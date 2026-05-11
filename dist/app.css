@@ -377,6 +377,7 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 .cp-recipe-item-body { flex: 1; min-width: 0; }
 .cp-recipe-item-title { font-size: var(--cp-font-size-sm); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; }
 .cp-recipe-item-badges { display: flex; gap: var(--cp-space-1); flex-wrap: wrap; }
+.cp-recipe-item-prod-badge { font-size: 10px; padding: 2px 6px; }
 .cp-recipe-item-time { font-size: 10px; color: var(--cp-text-muted); flex-shrink: 0; }
 /* Recipe detail */
 .cp-recipe-detail { }

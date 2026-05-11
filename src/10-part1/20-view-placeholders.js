@@ -426,6 +426,12 @@
       renderCurrentView();
     });
 
+    // Recipe production-presence filter (has / missing production node)
+    $(document).off('change.cp-recipe-prod').on('change.cp-recipe-prod', '#cpRecipeProductionFilter', function() {
+      S.recipeFilter.production = $(this).val() || '';
+      renderCurrentView();
+    });
+
     // Recipe sort
     $(document).off('change.cp-recipe-sort').on('change.cp-recipe-sort', '#cpRecipeSortBy', function() {
       S.recipeFilter.sortBy = $(this).val() || 'updated';
