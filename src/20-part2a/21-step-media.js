@@ -7,37 +7,44 @@
   // ============================================================
 
   function renderMediaStep(recipe) {
+    var prod = getRecipeProduction(recipe);
     var html = '<div class="cp-step-production" data-recipe-id="' + esc(recipe.id) + '">';
 
-    // Header / context
-    html += '<div class="cp-card cp-production-header-card">';
-    html += '<div class="cp-section-header"><h3>' + icon('rocket') + ' Production Handoff</h3>';
-    html += '<span class="cp-text-muted">Send this recipe to the matching media production app.</span></div>';
-    html += '<p class="cp-production-intro">';
-    html += 'Choose the media type, then open the production node-add form pre-filled with this recipe’s title, brand, and planner IDs. ';
-    html += 'You will craft the actual creative — image prompts, carousel slides, or video script — inside the production app.';
-    html += '</p>';
-    html += '</div>';
+    if (prod) {
+      // A production node already exists for this recipe — show the
+      // connected-production card instead of the create-handoff UI.
+      html += renderProductionExistsCard(recipe, prod);
+    } else {
+      // Header / context
+      html += '<div class="cp-card cp-production-header-card">';
+      html += '<div class="cp-section-header"><h3>' + icon('rocket') + ' Production Handoff</h3>';
+      html += '<span class="cp-text-muted">Send this recipe to the matching media production app.</span></div>';
+      html += '<p class="cp-production-intro">';
+      html += 'Choose the media type, then open the production node-add form pre-filled with this recipe’s title, brand, and planner IDs. ';
+      html += 'You will craft the actual creative — image prompts, carousel slides, or video script — inside the production app.';
+      html += '</p>';
+      html += '</div>';
 
-    // Media-type selector
-    html += '<div class="cp-card cp-production-type-card">';
-    html += '<div class="cp-section-header"><h3>' + icon('layer-group') + ' Media Type</h3></div>';
-    html += '<div class="cp-production-type-grid">';
-    var types = (typeof Constants !== 'undefined' && Constants.MEDIA_TYPES) || {};
-    for (var key in types) {
-      var mt = types[key];
-      var active = recipe.media_type === key;
-      html += '<button class="cp-production-type-card-btn' + (active ? ' cp-production-type-active' : '') + '" data-action="set-media-type" data-type="' + esc(key) + '" style="--mt-color:' + mt.color + '">';
-      html += '<span class="cp-production-type-icon" style="background:' + mt.color + '15;color:' + mt.color + '">' + icon(mt.icon) + '</span>';
-      html += '<span class="cp-production-type-label">' + esc(mt.label) + '</span>';
-      html += '<span class="cp-production-type-sub">/node/add/' + esc(mt.node_type) + '</span>';
-      if (active) html += '<span class="cp-production-type-selected">' + icon('circle-check') + ' Selected</span>';
-      html += '</button>';
+      // Media-type selector
+      html += '<div class="cp-card cp-production-type-card">';
+      html += '<div class="cp-section-header"><h3>' + icon('layer-group') + ' Media Type</h3></div>';
+      html += '<div class="cp-production-type-grid">';
+      var types = (typeof Constants !== 'undefined' && Constants.MEDIA_TYPES) || {};
+      for (var key in types) {
+        var mt = types[key];
+        var active = recipe.media_type === key;
+        html += '<button class="cp-production-type-card-btn' + (active ? ' cp-production-type-active' : '') + '" data-action="set-media-type" data-type="' + esc(key) + '" style="--mt-color:' + mt.color + '">';
+        html += '<span class="cp-production-type-icon" style="background:' + mt.color + '15;color:' + mt.color + '">' + icon(mt.icon) + '</span>';
+        html += '<span class="cp-production-type-label">' + esc(mt.label) + '</span>';
+        html += '<span class="cp-production-type-sub">/node/add/' + esc(mt.node_type) + '</span>';
+        if (active) html += '<span class="cp-production-type-selected">' + icon('circle-check') + ' Selected</span>';
+        html += '</button>';
+      }
+      html += '</div></div>';
+
+      // Production handoff panel for the selected type
+      html += renderProductionHandoff(recipe);
     }
-    html += '</div></div>';
-
-    // Production handoff panel for the selected type
-    html += renderProductionHandoff(recipe);
 
     // Production / delivery notes (kept from before — used by reviewer)
     html += '<div class="cp-card" style="margin-top:var(--cp-space-3)">';
@@ -48,6 +55,87 @@
 
     html += '</div>';
     return html;
+  }
+
+  // Renders the "production node is connected" card. Shown in place of the
+  // media-type selector + handoff panel once a node exists for the recipe.
+  function renderProductionExistsCard(recipe, prod) {
+    var mediaTypes = (typeof Constants !== 'undefined' && Constants.MEDIA_TYPES) || {};
+    var mtKey = prod.media_type || recipe.media_type || 'image';
+    var mt = mediaTypes[mtKey] || mediaTypes.image || { color: '#1a73e8', icon: 'image', label: 'Production' };
+    var statusStyle = getProductionStatusStyle(prod.status);
+
+    var prodTitle = prod.title || recipe.title || 'Untitled production';
+    var prodUrl   = prod.url || (prod.node_id ? '/node/' + prod.node_id : '');
+    var editUrl   = prod.node_id ? '/node/' + prod.node_id + '/edit' : prodUrl;
+
+    var html = '<div class="cp-card cp-production-exists-card" style="--mt-color:' + mt.color + '">';
+
+    // Header strip
+    html += '<div class="cp-production-exists-header">';
+    html += '<div class="cp-production-exists-icon" style="background:' + mt.color + '15;color:' + mt.color + '">' + icon(mt.icon) + '</div>';
+    html += '<div class="cp-production-exists-headings">';
+    html += '<div class="cp-production-exists-eyebrow">' + icon('circle-check') + ' Production node connected</div>';
+    if (prodUrl) {
+      html += '<h3 class="cp-production-exists-title"><a href="' + esc(prodUrl) + '" target="_blank" rel="noopener">' + esc(prodTitle) + '</a></h3>';
+    } else {
+      html += '<h3 class="cp-production-exists-title">' + esc(prodTitle) + '</h3>';
+    }
+    html += '<div class="cp-production-exists-badges">';
+    html += '<span class="cp-production-exists-type-badge" style="background:' + mt.color + '15;color:' + mt.color + '">' + icon(mt.icon) + ' ' + esc(mt.label) + '</span>';
+    if (statusStyle.label || prod.status) {
+      var statusText = statusStyle.label || prod.status;
+      html += '<span class="cp-production-exists-status-badge" style="background:' + statusStyle.color + '15;color:' + statusStyle.color + ';border-color:' + statusStyle.color + '40">' + esc(statusText) + '</span>';
+    }
+    if (prod.node_id) {
+      html += '<span class="cp-production-exists-id"><code>node/' + esc(prod.node_id) + '</code></span>';
+    }
+    html += '</div>';
+    html += '</div>';
+    html += '</div>';
+
+    // Metadata grid
+    var metaRows = [];
+    if (prod.director) metaRows.push(['Director', esc(prod.director)]);
+    if (prod.created)  metaRows.push(['Created', _formatProdDate(prod.created)]);
+    if (prod.updated)  metaRows.push(['Last updated', _formatProdDate(prod.updated)]);
+    if (metaRows.length) {
+      html += '<div class="cp-production-exists-meta">';
+      for (var i = 0; i < metaRows.length; i++) {
+        html += '<div class="cp-production-exists-meta-row"><span class="cp-production-exists-meta-label">' + metaRows[i][0] + '</span><span class="cp-production-exists-meta-value">' + metaRows[i][1] + '</span></div>';
+      }
+      html += '</div>';
+    }
+
+    // Actions
+    html += '<div class="cp-production-exists-actions">';
+    if (editUrl) {
+      html += '<a class="cp-btn cp-btn-primary cp-btn-lg" href="' + esc(editUrl) + '" target="_blank" rel="noopener">' + icon('external-link') + ' Open Production</a>';
+    }
+    html += '<button class="cp-btn cp-btn-outline" data-action="refresh-production">' + icon('refresh') + ' Refresh from page</button>';
+    if (prodUrl && prodUrl !== editUrl) {
+      html += '<a class="cp-btn cp-btn-outline" href="' + esc(prodUrl) + '" target="_blank" rel="noopener">' + icon('eye') + ' View</a>';
+    }
+    if (prodUrl) {
+      html += '<button class="cp-btn cp-btn-outline" data-action="copy-production-url" data-url="' + esc(prodUrl) + '">' + icon('copy') + ' Copy URL</button>';
+    }
+    html += '</div>';
+
+    // Lock note
+    html += '<div class="cp-production-exists-lock-note">' + icon('lock') + ' Media type is locked while a production node exists for this recipe. To switch types, delete the production node in Drupal first.</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  function _formatProdDate(value) {
+    if (!value) return '';
+    var d = new Date(value);
+    if (isNaN(d.getTime())) return esc(String(value));
+    if (typeof window._cpFormatRelativeTime === 'function') {
+      return window._cpFormatRelativeTime(d.toISOString());
+    }
+    return d.toLocaleDateString();
   }
 
   function renderProductionHandoff(recipe) {

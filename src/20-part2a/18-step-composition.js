@@ -25,15 +25,29 @@
     html += '</div></div>';
 
     // ── Media type toggle (used downstream to pick production app)
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-3)">';
-    html += '<div class="cp-section-header"><h3>' + icon('image') + ' Media Type</h3>';
-    html += '<span class="cp-text-muted">Determines which production app handles delivery.</span></div>';
-    html += '<div class="cp-media-type-toggle">';
+    // Once a production node exists for this recipe, the media type is locked
+    // to whatever that production was created as. To switch types, the user
+    // has to delete the production node in Drupal first.
+    var compProd = getRecipeProduction(recipe);
+    var mtLocked = !!compProd;
+    var lockedMtKey = compProd ? (compProd.media_type || recipe.media_type) : '';
+    html += '<div class="cp-card' + (mtLocked ? ' cp-media-type-card-locked' : '') + '" style="margin-top:var(--cp-space-3)">';
+    html += '<div class="cp-section-header"><h3>' + icon('image') + ' Media Type' + (mtLocked ? ' <span class="cp-media-type-lock-icon" title="Locked — production node exists">' + icon('lock') + '</span>' : '') + '</h3>';
+    if (mtLocked) {
+      html += '<span class="cp-text-muted">Locked — a production node exists for this recipe. <a href="#" data-action="go-step" data-step="media">View it →</a></span></div>';
+    } else {
+      html += '<span class="cp-text-muted">Determines which production app handles delivery.</span></div>';
+    }
+    html += '<div class="cp-media-type-toggle' + (mtLocked ? ' cp-media-type-toggle-locked' : '') + '">';
     var mediaTypes = (typeof Constants !== 'undefined' && Constants.MEDIA_TYPES) || {};
     for (var mtk in mediaTypes) {
       var mt = mediaTypes[mtk];
-      var mtActive = recipe.media_type === mtk ? ' cp-media-type-active' : '';
-      html += '<button class="cp-media-type-btn' + mtActive + '" data-action="set-media-type" data-type="' + mtk + '">' + icon(mt.icon) + ' ' + esc(mt.label) + '</button>';
+      var mtActive = (mtLocked ? lockedMtKey : recipe.media_type) === mtk ? ' cp-media-type-active' : '';
+      if (mtLocked) {
+        html += '<button class="cp-media-type-btn cp-media-type-btn-locked' + mtActive + '" type="button" disabled aria-disabled="true" title="Locked — production node exists">' + icon(mt.icon) + ' ' + esc(mt.label) + '</button>';
+      } else {
+        html += '<button class="cp-media-type-btn' + mtActive + '" data-action="set-media-type" data-type="' + mtk + '">' + icon(mt.icon) + ' ' + esc(mt.label) + '</button>';
+      }
     }
     html += '</div></div>';
 

@@ -44,6 +44,12 @@
       }
       html += '</select>';
     }
+    // Production filter (has / missing production node)
+    html += '<select class="cp-select cp-select-sm" id="cpRecipeProductionFilter" title="Production node status">';
+    html += '<option value=""' + (!f.production ? ' selected' : '') + '>All Production</option>';
+    html += '<option value="has"' + (f.production === 'has' ? ' selected' : '') + '>With Production</option>';
+    html += '<option value="missing"' + (f.production === 'missing' ? ' selected' : '') + '>Missing Production</option>';
+    html += '</select>';
     html += '<span class="cp-filter-count">' + recipes.length + ' of ' + totalAll + '</span>';
     html += '</div>';
 
@@ -128,6 +134,12 @@
     html += '<div class="cp-recipe-item-badges">';
     html += '<span class="cp-status-badge"><span class="cp-status-dot" style="background:' + stCfg.color + '"></span>' + esc(stCfg.label) + '</span>';
     html += '<span class="cp-badge" style="background:' + mt.color + '15;color:' + mt.color + '">' + icon(mt.icon) + '</span>';
+    var rProd = getRecipeProduction(recipe);
+    if (rProd) {
+      var prodStatusStyle = getProductionStatusStyle(rProd.status);
+      var prodTitle = 'Production: ' + (rProd.title || 'connected') + (rProd.status ? ' • ' + rProd.status : '');
+      html += '<span class="cp-badge cp-recipe-item-prod-badge" style="background:' + prodStatusStyle.color + '15;color:' + prodStatusStyle.color + '" title="' + esc(prodTitle) + '">' + icon('rocket') + '</span>';
+    }
     var persona = S.personaMap[recipe.persona_id];
     if (persona) html += '<span class="cp-badge" style="background:#9334e915;color:#9334e9">' + esc(truncate(persona.name, 12)) + '</span>';
     var campaign = S.campaignMap[recipe.campaign_id];
@@ -315,6 +327,8 @@
     if (f.priority) recipes = recipes.filter(function(r) { return r.priority === f.priority; });
     if (f.type) recipes = recipes.filter(function(r) { return r.media_type === f.type; });
     if (f.tag) recipes = recipes.filter(function(r) { return (r.tags || []).indexOf(f.tag) > -1; });
+    if (f.production === 'has') recipes = recipes.filter(function(r) { return !!getRecipeProduction(r); });
+    else if (f.production === 'missing') recipes = recipes.filter(function(r) { return !getRecipeProduction(r); });
 
     // Sort
     var dir = f.sortDir === 'asc' ? 1 : -1;

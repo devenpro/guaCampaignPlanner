@@ -46,7 +46,7 @@
 
     // Recipe list filters
     recipeGroupBy: 'status',
-    recipeFilter: { search: '', statuses: [], campaign: '', persona: '', funnel: '', priority: '', type: '', tag: '', sortBy: 'updated', sortDir: 'desc' },
+    recipeFilter: { search: '', statuses: [], campaign: '', persona: '', funnel: '', priority: '', type: '', tag: '', production: '', sortBy: 'updated', sortDir: 'desc' },
     collapsedGroups: {},
 
     // Persona search
