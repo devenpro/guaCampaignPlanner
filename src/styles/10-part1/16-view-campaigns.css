@@ -1,0 +1,15 @@
+/* ═══ S16: CAMPAIGNS VIEW ═══ */
+.cp-campaign-card { transition: all var(--cp-transition-fast); cursor: pointer; }
+.cp-campaign-card:hover { border-color: var(--cp-border-dark); box-shadow: var(--cp-shadow-sm); }
+@media (hover: hover) { .cp-campaign-card:hover { transform: translateY(-1px); } }
+.cp-campaign-card-header { display: flex; align-items: center; gap: var(--cp-space-2); margin-bottom: var(--cp-space-2); }
+.cp-campaign-card-header h3 { font-size: var(--cp-font-size-md); font-weight: 700; flex: 1; margin: 0; }
+.cp-campaign-card-actions { display: flex; gap: var(--cp-space-1); }
+.cp-campaign-card-badges { display: flex; gap: var(--cp-space-1); flex-wrap: wrap; margin-bottom: var(--cp-space-2); }
+.cp-campaign-card-dates { font-size: var(--cp-font-size-xs); color: var(--cp-text-secondary); display: flex; align-items: center; gap: var(--cp-space-1); margin-bottom: var(--cp-space-3); }
+.cp-campaign-card-recipes { }
+.cp-campaign-recipe-count { font-size: var(--cp-font-size-xs); font-weight: 600; color: var(--cp-text-secondary); margin-bottom: var(--cp-space-1); }
+.cp-campaign-status-bar { display: flex; height: 6px; border-radius: var(--cp-radius-full); overflow: hidden; background: var(--cp-gray-100); margin-bottom: var(--cp-space-1); }
+.cp-campaign-status-segment { height: 100%; }
+.cp-campaign-status-labels { display: flex; gap: var(--cp-space-2); flex-wrap: wrap; }
+

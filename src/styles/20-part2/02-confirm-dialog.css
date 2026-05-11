@@ -1,0 +1,7 @@
+/* ═══ S2: CONFIRM DIALOG ═══ */
+.cp-confirm-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: var(--cp-z-confirm); display: flex; align-items: center; justify-content: center; }
+.cp-confirm-dialog { background: var(--cp-white); border-radius: var(--cp-radius-lg); box-shadow: var(--cp-shadow-xl); padding: var(--cp-space-6); max-width: 400px; width: 90%; text-align: center; }
+.cp-confirm-dialog h3 { margin-bottom: var(--cp-space-3); }
+.cp-confirm-dialog p { color: var(--cp-text-secondary); font-size: var(--cp-font-size-sm); margin: 0 0 var(--cp-space-5); }
+.cp-confirm-actions { display: flex; gap: var(--cp-space-2); justify-content: center; }
+

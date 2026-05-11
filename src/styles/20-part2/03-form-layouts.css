@@ -1,0 +1,11 @@
+/* ═══ S3: FORM LAYOUTS ═══ */
+.cp-editor-form { display: flex; flex-direction: column; gap: var(--cp-space-4); }
+.cp-form-group { display: flex; flex-direction: column; gap: var(--cp-space-1); }
+.cp-form-group label { font-size: var(--cp-font-size-xs); font-weight: 600; color: var(--cp-text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.cp-form-row { display: flex; gap: var(--cp-space-4); }
+.cp-form-half { flex: 1; display: flex; flex-direction: column; gap: var(--cp-space-1); }
+.cp-form-half label { font-size: var(--cp-font-size-xs); font-weight: 600; color: var(--cp-text-secondary); }
+.cp-form-third { flex: 1; display: flex; flex-direction: column; gap: var(--cp-space-1); }
+.cp-form-third label { font-size: var(--cp-font-size-xs); font-weight: 600; color: var(--cp-text-secondary); }
+.cp-flex-between { display: flex; align-items: center; justify-content: space-between; gap: var(--cp-space-2); }
+

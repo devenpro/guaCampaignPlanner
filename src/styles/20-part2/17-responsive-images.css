@@ -1,0 +1,40 @@
+/* ═══ S14: RESPONSIVE ═══ */
+@media (max-width: 992px) {
+  .cp-settings-panel, .cp-brand-design-panel { max-width: 100%; }
+  .cp-mixer-columns { flex-direction: column; max-height: 60vh; overflow-y: auto; }
+  .cp-mixer-column { min-height: 120px; }
+  .cp-img-detail { width: 100%; border-left: none; border-top: 1px solid var(--cp-border-light); position: relative; }
+  .cp-img-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .cp-script-header, .cp-script-row { grid-template-columns: 50px 1fr 1fr; }
+  .cp-script-header > :nth-child(n+4), .cp-script-row > :nth-child(n+4) { display: none; }
+}
+@media (max-width: 768px) {
+  .cp-modal { width: 95%; }
+  .cp-settings-tab { padding: var(--cp-space-2) var(--cp-space-3); font-size: var(--cp-font-size-xs); }
+  .cp-form-row { flex-direction: column; }
+  .cp-form-half, .cp-form-third { flex: none; width: 100%; }
+  .cp-demo-grid { grid-template-columns: repeat(2, 1fr); }
+  .cp-psych-grid { grid-template-columns: 1fr; }
+  .cp-cta-fields { grid-template-columns: 1fr; }
+  .cp-video-meta-row { flex-direction: column; }
+  .cp-media-type-toggle { width: 100%; }
+  .cp-media-type-btn { flex: 1; justify-content: center; }
+  .cp-img-filters { flex-direction: column; align-items: stretch; }
+  .cp-img-filters .cp-search-wrapper { max-width: 100%; }
+  .cp-brand-color-row { flex-direction: column; }
+  .cp-brand-color-field { min-width: 100%; }
+  .cp-date-range { flex-direction: column; align-items: stretch; }
+}
+@media (max-width: 480px) {
+  .cp-modal-header { padding: var(--cp-space-3) var(--cp-space-4); }
+  .cp-modal-body { padding: var(--cp-space-4); }
+  .cp-modal-footer { padding: var(--cp-space-3) var(--cp-space-4); }
+  .cp-confirm-dialog { padding: var(--cp-space-4); }
+  .cp-demo-grid { grid-template-columns: 1fr; }
+  .cp-ai-picker { flex-wrap: wrap; gap: 4px; }
+  .cp-ai-picker .cp-ai-provider-select, .cp-ai-picker .cp-ai-model-select { font-size: 10px; padding: 2px 4px; min-width: 60px; }
+  .cp-settings-section { padding: var(--cp-space-3); }
+  .cp-img-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: var(--cp-space-2); }
+  .cp-img-card-thumb { height: 100px; }
+  .cp-img-picker-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
+}

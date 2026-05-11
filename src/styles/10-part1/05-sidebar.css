@@ -1,0 +1,21 @@
+/* ═══ S5: SIDEBAR ═══ */
+.cp-body { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+.cp-sidebar { width: var(--cp-sidebar-width); background: var(--cp-white); border-right: 1px solid var(--cp-border-light); display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; transition: width var(--cp-transition-base); }
+.cp-sidebar-hidden { display: none !important; }
+.cp-sidebar-overlay { display: none; }
+.cp-sidebar-inner { display: flex; flex-direction: column; flex: 1; }
+.cp-nav { display: flex; flex-direction: column; padding: var(--cp-space-2) var(--cp-space-2); gap: 0; flex: 1; }
+.cp-nav-group { margin-bottom: var(--cp-space-1); }
+.cp-nav-group-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.1px; color: var(--cp-text-muted); padding: var(--cp-space-2) var(--cp-space-2) var(--cp-space-1); margin-top: var(--cp-space-1); }
+.cp-nav-item { display: flex; align-items: center; gap: var(--cp-space-2); padding: 6px var(--cp-space-2); border-radius: var(--cp-radius-md); cursor: pointer; color: var(--cp-text-secondary); transition: all var(--cp-transition-fast); font-size: var(--cp-font-size-sm); font-weight: 500; user-select: none; text-decoration: none; }
+.cp-nav-item:hover { background: var(--cp-gray-50); color: var(--cp-text-primary); text-decoration: none; }
+.cp-nav-item-active { background: var(--cp-primary-light); color: var(--cp-primary); font-weight: 600; }
+.cp-nav-icon { width: 18px; text-align: center; font-size: var(--cp-font-size-xs); flex-shrink: 0; }
+.cp-nav-label { flex: 1; }
+.cp-nav-badge { background: var(--cp-gray-100); color: var(--cp-text-tertiary); font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: var(--cp-radius-full); }
+.cp-nav-item-active .cp-nav-badge { background: var(--cp-primary); color: var(--cp-white); }
+.cp-sidebar-footer { padding: var(--cp-space-2) var(--cp-space-3); border-top: 1px solid var(--cp-border-light); margin-top: auto; }
+.cp-sidebar-footer-label { font-size: 9px; font-weight: 600; color: var(--cp-text-muted); text-transform: uppercase; }
+.cp-sidebar-footer-name { font-size: var(--cp-font-size-sm); font-weight: 700; color: var(--cp-text-primary); }
+.cp-sidebar-footer-meta { font-size: var(--cp-font-size-xs); color: var(--cp-text-muted); }
+

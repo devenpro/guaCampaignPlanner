@@ -1,0 +1,15 @@
+/* ═══ S10: AI RESEARCH PANEL (Full - Part 2B) ═══ */
+.cp-ai-research-input { display: flex; gap: var(--cp-space-2); margin-bottom: var(--cp-space-3); }
+.cp-ai-research-input .cp-textarea { flex: 1; min-height: 40px; }
+.cp-ai-research-results { display: flex; flex-direction: column; gap: var(--cp-space-2); }
+.cp-ai-research-result { display: flex; align-items: flex-start; gap: var(--cp-space-2); padding: var(--cp-space-3); border: 1.5px solid var(--cp-border-light); border-radius: var(--cp-radius-md); background: var(--cp-white); cursor: pointer; transition: all var(--cp-transition-fast); }
+.cp-ai-research-result:hover { border-color: var(--cp-border-dark); }
+.cp-ai-research-result-selected { border-width: 2px; }
+.cp-ai-research-result-check { width: 20px; height: 20px; border-radius: var(--cp-radius-sm); border: 1.5px solid var(--cp-border-default); display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; margin-top: 2px; }
+.cp-ai-research-result-check-on { color: var(--cp-white); }
+.cp-ai-research-result-body { flex: 1; min-width: 0; }
+.cp-ai-research-result-title { font-size: var(--cp-font-size-sm); font-weight: 700; }
+.cp-ai-research-result-desc { font-size: var(--cp-font-size-xs); color: var(--cp-text-secondary); line-height: 1.5; margin-top: 2px; }
+.cp-ai-research-result-tags { display: flex; gap: var(--cp-space-1); margin-top: var(--cp-space-1); flex-wrap: wrap; }
+.cp-ai-research-footer { display: flex; gap: var(--cp-space-2); margin-top: var(--cp-space-3); padding-top: var(--cp-space-3); border-top: 1px solid var(--cp-border-light); align-items: center; }
+

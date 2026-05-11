@@ -1,0 +1,13 @@
+/* ═══ S5: PERSONA EDITOR ═══ */
+.cp-persona-editor { }
+.cp-demo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--cp-space-3); }
+.cp-psych-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--cp-space-3); }
+.cp-pain-point-picker { }
+.cp-pain-point-picker-list { display: flex; flex-direction: column; gap: var(--cp-space-2); max-height: 240px; overflow-y: auto; margin-bottom: var(--cp-space-3); }
+.cp-pain-point-picker-item { display: flex; align-items: flex-start; gap: var(--cp-space-2); padding: var(--cp-space-2) var(--cp-space-3); border: 1px solid var(--cp-border-light); border-radius: var(--cp-radius-md); cursor: pointer; transition: all var(--cp-transition-fast); }
+.cp-pain-point-picker-item:hover { border-color: var(--cp-border-dark); }
+.cp-pain-point-picker-item-selected { border-color: var(--cp-primary); background: var(--cp-primary-subtle); }
+.cp-pain-point-picker-item input[type="checkbox"] { margin-top: 3px; flex-shrink: 0; cursor: pointer; }
+.cp-pain-point-inline-add { display: flex; gap: var(--cp-space-2); padding: var(--cp-space-2); border: 1.5px dashed var(--cp-border-default); border-radius: var(--cp-radius-md); background: var(--cp-gray-50); }
+.cp-pain-point-inline-add .cp-input { flex: 1; }
+

@@ -1,0 +1,8 @@
+/* ═══ S3: APP SHELL ═══ */
+.cp-app { position: fixed; top: var(--cp-drupal-toolbar, 0px); left: 0; right: 0; bottom: 0; z-index: var(--cp-z-base); display: flex; flex-direction: column; background: var(--cp-bg-secondary); overflow: hidden; }
+body.cp-active { overflow: hidden; }
+body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-active .block-page-title-block { display: none !important; }
+.cp-view { animation: cp-fadeIn var(--cp-transition-base) ease-out; }
+@keyframes cp-fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes cp-pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+

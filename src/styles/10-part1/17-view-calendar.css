@@ -1,0 +1,28 @@
+/* ═══ S17: CALENDAR VIEW ═══ */
+.cp-cal-mode-toggle { display: flex; border: 1.5px solid var(--cp-border-default); border-radius: var(--cp-radius-full); overflow: hidden; margin-left: var(--cp-space-3); }
+.cp-cal-mode-btn { padding: 3px 12px; border: none; background: var(--cp-white); font-size: var(--cp-font-size-xs); font-weight: 600; font-family: var(--cp-font-family); cursor: pointer; color: var(--cp-text-secondary); transition: all var(--cp-transition-fast); }
+.cp-cal-mode-btn:hover { background: var(--cp-gray-50); }
+.cp-cal-mode-active { background: var(--cp-primary); color: var(--cp-white); }
+.cp-cal-title { font-size: var(--cp-font-size-lg); font-weight: 700; font-family: var(--cp-font-display); min-width: 160px; text-align: center; }
+.cp-cal-campaign-bars { margin-bottom: var(--cp-space-3); }
+.cp-cal-campaign-row { display: flex; align-items: center; gap: var(--cp-space-2); margin-bottom: var(--cp-space-1); }
+.cp-cal-campaign-name { font-size: var(--cp-font-size-xs); font-weight: 600; width: 110px; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+.cp-cal-campaign-bar-track { flex: 1; position: relative; height: 16px; }
+.cp-cal-campaign-bar { position: absolute; top: 0; bottom: 0; border-radius: var(--cp-radius-sm); border: 1.5px solid; }
+.cp-cal-phase-marker { position: absolute; top: 0; bottom: 0; border-radius: 2px; pointer-events: none; }
+.cp-calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); border: 1px solid var(--cp-border-light); border-radius: var(--cp-radius-lg); overflow: hidden; background: var(--cp-white); }
+.cp-cal-header { padding: var(--cp-space-2); text-align: center; font-size: var(--cp-font-size-xs); font-weight: 700; color: var(--cp-text-tertiary); background: var(--cp-gray-50); border-bottom: 1px solid var(--cp-border-light); text-transform: uppercase; letter-spacing: 0.04em; }
+.cp-cal-day { min-height: 80px; padding: var(--cp-space-1); border-right: 1px solid var(--cp-border-light); border-bottom: 1px solid var(--cp-border-light); }
+.cp-cal-day:nth-child(7n+7) { border-right: none; }
+.cp-cal-day-empty { background: var(--cp-gray-50); }
+.cp-cal-day-today { background: var(--cp-primary-subtle); }
+.cp-cal-day-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; padding: 1px 2px; }
+.cp-cal-day-num { font-size: var(--cp-font-size-xs); font-weight: 600; color: var(--cp-text-secondary); }
+.cp-cal-day-today .cp-cal-day-num { background: var(--cp-primary); color: var(--cp-white); border-radius: var(--cp-radius-full); width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.cp-cal-day-count { font-size: 9px; font-weight: 700; color: var(--cp-text-muted); background: var(--cp-gray-100); border-radius: var(--cp-radius-full); padding: 0 5px; line-height: 16px; }
+.cp-cal-recipe-chip { display: flex; align-items: center; gap: 2px; font-size: 10px; font-weight: 500; padding: 1px 4px; border-radius: 3px; margin-bottom: 1px; cursor: pointer; transition: all var(--cp-transition-fast); overflow: hidden; }
+.cp-cal-recipe-chip:hover { opacity: 0.85; }
+.cp-cal-chip-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cp-cal-more { font-size: 10px; color: var(--cp-text-muted); padding: 1px 4px; cursor: pointer; }
+.cp-cal-more:hover { color: var(--cp-primary); }
+

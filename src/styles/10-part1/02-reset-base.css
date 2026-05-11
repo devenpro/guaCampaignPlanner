@@ -1,0 +1,14 @@
+/* ═══ S2: RESET & BASE ═══ */
+.cp-app { font-family: var(--cp-font-family); font-size: var(--cp-font-size-base); color: var(--cp-text-primary); line-height: 1.5; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; box-sizing: border-box; }
+.cp-app *, .cp-app *::before, .cp-app *::after { box-sizing: border-box; }
+/* Keyboard focus — visible ring on all interactive elements */
+.cp-app :focus { outline: none; }
+.cp-app :focus-visible { outline: 2px solid var(--cp-primary); outline-offset: 2px; border-radius: 2px; }
+.cp-app h1, .cp-app h2, .cp-app h3, .cp-app h4 { font-family: var(--cp-font-display); margin: 0; font-weight: 700; letter-spacing: -0.01em; }
+.cp-app h1 { font-size: var(--cp-font-size-2xl); display: flex; align-items: center; gap: var(--cp-space-2); }
+.cp-app h2 { font-size: var(--cp-font-size-lg); display: flex; align-items: center; gap: var(--cp-space-2); }
+.cp-app h3 { font-size: var(--cp-font-size-md); }
+.cp-app a { color: var(--cp-primary); text-decoration: none; }
+.cp-app a:hover { text-decoration: underline; }
+.cp-app p { margin: 0 0 var(--cp-space-3); }
+

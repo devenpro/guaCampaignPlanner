@@ -1,0 +1,60 @@
+/* ═══ S7: RECIPE PIPELINE STEPS ═══ */
+/* Hook step */
+.cp-hook-inherited { margin-bottom: var(--cp-space-4); }
+.cp-hook-inherited-header { display: flex; align-items: center; gap: var(--cp-space-2); margin-bottom: var(--cp-space-2); }
+.cp-hook-radio-list { display: flex; flex-direction: column; gap: var(--cp-space-2); }
+.cp-hook-radio-item { display: flex; align-items: center; gap: var(--cp-space-2); padding: var(--cp-space-3); border: 1.5px solid var(--cp-border-light); border-radius: var(--cp-radius-md); cursor: pointer; transition: all var(--cp-transition-fast); }
+.cp-hook-radio-item:hover { border-color: var(--cp-border-dark); }
+.cp-hook-radio-item-selected { border-color: var(--cp-primary); background: var(--cp-primary-subtle); }
+.cp-hook-override { border-top: 1px solid var(--cp-border-light); padding-top: var(--cp-space-4); }
+
+/* Content step */
+.cp-ad-copy-editor { margin-bottom: var(--cp-space-4); }
+.cp-variant-panel { }
+.cp-variant-item { padding: var(--cp-space-3); border: 1px solid var(--cp-border-light); border-radius: var(--cp-radius-md); margin-bottom: var(--cp-space-2); }
+.cp-cta-fields { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--cp-space-3); }
+
+/* Media step - Image */
+.cp-image-brief-section { margin-bottom: var(--cp-space-4); }
+.cp-ai-prompt-section { margin-bottom: var(--cp-space-4); }
+.cp-prompt-params { display: flex; gap: var(--cp-space-2); flex-wrap: wrap; margin-top: var(--cp-space-2); }
+.cp-ref-images-row { display: flex; gap: var(--cp-space-2); flex-wrap: wrap; align-items: center; }
+.cp-ref-image-thumb { width: 52px; height: 52px; border-radius: var(--cp-radius-sm); overflow: hidden; border: 1px solid var(--cp-border-light); flex-shrink: 0; }
+.cp-ref-image-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.cp-ref-image-add { width: 52px; height: 52px; border: 1.5px dashed var(--cp-border-default); border-radius: var(--cp-radius-sm); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--cp-text-muted); transition: all var(--cp-transition-fast); }
+.cp-ref-image-add:hover { border-color: var(--cp-primary); color: var(--cp-primary); }
+
+/* Media step - Video */
+.cp-video-blueprint { margin-bottom: var(--cp-space-4); }
+.cp-video-meta-row { display: flex; gap: var(--cp-space-3); margin-bottom: var(--cp-space-3); }
+.cp-video-meta-field { flex: 1; }
+.cp-scene-list { display: flex; flex-direction: column; gap: var(--cp-space-2); }
+.cp-scene-card { padding: var(--cp-space-3); border: 1.5px solid var(--cp-border-light); border-radius: var(--cp-radius-md); background: var(--cp-white); }
+.cp-scene-card-header { display: flex; align-items: center; gap: var(--cp-space-2); margin-bottom: var(--cp-space-1); }
+.cp-scene-card-desc { font-size: var(--cp-font-size-sm); color: var(--cp-text-secondary); line-height: 1.5; }
+.cp-scene-add { display: flex; align-items: center; justify-content: center; padding: var(--cp-space-2); border: 1.5px dashed var(--cp-border-default); border-radius: var(--cp-radius-md); cursor: pointer; color: var(--cp-text-muted); transition: all var(--cp-transition-fast); }
+.cp-scene-add:hover { border-color: var(--cp-primary); color: var(--cp-primary); }
+
+/* Script table */
+.cp-script-table { border: 1px solid var(--cp-border-light); border-radius: var(--cp-radius-md); overflow: hidden; }
+.cp-script-header { display: grid; grid-template-columns: 60px 1fr 1fr 80px 80px; gap: 0; font-size: 10px; font-weight: 700; color: var(--cp-text-muted); text-transform: uppercase; padding: var(--cp-space-1) var(--cp-space-2); background: var(--cp-gray-50); border-bottom: 1px solid var(--cp-border-light); }
+.cp-script-row { display: grid; grid-template-columns: 60px 1fr 1fr 80px 80px; gap: 0; padding: var(--cp-space-2); font-size: var(--cp-font-size-xs); border-bottom: 1px solid var(--cp-border-light); }
+.cp-script-row:last-child { border-bottom: none; }
+.cp-script-row:nth-child(even) { background: var(--cp-gray-50); }
+.cp-script-time { font-weight: 700; color: var(--cp-error); }
+.cp-script-export-banner { margin-top: var(--cp-space-3); padding: var(--cp-space-2) var(--cp-space-3); border-radius: var(--cp-radius-md); background: var(--cp-success-light); border: 1px solid rgba(13,144,79,0.15); font-size: var(--cp-font-size-xs); display: flex; align-items: center; gap: var(--cp-space-2); }
+
+/* Review step */
+.cp-review-checklist { margin-bottom: var(--cp-space-4); }
+.cp-review-check-item { display: flex; align-items: center; gap: var(--cp-space-2); padding: var(--cp-space-2) var(--cp-space-3); border-bottom: 1px solid var(--cp-border-light); }
+.cp-review-check-icon { width: 20px; height: 20px; border-radius: var(--cp-radius-sm); display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+.cp-review-check-done { background: var(--cp-success); color: var(--cp-white); }
+.cp-review-check-pending { background: var(--cp-gray-200); }
+.cp-review-actions { display: flex; gap: var(--cp-space-2); margin-top: var(--cp-space-4); }
+
+/* Media type toggle */
+.cp-media-type-toggle { display: flex; border: 1.5px solid var(--cp-border-default); border-radius: var(--cp-radius-full); overflow: hidden; width: fit-content; margin-bottom: var(--cp-space-4); }
+.cp-media-type-btn { padding: 6px 16px; border: none; background: var(--cp-white); font-size: var(--cp-font-size-sm); font-weight: 700; font-family: var(--cp-font-family); cursor: pointer; color: var(--cp-text-secondary); display: flex; align-items: center; gap: var(--cp-space-1); transition: all var(--cp-transition-fast); }
+.cp-media-type-btn:hover { background: var(--cp-gray-50); }
+.cp-media-type-active { background: var(--cp-primary); color: var(--cp-white) !important; }
+

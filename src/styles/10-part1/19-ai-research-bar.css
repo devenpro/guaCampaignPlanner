@@ -1,0 +1,19 @@
+/* ═══ S19: AI RESEARCH BAR ═══ */
+.cp-ai-research-slot { margin-bottom: var(--cp-space-3); }
+.cp-ai-research-bar { display: flex; align-items: center; gap: var(--cp-space-2); padding: var(--cp-space-3) var(--cp-space-4); border-radius: var(--cp-radius-md); border: 1.5px solid; cursor: pointer; transition: all var(--cp-transition-fast); }
+.cp-ai-research-bar:hover { box-shadow: var(--cp-shadow-sm); }
+.cp-ai-research-icon { font-size: var(--cp-font-size-sm); flex-shrink: 0; }
+.cp-ai-research-title { font-size: var(--cp-font-size-sm); font-weight: 700; }
+.cp-ai-research-arrow { margin-left: auto; color: var(--cp-text-muted); font-size: var(--cp-font-size-xs); }
+.cp-ai-research-panel { border: 1.5px solid; border-radius: var(--cp-radius-lg); padding: var(--cp-space-4); }
+.cp-ai-research-expanded { }
+.cp-ai-research-header { display: flex; align-items: center; gap: var(--cp-space-2); margin-bottom: var(--cp-space-3); }
+.cp-ai-research-body { }
+.cp-ai-status-indicator { display: inline-flex; align-items: center; gap: var(--cp-space-1); padding: 3px 10px; border-radius: var(--cp-radius-full); background: var(--cp-gray-50); border: 1px solid var(--cp-border-light); cursor: pointer; transition: all var(--cp-transition-fast); font-size: var(--cp-font-size-xs); }
+.cp-ai-status-indicator:hover { border-color: var(--cp-primary); background: var(--cp-primary-light); }
+.cp-ai-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.cp-ai-status-ok { background: var(--cp-success); }
+.cp-ai-status-off { background: var(--cp-error); }
+.cp-ai-status-loading { background: var(--cp-gray-400); animation: cp-pulse 1.5s ease-in-out infinite; }
+.cp-ai-status-label { font-weight: 600; color: var(--cp-text-secondary); white-space: nowrap; }
+

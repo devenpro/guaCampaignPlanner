@@ -1,0 +1,46 @@
+/* ═══ S22: RESPONSIVE ═══ */
+@media (max-width: 1200px) {
+  .cp-dash-stats { grid-template-columns: repeat(2, 1fr); }
+  .cp-list-pane { width: 260px; min-width: 220px; }
+  .cp-composition-grid { grid-template-columns: 1fr; }
+  .cp-dash-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 992px) {
+  .cp-sidebar { display: none; }
+  .cp-sidebar.cp-sidebar-open { display: flex; position: fixed; top: 0; left: 0; bottom: 0; z-index: var(--cp-z-sidebar); box-shadow: var(--cp-shadow-xl); width: var(--cp-sidebar-width); }
+  .cp-sidebar.cp-sidebar-open .cp-sidebar-overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: var(--cp-z-sidebar-overlay); }
+  .cp-dash-grid { grid-template-columns: 1fr; }
+  .cp-split-pane { flex-direction: column; }
+  .cp-list-pane { width: 100%; min-width: unset; max-width: unset; border-right: none; border-bottom: 1px solid var(--cp-border-light); max-height: 40vh; flex-shrink: 0; }
+  .cp-preview-pane { min-height: 50vh; flex: 1; }
+  .cp-header-brand { display: none; }
+  .cp-header-workspace { display: none; }
+  .cp-detail-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .cp-content { padding: var(--cp-space-4); }
+  .cp-card-grid { grid-template-columns: 1fr; }
+  .cp-dash-stats { grid-template-columns: 1fr 1fr; }
+  .cp-view-header { flex-wrap: wrap; }
+  .cp-cal-day { min-height: 56px; }
+  .cp-cal-mode-toggle { margin-left: 0; }
+  .cp-cal-title { min-width: 120px; font-size: var(--cp-font-size-base); }
+  .cp-cal-campaign-bars { display: none; }
+  .cp-detail-grid { grid-template-columns: 1fr; }
+  .cp-persona-detail-header { flex-direction: column; }
+}
+@media (max-width: 480px) {
+  .cp-content { padding: var(--cp-space-3); }
+  .cp-view-header { flex-direction: column; align-items: flex-start; }
+  .cp-list-toolbar-row { flex-wrap: wrap; }
+  .cp-header-right .cp-header-user { display: none; }
+  .cp-dash-stats { grid-template-columns: 1fr; gap: var(--cp-space-2); }
+  .cp-stat-value { font-size: var(--cp-font-size-xl); }
+  .cp-cal-day { min-height: 40px; }
+  .cp-cal-recipe-chip { font-size: 9px; }
+  .cp-cal-day-count { display: none; }
+  .cp-tab-toggle { width: 100%; }
+  .cp-tab-btn { flex: 1; justify-content: center; font-size: 10px; padding: 3px 8px; }
+  .cp-ai-research-bar { flex-wrap: wrap; padding: var(--cp-space-2); }
+  .cp-ai-status-label { display: none; }
+}

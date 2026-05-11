@@ -1,0 +1,10 @@
+/* ═══ S4: SELECTORS & CHIPS ═══ */
+.cp-chip-selector { display: flex; gap: var(--cp-space-2); flex-wrap: wrap; }
+.cp-chip-option { display: inline-flex; align-items: center; gap: var(--cp-space-1); padding: 5px 14px; border: 1.5px solid var(--cp-border-default); border-radius: var(--cp-radius-full); font-size: var(--cp-font-size-xs); font-weight: 600; font-family: var(--cp-font-family); cursor: pointer; background: var(--cp-white); color: var(--cp-text-secondary); transition: all var(--cp-transition-fast); }
+.cp-chip-option:hover { border-color: var(--opt-color, var(--cp-primary)); color: var(--opt-color, var(--cp-primary)); }
+.cp-chip-option-active { background: var(--opt-color, var(--cp-primary)); border-color: var(--opt-color, var(--cp-primary)); color: var(--cp-white) !important; }
+.cp-chip-checkbox { display: inline-flex; align-items: center; gap: var(--cp-space-1); padding: 5px 12px; border: 1.5px solid var(--cp-border-default); border-radius: var(--cp-radius-full); font-size: var(--cp-font-size-xs); font-weight: 600; cursor: pointer; transition: all var(--cp-transition-fast); background: var(--cp-white); color: var(--cp-text-secondary); }
+.cp-chip-checkbox input[type="checkbox"] { display: none; }
+.cp-chip-checkbox:hover { border-color: var(--chip-color, var(--cp-primary)); color: var(--chip-color, var(--cp-primary)); }
+.cp-chip-checkbox-active { background: var(--chip-color, var(--cp-primary)); border-color: var(--chip-color, var(--cp-primary)); color: var(--cp-white) !important; }
+

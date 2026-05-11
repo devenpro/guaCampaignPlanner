@@ -1,0 +1,6 @@
+/* ═══ S21: QUILL OVERRIDES ═══ */
+.cp-app .ql-container { font-family: var(--cp-font-family); font-size: var(--cp-font-size-base); border-color: var(--cp-border-default); border-radius: 0 0 var(--cp-radius-md) var(--cp-radius-md); }
+.cp-app .ql-toolbar { border-color: var(--cp-border-default); border-radius: var(--cp-radius-md) var(--cp-radius-md) 0 0; background: var(--cp-gray-50); }
+.cp-app .ql-editor { min-height: 120px; line-height: 1.7; padding: var(--cp-space-4); }
+.cp-app .ql-editor:focus { box-shadow: var(--cp-shadow-glow); }
+

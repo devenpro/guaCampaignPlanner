@@ -1,0 +1,13 @@
+/* ═══ S18: ACTIVITY VIEW ═══ */
+.cp-activity-list { display: flex; flex-direction: column; }
+.cp-activity-item { display: flex; align-items: flex-start; gap: var(--cp-space-3); padding: var(--cp-space-3) 0; border-bottom: 1px solid var(--cp-border-light); }
+.cp-activity-item:last-child { border-bottom: none; }
+.cp-activity-icon { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: var(--cp-font-size-xs); flex-shrink: 0; margin-top: 2px; }
+.cp-activity-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.cp-activity-entity { font-size: var(--cp-font-size-sm); font-weight: 600; }
+.cp-activity-entity-link { color: var(--cp-primary); text-decoration: none; }
+.cp-activity-entity-link:hover { text-decoration: underline; }
+.cp-activity-text { font-size: var(--cp-font-size-xs); color: var(--cp-text-secondary); }
+.cp-activity-meta { font-size: var(--cp-font-size-xs); color: var(--cp-text-muted); }
+.cp-activity-more { font-size: var(--cp-font-size-xs); color: var(--cp-text-muted); padding: var(--cp-space-3); text-align: center; }
+

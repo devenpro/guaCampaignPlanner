@@ -1,0 +1,19 @@
+/* ═══ S7: BUTTONS ═══ */
+.cp-btn { display: inline-flex; align-items: center; gap: var(--cp-space-2); padding: 7px 16px; font-size: var(--cp-font-size-sm); font-weight: 600; font-family: var(--cp-font-family); border: 1.5px solid var(--cp-border-default); border-radius: var(--cp-radius-full); background: var(--cp-white); color: var(--cp-text-primary); cursor: pointer; transition: all var(--cp-transition-fast); line-height: 1.4; white-space: nowrap; }
+.cp-btn:hover { border-color: var(--cp-border-dark); box-shadow: var(--cp-shadow-sm); }
+@media (hover: hover) { .cp-btn:hover { transform: translateY(-1px); } }
+.cp-btn-primary { background: var(--cp-primary); color: var(--cp-text-inverse); border-color: var(--cp-primary); }
+.cp-btn-primary:hover { background: var(--cp-primary-hover); border-color: var(--cp-primary-hover); }
+.cp-btn-outline { background: transparent; border-color: var(--cp-border-default); color: var(--cp-text-secondary); }
+.cp-btn-outline:hover { border-color: var(--cp-primary); color: var(--cp-primary); }
+.cp-btn-ai { background: var(--cp-accent-gradient); color: var(--cp-text-inverse); border: none; }
+.cp-btn-ai:hover { opacity: 0.9; }
+.cp-btn-danger { color: var(--cp-error); border-color: rgba(217,48,37,0.3); }
+.cp-btn-danger:hover { background: var(--cp-error-light); border-color: var(--cp-error); }
+.cp-btn-sm { padding: 4px 12px; font-size: var(--cp-font-size-xs); }
+.cp-btn-xs { padding: 3px 8px; font-size: 10px; min-height: 28px; }
+.cp-btn-icon { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; min-width: 32px; min-height: 32px; border: none; background: none; color: var(--cp-text-muted); cursor: pointer; border-radius: var(--cp-radius-md); transition: all var(--cp-transition-fast); padding: 0; }
+.cp-btn-icon:hover { background: var(--cp-gray-100); color: var(--cp-text-primary); }
+.cp-btn-link { background: none; border: none; color: var(--cp-primary); font-size: var(--cp-font-size-xs); cursor: pointer; padding: 0; display: inline-flex; align-items: center; gap: 3px; font-family: var(--cp-font-family); font-weight: 600; }
+.cp-btn-link:hover { text-decoration: underline; }
+

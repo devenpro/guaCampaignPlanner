@@ -1,0 +1,23 @@
+/* ═══ S15: RESPONSIVE ═══ */
+@media (max-width: 1024px) {
+  .cp-sw-rail { width: 220px; min-width: 220px; }
+  .cp-sw-content-scroll { padding: var(--cp-space-6); }
+}
+@media (max-width: 768px) {
+  .cp-sw-rail { display: none; }
+  .cp-sw-content-scroll { padding: var(--cp-space-5) var(--cp-space-4); }
+  .cp-sw-footer { padding: var(--cp-space-3) var(--cp-space-4); }
+  .cp-sw-card-grid { grid-template-columns: 1fr; }
+  .cp-sw-ai-loading { grid-template-columns: 1fr; }
+  .cp-sw-review-grid { grid-template-columns: repeat(2, 1fr); }
+  .cp-sw-step-title { font-size: var(--cp-font-size-xl); }
+}
+@media (max-width: 480px) {
+  .cp-sw-content-scroll { padding: var(--cp-space-4) var(--cp-space-3); }
+  .cp-sw-review-grid { grid-template-columns: 1fr 1fr; gap: var(--cp-space-2); }
+  .cp-sw-gen-bar { flex-direction: column; align-items: stretch; }
+  .cp-sw-footer-center { display: none; }
+  .cp-sw-field-row { grid-template-columns: 1fr; }
+  .cp-setup-welcome-card { padding: var(--cp-space-6) var(--cp-space-5); }
+}
+

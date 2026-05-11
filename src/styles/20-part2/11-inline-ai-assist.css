@@ -1,0 +1,8 @@
+/* ═══ S11: INLINE AI ASSIST ═══ */
+.cp-ai-assist { display: flex; align-items: center; gap: var(--cp-space-1); margin-top: var(--cp-space-1); }
+.cp-ai-assist-btn { padding: 2px 8px; border-radius: var(--cp-radius-full); border: none; font-size: 10px; font-weight: 600; cursor: pointer; transition: all var(--cp-transition-fast); font-family: var(--cp-font-family); }
+.cp-ai-assist-suggest { background: linear-gradient(135deg, rgba(124,58,237,0.12), rgba(26,115,232,0.12)); color: #7c3aed; }
+.cp-ai-assist-suggest:hover { background: linear-gradient(135deg, rgba(124,58,237,0.2), rgba(26,115,232,0.2)); }
+.cp-ai-assist-improve { background: var(--cp-gray-100); color: var(--cp-text-secondary); }
+.cp-ai-assist-improve:hover { background: var(--cp-gray-200); color: var(--cp-text-primary); }
+
