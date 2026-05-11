@@ -16,6 +16,11 @@
     recipeMap: {}, campaignMap: {}, tagMap: {},
     funnelStageMap: {}, researchMap: {},
 
+    // Production node snapshot, keyed by `data-planner-id` (= recipe.id).
+    // Rebuilt on every page load from the Drupal `view-media-productions`
+    // block. Persistent copy lives in `recipe.production` (append-only).
+    productionMap: {},
+
     // Aggregated counts
     recipeStatusCounts: {}, campaignStatusCounts: {},
     funnelCounts: {},

@@ -156,6 +156,37 @@
     { id: 'ppc_growth',       name: 'Growth' }
   ];
 
+  // Status palette for production nodes returned by the Drupal media-productions view.
+  // The view's `.mp-status` value is matched case-insensitively against these keys;
+  // unknown values fall back to PRODUCTION_STATUS_DEFAULT (neutral gray).
+  var PRODUCTION_STATUSES = {
+    'draft':            { label: 'Draft',           color: '#80868b' },
+    'pending':          { label: 'Pending',         color: '#80868b' },
+    'queued':           { label: 'Queued',          color: '#80868b' },
+    'in_progress':      { label: 'In Progress',     color: '#1a73e8' },
+    'in-progress':      { label: 'In Progress',     color: '#1a73e8' },
+    'working':          { label: 'Working',         color: '#1a73e8' },
+    'review':           { label: 'In Review',       color: '#e37400' },
+    'in_review':        { label: 'In Review',       color: '#e37400' },
+    'pending_review':   { label: 'Pending Review',  color: '#e37400' },
+    'approved':         { label: 'Approved',        color: '#0d904f' },
+    'published':        { label: 'Published',       color: '#0d904f' },
+    'live':             { label: 'Live',            color: '#0d904f' },
+    'completed':        { label: 'Completed',       color: '#0d904f' },
+    'rejected':         { label: 'Rejected',        color: '#d93025' },
+    'cancelled':        { label: 'Cancelled',       color: '#d93025' },
+    'canceled':         { label: 'Cancelled',       color: '#d93025' }
+  };
+  var PRODUCTION_STATUS_DEFAULT = { label: '', color: '#80868b' };
+
+  // Map a production content type (image_production, carousel_production,
+  // video_production) to the matching MEDIA_TYPES key.
+  var PRODUCTION_TYPE_TO_MEDIA = {
+    'image_production':    'image',
+    'carousel_production': 'carousel',
+    'video_production':    'video'
+  };
+
   var ACTIVITY_TYPES = {
     'recipe_created':            { icon: 'plus',           color: '#0d904f' },
     'recipe_updated':            { icon: 'edit',           color: '#1a73e8' },
@@ -237,6 +268,11 @@
     messageMap: {}, styleMap: {}, formatMap: {},
     recipeMap: {}, campaignMap: {}, tagMap: {},
     funnelStageMap: {}, researchMap: {},
+
+    // Production node snapshot, keyed by `data-planner-id` (= recipe.id).
+    // Rebuilt on every page load from the Drupal `view-media-productions`
+    // block. Persistent copy lives in `recipe.production` (append-only).
+    productionMap: {},
 
     // Aggregated counts
     recipeStatusCounts: {}, campaignStatusCounts: {},
@@ -439,6 +475,63 @@
 
     // Parse brand data from DOM
     parseBrandData();
+
+    // Parse production-node list from the Drupal media-productions view block
+    parseProductionData();
+  }
+
+  // Build S.productionMap from the Drupal view-media-productions block
+  // and mirror new entries into recipe.production (append-only — never
+  // overwrites or removes existing recipe.production records).
+  function parseProductionData() {
+    S.productionMap = {};
+    var $items = $('.media-production-data .media-production-item, .view-media-productions .media-production-item');
+    if (!$items.length) {
+      console.log('[CP] No media-production-data view block found on page');
+      return;
+    }
+    $items.each(function() {
+      var $item = $(this);
+      var plannerId = ($item.attr('data-planner-id') || '').trim();
+      if (!plannerId) return;
+      var entry = _readProductionItem($item, plannerId);
+      if (!entry.node_id) return;
+      S.productionMap[plannerId] = entry;
+    });
+    // Mirror into recipe.production for any recipes that don't yet have a
+    // cached production. Append-only: existing recipe.production is kept
+    // as-is even if the view's snapshot has changed.
+    var seeded = 0;
+    var recipes = (S.data && S.data.recipes) || [];
+    for (var i = 0; i < recipes.length; i++) {
+      var r = recipes[i];
+      var live = S.productionMap[r.id];
+      if (!live) continue;
+      if (r.production && r.production.node_id) continue;
+      r.production = $.extend(true, {}, live);
+      seeded++;
+    }
+    console.log('[CP] Parsed ' + Object.keys(S.productionMap).length + ' production node(s)' + (seeded ? ', seeded ' + seeded + ' recipe.production cache entries' : ''));
+  }
+
+  function _readProductionItem($item, plannerId) {
+    var $created = $item.find('.mp-created time').first();
+    var $updated = $item.find('.mp-updated time').first();
+    var rawType = ($item.find('.mp-type').text() || $item.attr('data-mp-type') || '').trim();
+    var typeKey = rawType.replace(/-/g, '_').toLowerCase();
+    return {
+      node_id:    ($item.find('.mp-id').text() || '').trim(),
+      title:      ($item.find('.mp-title').text() || '').trim(),
+      url:        ($item.find('.mp-url').text() || '').trim(),
+      status:     ($item.find('.mp-status').text() || '').trim(),
+      type:       rawType,
+      media_type: PRODUCTION_TYPE_TO_MEDIA[typeKey] || '',
+      director:   ($item.find('.mp-director').text() || '').trim(),
+      created:    ($created.attr('datetime') || $item.find('.mp-created').text() || '').trim(),
+      updated:    ($updated.attr('datetime') || $item.find('.mp-updated').text() || '').trim(),
+      planner_id: plannerId,
+      _parsed_at: new Date().toISOString()
+    };
   }
 
   function parseImageField() {
@@ -1159,6 +1252,27 @@
   function getFunnelStage(id) { return S.funnelStageMap[id] || null; }
   function getResearchSession(id) { return S.researchMap[id] || null; }
   function getImageById(fid) { return S.imageMap[fid] || null; }
+
+  // Returns the production node info for a recipe, preferring the live
+  // snapshot from S.productionMap (rebuilt on each page load from the view
+  // block) and falling back to the persistent recipe.production cache.
+  // Returns null if neither has a record.
+  function getRecipeProduction(recipeIdOrRecipe) {
+    if (!recipeIdOrRecipe) return null;
+    var recipe = typeof recipeIdOrRecipe === 'string' ? S.recipeMap[recipeIdOrRecipe] : recipeIdOrRecipe;
+    var live = (S.productionMap || {})[recipe ? recipe.id : recipeIdOrRecipe];
+    if (live && live.node_id) return live;
+    if (recipe && recipe.production && recipe.production.node_id) return recipe.production;
+    return null;
+  }
+
+  // Looks up the visual style for a production node's status string.
+  // Case-insensitive; unknown values get the neutral default.
+  function getProductionStatusStyle(status) {
+    if (!status) return PRODUCTION_STATUS_DEFAULT;
+    var key = String(status).toLowerCase().trim().replace(/\s+/g, '_');
+    return PRODUCTION_STATUSES[key] || $.extend({}, PRODUCTION_STATUS_DEFAULT, { label: status });
+  }
 
   // --- Collection getters ---
   function getAllTags() { return (S.data.tags || []).slice().sort(function(a, b) { return a.name.localeCompare(b.name); }); }
@@ -4636,6 +4750,9 @@
           review_notes: '', production_notes: '', assigned_to: '', due_date: '',
           delivery_notes: '', creative_brief: '',
           tags: [], batch_id: '',
+          // Production node attached to this recipe (one per recipe, by media type).
+          // Populated by parseProductionData() when the Drupal view block lists it.
+          production: null,
           created: now, updated: now, created_by: S.user.id || ''
         }, data);
         // Auto-generate title from dimensions
@@ -5040,6 +5157,9 @@
   window._cpGetFunnelStage = getFunnelStage;
   window._cpGetResearchSession = getResearchSession;
   window._cpGetImageById = getImageById;
+  window._cpGetRecipeProduction = getRecipeProduction;
+  window._cpGetProductionStatusStyle = getProductionStatusStyle;
+  window._cpParseProductionData = parseProductionData;
 
   // Collection getters
   window._cpGetAllTags = getAllTags;
@@ -5070,7 +5190,9 @@
     PIPELINE_STEPS: PIPELINE_STEPS, MEDIA_TYPES: MEDIA_TYPES, HOOK_TYPES: HOOK_TYPES,
     PRIORITY_LEVELS: PRIORITY_LEVELS, CAMPAIGN_OBJECTIVES: CAMPAIGN_OBJECTIVES,
     FORMAT_CATEGORIES: FORMAT_CATEGORIES, PAIN_POINT_CATEGORIES: PAIN_POINT_CATEGORIES,
-    ACTIVITY_TYPES: ACTIVITY_TYPES, CARD_DENSITIES: CARD_DENSITIES, GROUPING_OPTIONS: GROUPING_OPTIONS
+    ACTIVITY_TYPES: ACTIVITY_TYPES, CARD_DENSITIES: CARD_DENSITIES, GROUPING_OPTIONS: GROUPING_OPTIONS,
+    PRODUCTION_STATUSES: PRODUCTION_STATUSES, PRODUCTION_STATUS_DEFAULT: PRODUCTION_STATUS_DEFAULT,
+    PRODUCTION_TYPE_TO_MEDIA: PRODUCTION_TYPE_TO_MEDIA
   };
 
   // Setup
@@ -5163,6 +5285,7 @@
   var getPersonaPainPoints, getPersona, getMessage, getStyle, getFormat;
   var getCategory, getCampaign, getTag, getPainPoint, getFunnelStage;
   var getFilteredRecipes, getRecipe;
+  var getRecipeProduction, getProductionStatusStyle, parseProductionData;
   var Constants;
 
   console.log('[CP] Part 2A script loaded');
@@ -5216,6 +5339,9 @@
     getTag = window._cpGetTag; getPainPoint = window._cpGetPainPoint;
     getFunnelStage = window._cpGetFunnelStage;
     getFilteredRecipes = window._cpGetFilteredRecipes; getRecipe = window._cpGetRecipe;
+    getRecipeProduction = window._cpGetRecipeProduction;
+    getProductionStatusStyle = window._cpGetProductionStatusStyle;
+    parseProductionData = window._cpParseProductionData;
     Constants = window._cpConstants;
 
     // AI picker helper — lazy evaluation (Part 2B may not be loaded yet)
@@ -10173,6 +10299,7 @@
   var getPersonaPainPoints, getPersona, getMessage, getStyle, getFormat;
   var getCategory, getCampaign, getTag, getPainPoint, getFunnelStage;
   var getRecipe, getImages, getAllImageTags, parseImageField, isSetupComplete;
+  var getRecipeProduction, getProductionStatusStyle, parseProductionData;
   var Constants;
   var snapshot, openModal, closeModal, openConfirmDialog, closeConfirmDialog, collectModalFields;
   var collectFunnelChips, getSelectedRecipe, getEffectiveHook, renderTagInput;
@@ -10230,6 +10357,9 @@
     getCategory = window._cpGetCategory; getCampaign = window._cpGetCampaign;
     getTag = window._cpGetTag; getPainPoint = window._cpGetPainPoint;
     getFunnelStage = window._cpGetFunnelStage; getRecipe = window._cpGetRecipe;
+    getRecipeProduction = window._cpGetRecipeProduction;
+    getProductionStatusStyle = window._cpGetProductionStatusStyle;
+    parseProductionData = window._cpParseProductionData;
     getImages = window._cpGetImages; getAllImageTags = window._cpGetAllImageTags;
     parseImageField = window._cpParseImageField; isSetupComplete = window._cpIsSetupComplete;
 

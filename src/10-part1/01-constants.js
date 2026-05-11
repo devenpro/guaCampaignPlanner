@@ -113,6 +113,37 @@
     { id: 'ppc_growth',       name: 'Growth' }
   ];
 
+  // Status palette for production nodes returned by the Drupal media-productions view.
+  // The view's `.mp-status` value is matched case-insensitively against these keys;
+  // unknown values fall back to PRODUCTION_STATUS_DEFAULT (neutral gray).
+  var PRODUCTION_STATUSES = {
+    'draft':            { label: 'Draft',           color: '#80868b' },
+    'pending':          { label: 'Pending',         color: '#80868b' },
+    'queued':           { label: 'Queued',          color: '#80868b' },
+    'in_progress':      { label: 'In Progress',     color: '#1a73e8' },
+    'in-progress':      { label: 'In Progress',     color: '#1a73e8' },
+    'working':          { label: 'Working',         color: '#1a73e8' },
+    'review':           { label: 'In Review',       color: '#e37400' },
+    'in_review':        { label: 'In Review',       color: '#e37400' },
+    'pending_review':   { label: 'Pending Review',  color: '#e37400' },
+    'approved':         { label: 'Approved',        color: '#0d904f' },
+    'published':        { label: 'Published',       color: '#0d904f' },
+    'live':             { label: 'Live',            color: '#0d904f' },
+    'completed':        { label: 'Completed',       color: '#0d904f' },
+    'rejected':         { label: 'Rejected',        color: '#d93025' },
+    'cancelled':        { label: 'Cancelled',       color: '#d93025' },
+    'canceled':         { label: 'Cancelled',       color: '#d93025' }
+  };
+  var PRODUCTION_STATUS_DEFAULT = { label: '', color: '#80868b' };
+
+  // Map a production content type (image_production, carousel_production,
+  // video_production) to the matching MEDIA_TYPES key.
+  var PRODUCTION_TYPE_TO_MEDIA = {
+    'image_production':    'image',
+    'carousel_production': 'carousel',
+    'video_production':    'video'
+  };
+
   var ACTIVITY_TYPES = {
     'recipe_created':            { icon: 'plus',           color: '#0d904f' },
     'recipe_updated':            { icon: 'edit',           color: '#1a73e8' },

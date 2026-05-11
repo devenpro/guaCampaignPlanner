@@ -80,6 +80,9 @@
           review_notes: '', production_notes: '', assigned_to: '', due_date: '',
           delivery_notes: '', creative_brief: '',
           tags: [], batch_id: '',
+          // Production node attached to this recipe (one per recipe, by media type).
+          // Populated by parseProductionData() when the Drupal view block lists it.
+          production: null,
           created: now, updated: now, created_by: S.user.id || ''
         }, data);
         // Auto-generate title from dimensions

@@ -164,6 +164,27 @@
   function getResearchSession(id) { return S.researchMap[id] || null; }
   function getImageById(fid) { return S.imageMap[fid] || null; }
 
+  // Returns the production node info for a recipe, preferring the live
+  // snapshot from S.productionMap (rebuilt on each page load from the view
+  // block) and falling back to the persistent recipe.production cache.
+  // Returns null if neither has a record.
+  function getRecipeProduction(recipeIdOrRecipe) {
+    if (!recipeIdOrRecipe) return null;
+    var recipe = typeof recipeIdOrRecipe === 'string' ? S.recipeMap[recipeIdOrRecipe] : recipeIdOrRecipe;
+    var live = (S.productionMap || {})[recipe ? recipe.id : recipeIdOrRecipe];
+    if (live && live.node_id) return live;
+    if (recipe && recipe.production && recipe.production.node_id) return recipe.production;
+    return null;
+  }
+
+  // Looks up the visual style for a production node's status string.
+  // Case-insensitive; unknown values get the neutral default.
+  function getProductionStatusStyle(status) {
+    if (!status) return PRODUCTION_STATUS_DEFAULT;
+    var key = String(status).toLowerCase().trim().replace(/\s+/g, '_');
+    return PRODUCTION_STATUSES[key] || $.extend({}, PRODUCTION_STATUS_DEFAULT, { label: status });
+  }
+
   // --- Collection getters ---
   function getAllTags() { return (S.data.tags || []).slice().sort(function(a, b) { return a.name.localeCompare(b.name); }); }
   function getAllPersonas() { return (S.data.personas || []).slice(); }
