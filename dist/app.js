@@ -1,4 +1,4 @@
-/* Campaign Planner — built 2026-05-11T11:07:29.857Z from 82 source files */
+/* Campaign Planner — built from 82 source files (see src/) */
 
 /* ===== src/10-part1/00-header.js ===== */
 /**

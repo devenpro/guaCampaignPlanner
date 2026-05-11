@@ -26,7 +26,7 @@ mkdirSync('dist', { recursive: true });
 
 for (const { src, out, ext, skipDir } of targets) {
   const files = walk(src, ext, skipDir);
-  const banner = `/* Campaign Planner — built ${new Date().toISOString()} from ${files.length} source files */\n`;
+  const banner = `/* Campaign Planner — built from ${files.length} source files (see src/) */\n`;
   const body = files.map(f =>
     `\n/* ===== ${relative('.', f).replace(/\\/g, '/')} ===== */\n` + readFileSync(f, 'utf8')
   ).join('');
