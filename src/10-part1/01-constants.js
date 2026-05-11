@@ -62,16 +62,17 @@
   ];
 
   var PIPELINE_STEPS = [
-    { key: 'composition', label: 'Composition', icon: 'shapes',       order: 0 },
-    { key: 'hook',        label: 'Hook',        icon: 'anchor',       order: 1 },
-    { key: 'content',     label: 'Content',     icon: 'pen-fancy',    order: 2 },
-    { key: 'media',       label: 'Media',       icon: 'wand-magic',   order: 3 },
-    { key: 'review',      label: 'Review',      icon: 'eye',          order: 4 }
+    { key: 'composition', label: 'Composition', icon: 'shapes',        order: 0 },
+    { key: 'hook',        label: 'Hook',        icon: 'anchor',        order: 1 },
+    { key: 'content',     label: 'Content',     icon: 'pen-fancy',     order: 2 },
+    { key: 'media',       label: 'Production',  icon: 'rocket',        order: 3 },
+    { key: 'review',      label: 'Review',      icon: 'eye',           order: 4 }
   ];
 
   var MEDIA_TYPES = {
-    'image': { key: 'image', label: 'Image', icon: 'image',  color: '#1a73e8' },
-    'video': { key: 'video', label: 'Video', icon: 'video',  color: '#d93025' }
+    'image':    { key: 'image',    label: 'Image',    icon: 'image',        color: '#1a73e8', node_type: 'image_production' },
+    'carousel': { key: 'carousel', label: 'Carousel', icon: 'images',       color: '#7c3aed', node_type: 'carousel_production' },
+    'video':    { key: 'video',    label: 'Video',    icon: 'video',        color: '#d93025', node_type: 'video_production' }
   };
 
   var HOOK_TYPES = {

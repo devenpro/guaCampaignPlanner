@@ -105,16 +105,17 @@
   ];
 
   var PIPELINE_STEPS = [
-    { key: 'composition', label: 'Composition', icon: 'shapes',       order: 0 },
-    { key: 'hook',        label: 'Hook',        icon: 'anchor',       order: 1 },
-    { key: 'content',     label: 'Content',     icon: 'pen-fancy',    order: 2 },
-    { key: 'media',       label: 'Media',       icon: 'wand-magic',   order: 3 },
-    { key: 'review',      label: 'Review',      icon: 'eye',          order: 4 }
+    { key: 'composition', label: 'Composition', icon: 'shapes',        order: 0 },
+    { key: 'hook',        label: 'Hook',        icon: 'anchor',        order: 1 },
+    { key: 'content',     label: 'Content',     icon: 'pen-fancy',     order: 2 },
+    { key: 'media',       label: 'Production',  icon: 'rocket',        order: 3 },
+    { key: 'review',      label: 'Review',      icon: 'eye',           order: 4 }
   ];
 
   var MEDIA_TYPES = {
-    'image': { key: 'image', label: 'Image', icon: 'image',  color: '#1a73e8' },
-    'video': { key: 'video', label: 'Video', icon: 'video',  color: '#d93025' }
+    'image':    { key: 'image',    label: 'Image',    icon: 'image',        color: '#1a73e8', node_type: 'image_production' },
+    'carousel': { key: 'carousel', label: 'Carousel', icon: 'images',       color: '#7c3aed', node_type: 'carousel_production' },
+    'video':    { key: 'video',    label: 'Video',    icon: 'video',        color: '#d93025', node_type: 'video_production' }
   };
 
   var HOOK_TYPES = {
@@ -500,14 +501,19 @@
     S.brand.seo = parseDiv('.brand-seo-data');
     S.brand.social = parseDiv('.brand-social-data');
 
-    // Identity from core
-    if (S.brand.core) {
+    // Identity — name, id, logo come from sibling spans/divs inside .brand-data
+    var idFromDom = ($bd.find('.brand-id').text() || '').trim();
+    var nameFromDom = ($bd.find('.brand-name').text() || '').trim();
+    var logoFromDom = ($bd.find('.brand-logo-url').text() || '').trim();
+
+    if (S.brand.core || idFromDom || nameFromDom) {
       S.brand.identity = {
-        name: S.brand.core.brand_name || '',
-        logoUrl: S.brand.core.logo_url || ''
+        name: nameFromDom || (S.brand.core && S.brand.core.brand_name) || '',
+        id: idFromDom || (S.brand.core && (S.brand.core.id || S.brand.core.brand_id || S.brand.core.nid)) || '',
+        logoUrl: logoFromDom || (S.brand.core && S.brand.core.logo_url) || ''
       };
-      S.brand.configured = true;
-      console.log('[CP] Brand data loaded: ' + S.brand.identity.name);
+      S.brand.configured = !!(S.brand.identity.name || S.brand.core);
+      if (S.brand.configured) console.log('[CP] Brand data loaded: ' + S.brand.identity.name + (S.brand.identity.id ? ' (#' + S.brand.identity.id + ')' : ''));
     } else {
       S.brand.configured = false;
     }
@@ -981,6 +987,9 @@
     if (R.setupResearchEvents && S.currentView === 'research') R.setupResearchEvents();
     if (R.setupImagesEvents && S.currentView === 'images') R.setupImagesEvents();
     if (R.setupSettingsEvents && S.currentView === 'settings') R.setupSettingsEvents();
+
+    // Replace any AI picker placeholders left in the DOM (Part 2B loads async).
+    if (typeof window._cpReplaceAiPickers === 'function') window._cpReplaceAiPickers();
   }
 
 
@@ -2483,12 +2492,15 @@
     }
     if (ppFilter.category) filtered = filtered.filter(function(pp) { return pp.category === ppFilter.category; });
 
+    // Group mode: 'category' (default) | 'flat'
+    var groupBy = ppFilter.groupBy || 'category';
+
     var html = '<div class="cp-view cp-view-pain-points">';
 
     // Header
     html += '<div class="cp-view-header"><div class="cp-view-header-left">';
     html += '<h1>' + icon('bolt') + ' Pain Points</h1>';
-    html += '<span class="cp-view-subtitle">' + filtered.length + ' of ' + pps.length + ' pain points</span>';
+    html += '<span class="cp-view-subtitle">' + filtered.length + ' of ' + pps.length + '</span>';
     html += '</div><div class="cp-view-header-right">';
     html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-pain-point">' + icon('plus') + ' Add Pain Point</button>';
     html += '</div></div>';
@@ -2498,40 +2510,35 @@
     html += renderAIResearchBar('Pain Point', '#d93025', 'bolt', 'pain_points');
     html += '</div>';
 
-    // Toolbar
-    html += '<div class="cp-view-toolbar">';
-    html += '<div class="cp-search-wrapper">' + icon('search') + '<input type="text" class="cp-input" id="cpPainPointPageSearch" placeholder="Search pain points..." value="' + esc(ppFilter.search || '') + '"></div>';
+    // Toolbar — single compact row
+    html += '<div class="cp-view-toolbar cp-pp-toolbar">';
+    html += '<div class="cp-search-wrapper">' + icon('search') + '<input type="text" class="cp-input" id="cpPainPointPageSearch" placeholder="Search pain points & solutions…" value="' + esc(ppFilter.search || '') + '"></div>';
     html += '<select class="cp-select cp-select-sm" id="cpPainPointCatFilter"><option value="">All Categories</option>';
     for (var ci = 0; ci < PAIN_POINT_CATEGORIES.length; ci++) {
       var cat = PAIN_POINT_CATEGORIES[ci];
       html += '<option value="' + esc(cat.id) + '"' + (ppFilter.category === cat.id ? ' selected' : '') + '>' + esc(cat.name) + '</option>';
     }
-    html += '</select></div>';
+    html += '</select>';
+    html += '<select class="cp-select cp-select-sm" id="cpPainPointGroupBy">';
+    html += '<option value="category"' + (groupBy === 'category' ? ' selected' : '') + '>Group: Category</option>';
+    html += '<option value="flat"' + (groupBy === 'flat' ? ' selected' : '') + '>Group: None</option>';
+    html += '</select>';
+    html += '</div>';
 
     // Split pane: list + detail
     html += '<div class="cp-split-pane">';
 
     // Left: list
-    html += '<div class="cp-list-pane">';
+    html += '<div class="cp-list-pane cp-pp-list-pane">';
     if (filtered.length === 0) {
       html += '<div class="cp-empty-state cp-empty-state--compact"><p>No pain points' + (ppFilter.search || ppFilter.category ? ' match your filters' : ' yet') + '.</p>';
       html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-pain-point">' + icon('plus') + ' Create First Pain Point</button></div>';
+    } else if (groupBy === 'category') {
+      html += renderPainPointListGroupedByCategory(filtered);
     } else {
-      for (var i = 0; i < filtered.length; i++) {
-        var pp = filtered[i];
-        var usedByCount = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) > -1; }).length;
-        var recipeCount = (S.data.recipes || []).filter(function(r) { return (r.selected_pain_point_ids || []).indexOf(pp.id) > -1; }).length;
-        var catLabel = '';
-        if (pp.category) { var ppcMatch = PAIN_POINT_CATEGORIES.find(function(c) { return c.id === pp.category; }); catLabel = ppcMatch ? ppcMatch.name : ''; }
-        var sel = S.selectedPainPointId === pp.id ? ' cp-list-item-selected' : '';
-
-        html += '<div class="cp-list-item' + sel + '" data-action="select-pain-point-page" data-id="' + esc(pp.id) + '">';
-        html += '<div class="cp-list-item-title">' + esc(truncate(pp.pain_point, 55)) + '</div>';
-        html += '<div class="cp-list-item-meta">';
-        if (catLabel) html += '<span class="cp-badge" style="background:#5f636815;color:#5f6368">' + esc(catLabel) + '</span>';
-        html += '<span class="cp-text-muted">' + usedByCount + ' persona' + (usedByCount !== 1 ? 's' : '') + ' · ' + recipeCount + ' recipe' + (recipeCount !== 1 ? 's' : '') + '</span>';
-        html += '</div></div>';
-      }
+      html += '<div class="cp-pp-list">';
+      for (var i = 0; i < filtered.length; i++) html += renderPainPointListItem(filtered[i]);
+      html += '</div>';
     }
     html += '</div>';
 
@@ -2540,6 +2547,63 @@
     html += renderPainPointDetailPane();
     html += '</div></div>';
 
+    html += '</div>';
+    return html;
+  }
+
+  function renderPainPointListGroupedByCategory(filtered) {
+    var grouped = {};
+    var uncatId = '__uncat__';
+    for (var i = 0; i < filtered.length; i++) {
+      var key = filtered[i].category || uncatId;
+      (grouped[key] = grouped[key] || []).push(filtered[i]);
+    }
+    var order = (PAIN_POINT_CATEGORIES || []).map(function(c) { return c.id; });
+    order.push(uncatId);
+
+    var html = '';
+    for (var oi = 0; oi < order.length; oi++) {
+      var catId = order[oi];
+      var items = grouped[catId];
+      if (!items || items.length === 0) continue;
+      var cat = (PAIN_POINT_CATEGORIES || []).find(function(c) { return c.id === catId; });
+      var label = cat ? cat.name : 'Uncategorized';
+      var collapsed = !!(S.collapsedGroups && S.collapsedGroups['ppcat_' + catId]);
+
+      html += '<div class="cp-pp-group">';
+      html += '<div class="cp-pp-group-header" data-action="toggle-pp-group" data-cat-id="' + esc(catId) + '">';
+      html += icon(collapsed ? 'chevron-right' : 'chevron-down');
+      html += '<span class="cp-pp-group-name">' + esc(label) + '</span>';
+      html += '<span class="cp-pp-group-count">' + items.length + '</span>';
+      html += '</div>';
+      if (!collapsed) {
+        html += '<div class="cp-pp-list">';
+        for (var k = 0; k < items.length; k++) html += renderPainPointListItem(items[k]);
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    return html;
+  }
+
+  function renderPainPointListItem(pp) {
+    var personaCount = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) > -1; }).length;
+    var recipeCount = (S.data.recipes || []).filter(function(r) { return (r.selected_pain_point_ids || []).indexOf(pp.id) > -1; }).length;
+    var sel = S.selectedPainPointId === pp.id ? ' cp-pp-item-selected' : '';
+    var hasSolution = !!(pp.solution && pp.solution.trim());
+
+    var html = '<div class="cp-pp-item' + sel + '" data-action="select-pain-point-page" data-id="' + esc(pp.id) + '">';
+    html += '<div class="cp-pp-item-main">';
+    html += '<div class="cp-pp-item-title">' + esc(truncate(pp.pain_point || '(Empty)', 90)) + '</div>';
+    if (hasSolution) {
+      html += '<div class="cp-pp-item-solution" title="Solution"><span class="cp-pp-item-solution-icon">' + icon('lightbulb') + '</span>' + esc(truncate(pp.solution, 90)) + '</div>';
+    }
+    html += '</div>';
+    html += '<div class="cp-pp-item-meta">';
+    if (personaCount > 0) html += '<span class="cp-pp-mini-stat" title="Linked personas">' + icon('users') + ' ' + personaCount + '</span>';
+    if (recipeCount > 0) html += '<span class="cp-pp-mini-stat" title="Used in recipes">' + icon('shuffle') + ' ' + recipeCount + '</span>';
+    if (!hasSolution) html += '<span class="cp-pp-mini-stat cp-pp-mini-warn" title="No solution defined">' + icon('triangle-exclamation') + '</span>';
+    html += '</div>';
     html += '</div>';
     return html;
   }
@@ -2570,18 +2634,18 @@
     html += '</div></div>';
 
     // Inline editable pain point + solution
-    html += '<div class="cp-card" style="margin-bottom:var(--cp-space-4)">';
+    html += '<div class="cp-card cp-pp-detail-card">';
     html += '<div class="cp-section-header"><h3>' + icon('triangle-exclamation') + ' Pain Point</h3></div>';
     html += '<textarea class="cp-textarea cp-pp-inline-field" data-ppfield="pain_point" rows="3">' + esc(pp.pain_point || '') + '</textarea>';
     html += '</div>';
 
-    html += '<div class="cp-card" style="margin-bottom:var(--cp-space-4);border-left:3px solid var(--cp-success)">';
+    html += '<div class="cp-card cp-pp-detail-card cp-pp-detail-solution">';
     html += '<div class="cp-section-header"><h3 style="color:var(--cp-success)">' + icon('lightbulb') + ' Solution</h3></div>';
     html += '<textarea class="cp-textarea cp-pp-inline-field" data-ppfield="solution" rows="3" placeholder="How does your product solve this?">' + esc(pp.solution || '') + '</textarea>';
     html += '</div>';
 
     // Category inline selector
-    html += '<div class="cp-card" style="margin-bottom:var(--cp-space-4)">';
+    html += '<div class="cp-card cp-pp-detail-card">';
     html += '<div class="cp-form-group"><label class="cp-field-label">Category</label>';
     html += '<select class="cp-select cp-pp-inline-field" data-ppfield="category">';
     html += '<option value="">None</option>';
@@ -2591,7 +2655,7 @@
     html += '</select></div></div>';
 
     // Linked Personas with link/unlink actions
-    html += '<div class="cp-card" style="margin-bottom:var(--cp-space-4)">';
+    html += '<div class="cp-card cp-pp-detail-card">';
     html += '<div class="cp-section-header"><h3>' + icon('users') + ' Linked Personas (' + linkedPersonas.length + ')</h3>';
     if (unlinkedPersonas.length > 0) html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="link-pp-to-personas" data-pp-id="' + esc(pp.id) + '">' + icon('link') + ' Link to Personas</button>';
     html += '</div>';
@@ -2608,7 +2672,7 @@
     html += '</div>';
 
     // Linked Recipes
-    html += '<div class="cp-card">';
+    html += '<div class="cp-card cp-pp-detail-card">';
     html += '<div class="cp-section-header"><h3>' + icon('shuffle') + ' Used in Recipes (' + linkedRecipes.length + ')</h3></div>';
     if (linkedRecipes.length === 0) {
       html += '<p class="cp-text-muted">Not used in any recipes yet.</p>';
@@ -2888,29 +2952,20 @@
   }
 
   // C2: Recipe completion percentage (lightweight, no Part 2A dependency)
+  // Counts the primary fields: persona, message, hook, ad copy, headline,
+  // CTA, and a chosen media type for the production handoff.
   function getRecipeCompletionPct(recipe) {
-    var done = 0, total = 8;
+    var done = 0, total = 7;
     if (recipe.persona_id) done++;
     if (recipe.message_id) done++;
-    if (recipe.style_id) done++;
-    if (recipe.visual_format_id) done++;
     var hook = recipe.hook || {};
     if (hook.custom_hook || hook.selected_hook_id) done++;
     var content = recipe.content || {};
     var adCopy = stripHtml ? stripHtml(content.ad_copy || '') : (content.ad_copy || '').replace(/<[^>]*>/g, '');
     if (adCopy.trim().length >= 50) done++;
     if (content.headline && content.headline.trim()) done++;
-    if (recipe.media_type === 'image') {
-      var brief = recipe.image_brief || {};
-      if (brief.creative_brief && brief.creative_brief.trim().length > 20) done++;
-      total = 8;
-    } else if (recipe.media_type === 'video') {
-      var scenes = (recipe.video && recipe.video.blueprint && recipe.video.blueprint.scenes) || [];
-      if (scenes.length >= 2) done++;
-      total = 8;
-    } else {
-      total = 7; // No media check for text-only
-    }
+    if (content.cta && content.cta.trim()) done++;
+    if (recipe.media_type) done++;
     return Math.round((done / total) * 100);
   }
 
@@ -3974,6 +4029,20 @@
       S.painPointFilter.category = $(this).val() || '';
       renderCurrentView();
     });
+    $(document).off('change.cp-pp-group-by').on('change.cp-pp-group-by', '#cpPainPointGroupBy', function() {
+      S.painPointFilter = S.painPointFilter || {};
+      S.painPointFilter.groupBy = $(this).val() || 'category';
+      renderCurrentView();
+    });
+    $(document).off('click.cp-pp-group-toggle').on('click.cp-pp-group-toggle', '[data-action="toggle-pp-group"]', function(e) {
+      e.preventDefault();
+      var catId = $(this).data('cat-id');
+      if (!catId) return;
+      S.collapsedGroups = S.collapsedGroups || {};
+      var key = 'ppcat_' + catId;
+      S.collapsedGroups[key] = !S.collapsedGroups[key];
+      renderCurrentView();
+    });
     $(document).off('click.cp-select-pp-page').on('click.cp-select-pp-page', '[data-action="select-pain-point-page"]', function(e) {
       e.preventDefault();
       S.selectedPainPointId = $(this).data('id');
@@ -4831,19 +4900,14 @@
     }
 
     // content_ready → media_ready
+    // Media production now happens in dedicated apps (image_production,
+    // carousel_production, video_production). The recipe is considered
+    // production-ready as soon as a media type is chosen for handoff and
+    // ad copy is in place — the actual creative is built downstream.
     sugIdx = STATUS_ORDER.indexOf(suggested);
     if (STATUS_ORDER.indexOf('media_ready') > sugIdx) {
-      if (recipe.media_type === 'image') {
-        var brief = recipe.image_brief || {};
-        if ((brief.creative_brief && brief.creative_brief.trim().length > 30) ||
-            (brief.ai_prompt && brief.ai_prompt.trim().length > 20)) {
-          suggested = 'media_ready';
-        }
-      } else if (recipe.media_type === 'video') {
-        var scenes = (recipe.video && recipe.video.blueprint && recipe.video.blueprint.scenes) || [];
-        if (scenes.length >= 2) {
-          suggested = 'media_ready';
-        }
+      if (recipe.media_type && suggested === 'content_ready') {
+        suggested = 'media_ready';
       }
     }
 
@@ -5159,7 +5223,23 @@
       if (window._cpPart2B && window._cpPart2B.renderInlinePicker) {
         return window._cpPart2B.renderInlinePicker(actionId);
       }
-      return '<span class="cp-ai-picker-loading" data-pending-action="' + esc(actionId) + '">' + icon('spinner') + '</span>';
+      // Show loading placeholder; will be replaced once Part 2B loads.
+      if (S && S._part2bTimeout) {
+        return '<span class="cp-ai-picker-loading" data-pending-action="' + esc(actionId) + '" title="AI module failed to load">' + icon('warning') + ' AI unavailable</span>';
+      }
+      return '<span class="cp-ai-picker-loading" data-pending-action="' + esc(actionId) + '">' + icon('spinner') + ' Loading…</span>';
+    };
+
+    // Replace any AI picker placeholders in the DOM with rendered pickers.
+    // Called after every render so newly rendered views get live pickers.
+    window._cpReplaceAiPickers = function() {
+      if (!window._cpPart2B || !window._cpPart2B.renderInlinePicker) return;
+      $('.cp-ai-picker-loading').each(function() {
+        var actionId = $(this).data('pending-action');
+        if (!actionId) return;
+        try { $(this).replaceWith(window._cpPart2B.renderInlinePicker(actionId)); }
+        catch (e) { console.warn('[CP] AI picker placeholder replace failed:', e); }
+      });
     };
 
     // Register step renderers
@@ -5203,6 +5283,8 @@
     $('body').append(html);
     currentModal = options;
     setTimeout(function() { $('.cp-modal-backdrop').addClass('cp-modal-visible'); }, 10);
+    // Replace any AI picker loading placeholders that landed in the modal
+    if (typeof window._cpReplaceAiPickers === 'function') window._cpReplaceAiPickers();
     // Focus first input
     setTimeout(function() { $('.cp-modal-body input:visible, .cp-modal-body textarea:visible').first().focus(); }, 100);
   }
@@ -7669,70 +7751,58 @@
   function renderCompositionStep(recipe) {
     var html = '<div class="cp-step-composition" data-recipe-id="' + esc(recipe.id) + '">';
 
-    // Composition card with 4 dimensions
-    html += '<div class="cp-composition-card">';
-    html += '<div class="cp-section-header"><h3>' + icon('shapes') + ' Creative Composition</h3>';
-    html += '<span class="cp-text-muted">The combination of dimensions that defines this creative.</span></div>';
-    html += '<div class="cp-composition-grid">';
-
-    var dims = [
-      { key: 'persona', id: recipe.persona_id, field: 'persona_id' },
-      { key: 'message', id: recipe.message_id, field: 'message_id' },
-      { key: 'style',   id: recipe.style_id,   field: 'style_id' },
-      { key: 'format',  id: recipe.visual_format_id, field: 'visual_format_id' }
-    ];
-    for (var di = 0; di < dims.length; di++) {
-      var dim = Constants.DIMENSIONS[dims[di].key];
-      var entity = getEntityForDim(dims[di].key, dims[di].id);
-      var entityName = entity ? (entity.name || entity.title || '') : '(Not set)';
-      var entitySub = getEntitySubtext(dims[di].key, entity);
-      var isEmpty = !entity;
-
-      html += '<div class="cp-composition-dim' + (isEmpty ? ' cp-composition-dim-empty' : '') + '" style="border-color:' + dim.color + (isEmpty ? '15' : '30') + '">';
-      html += '<div class="cp-composition-dim-icon" style="background:' + dim.color + '12;color:' + dim.color + '">' + icon(dim.icon) + '</div>';
-      html += '<div class="cp-composition-dim-body">';
-      html += '<div class="cp-composition-dim-label" style="color:' + dim.color + '">' + esc(dim.label) + '</div>';
-      html += '<div class="cp-composition-dim-name">' + esc(entityName) + '</div>';
-      if (entitySub) html += '<div class="cp-composition-dim-sub">' + esc(entitySub) + '</div>';
-      html += '</div>';
-      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="change-dimension" data-dim="' + dims[di].key + '" data-recipe-id="' + esc(recipe.id) + '">' + (isEmpty ? icon('plus') + ' Set' : icon('refresh') + ' Change') + '</button>';
-      html += '</div>';
-    }
+    // ── PRIMARY ROW: Persona + Message (large, dominant)
+    html += '<div class="cp-card cp-composition-primary">';
+    html += '<div class="cp-section-header"><h3>' + icon('shapes') + ' Core Composition</h3>';
+    html += '<span class="cp-text-muted">Persona &amp; message angle drive every creative decision.</span></div>';
+    html += '<div class="cp-composition-primary-grid">';
+    html += renderCompositionPrimaryCard('persona', recipe.persona_id, 'persona_id', recipe);
+    html += renderCompositionPrimaryCard('message', recipe.message_id, 'message_id', recipe);
     html += '</div></div>';
 
-    // Media type toggle
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('image') + ' Media Type</h3></div>';
+    // ── SECONDARY ROW: Style + Visual Format (compact chips)
+    html += '<div class="cp-card cp-composition-secondary">';
+    html += '<div class="cp-composition-secondary-header">';
+    html += '<span class="cp-composition-secondary-label">' + icon('sliders') + ' Style &amp; Visual Format <span class="cp-text-muted">(optional refinements)</span></span>';
+    html += '</div>';
+    html += '<div class="cp-composition-secondary-grid">';
+    html += renderCompositionChip('style', recipe.style_id, recipe);
+    html += renderCompositionChip('format', recipe.visual_format_id, recipe);
+    html += '</div></div>';
+
+    // ── Media type toggle (used downstream to pick production app)
+    html += '<div class="cp-card" style="margin-top:var(--cp-space-3)">';
+    html += '<div class="cp-section-header"><h3>' + icon('image') + ' Media Type</h3>';
+    html += '<span class="cp-text-muted">Determines which production app handles delivery.</span></div>';
     html += '<div class="cp-media-type-toggle">';
-    for (var mtk in Constants.MEDIA_TYPES) {
-      var mt = Constants.MEDIA_TYPES[mtk];
+    var mediaTypes = (typeof Constants !== 'undefined' && Constants.MEDIA_TYPES) || {};
+    for (var mtk in mediaTypes) {
+      var mt = mediaTypes[mtk];
       var mtActive = recipe.media_type === mtk ? ' cp-media-type-active' : '';
       html += '<button class="cp-media-type-btn' + mtActive + '" data-action="set-media-type" data-type="' + mtk + '">' + icon(mt.icon) + ' ' + esc(mt.label) + '</button>';
     }
     html += '</div></div>';
 
-    // Pain point selector
+    // ── Pain point selector (grouped + searchable)
     html += renderPainPointSelector(recipe);
 
-    // Title editor
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
+    // ── Title editor
+    html += '<div class="cp-card" style="margin-top:var(--cp-space-3)">';
     html += '<div class="cp-section-header"><h3>' + icon('edit') + ' Recipe Title</h3></div>';
     html += '<input type="text" class="cp-input" data-action="save-recipe-title" value="' + esc(recipe.title || '') + '" placeholder="Recipe title...">';
     html += '</div>';
 
-    // Priority + Campaign + Due date
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
+    // ── Priority + Campaign + Due date
+    html += '<div class="cp-card" style="margin-top:var(--cp-space-3)">';
     html += '<div class="cp-section-header"><h3>' + icon('sliders') + ' Details</h3></div>';
     var camps = getAllCampaigns();
-    html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">';
-    // Priority
+    html += '<div class="cp-recipe-details-grid">';
     html += '<div class="cp-form-group"><label class="cp-field-label">Priority</label>';
     html += '<select class="cp-select" data-action="save-recipe-field" data-rfield="priority">';
     for (var pk in Constants.PRIORITY_LEVELS) {
       html += '<option value="' + pk + '"' + (recipe.priority === pk ? ' selected' : '') + '>' + esc(Constants.PRIORITY_LEVELS[pk].label) + '</option>';
     }
     html += '</select></div>';
-    // Campaign
     html += '<div class="cp-form-group"><label class="cp-field-label">Campaign</label>';
     html += '<select class="cp-select" data-action="save-recipe-field" data-rfield="campaign_id">';
     html += '<option value="">None</option>';
@@ -7740,13 +7810,12 @@
       html += '<option value="' + esc(camps[ci].id) + '"' + (recipe.campaign_id === camps[ci].id ? ' selected' : '') + '>' + esc(truncate(camps[ci].name, 25)) + '</option>';
     }
     html += '</select></div>';
-    // Due date
     html += '<div class="cp-form-group"><label class="cp-field-label">Due Date</label>';
     html += '<input type="date" class="cp-input" data-action="save-recipe-field" data-rfield="due_date" value="' + esc(recipe.due_date || '') + '"></div>';
     html += '</div></div>';
 
-    // Save as Template + Create from Template
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
+    // ── Templates
+    html += '<div class="cp-card" style="margin-top:var(--cp-space-3)">';
     html += '<div class="cp-section-header"><h3>' + icon('bookmark') + ' Templates</h3></div>';
     html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap">';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="save-recipe-template" data-recipe-id="' + esc(recipe.id) + '">' + icon('floppy-disk') + ' Save as Template</button>';
@@ -7760,28 +7829,148 @@
     return html;
   }
 
+  function renderCompositionPrimaryCard(dimKey, currentId, fieldKey, recipe) {
+    var dim = Constants.DIMENSIONS[dimKey];
+    var entity = getEntityForDim(dimKey, currentId);
+    var entityName = entity ? (entity.name || entity.title || '') : '';
+    var entitySub = getEntitySubtext(dimKey, entity);
+    var entityDesc = entity ? (entity.description || entity.body || '') : '';
+    var isEmpty = !entity;
+
+    var html = '<div class="cp-comp-primary-card' + (isEmpty ? ' cp-comp-primary-card-empty' : '') + '" style="--dim-color:' + dim.color + '">';
+    html += '<div class="cp-comp-primary-icon" style="background:' + dim.color + '15;color:' + dim.color + '">' + icon(dim.icon) + '</div>';
+    html += '<div class="cp-comp-primary-body">';
+    html += '<div class="cp-comp-primary-label" style="color:' + dim.color + '">' + esc(dim.label) + (dimKey === 'message' ? ' Angle' : '') + '</div>';
+    if (isEmpty) {
+      html += '<div class="cp-comp-primary-empty">Not set</div>';
+    } else {
+      html += '<div class="cp-comp-primary-name">' + esc(entityName) + '</div>';
+      if (entitySub) html += '<div class="cp-comp-primary-sub">' + esc(entitySub) + '</div>';
+      if (entityDesc) html += '<div class="cp-comp-primary-desc">' + esc(truncate(entityDesc, 140)) + '</div>';
+    }
+    html += '</div>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="change-dimension" data-dim="' + dimKey + '" data-recipe-id="' + esc(recipe.id) + '">' + (isEmpty ? icon('plus') + ' Set' : icon('refresh') + ' Change') + '</button>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderCompositionChip(dimKey, currentId, recipe) {
+    var dim = Constants.DIMENSIONS[dimKey];
+    var entity = getEntityForDim(dimKey, currentId);
+    var entityName = entity ? (entity.name || entity.title || '') : '';
+    var isEmpty = !entity;
+
+    var html = '<button class="cp-comp-chip' + (isEmpty ? ' cp-comp-chip-empty' : '') + '" data-action="change-dimension" data-dim="' + dimKey + '" data-recipe-id="' + esc(recipe.id) + '" style="--dim-color:' + dim.color + '">';
+    html += '<span class="cp-comp-chip-icon" style="color:' + dim.color + '">' + icon(dim.icon) + '</span>';
+    html += '<span class="cp-comp-chip-label">' + esc(dim.label) + ':</span>';
+    html += '<span class="cp-comp-chip-value">' + (isEmpty ? '<span class="cp-text-muted">Not set</span>' : esc(entityName)) + '</span>';
+    html += '<span class="cp-comp-chip-edit">' + icon(isEmpty ? 'plus' : 'edit') + '</span>';
+    html += '</button>';
+    return html;
+  }
+
   function renderPainPointSelector(recipe) {
     var persona = S.personaMap[recipe.persona_id];
-    if (!persona) return '';
-    var painPoints = getPersonaPainPoints(persona);
-    if (painPoints.length === 0) return '';
+    var personaPainPoints = persona ? getPersonaPainPoints(persona) : [];
+    var allPainPoints = getAllPainPoints();
+    if (allPainPoints.length === 0) return '';
 
     var selected = recipe.selected_pain_point_ids || [];
-    var html = '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('bolt') + ' Pain Points to Address</h3>';
-    html += '<span class="cp-text-muted">' + selected.length + ' of ' + painPoints.length + ' selected</span></div>';
-    html += '<div class="cp-pain-point-picker-list">';
-    for (var i = 0; i < painPoints.length; i++) {
-      var pp = painPoints[i];
-      var isSelected = selected.indexOf(pp.id) > -1;
-      html += '<label class="cp-pain-point-picker-item' + (isSelected ? ' cp-pain-point-picker-item-selected' : '') + '">';
-      html += '<input type="checkbox" data-action="toggle-recipe-pp" data-pp-id="' + esc(pp.id) + '"' + (isSelected ? ' checked' : '') + '>';
-      html += '<div><div style="font-weight:600;font-size:13px">' + esc(truncate(pp.pain_point, 80)) + '</div>';
-      if (pp.solution) html += '<div style="font-size:11px;color:var(--cp-success);margin-top:2px">' + icon('lightbulb') + ' ' + esc(truncate(pp.solution, 60)) + '</div>';
-      html += '</div></label>';
+    S._compPainFilter = S._compPainFilter || { search: '', scope: 'persona', category: '' };
+    var f = S._compPainFilter;
+
+    // Scope: 'persona' (default if persona has points) | 'all'
+    if (personaPainPoints.length === 0 && f.scope === 'persona') f.scope = 'all';
+    var basePool = f.scope === 'persona' ? personaPainPoints : allPainPoints;
+
+    // Apply filters
+    var pool = basePool.slice();
+    if (f.search) {
+      var q = f.search.toLowerCase();
+      pool = pool.filter(function(pp) {
+        return (pp.pain_point || '').toLowerCase().indexOf(q) > -1 ||
+               (pp.solution || '').toLowerCase().indexOf(q) > -1;
+      });
     }
-    html += '</div></div>';
+    if (f.category) pool = pool.filter(function(pp) { return pp.category === f.category; });
+
+    var html = '<div class="cp-card cp-pain-picker-card" style="margin-top:var(--cp-space-3)">';
+    html += '<div class="cp-section-header"><h3>' + icon('bolt') + ' Pain Points to Address</h3>';
+    html += '<span class="cp-text-muted">' + selected.length + ' selected · ' + pool.length + ' shown</span></div>';
+
+    // Toolbar
+    html += '<div class="cp-pain-picker-toolbar">';
+    html += '<div class="cp-search-wrapper cp-search-wrapper-sm">' + icon('search') + '<input type="text" class="cp-input cp-input-sm" id="cpRecipePainSearch" placeholder="Search pain points…" value="' + esc(f.search || '') + '"></div>';
+    html += '<select class="cp-select cp-select-sm" id="cpRecipePainCategory"><option value="">All categories</option>';
+    var ppCats = Constants.PAIN_POINT_CATEGORIES || [];
+    for (var ci = 0; ci < ppCats.length; ci++) {
+      html += '<option value="' + esc(ppCats[ci].id) + '"' + (f.category === ppCats[ci].id ? ' selected' : '') + '>' + esc(ppCats[ci].name) + '</option>';
+    }
+    html += '</select>';
+    if (personaPainPoints.length > 0) {
+      html += '<div class="cp-pain-scope-toggle">';
+      html += '<button class="cp-pain-scope-btn' + (f.scope === 'persona' ? ' cp-pain-scope-active' : '') + '" data-action="set-pain-scope" data-scope="persona" title="Pain points linked to this recipe’s persona">' + icon('user') + ' Persona (' + personaPainPoints.length + ')</button>';
+      html += '<button class="cp-pain-scope-btn' + (f.scope === 'all' ? ' cp-pain-scope-active' : '') + '" data-action="set-pain-scope" data-scope="all" title="Browse every pain point in the library">' + icon('list') + ' All (' + allPainPoints.length + ')</button>';
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // List — grouped by category
+    if (pool.length === 0) {
+      html += '<p class="cp-text-muted" style="padding:var(--cp-space-3) 0">No pain points match the filters.</p>';
+    } else {
+      var groups = groupPainPointsByCategory(pool);
+      html += '<div class="cp-pain-picker-list">';
+      for (var gi = 0; gi < groups.length; gi++) {
+        var g = groups[gi];
+        if (groups.length > 1) {
+          html += '<div class="cp-pain-picker-group-label">' + esc(g.label) + ' <span class="cp-text-muted">(' + g.items.length + ')</span></div>';
+        }
+        for (var pi = 0; pi < g.items.length; pi++) {
+          var pp = g.items[pi];
+          var isSelected = selected.indexOf(pp.id) > -1;
+          html += '<label class="cp-pain-point-picker-item' + (isSelected ? ' cp-pain-point-picker-item-selected' : '') + '">';
+          html += '<input type="checkbox" data-action="toggle-recipe-pp" data-pp-id="' + esc(pp.id) + '"' + (isSelected ? ' checked' : '') + '>';
+          html += '<div style="flex:1;min-width:0">';
+          html += '<div style="font-weight:600;font-size:13px;line-height:1.4">' + esc(truncate(pp.pain_point, 110)) + '</div>';
+          if (pp.solution) html += '<div style="font-size:11px;color:var(--cp-success);margin-top:2px;line-height:1.4"><i class="fa-solid fa-lightbulb" style="margin-right:3px"></i>' + esc(truncate(pp.solution, 100)) + '</div>';
+          html += '</div></label>';
+        }
+      }
+      html += '</div>';
+    }
+    html += '</div>';
     return html;
+  }
+
+  // Debounced search handler — exported for event handler registration
+  var _cpPainSearchTimer = null;
+  function _cpDebouncePainSearch() {
+    var val = $(this).val() || '';
+    if (_cpPainSearchTimer) clearTimeout(_cpPainSearchTimer);
+    _cpPainSearchTimer = setTimeout(function() {
+      S._compPainFilter = S._compPainFilter || {};
+      S._compPainFilter.search = val;
+      render();
+      // Restore focus + caret after re-render
+      var $el = $('#cpRecipePainSearch');
+      if ($el.length) { var v = $el.val(); $el.focus(); try { $el[0].setSelectionRange(v.length, v.length); } catch(e) {} }
+    }, 250);
+  }
+
+  function groupPainPointsByCategory(items) {
+    var ppCats = Constants.PAIN_POINT_CATEGORIES || [];
+    var grouped = {};
+    for (var i = 0; i < items.length; i++) {
+      var k = items[i].category || '__uncat__';
+      (grouped[k] = grouped[k] || []).push(items[i]);
+    }
+    var result = [];
+    for (var ci = 0; ci < ppCats.length; ci++) {
+      if (grouped[ppCats[ci].id]) result.push({ id: ppCats[ci].id, label: ppCats[ci].name, items: grouped[ppCats[ci].id] });
+    }
+    if (grouped.__uncat__) result.push({ id: '', label: 'Uncategorized', items: grouped.__uncat__ });
+    return result;
   }
 
   function getEntityForDim(dimKey, id) {
@@ -7823,43 +8012,182 @@
     else if (dimKey === 'style') { items = getAllStyles(); currentId = recipe.style_id; }
     else if (dimKey === 'format') { items = getAllFormats(); currentId = recipe.visual_format_id; }
 
-    var html = '<div class="cp-editor-form">';
-    if (items.length === 0) {
-      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No ' + esc(dim.label.toLowerCase()) + 's created yet.</p>';
-      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-' + dimKey + '">' + icon('plus') + ' Create ' + esc(dim.label) + '</button></div>';
-    } else {
-      html += '<div class="cp-hook-radio-list">';
-      for (var i = 0; i < items.length; i++) {
-        var item = items[i];
-        var iid = item.id;
-        var iname = item.name || item.title || 'Untitled';
-        var isSelected = iid === currentId;
-        var sub = getEntitySubtext(dimKey, item);
+    // Reset/use per-dim picker filter state
+    S._dimPickerFilter = S._dimPickerFilter || {};
+    var fState = S._dimPickerFilter[dimKey] = S._dimPickerFilter[dimKey] || { search: '', groupBy: getDefaultPickerGroup(dimKey) };
 
-        html += '<label class="cp-hook-radio-item' + (isSelected ? ' cp-hook-radio-item-selected' : '') + '">';
-        html += '<input type="radio" name="dim_pick" value="' + esc(iid) + '"' + (isSelected ? ' checked' : '') + ' style="margin:3px 0 0;flex-shrink:0;cursor:pointer">';
-        html += '<div><div style="font-weight:600;font-size:13px">' + esc(iname) + '</div>';
-        if (sub) html += '<div style="font-size:11px;color:var(--cp-text-muted);margin-top:2px">' + esc(sub) + '</div>';
-        html += '</div></label>';
-      }
-      html += '</div>';
-    }
-    html += '</div>';
+    var html = renderDimensionPickerBody(dimKey, items, currentId, fState);
 
     openModal('Select ' + dim.label, html, {
       titleIcon: dim.icon,
-      size: 'md',
+      size: 'lg',
       saveLabel: 'Select',
       onSave: function() {
         var selected = $('.cp-modal-body input[name="dim_pick"]:checked').val() || '';
         var fieldMap = { persona: 'persona_id', message: 'message_id', style: 'style_id', format: 'visual_format_id' };
         saveEntityField('recipe', recipeId, fieldMap[dimKey], selected);
-        // Auto-update title if all 4 dimensions set
         autoUpdateRecipeTitle(recipeId);
         snapshot('Change ' + dim.label);
         closeModal();
       }
     });
+
+    // Wire up filter/group within the modal (delegated handlers, no re-render of modal)
+    $(document).off('input.cp-dim-pick-search').on('input.cp-dim-pick-search', '.cp-dim-picker-search', function() {
+      var v = ($(this).val() || '').toLowerCase();
+      $('.cp-dim-picker-item').each(function() {
+        var $it = $(this);
+        var hay = ($it.data('search-text') || '').toLowerCase();
+        $it.toggle(!v || hay.indexOf(v) > -1);
+      });
+      // Hide empty groups
+      $('.cp-dim-picker-group').each(function() {
+        var $g = $(this);
+        $g.toggle($g.find('.cp-dim-picker-item:visible').length > 0);
+      });
+    });
+    $(document).off('change.cp-dim-pick-group').on('change.cp-dim-pick-group', '.cp-dim-picker-group-select', function() {
+      fState.groupBy = $(this).val() || '';
+      // Re-render body
+      $('.cp-dim-picker-body').html(renderDimensionPickerBodyInner(dimKey, items, currentId, fState));
+    });
+  }
+
+  function getDefaultPickerGroup(dimKey) {
+    if (dimKey === 'persona') return 'category';
+    if (dimKey === 'message') return 'funnel';
+    if (dimKey === 'format')  return 'category';
+    return '';
+  }
+
+  function renderDimensionPickerBody(dimKey, items, currentId, fState) {
+    var dim = Constants.DIMENSIONS[dimKey];
+    var html = '<div class="cp-editor-form cp-dim-picker">';
+
+    // Toolbar
+    if (items.length > 0) {
+      html += '<div class="cp-dim-picker-toolbar">';
+      html += '<div class="cp-search-wrapper cp-search-wrapper-sm">' + icon('search') + '<input type="text" class="cp-input cp-input-sm cp-dim-picker-search" placeholder="Search ' + esc(dim.label.toLowerCase()) + 's…"></div>';
+
+      var groupOptions = getDimGroupOptions(dimKey);
+      if (groupOptions.length > 1) {
+        html += '<select class="cp-select cp-select-sm cp-dim-picker-group-select">';
+        for (var gi = 0; gi < groupOptions.length; gi++) {
+          html += '<option value="' + esc(groupOptions[gi].key) + '"' + (fState.groupBy === groupOptions[gi].key ? ' selected' : '') + '>Group: ' + esc(groupOptions[gi].label) + '</option>';
+        }
+        html += '</select>';
+      }
+      html += '<span class="cp-text-muted cp-dim-picker-count">' + items.length + ' total</span>';
+      html += '</div>';
+    }
+
+    html += '<div class="cp-dim-picker-body">';
+    html += renderDimensionPickerBodyInner(dimKey, items, currentId, fState);
+    html += '</div></div>';
+    return html;
+  }
+
+  function getDimGroupOptions(dimKey) {
+    var common = [{ key: '', label: 'None' }];
+    if (dimKey === 'persona') return common.concat([{ key: 'category', label: 'Category' }]);
+    if (dimKey === 'message') return common.concat([{ key: 'funnel', label: 'Funnel Stage' }]);
+    if (dimKey === 'format')  return common.concat([{ key: 'category', label: 'Category' }]);
+    return common;
+  }
+
+  function renderDimensionPickerBodyInner(dimKey, items, currentId, fState) {
+    var dim = Constants.DIMENSIONS[dimKey];
+    if (items.length === 0) {
+      return '<div class="cp-empty-state cp-empty-state--compact"><p>No ' + esc(dim.label.toLowerCase()) + 's created yet.</p>' +
+        '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-' + dimKey + '">' + icon('plus') + ' Create ' + esc(dim.label) + '</button></div>';
+    }
+
+    var groups = groupDimensionItems(dimKey, items, fState.groupBy);
+    var html = '<div class="cp-dim-picker-list">';
+    for (var gi = 0; gi < groups.length; gi++) {
+      var g = groups[gi];
+      if (groups.length > 1 || g.label) {
+        html += '<div class="cp-dim-picker-group">';
+        html += '<div class="cp-dim-picker-group-label">' + esc(g.label) + ' <span class="cp-text-muted">(' + g.items.length + ')</span></div>';
+      } else {
+        html += '<div class="cp-dim-picker-group">';
+      }
+      for (var ii = 0; ii < g.items.length; ii++) {
+        var item = g.items[ii];
+        var iid = item.id;
+        var iname = item.name || item.title || 'Untitled';
+        var isSelected = iid === currentId;
+        var sub = getEntitySubtext(dimKey, item);
+        var desc = item.description || item.body || '';
+        var searchText = (iname + ' ' + (sub || '') + ' ' + (desc || '')).trim();
+
+        html += '<label class="cp-dim-picker-item cp-hook-radio-item' + (isSelected ? ' cp-hook-radio-item-selected' : '') + '" data-search-text="' + esc(searchText) + '">';
+        html += '<input type="radio" name="dim_pick" value="' + esc(iid) + '"' + (isSelected ? ' checked' : '') + '>';
+        html += '<div style="flex:1;min-width:0">';
+        html += '<div style="font-weight:600;font-size:13px;line-height:1.4">' + esc(iname) + '</div>';
+        if (sub) html += '<div style="font-size:11px;color:var(--cp-text-muted);margin-top:2px">' + esc(sub) + '</div>';
+        if (desc) html += '<div style="font-size:11px;color:var(--cp-text-secondary);margin-top:4px;line-height:1.5">' + esc(truncate(desc, 160)) + '</div>';
+        html += '</div></label>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function groupDimensionItems(dimKey, items, groupBy) {
+    if (!groupBy) return [{ id: '', label: '', items: items }];
+
+    if (dimKey === 'persona' && groupBy === 'category') {
+      var pcats = getAllCategories();
+      var byCat = {}; var uncat = [];
+      for (var i = 0; i < items.length; i++) {
+        var cid = items[i].category_id;
+        if (cid && S.categoryMap[cid]) (byCat[cid] = byCat[cid] || []).push(items[i]);
+        else uncat.push(items[i]);
+      }
+      var groups = [];
+      for (var pi = 0; pi < pcats.length; pi++) {
+        if (byCat[pcats[pi].id]) groups.push({ id: pcats[pi].id, label: pcats[pi].name, items: byCat[pcats[pi].id] });
+      }
+      if (uncat.length) groups.push({ id: '', label: 'Uncategorized', items: uncat });
+      return groups;
+    }
+
+    if (dimKey === 'message' && groupBy === 'funnel') {
+      var funnels = (S.meta.settings && S.meta.settings.funnel_stages) || [];
+      var byFun = {}; var unas = [];
+      for (var mi = 0; mi < items.length; mi++) {
+        var stages = items[mi].funnel_stages || [];
+        if (stages.length === 0) { unas.push(items[mi]); continue; }
+        for (var si = 0; si < stages.length; si++) {
+          (byFun[stages[si]] = byFun[stages[si]] || []).push(items[mi]);
+        }
+      }
+      var mGroups = [];
+      for (var fi = 0; fi < funnels.length; fi++) {
+        if (byFun[funnels[fi].id]) mGroups.push({ id: funnels[fi].id, label: funnels[fi].name, items: byFun[funnels[fi].id] });
+      }
+      if (unas.length) mGroups.push({ id: '', label: 'Unassigned', items: unas });
+      return mGroups;
+    }
+
+    if (dimKey === 'format' && groupBy === 'category') {
+      var fcats = Constants.FORMAT_CATEGORIES || [];
+      var byFc = {}; var unFc = [];
+      for (var ji = 0; ji < items.length; ji++) {
+        var c = items[ji].category;
+        if (c) (byFc[c] = byFc[c] || []).push(items[ji]); else unFc.push(items[ji]);
+      }
+      var fGroups = [];
+      for (var fci = 0; fci < fcats.length; fci++) {
+        if (byFc[fcats[fci].id]) fGroups.push({ id: fcats[fci].id, label: fcats[fci].name, items: byFc[fcats[fci].id] });
+      }
+      if (unFc.length) fGroups.push({ id: '', label: 'Uncategorized', items: unFc });
+      return fGroups;
+    }
+
+    return [{ id: '', label: '', items: items }];
   }
 
   function autoUpdateRecipeTitle(recipeId) {
@@ -8090,197 +8418,155 @@
 
 /* ===== src/20-part2a/21-step-media.js ===== */
   // ============================================================
-  // SECTION 14: MEDIA STEP RENDERER (Image + Video)
+  // SECTION 14: PRODUCTION STEP RENDERER
+  // ============================================================
+  // Hands off recipe to the matching media-production Drupal app
+  // (image_production / carousel_production / video_production).
+  // Pre-fills title, brand, planner hub, planner id via query params.
   // ============================================================
 
   function renderMediaStep(recipe) {
-    var html = '<div class="cp-step-media" data-recipe-id="' + esc(recipe.id) + '">';
+    var html = '<div class="cp-step-production" data-recipe-id="' + esc(recipe.id) + '">';
 
-    if (recipe.media_type === 'video') {
-      html += renderVideoMediaPanel(recipe);
-    } else {
-      html += renderImageMediaPanel(recipe);
-    }
-
-    html += '</div>';
-    return html;
-  }
-
-  // ─── IMAGE MODE ───
-  function renderImageMediaPanel(recipe) {
-    var brief = recipe.image_brief || {};
-    var params = brief.prompt_params || {};
-    var html = '';
-
-    // Creative brief
-    html += '<div class="cp-card cp-image-brief-section">';
-    html += '<div class="cp-section-header"><h3>' + icon('pen-fancy') + ' Creative Brief</h3>';
-    html += renderRecipeAIBar('ai-generate-brief', recipe.id, 'AI Generate', 'sparkles');
-    html += '</div>';
-    html += '<p class="cp-text-muted" style="margin-bottom:8px">Describe what the image should look like, mood, key visual elements.</p>';
-    html += '<textarea class="cp-textarea" data-action="save-brief-field" data-bfield="creative_brief" rows="4" placeholder="A warm indoor studio scene with the talent looking directly at camera, holding the product...">' + esc(brief.creative_brief || '') + '</textarea>';
+    // Header / context
+    html += '<div class="cp-card cp-production-header-card">';
+    html += '<div class="cp-section-header"><h3>' + icon('rocket') + ' Production Handoff</h3>';
+    html += '<span class="cp-text-muted">Send this recipe to the matching media production app.</span></div>';
+    html += '<p class="cp-production-intro">';
+    html += 'Choose the media type, then open the production node-add form pre-filled with this recipe’s title, brand, and planner IDs. ';
+    html += 'You will craft the actual creative — image prompts, carousel slides, or video script — inside the production app.';
+    html += '</p>';
     html += '</div>';
 
-    // AI image prompt
-    html += '<div class="cp-card cp-ai-prompt-section" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('wand-magic') + ' AI Image Prompt</h3>';
-    html += renderRecipeAIBar('ai-generate-prompt', recipe.id, 'AI Generate', 'wand-magic');
-    html += '</div>';
-    html += '<textarea class="cp-textarea" data-action="save-brief-field" data-bfield="ai_prompt" rows="4" placeholder="Detailed AI image generation prompt...">' + esc(brief.ai_prompt || '') + '</textarea>';
-
-    // Prompt parameters
-    html += '<div class="cp-prompt-params">';
-    // Aspect ratio
-    html += '<div class="cp-form-group" style="min-width:100px"><label class="cp-field-label">Aspect Ratio</label>';
-    html += '<select class="cp-select cp-select-sm" data-action="save-prompt-param" data-param="aspect_ratio">';
-    var ratios = ['1:1', '4:5', '9:16', '16:9', '4:3'];
-    for (var ri = 0; ri < ratios.length; ri++) {
-      html += '<option value="' + ratios[ri] + '"' + ((params.aspect_ratio || '1:1') === ratios[ri] ? ' selected' : '') + '>' + ratios[ri] + '</option>';
-    }
-    html += '</select></div>';
-    // Visual approach
-    html += '<div class="cp-form-group" style="min-width:120px"><label class="cp-field-label">Visual Approach</label>';
-    html += '<select class="cp-select cp-select-sm" data-action="save-prompt-param" data-param="visual_approach">';
-    var approaches = [['photography', 'Photography'], ['illustration', 'Illustration'], ['3d_render', '3D Render'], ['flat_design', 'Flat Design'], ['mixed', 'Mixed Media']];
-    for (var ai = 0; ai < approaches.length; ai++) {
-      html += '<option value="' + approaches[ai][0] + '"' + ((params.visual_approach || 'photography') === approaches[ai][0] ? ' selected' : '') + '>' + approaches[ai][1] + '</option>';
-    }
-    html += '</select></div>';
-    // Mood
-    html += '<div class="cp-form-group" style="flex:1"><label class="cp-field-label">Mood</label>';
-    html += '<input type="text" class="cp-input" data-action="save-prompt-param" data-param="mood" value="' + esc(params.mood || '') + '" placeholder="e.g., Warm, Energetic, Professional"></div>';
-    html += '</div>';
-
-    // Negative prompt
-    html += '<div class="cp-form-group" style="margin-top:8px"><label class="cp-field-label">Negative Prompt</label>';
-    html += '<input type="text" class="cp-input" data-action="save-prompt-param" data-param="negative_prompt" value="' + esc(params.negative_prompt || '') + '" placeholder="Elements to exclude..."></div>';
-    html += '</div>';
-
-    // Reference images
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('images') + ' Reference Images</h3></div>';
-    var refIds = brief.reference_image_ids || [];
-    html += '<div class="cp-ref-images-row">';
-    for (var rii = 0; rii < refIds.length; rii++) {
-      var img = S.imageMap[refIds[rii]];
-      if (img) {
-        var imgMeta = (S.meta.reference_images && S.meta.reference_images[img.fid]) || {};
-        html += '<div class="cp-ref-image-thumb">';
-        html += '<img src="' + esc(img.url) + '" alt="' + esc(img.filename) + '" title="' + esc(img.filename) + (imgMeta.description ? ' — ' + imgMeta.description : '') + '">';
-        html += '<button class="cp-ref-image-remove" data-action="remove-ref-image" data-recipe-id="' + esc(recipe.id) + '" data-fid="' + esc(img.fid) + '" title="Remove">&times;</button>';
-        html += '</div>';
-      }
-    }
-    html += '<button class="cp-ref-image-add" data-action="pick-ref-images" data-recipe-id="' + esc(recipe.id) + '" title="Select reference images">' + icon('plus') + '</button>';
-    if (S.$imageField && S.$imageField.length) {
-      html += '<button class="cp-ref-image-add" data-action="upload-image" title="Upload new image">' + icon('upload') + '</button>';
-    }
-    html += '</div>';
-    if (refIds.length > 0) {
-      html += '<p class="cp-text-muted" style="margin-top:6px;font-size:11px">' + refIds.length + ' reference image' + (refIds.length !== 1 ? 's' : '') + ' selected. These will be included in AI context for creative brief and prompt generation.</p>';
-    }
-    html += '</div>';
-
-    return html;
-  }
-
-  // ─── VIDEO MODE ───
-  function renderVideoMediaPanel(recipe) {
-    var vid = recipe.video || {};
-    var blueprint = vid.blueprint || {};
-    var scenes = blueprint.scenes || [];
-    var script = vid.script || {};
-    var scriptRows = script.rows || [];
-    var html = '';
-
-    // Video meta
-    html += '<div class="cp-card">';
-    html += '<div class="cp-section-header"><h3>' + icon('video') + ' Video Details</h3></div>';
-    html += '<div class="cp-video-meta-row">';
-    // Duration
-    html += '<div class="cp-video-meta-field"><label class="cp-field-label">Duration (sec)</label>';
-    html += '<input type="number" class="cp-input" data-action="save-video-field" data-vfield="duration_seconds" value="' + (vid.duration_seconds || 30) + '" min="5" max="180"></div>';
-    // Format
-    html += '<div class="cp-video-meta-field"><label class="cp-field-label">Format</label>';
-    html += '<select class="cp-select" data-action="save-video-field" data-vfield="format">';
-    var formats = ['Reel', 'Feed Video', 'Story', 'Long Form'];
-    for (var fi = 0; fi < formats.length; fi++) {
-      html += '<option value="' + formats[fi] + '"' + ((vid.format || 'Reel') === formats[fi] ? ' selected' : '') + '>' + formats[fi] + '</option>';
-    }
-    html += '</select></div>';
-    // Aspect ratio
-    html += '<div class="cp-video-meta-field"><label class="cp-field-label">Aspect Ratio</label>';
-    html += '<select class="cp-select" data-action="save-video-field" data-vfield="aspect_ratio">';
-    var vRatios = ['9:16', '1:1', '16:9', '4:5'];
-    for (var vri = 0; vri < vRatios.length; vri++) {
-      html += '<option value="' + vRatios[vri] + '"' + ((vid.aspect_ratio || '9:16') === vRatios[vri] ? ' selected' : '') + '>' + vRatios[vri] + '</option>';
-    }
-    html += '</select></div>';
-    html += '</div>';
-
-    // Concept
-    html += '<div class="cp-form-group" style="margin-top:8px"><label class="cp-field-label">Video Concept</label>';
-    html += '<textarea class="cp-textarea" data-action="save-video-field" data-vfield="concept" rows="2" placeholder="Describe the video concept...">' + esc(vid.concept || '') + '</textarea></div>';
-    html += '</div>';
-
-    // Blueprint (scenes)
-    html += '<div class="cp-card cp-video-blueprint" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('film') + ' Blueprint — Scenes</h3>';
-    html += renderRecipeAIBar('ai-generate-blueprint', recipe.id, 'AI Generate', 'sparkles');
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="add-scene">' + icon('plus') + ' Add Scene</button>';
-    html += '</div>';
-
-    html += '<div class="cp-scene-list">';
-    if (scenes.length === 0) {
-      html += '<p class="cp-text-muted">No scenes yet. Add scenes to plan your video structure.</p>';
-    } else {
-      for (var si = 0; si < scenes.length; si++) {
-        var sc = scenes[si];
-        html += '<div class="cp-scene-card" data-scene-index="' + si + '">';
-        html += '<div class="cp-scene-card-header">';
-        html += '<span class="cp-badge" style="background:#d9302515;color:#d93025;font-weight:800">S' + (si + 1) + '</span>';
-        html += '<input type="text" class="cp-input" data-action="save-scene-field" data-scene-index="' + si + '" data-sfield="name" value="' + esc(sc.name || '') + '" placeholder="Scene name..." style="flex:1;font-weight:700">';
-        html += '<span class="cp-text-muted">' + esc(sc.timestamp || '') + '</span>';
-        html += '<button class="cp-btn-icon cp-btn-xs" data-action="delete-scene" data-scene-index="' + si + '">' + icon('trash') + '</button>';
-        html += '</div>';
-        html += '<textarea class="cp-textarea" data-action="save-scene-field" data-scene-index="' + si + '" data-sfield="description" rows="2" placeholder="What happens in this scene...">' + esc(sc.description || '') + '</textarea>';
-        html += '</div>';
-      }
+    // Media-type selector
+    html += '<div class="cp-card cp-production-type-card">';
+    html += '<div class="cp-section-header"><h3>' + icon('layer-group') + ' Media Type</h3></div>';
+    html += '<div class="cp-production-type-grid">';
+    var types = (typeof Constants !== 'undefined' && Constants.MEDIA_TYPES) || {};
+    for (var key in types) {
+      var mt = types[key];
+      var active = recipe.media_type === key;
+      html += '<button class="cp-production-type-card-btn' + (active ? ' cp-production-type-active' : '') + '" data-action="set-media-type" data-type="' + esc(key) + '" style="--mt-color:' + mt.color + '">';
+      html += '<span class="cp-production-type-icon" style="background:' + mt.color + '15;color:' + mt.color + '">' + icon(mt.icon) + '</span>';
+      html += '<span class="cp-production-type-label">' + esc(mt.label) + '</span>';
+      html += '<span class="cp-production-type-sub">/node/add/' + esc(mt.node_type) + '</span>';
+      if (active) html += '<span class="cp-production-type-selected">' + icon('circle-check') + ' Selected</span>';
+      html += '</button>';
     }
     html += '</div></div>';
 
-    // Script table
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('file-lines') + ' Detailed Script</h3>';
-    html += renderRecipeAIBar('ai-generate-script', recipe.id, 'AI Generate', 'sparkles');
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="add-script-row">' + icon('plus') + ' Add Row</button>';
+    // Production handoff panel for the selected type
+    html += renderProductionHandoff(recipe);
+
+    // Production / delivery notes (kept from before — used by reviewer)
+    html += '<div class="cp-card" style="margin-top:var(--cp-space-3)">';
+    html += '<div class="cp-section-header"><h3>' + icon('clipboard-list') + ' Production Notes</h3>';
+    html += '<span class="cp-text-muted">Optional — passed along as context for the production team.</span></div>';
+    html += '<textarea class="cp-textarea" data-action="save-production-notes" rows="3" placeholder="Anything the production team should know — references, constraints, tone reminders…">' + esc(recipe.production_notes || '') + '</textarea>';
     html += '</div>';
 
-    if (scriptRows.length === 0) {
-      html += '<p class="cp-text-muted">No script rows yet. Add rows manually or generate with AI.</p>';
-    } else {
-      html += '<div class="cp-script-table">';
-      html += '<div class="cp-script-header"><div>Time</div><div>Dialogue</div><div>Visual</div><div>Camera</div><div>Audio</div></div>';
-      for (var sri = 0; sri < scriptRows.length; sri++) {
-        var row = scriptRows[sri];
-        html += '<div class="cp-script-row" data-row-index="' + sri + '">';
-        html += '<div><input type="text" class="cp-input" data-action="save-script-field" data-row-index="' + sri + '" data-srfield="time" value="' + esc(row.time || '') + '" placeholder="0:00" style="width:50px;padding:2px 4px;font-size:11px"></div>';
-        html += '<div><textarea class="cp-textarea" data-action="save-script-field" data-row-index="' + sri + '" data-srfield="dialogue" rows="1" style="min-height:30px;font-size:11px;padding:3px 6px">' + esc(row.dialogue || '') + '</textarea></div>';
-        html += '<div><textarea class="cp-textarea" data-action="save-script-field" data-row-index="' + sri + '" data-srfield="visual" rows="1" style="min-height:30px;font-size:11px;padding:3px 6px">' + esc(row.visual || '') + '</textarea></div>';
-        html += '<div><input type="text" class="cp-input" data-action="save-script-field" data-row-index="' + sri + '" data-srfield="camera" value="' + esc(row.camera || '') + '" style="padding:2px 4px;font-size:11px"></div>';
-        html += '<div><input type="text" class="cp-input" data-action="save-script-field" data-row-index="' + sri + '" data-srfield="audio" value="' + esc(row.audio || '') + '" style="padding:2px 4px;font-size:11px"></div>';
-        html += '</div>';
-      }
-      html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderProductionHandoff(recipe) {
+    var mtKey = recipe.media_type || 'image';
+    var mt = (Constants.MEDIA_TYPES || {})[mtKey] || Constants.MEDIA_TYPES.image;
+    var url = buildProductionNodeAddUrl(recipe, mt);
+    var brand = (S.brand && S.brand.identity) || {};
+    var brandName = (S.brand && S.brand.core && S.brand.core.brand_name) || brand.name || '';
+    var brandId = brand.id || '';
+    var plannerHubId = getPlannerHubId();
+    var plannerId = recipe.id;
+
+    var html = '<div class="cp-card cp-production-handoff" style="margin-top:var(--cp-space-3);--mt-color:' + mt.color + '">';
+    html += '<div class="cp-section-header"><h3 style="color:' + mt.color + '">' + icon(mt.icon) + ' ' + esc(mt.label) + ' Production</h3></div>';
+
+    html += '<div class="cp-production-summary">';
+    html += '<div class="cp-production-summary-row"><span class="cp-production-summary-label">Title</span><span class="cp-production-summary-value">' + esc(recipe.title || '(Untitled)') + '</span></div>';
+    html += '<div class="cp-production-summary-row"><span class="cp-production-summary-label">Brand</span><span class="cp-production-summary-value">' + (brandName ? esc(brandName) : '<span class="cp-text-muted">(not detected)</span>') + (brandId ? ' <span class="cp-text-muted">(#' + esc(brandId) + ')</span>' : '') + '</span></div>';
+    html += '<div class="cp-production-summary-row"><span class="cp-production-summary-label">Planner Hub</span><span class="cp-production-summary-value">' + (plannerHubId ? esc(plannerHubId) : '<span class="cp-text-muted">(not detected)</span>') + '</span></div>';
+    html += '<div class="cp-production-summary-row"><span class="cp-production-summary-label">Planner ID</span><span class="cp-production-summary-value"><code>' + esc(plannerId) + '</code></span></div>';
+    html += '</div>';
+
+    // Validation warnings
+    var warnings = [];
+    if (!brandId) warnings.push('No brand ID detected from page (<code>.brand-id</code> inside <code>.brand-data</code>).');
+    if (!plannerHubId) warnings.push('No planner hub ID detected. Production node will be created without the hub reference.');
+    if (warnings.length > 0) {
+      html += '<div class="cp-production-warning">' + icon('triangle-exclamation') + ' <div>';
+      for (var wi = 0; wi < warnings.length; wi++) html += '<div>' + warnings[wi] + '</div>';
+      html += '</div></div>';
     }
 
-    // Export banner
-    html += '<div class="cp-script-export-banner" style="margin-top:12px">';
-    html += icon('circle-info') + ' <span>Blueprint + script can be exported to the Video Production app when ready.</span>';
-    html += '</div>';
+    // Open button
+    html += '<div class="cp-production-actions">';
+    html += '<a class="cp-btn cp-btn-primary cp-btn-lg cp-production-open-btn" href="' + esc(url) + '" target="_blank" rel="noopener">' + icon('external-link') + ' Create ' + esc(mt.label) + ' Production Node</a>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="copy-production-url" data-url="' + esc(url) + '">' + icon('copy') + ' Copy URL</button>';
     html += '</div>';
 
+    // URL preview (collapsed)
+    html += '<details class="cp-production-url-details">';
+    html += '<summary>' + icon('link') + ' URL preview</summary>';
+    html += '<code class="cp-production-url-preview">' + esc(url) + '</code>';
+    html += '</details>';
+
+    html += '</div>';
     return html;
+  }
+
+  function buildProductionNodeAddUrl(recipe, mt) {
+    var origin = window.location.origin;
+    var path = '/node/add/' + mt.node_type;
+    var brand = (S.brand && S.brand.identity) || {};
+    var brandId = brand.id || '';
+    var plannerHubId = getPlannerHubId();
+    var title = recipe.title || '';
+
+    // Drupal nested-array query format: edit[field][widget][0][value|target_id]
+    var params = [];
+    if (title) params.push(_qpair('edit[title][widget][0][value]', title));
+    if (brandId) params.push(_qpair('edit[field_brand][widget][0][target_id]', brandId));
+    if (plannerHubId) params.push(_qpair('edit[field_planner_hub][widget][0][target_id]', plannerHubId));
+    params.push(_qpair('edit[field_planner_id][widget][0][value]', recipe.id));
+
+    return origin + path + (params.length ? '?' + params.join('&') : '');
+  }
+
+  function _qpair(key, val) {
+    return encodeURIComponent(key) + '=' + encodeURIComponent(val);
+  }
+
+  // Reads the current planner hub (campaign planner node) ID — the node we're
+  // currently editing inside. We try several signals; first available wins.
+  function getPlannerHubId() {
+    // 1) Drupal data attribute on body (common in node-edit forms)
+    var nid = $('body').attr('data-node-id') || $('body').attr('data-nid');
+    if (nid) return String(nid).trim();
+
+    // 2) Hidden Drupal field
+    var $nid = $('input[name="nid"]').first();
+    if ($nid.length && $nid.val()) return String($nid.val()).trim();
+
+    // 3) Drupal settings (if exposed)
+    if (window.drupalSettings && window.drupalSettings.path && window.drupalSettings.path.currentPath) {
+      var m = String(window.drupalSettings.path.currentPath).match(/^node\/(\d+)/);
+      if (m) return m[1];
+    }
+
+    // 4) Body class node-XXX
+    var cls = $('body').attr('class') || '';
+    var bm = cls.match(/\bnode-(\d+)\b/);
+    if (bm) return bm[1];
+
+    // 5) Page URL /node/123/edit or /node/123
+    var um = String(window.location.pathname).match(/\/node\/(\d+)(\b|\/)/);
+    if (um) return um[1];
+
+    // 6) Configured in workspace meta
+    if (S.meta && S.meta.workspace && S.meta.workspace.planner_hub_id) return String(S.meta.workspace.planner_hub_id);
+
+    return '';
   }
 
 
@@ -8377,23 +8663,17 @@
 
     var checks = [
       { label: 'Persona assigned', done: !!recipe.persona_id, step: 'composition', action: true },
-      { label: 'Message assigned', done: !!recipe.message_id, step: 'composition', action: true },
-      { label: 'Style assigned', done: !!recipe.style_id, step: 'composition', action: true },
-      { label: 'Visual format assigned', done: !!recipe.visual_format_id, step: 'composition', action: true },
+      { label: 'Message angle assigned', done: !!recipe.message_id, step: 'composition', action: true },
       { label: 'Hook selected or written', done: !!effectiveHook, step: 'hook', action: true },
       { label: 'Ad copy written (50+ chars)', done: adCopyText.trim().length >= 50, step: 'content', action: true },
       { label: 'Headline written', done: !!(content.headline && content.headline.trim()), step: 'content', action: true },
-      { label: 'CTA defined', done: !!(content.cta && content.cta.trim()), step: 'content', action: true }
+      { label: 'CTA defined', done: !!(content.cta && content.cta.trim()), step: 'content', action: true },
+      { label: 'Media type selected for production', done: !!recipe.media_type, step: 'media', action: true }
     ];
 
-    // Media checks depend on type
-    if (recipe.media_type === 'image') {
-      var brief = recipe.image_brief || {};
-      checks.push({ label: 'Creative brief written', done: !!(brief.creative_brief && brief.creative_brief.trim().length > 20), step: 'media', action: true });
-    } else if (recipe.media_type === 'video') {
-      var scenes = (recipe.video && recipe.video.blueprint && recipe.video.blueprint.scenes) || [];
-      checks.push({ label: 'Video blueprint (2+ scenes)', done: scenes.length >= 2, step: 'media', action: true });
-    }
+    // Optional refinement checks (secondary)
+    if (recipe.style_id) checks.push({ label: 'Style selected (optional)', done: true, step: 'composition', action: true });
+    if (recipe.visual_format_id) checks.push({ label: 'Visual format selected (optional)', done: true, step: 'composition', action: true });
 
     return checks;
   }
@@ -9077,6 +9357,20 @@
       $(this).closest('.cp-pain-point-picker-item').toggleClass('cp-pain-point-picker-item-selected', this.checked);
     });
 
+    // Composition pain point filter + scope toggle (in-step picker)
+    $(document).off('input.cp2a-comp-pain-search').on('input.cp2a-comp-pain-search', '#cpRecipePainSearch', _cpDebouncePainSearch);
+    $(document).off('change.cp2a-comp-pain-cat').on('change.cp2a-comp-pain-cat', '#cpRecipePainCategory', function() {
+      S._compPainFilter = S._compPainFilter || {};
+      S._compPainFilter.category = $(this).val() || '';
+      render();
+    });
+    $(document).off('click.cp2a-comp-pain-scope').on('click.cp2a-comp-pain-scope', '[data-action="set-pain-scope"]', function(e) {
+      e.preventDefault();
+      S._compPainFilter = S._compPainFilter || {};
+      S._compPainFilter.scope = $(this).data('scope') || 'persona';
+      render();
+    });
+
     // Hook selection (radio)
     $(document).off('change.cp2a-select-hook').on('change.cp2a-select-hook', '[data-action="select-hook"]', function() {
       var recipe = getSelectedRecipe();
@@ -9197,6 +9491,23 @@
     $(document).off('blur.cp2a-prod-notes').on('blur.cp2a-prod-notes', '[data-action="save-production-notes"]', function() {
       var recipe = getSelectedRecipe();
       if (recipe) saveEntityField('recipe', recipe.id, 'production_notes', $(this).val() || '');
+    });
+
+    // Copy production handoff URL to clipboard
+    $(document).off('click.cp2a-copy-prod-url').on('click.cp2a-copy-prod-url', '[data-action="copy-production-url"]', function(e) {
+      e.preventDefault();
+      var url = $(this).data('url') || '';
+      if (!url) { toast('No production URL available', 'warning'); return; }
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function() { toast('Production URL copied', 'success'); });
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = url; document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta);
+          toast('Production URL copied', 'success');
+        }
+      } catch(ex) { toast('Copy failed: ' + ex.message, 'error'); }
     });
 
     // --- Mix & Match Engine ---
@@ -9956,11 +10267,15 @@
     LLMService.init();
     try { BrandService.init(); BrandService.autoPopulateBrandDesign(); } catch(e) { console.error('[CP] BrandService init error:', e); }
 
-    // Replace AI picker loading placeholders
-    $('.cp-ai-picker-loading').each(function() {
-      var actionId = $(this).data('pending-action');
-      if (actionId) $(this).replaceWith(LLMService.renderInlinePicker(actionId));
-    });
+    // Replace AI picker loading placeholders (uses Part 2A helper if available).
+    if (typeof window._cpReplaceAiPickers === 'function') {
+      window._cpReplaceAiPickers();
+    } else {
+      $('.cp-ai-picker-loading').each(function() {
+        var actionId = $(this).data('pending-action');
+        if (actionId) $(this).replaceWith(LLMService.renderInlinePicker(actionId));
+      });
+    }
 
     updateAIStatusIndicator();
     S._part2bTimeout = false;

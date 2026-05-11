@@ -64,5 +64,8 @@
     if (R.setupResearchEvents && S.currentView === 'research') R.setupResearchEvents();
     if (R.setupImagesEvents && S.currentView === 'images') R.setupImagesEvents();
     if (R.setupSettingsEvents && S.currentView === 'settings') R.setupSettingsEvents();
+
+    // Replace any AI picker placeholders left in the DOM (Part 2B loads async).
+    if (typeof window._cpReplaceAiPickers === 'function') window._cpReplaceAiPickers();
   }
 

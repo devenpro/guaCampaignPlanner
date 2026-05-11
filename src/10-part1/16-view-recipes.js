@@ -199,29 +199,20 @@
   }
 
   // C2: Recipe completion percentage (lightweight, no Part 2A dependency)
+  // Counts the primary fields: persona, message, hook, ad copy, headline,
+  // CTA, and a chosen media type for the production handoff.
   function getRecipeCompletionPct(recipe) {
-    var done = 0, total = 8;
+    var done = 0, total = 7;
     if (recipe.persona_id) done++;
     if (recipe.message_id) done++;
-    if (recipe.style_id) done++;
-    if (recipe.visual_format_id) done++;
     var hook = recipe.hook || {};
     if (hook.custom_hook || hook.selected_hook_id) done++;
     var content = recipe.content || {};
     var adCopy = stripHtml ? stripHtml(content.ad_copy || '') : (content.ad_copy || '').replace(/<[^>]*>/g, '');
     if (adCopy.trim().length >= 50) done++;
     if (content.headline && content.headline.trim()) done++;
-    if (recipe.media_type === 'image') {
-      var brief = recipe.image_brief || {};
-      if (brief.creative_brief && brief.creative_brief.trim().length > 20) done++;
-      total = 8;
-    } else if (recipe.media_type === 'video') {
-      var scenes = (recipe.video && recipe.video.blueprint && recipe.video.blueprint.scenes) || [];
-      if (scenes.length >= 2) done++;
-      total = 8;
-    } else {
-      total = 7; // No media check for text-only
-    }
+    if (content.cta && content.cta.trim()) done++;
+    if (recipe.media_type) done++;
     return Math.round((done / total) * 100);
   }
 

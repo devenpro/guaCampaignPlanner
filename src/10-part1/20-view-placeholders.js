@@ -293,6 +293,20 @@
       S.painPointFilter.category = $(this).val() || '';
       renderCurrentView();
     });
+    $(document).off('change.cp-pp-group-by').on('change.cp-pp-group-by', '#cpPainPointGroupBy', function() {
+      S.painPointFilter = S.painPointFilter || {};
+      S.painPointFilter.groupBy = $(this).val() || 'category';
+      renderCurrentView();
+    });
+    $(document).off('click.cp-pp-group-toggle').on('click.cp-pp-group-toggle', '[data-action="toggle-pp-group"]', function(e) {
+      e.preventDefault();
+      var catId = $(this).data('cat-id');
+      if (!catId) return;
+      S.collapsedGroups = S.collapsedGroups || {};
+      var key = 'ppcat_' + catId;
+      S.collapsedGroups[key] = !S.collapsedGroups[key];
+      renderCurrentView();
+    });
     $(document).off('click.cp-select-pp-page').on('click.cp-select-pp-page', '[data-action="select-pain-point-page"]', function(e) {
       e.preventDefault();
       S.selectedPainPointId = $(this).data('id');

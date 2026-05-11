@@ -90,23 +90,17 @@
 
     var checks = [
       { label: 'Persona assigned', done: !!recipe.persona_id, step: 'composition', action: true },
-      { label: 'Message assigned', done: !!recipe.message_id, step: 'composition', action: true },
-      { label: 'Style assigned', done: !!recipe.style_id, step: 'composition', action: true },
-      { label: 'Visual format assigned', done: !!recipe.visual_format_id, step: 'composition', action: true },
+      { label: 'Message angle assigned', done: !!recipe.message_id, step: 'composition', action: true },
       { label: 'Hook selected or written', done: !!effectiveHook, step: 'hook', action: true },
       { label: 'Ad copy written (50+ chars)', done: adCopyText.trim().length >= 50, step: 'content', action: true },
       { label: 'Headline written', done: !!(content.headline && content.headline.trim()), step: 'content', action: true },
-      { label: 'CTA defined', done: !!(content.cta && content.cta.trim()), step: 'content', action: true }
+      { label: 'CTA defined', done: !!(content.cta && content.cta.trim()), step: 'content', action: true },
+      { label: 'Media type selected for production', done: !!recipe.media_type, step: 'media', action: true }
     ];
 
-    // Media checks depend on type
-    if (recipe.media_type === 'image') {
-      var brief = recipe.image_brief || {};
-      checks.push({ label: 'Creative brief written', done: !!(brief.creative_brief && brief.creative_brief.trim().length > 20), step: 'media', action: true });
-    } else if (recipe.media_type === 'video') {
-      var scenes = (recipe.video && recipe.video.blueprint && recipe.video.blueprint.scenes) || [];
-      checks.push({ label: 'Video blueprint (2+ scenes)', done: scenes.length >= 2, step: 'media', action: true });
-    }
+    // Optional refinement checks (secondary)
+    if (recipe.style_id) checks.push({ label: 'Style selected (optional)', done: true, step: 'composition', action: true });
+    if (recipe.visual_format_id) checks.push({ label: 'Visual format selected (optional)', done: true, step: 'composition', action: true });
 
     return checks;
   }

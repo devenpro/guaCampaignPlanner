@@ -27,19 +27,14 @@
     }
 
     // content_ready → media_ready
+    // Media production now happens in dedicated apps (image_production,
+    // carousel_production, video_production). The recipe is considered
+    // production-ready as soon as a media type is chosen for handoff and
+    // ad copy is in place — the actual creative is built downstream.
     sugIdx = STATUS_ORDER.indexOf(suggested);
     if (STATUS_ORDER.indexOf('media_ready') > sugIdx) {
-      if (recipe.media_type === 'image') {
-        var brief = recipe.image_brief || {};
-        if ((brief.creative_brief && brief.creative_brief.trim().length > 30) ||
-            (brief.ai_prompt && brief.ai_prompt.trim().length > 20)) {
-          suggested = 'media_ready';
-        }
-      } else if (recipe.media_type === 'video') {
-        var scenes = (recipe.video && recipe.video.blueprint && recipe.video.blueprint.scenes) || [];
-        if (scenes.length >= 2) {
-          suggested = 'media_ready';
-        }
+      if (recipe.media_type && suggested === 'content_ready') {
+        suggested = 'media_ready';
       }
     }
 
