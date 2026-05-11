@@ -74,7 +74,23 @@
       if (window._cpPart2B && window._cpPart2B.renderInlinePicker) {
         return window._cpPart2B.renderInlinePicker(actionId);
       }
-      return '<span class="cp-ai-picker-loading" data-pending-action="' + esc(actionId) + '">' + icon('spinner') + '</span>';
+      // Show loading placeholder; will be replaced once Part 2B loads.
+      if (S && S._part2bTimeout) {
+        return '<span class="cp-ai-picker-loading" data-pending-action="' + esc(actionId) + '" title="AI module failed to load">' + icon('warning') + ' AI unavailable</span>';
+      }
+      return '<span class="cp-ai-picker-loading" data-pending-action="' + esc(actionId) + '">' + icon('spinner') + ' Loading…</span>';
+    };
+
+    // Replace any AI picker placeholders in the DOM with rendered pickers.
+    // Called after every render so newly rendered views get live pickers.
+    window._cpReplaceAiPickers = function() {
+      if (!window._cpPart2B || !window._cpPart2B.renderInlinePicker) return;
+      $('.cp-ai-picker-loading').each(function() {
+        var actionId = $(this).data('pending-action');
+        if (!actionId) return;
+        try { $(this).replaceWith(window._cpPart2B.renderInlinePicker(actionId)); }
+        catch (e) { console.warn('[CP] AI picker placeholder replace failed:', e); }
+      });
     };
 
     // Register step renderers

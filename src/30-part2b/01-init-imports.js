@@ -108,11 +108,15 @@
     LLMService.init();
     try { BrandService.init(); BrandService.autoPopulateBrandDesign(); } catch(e) { console.error('[CP] BrandService init error:', e); }
 
-    // Replace AI picker loading placeholders
-    $('.cp-ai-picker-loading').each(function() {
-      var actionId = $(this).data('pending-action');
-      if (actionId) $(this).replaceWith(LLMService.renderInlinePicker(actionId));
-    });
+    // Replace AI picker loading placeholders (uses Part 2A helper if available).
+    if (typeof window._cpReplaceAiPickers === 'function') {
+      window._cpReplaceAiPickers();
+    } else {
+      $('.cp-ai-picker-loading').each(function() {
+        var actionId = $(this).data('pending-action');
+        if (actionId) $(this).replaceWith(LLMService.renderInlinePicker(actionId));
+      });
+    }
 
     updateAIStatusIndicator();
     S._part2bTimeout = false;

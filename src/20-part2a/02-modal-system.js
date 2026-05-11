@@ -22,6 +22,8 @@
     $('body').append(html);
     currentModal = options;
     setTimeout(function() { $('.cp-modal-backdrop').addClass('cp-modal-visible'); }, 10);
+    // Replace any AI picker loading placeholders that landed in the modal
+    if (typeof window._cpReplaceAiPickers === 'function') window._cpReplaceAiPickers();
     // Focus first input
     setTimeout(function() { $('.cp-modal-body input:visible, .cp-modal-body textarea:visible').first().focus(); }, 100);
   }

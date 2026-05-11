@@ -193,14 +193,19 @@
     S.brand.seo = parseDiv('.brand-seo-data');
     S.brand.social = parseDiv('.brand-social-data');
 
-    // Identity from core
-    if (S.brand.core) {
+    // Identity — name, id, logo come from sibling spans/divs inside .brand-data
+    var idFromDom = ($bd.find('.brand-id').text() || '').trim();
+    var nameFromDom = ($bd.find('.brand-name').text() || '').trim();
+    var logoFromDom = ($bd.find('.brand-logo-url').text() || '').trim();
+
+    if (S.brand.core || idFromDom || nameFromDom) {
       S.brand.identity = {
-        name: S.brand.core.brand_name || '',
-        logoUrl: S.brand.core.logo_url || ''
+        name: nameFromDom || (S.brand.core && S.brand.core.brand_name) || '',
+        id: idFromDom || (S.brand.core && (S.brand.core.id || S.brand.core.brand_id || S.brand.core.nid)) || '',
+        logoUrl: logoFromDom || (S.brand.core && S.brand.core.logo_url) || ''
       };
-      S.brand.configured = true;
-      console.log('[CP] Brand data loaded: ' + S.brand.identity.name);
+      S.brand.configured = !!(S.brand.identity.name || S.brand.core);
+      if (S.brand.configured) console.log('[CP] Brand data loaded: ' + S.brand.identity.name + (S.brand.identity.id ? ' (#' + S.brand.identity.id + ')' : ''));
     } else {
       S.brand.configured = false;
     }

@@ -226,6 +226,20 @@
       $(this).closest('.cp-pain-point-picker-item').toggleClass('cp-pain-point-picker-item-selected', this.checked);
     });
 
+    // Composition pain point filter + scope toggle (in-step picker)
+    $(document).off('input.cp2a-comp-pain-search').on('input.cp2a-comp-pain-search', '#cpRecipePainSearch', _cpDebouncePainSearch);
+    $(document).off('change.cp2a-comp-pain-cat').on('change.cp2a-comp-pain-cat', '#cpRecipePainCategory', function() {
+      S._compPainFilter = S._compPainFilter || {};
+      S._compPainFilter.category = $(this).val() || '';
+      render();
+    });
+    $(document).off('click.cp2a-comp-pain-scope').on('click.cp2a-comp-pain-scope', '[data-action="set-pain-scope"]', function(e) {
+      e.preventDefault();
+      S._compPainFilter = S._compPainFilter || {};
+      S._compPainFilter.scope = $(this).data('scope') || 'persona';
+      render();
+    });
+
     // Hook selection (radio)
     $(document).off('change.cp2a-select-hook').on('change.cp2a-select-hook', '[data-action="select-hook"]', function() {
       var recipe = getSelectedRecipe();
@@ -346,6 +360,23 @@
     $(document).off('blur.cp2a-prod-notes').on('blur.cp2a-prod-notes', '[data-action="save-production-notes"]', function() {
       var recipe = getSelectedRecipe();
       if (recipe) saveEntityField('recipe', recipe.id, 'production_notes', $(this).val() || '');
+    });
+
+    // Copy production handoff URL to clipboard
+    $(document).off('click.cp2a-copy-prod-url').on('click.cp2a-copy-prod-url', '[data-action="copy-production-url"]', function(e) {
+      e.preventDefault();
+      var url = $(this).data('url') || '';
+      if (!url) { toast('No production URL available', 'warning'); return; }
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(url).then(function() { toast('Production URL copied', 'success'); });
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = url; document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta);
+          toast('Production URL copied', 'success');
+        }
+      } catch(ex) { toast('Copy failed: ' + ex.message, 'error'); }
     });
 
     // --- Mix & Match Engine ---

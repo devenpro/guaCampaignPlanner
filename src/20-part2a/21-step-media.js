@@ -1,194 +1,152 @@
   // ============================================================
-  // SECTION 14: MEDIA STEP RENDERER (Image + Video)
+  // SECTION 14: PRODUCTION STEP RENDERER
+  // ============================================================
+  // Hands off recipe to the matching media-production Drupal app
+  // (image_production / carousel_production / video_production).
+  // Pre-fills title, brand, planner hub, planner id via query params.
   // ============================================================
 
   function renderMediaStep(recipe) {
-    var html = '<div class="cp-step-media" data-recipe-id="' + esc(recipe.id) + '">';
+    var html = '<div class="cp-step-production" data-recipe-id="' + esc(recipe.id) + '">';
 
-    if (recipe.media_type === 'video') {
-      html += renderVideoMediaPanel(recipe);
-    } else {
-      html += renderImageMediaPanel(recipe);
-    }
-
-    html += '</div>';
-    return html;
-  }
-
-  // ─── IMAGE MODE ───
-  function renderImageMediaPanel(recipe) {
-    var brief = recipe.image_brief || {};
-    var params = brief.prompt_params || {};
-    var html = '';
-
-    // Creative brief
-    html += '<div class="cp-card cp-image-brief-section">';
-    html += '<div class="cp-section-header"><h3>' + icon('pen-fancy') + ' Creative Brief</h3>';
-    html += renderRecipeAIBar('ai-generate-brief', recipe.id, 'AI Generate', 'sparkles');
-    html += '</div>';
-    html += '<p class="cp-text-muted" style="margin-bottom:8px">Describe what the image should look like, mood, key visual elements.</p>';
-    html += '<textarea class="cp-textarea" data-action="save-brief-field" data-bfield="creative_brief" rows="4" placeholder="A warm indoor studio scene with the talent looking directly at camera, holding the product...">' + esc(brief.creative_brief || '') + '</textarea>';
+    // Header / context
+    html += '<div class="cp-card cp-production-header-card">';
+    html += '<div class="cp-section-header"><h3>' + icon('rocket') + ' Production Handoff</h3>';
+    html += '<span class="cp-text-muted">Send this recipe to the matching media production app.</span></div>';
+    html += '<p class="cp-production-intro">';
+    html += 'Choose the media type, then open the production node-add form pre-filled with this recipe’s title, brand, and planner IDs. ';
+    html += 'You will craft the actual creative — image prompts, carousel slides, or video script — inside the production app.';
+    html += '</p>';
     html += '</div>';
 
-    // AI image prompt
-    html += '<div class="cp-card cp-ai-prompt-section" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('wand-magic') + ' AI Image Prompt</h3>';
-    html += renderRecipeAIBar('ai-generate-prompt', recipe.id, 'AI Generate', 'wand-magic');
-    html += '</div>';
-    html += '<textarea class="cp-textarea" data-action="save-brief-field" data-bfield="ai_prompt" rows="4" placeholder="Detailed AI image generation prompt...">' + esc(brief.ai_prompt || '') + '</textarea>';
-
-    // Prompt parameters
-    html += '<div class="cp-prompt-params">';
-    // Aspect ratio
-    html += '<div class="cp-form-group" style="min-width:100px"><label class="cp-field-label">Aspect Ratio</label>';
-    html += '<select class="cp-select cp-select-sm" data-action="save-prompt-param" data-param="aspect_ratio">';
-    var ratios = ['1:1', '4:5', '9:16', '16:9', '4:3'];
-    for (var ri = 0; ri < ratios.length; ri++) {
-      html += '<option value="' + ratios[ri] + '"' + ((params.aspect_ratio || '1:1') === ratios[ri] ? ' selected' : '') + '>' + ratios[ri] + '</option>';
-    }
-    html += '</select></div>';
-    // Visual approach
-    html += '<div class="cp-form-group" style="min-width:120px"><label class="cp-field-label">Visual Approach</label>';
-    html += '<select class="cp-select cp-select-sm" data-action="save-prompt-param" data-param="visual_approach">';
-    var approaches = [['photography', 'Photography'], ['illustration', 'Illustration'], ['3d_render', '3D Render'], ['flat_design', 'Flat Design'], ['mixed', 'Mixed Media']];
-    for (var ai = 0; ai < approaches.length; ai++) {
-      html += '<option value="' + approaches[ai][0] + '"' + ((params.visual_approach || 'photography') === approaches[ai][0] ? ' selected' : '') + '>' + approaches[ai][1] + '</option>';
-    }
-    html += '</select></div>';
-    // Mood
-    html += '<div class="cp-form-group" style="flex:1"><label class="cp-field-label">Mood</label>';
-    html += '<input type="text" class="cp-input" data-action="save-prompt-param" data-param="mood" value="' + esc(params.mood || '') + '" placeholder="e.g., Warm, Energetic, Professional"></div>';
-    html += '</div>';
-
-    // Negative prompt
-    html += '<div class="cp-form-group" style="margin-top:8px"><label class="cp-field-label">Negative Prompt</label>';
-    html += '<input type="text" class="cp-input" data-action="save-prompt-param" data-param="negative_prompt" value="' + esc(params.negative_prompt || '') + '" placeholder="Elements to exclude..."></div>';
-    html += '</div>';
-
-    // Reference images
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('images') + ' Reference Images</h3></div>';
-    var refIds = brief.reference_image_ids || [];
-    html += '<div class="cp-ref-images-row">';
-    for (var rii = 0; rii < refIds.length; rii++) {
-      var img = S.imageMap[refIds[rii]];
-      if (img) {
-        var imgMeta = (S.meta.reference_images && S.meta.reference_images[img.fid]) || {};
-        html += '<div class="cp-ref-image-thumb">';
-        html += '<img src="' + esc(img.url) + '" alt="' + esc(img.filename) + '" title="' + esc(img.filename) + (imgMeta.description ? ' — ' + imgMeta.description : '') + '">';
-        html += '<button class="cp-ref-image-remove" data-action="remove-ref-image" data-recipe-id="' + esc(recipe.id) + '" data-fid="' + esc(img.fid) + '" title="Remove">&times;</button>';
-        html += '</div>';
-      }
-    }
-    html += '<button class="cp-ref-image-add" data-action="pick-ref-images" data-recipe-id="' + esc(recipe.id) + '" title="Select reference images">' + icon('plus') + '</button>';
-    if (S.$imageField && S.$imageField.length) {
-      html += '<button class="cp-ref-image-add" data-action="upload-image" title="Upload new image">' + icon('upload') + '</button>';
-    }
-    html += '</div>';
-    if (refIds.length > 0) {
-      html += '<p class="cp-text-muted" style="margin-top:6px;font-size:11px">' + refIds.length + ' reference image' + (refIds.length !== 1 ? 's' : '') + ' selected. These will be included in AI context for creative brief and prompt generation.</p>';
-    }
-    html += '</div>';
-
-    return html;
-  }
-
-  // ─── VIDEO MODE ───
-  function renderVideoMediaPanel(recipe) {
-    var vid = recipe.video || {};
-    var blueprint = vid.blueprint || {};
-    var scenes = blueprint.scenes || [];
-    var script = vid.script || {};
-    var scriptRows = script.rows || [];
-    var html = '';
-
-    // Video meta
-    html += '<div class="cp-card">';
-    html += '<div class="cp-section-header"><h3>' + icon('video') + ' Video Details</h3></div>';
-    html += '<div class="cp-video-meta-row">';
-    // Duration
-    html += '<div class="cp-video-meta-field"><label class="cp-field-label">Duration (sec)</label>';
-    html += '<input type="number" class="cp-input" data-action="save-video-field" data-vfield="duration_seconds" value="' + (vid.duration_seconds || 30) + '" min="5" max="180"></div>';
-    // Format
-    html += '<div class="cp-video-meta-field"><label class="cp-field-label">Format</label>';
-    html += '<select class="cp-select" data-action="save-video-field" data-vfield="format">';
-    var formats = ['Reel', 'Feed Video', 'Story', 'Long Form'];
-    for (var fi = 0; fi < formats.length; fi++) {
-      html += '<option value="' + formats[fi] + '"' + ((vid.format || 'Reel') === formats[fi] ? ' selected' : '') + '>' + formats[fi] + '</option>';
-    }
-    html += '</select></div>';
-    // Aspect ratio
-    html += '<div class="cp-video-meta-field"><label class="cp-field-label">Aspect Ratio</label>';
-    html += '<select class="cp-select" data-action="save-video-field" data-vfield="aspect_ratio">';
-    var vRatios = ['9:16', '1:1', '16:9', '4:5'];
-    for (var vri = 0; vri < vRatios.length; vri++) {
-      html += '<option value="' + vRatios[vri] + '"' + ((vid.aspect_ratio || '9:16') === vRatios[vri] ? ' selected' : '') + '>' + vRatios[vri] + '</option>';
-    }
-    html += '</select></div>';
-    html += '</div>';
-
-    // Concept
-    html += '<div class="cp-form-group" style="margin-top:8px"><label class="cp-field-label">Video Concept</label>';
-    html += '<textarea class="cp-textarea" data-action="save-video-field" data-vfield="concept" rows="2" placeholder="Describe the video concept...">' + esc(vid.concept || '') + '</textarea></div>';
-    html += '</div>';
-
-    // Blueprint (scenes)
-    html += '<div class="cp-card cp-video-blueprint" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('film') + ' Blueprint — Scenes</h3>';
-    html += renderRecipeAIBar('ai-generate-blueprint', recipe.id, 'AI Generate', 'sparkles');
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="add-scene">' + icon('plus') + ' Add Scene</button>';
-    html += '</div>';
-
-    html += '<div class="cp-scene-list">';
-    if (scenes.length === 0) {
-      html += '<p class="cp-text-muted">No scenes yet. Add scenes to plan your video structure.</p>';
-    } else {
-      for (var si = 0; si < scenes.length; si++) {
-        var sc = scenes[si];
-        html += '<div class="cp-scene-card" data-scene-index="' + si + '">';
-        html += '<div class="cp-scene-card-header">';
-        html += '<span class="cp-badge" style="background:#d9302515;color:#d93025;font-weight:800">S' + (si + 1) + '</span>';
-        html += '<input type="text" class="cp-input" data-action="save-scene-field" data-scene-index="' + si + '" data-sfield="name" value="' + esc(sc.name || '') + '" placeholder="Scene name..." style="flex:1;font-weight:700">';
-        html += '<span class="cp-text-muted">' + esc(sc.timestamp || '') + '</span>';
-        html += '<button class="cp-btn-icon cp-btn-xs" data-action="delete-scene" data-scene-index="' + si + '">' + icon('trash') + '</button>';
-        html += '</div>';
-        html += '<textarea class="cp-textarea" data-action="save-scene-field" data-scene-index="' + si + '" data-sfield="description" rows="2" placeholder="What happens in this scene...">' + esc(sc.description || '') + '</textarea>';
-        html += '</div>';
-      }
+    // Media-type selector
+    html += '<div class="cp-card cp-production-type-card">';
+    html += '<div class="cp-section-header"><h3>' + icon('layer-group') + ' Media Type</h3></div>';
+    html += '<div class="cp-production-type-grid">';
+    var types = (typeof Constants !== 'undefined' && Constants.MEDIA_TYPES) || {};
+    for (var key in types) {
+      var mt = types[key];
+      var active = recipe.media_type === key;
+      html += '<button class="cp-production-type-card-btn' + (active ? ' cp-production-type-active' : '') + '" data-action="set-media-type" data-type="' + esc(key) + '" style="--mt-color:' + mt.color + '">';
+      html += '<span class="cp-production-type-icon" style="background:' + mt.color + '15;color:' + mt.color + '">' + icon(mt.icon) + '</span>';
+      html += '<span class="cp-production-type-label">' + esc(mt.label) + '</span>';
+      html += '<span class="cp-production-type-sub">/node/add/' + esc(mt.node_type) + '</span>';
+      if (active) html += '<span class="cp-production-type-selected">' + icon('circle-check') + ' Selected</span>';
+      html += '</button>';
     }
     html += '</div></div>';
 
-    // Script table
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('file-lines') + ' Detailed Script</h3>';
-    html += renderRecipeAIBar('ai-generate-script', recipe.id, 'AI Generate', 'sparkles');
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="add-script-row">' + icon('plus') + ' Add Row</button>';
+    // Production handoff panel for the selected type
+    html += renderProductionHandoff(recipe);
+
+    // Production / delivery notes (kept from before — used by reviewer)
+    html += '<div class="cp-card" style="margin-top:var(--cp-space-3)">';
+    html += '<div class="cp-section-header"><h3>' + icon('clipboard-list') + ' Production Notes</h3>';
+    html += '<span class="cp-text-muted">Optional — passed along as context for the production team.</span></div>';
+    html += '<textarea class="cp-textarea" data-action="save-production-notes" rows="3" placeholder="Anything the production team should know — references, constraints, tone reminders…">' + esc(recipe.production_notes || '') + '</textarea>';
     html += '</div>';
 
-    if (scriptRows.length === 0) {
-      html += '<p class="cp-text-muted">No script rows yet. Add rows manually or generate with AI.</p>';
-    } else {
-      html += '<div class="cp-script-table">';
-      html += '<div class="cp-script-header"><div>Time</div><div>Dialogue</div><div>Visual</div><div>Camera</div><div>Audio</div></div>';
-      for (var sri = 0; sri < scriptRows.length; sri++) {
-        var row = scriptRows[sri];
-        html += '<div class="cp-script-row" data-row-index="' + sri + '">';
-        html += '<div><input type="text" class="cp-input" data-action="save-script-field" data-row-index="' + sri + '" data-srfield="time" value="' + esc(row.time || '') + '" placeholder="0:00" style="width:50px;padding:2px 4px;font-size:11px"></div>';
-        html += '<div><textarea class="cp-textarea" data-action="save-script-field" data-row-index="' + sri + '" data-srfield="dialogue" rows="1" style="min-height:30px;font-size:11px;padding:3px 6px">' + esc(row.dialogue || '') + '</textarea></div>';
-        html += '<div><textarea class="cp-textarea" data-action="save-script-field" data-row-index="' + sri + '" data-srfield="visual" rows="1" style="min-height:30px;font-size:11px;padding:3px 6px">' + esc(row.visual || '') + '</textarea></div>';
-        html += '<div><input type="text" class="cp-input" data-action="save-script-field" data-row-index="' + sri + '" data-srfield="camera" value="' + esc(row.camera || '') + '" style="padding:2px 4px;font-size:11px"></div>';
-        html += '<div><input type="text" class="cp-input" data-action="save-script-field" data-row-index="' + sri + '" data-srfield="audio" value="' + esc(row.audio || '') + '" style="padding:2px 4px;font-size:11px"></div>';
-        html += '</div>';
-      }
-      html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderProductionHandoff(recipe) {
+    var mtKey = recipe.media_type || 'image';
+    var mt = (Constants.MEDIA_TYPES || {})[mtKey] || Constants.MEDIA_TYPES.image;
+    var url = buildProductionNodeAddUrl(recipe, mt);
+    var brand = (S.brand && S.brand.identity) || {};
+    var brandName = (S.brand && S.brand.core && S.brand.core.brand_name) || brand.name || '';
+    var brandId = brand.id || '';
+    var plannerHubId = getPlannerHubId();
+    var plannerId = recipe.id;
+
+    var html = '<div class="cp-card cp-production-handoff" style="margin-top:var(--cp-space-3);--mt-color:' + mt.color + '">';
+    html += '<div class="cp-section-header"><h3 style="color:' + mt.color + '">' + icon(mt.icon) + ' ' + esc(mt.label) + ' Production</h3></div>';
+
+    html += '<div class="cp-production-summary">';
+    html += '<div class="cp-production-summary-row"><span class="cp-production-summary-label">Title</span><span class="cp-production-summary-value">' + esc(recipe.title || '(Untitled)') + '</span></div>';
+    html += '<div class="cp-production-summary-row"><span class="cp-production-summary-label">Brand</span><span class="cp-production-summary-value">' + (brandName ? esc(brandName) : '<span class="cp-text-muted">(not detected)</span>') + (brandId ? ' <span class="cp-text-muted">(#' + esc(brandId) + ')</span>' : '') + '</span></div>';
+    html += '<div class="cp-production-summary-row"><span class="cp-production-summary-label">Planner Hub</span><span class="cp-production-summary-value">' + (plannerHubId ? esc(plannerHubId) : '<span class="cp-text-muted">(not detected)</span>') + '</span></div>';
+    html += '<div class="cp-production-summary-row"><span class="cp-production-summary-label">Planner ID</span><span class="cp-production-summary-value"><code>' + esc(plannerId) + '</code></span></div>';
+    html += '</div>';
+
+    // Validation warnings
+    var warnings = [];
+    if (!brandId) warnings.push('No brand ID detected from page (<code>.brand-id</code> inside <code>.brand-data</code>).');
+    if (!plannerHubId) warnings.push('No planner hub ID detected. Production node will be created without the hub reference.');
+    if (warnings.length > 0) {
+      html += '<div class="cp-production-warning">' + icon('triangle-exclamation') + ' <div>';
+      for (var wi = 0; wi < warnings.length; wi++) html += '<div>' + warnings[wi] + '</div>';
+      html += '</div></div>';
     }
 
-    // Export banner
-    html += '<div class="cp-script-export-banner" style="margin-top:12px">';
-    html += icon('circle-info') + ' <span>Blueprint + script can be exported to the Video Production app when ready.</span>';
-    html += '</div>';
+    // Open button
+    html += '<div class="cp-production-actions">';
+    html += '<a class="cp-btn cp-btn-primary cp-btn-lg cp-production-open-btn" href="' + esc(url) + '" target="_blank" rel="noopener">' + icon('external-link') + ' Create ' + esc(mt.label) + ' Production Node</a>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="copy-production-url" data-url="' + esc(url) + '">' + icon('copy') + ' Copy URL</button>';
     html += '</div>';
 
+    // URL preview (collapsed)
+    html += '<details class="cp-production-url-details">';
+    html += '<summary>' + icon('link') + ' URL preview</summary>';
+    html += '<code class="cp-production-url-preview">' + esc(url) + '</code>';
+    html += '</details>';
+
+    html += '</div>';
     return html;
+  }
+
+  function buildProductionNodeAddUrl(recipe, mt) {
+    var origin = window.location.origin;
+    var path = '/node/add/' + mt.node_type;
+    var brand = (S.brand && S.brand.identity) || {};
+    var brandId = brand.id || '';
+    var plannerHubId = getPlannerHubId();
+    var title = recipe.title || '';
+
+    // Drupal nested-array query format: edit[field][widget][0][value|target_id]
+    var params = [];
+    if (title) params.push(_qpair('edit[title][widget][0][value]', title));
+    if (brandId) params.push(_qpair('edit[field_brand][widget][0][target_id]', brandId));
+    if (plannerHubId) params.push(_qpair('edit[field_planner_hub][widget][0][target_id]', plannerHubId));
+    params.push(_qpair('edit[field_planner_id][widget][0][value]', recipe.id));
+
+    return origin + path + (params.length ? '?' + params.join('&') : '');
+  }
+
+  function _qpair(key, val) {
+    return encodeURIComponent(key) + '=' + encodeURIComponent(val);
+  }
+
+  // Reads the current planner hub (campaign planner node) ID — the node we're
+  // currently editing inside. We try several signals; first available wins.
+  function getPlannerHubId() {
+    // 1) Drupal data attribute on body (common in node-edit forms)
+    var nid = $('body').attr('data-node-id') || $('body').attr('data-nid');
+    if (nid) return String(nid).trim();
+
+    // 2) Hidden Drupal field
+    var $nid = $('input[name="nid"]').first();
+    if ($nid.length && $nid.val()) return String($nid.val()).trim();
+
+    // 3) Drupal settings (if exposed)
+    if (window.drupalSettings && window.drupalSettings.path && window.drupalSettings.path.currentPath) {
+      var m = String(window.drupalSettings.path.currentPath).match(/^node\/(\d+)/);
+      if (m) return m[1];
+    }
+
+    // 4) Body class node-XXX
+    var cls = $('body').attr('class') || '';
+    var bm = cls.match(/\bnode-(\d+)\b/);
+    if (bm) return bm[1];
+
+    // 5) Page URL /node/123/edit or /node/123
+    var um = String(window.location.pathname).match(/\/node\/(\d+)(\b|\/)/);
+    if (um) return um[1];
+
+    // 6) Configured in workspace meta
+    if (S.meta && S.meta.workspace && S.meta.workspace.planner_hub_id) return String(S.meta.workspace.planner_hub_id);
+
+    return '';
   }
 

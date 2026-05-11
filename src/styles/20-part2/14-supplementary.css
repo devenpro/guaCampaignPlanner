@@ -100,6 +100,38 @@
 /* Pain point persona link checkbox */
 .cp-pp-link-check { width: 18px; height: 18px; accent-color: var(--cp-primary); cursor: pointer; }
 
+/* Pain Points view — list redesign */
+.cp-pp-toolbar { display: flex; gap: var(--cp-space-2); align-items: center; flex-wrap: wrap; padding: var(--cp-space-3) var(--cp-space-4); border-bottom: 1px solid var(--cp-border-light); background: var(--cp-bg-secondary); }
+.cp-pp-toolbar .cp-search-wrapper { flex: 1 1 220px; min-width: 200px; }
+.cp-pp-toolbar .cp-select-sm { min-width: 140px; }
+
+.cp-pp-list-pane { padding: 0; overflow-y: auto; }
+.cp-pp-group { border-bottom: 1px solid var(--cp-border-light); }
+.cp-pp-group:last-child { border-bottom: none; }
+.cp-pp-group-header { display: flex; align-items: center; gap: var(--cp-space-2); padding: var(--cp-space-2) var(--cp-space-3); font-size: var(--cp-font-size-xs); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--cp-text-secondary); background: var(--cp-gray-50); cursor: pointer; position: sticky; top: 0; z-index: 1; }
+.cp-pp-group-header:hover { background: var(--cp-gray-100); color: var(--cp-text-primary); }
+.cp-pp-group-name { flex: 1; }
+.cp-pp-group-count { background: var(--cp-white); border: 1px solid var(--cp-border-light); border-radius: var(--cp-radius-full); padding: 1px 8px; font-size: 11px; font-weight: 600; color: var(--cp-text-secondary); }
+
+.cp-pp-list { display: flex; flex-direction: column; }
+.cp-pp-item { display: flex; align-items: flex-start; gap: var(--cp-space-3); padding: var(--cp-space-3) var(--cp-space-4); border-bottom: 1px solid var(--cp-border-light); cursor: pointer; transition: background var(--cp-transition-fast); }
+.cp-pp-item:hover { background: var(--cp-gray-50); }
+.cp-pp-item:last-child { border-bottom: none; }
+.cp-pp-item-selected { background: var(--cp-primary-subtle); border-left: 3px solid var(--cp-primary); padding-left: calc(var(--cp-space-4) - 3px); }
+.cp-pp-item-selected .cp-pp-item-title { color: var(--cp-primary); }
+
+.cp-pp-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.cp-pp-item-title { font-size: var(--cp-font-size-sm); font-weight: 600; line-height: 1.4; color: var(--cp-text-primary); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.cp-pp-item-solution { font-size: 12px; color: var(--cp-text-secondary); line-height: 1.4; display: flex; align-items: flex-start; gap: 4px; overflow: hidden; }
+.cp-pp-item-solution-icon { color: var(--cp-success); flex-shrink: 0; font-size: 11px; padding-top: 2px; }
+
+.cp-pp-item-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; font-size: 11px; color: var(--cp-text-muted); }
+.cp-pp-mini-stat { display: inline-flex; align-items: center; gap: 3px; font-weight: 600; white-space: nowrap; }
+.cp-pp-mini-warn { color: var(--cp-warning); }
+
+.cp-pp-detail-card { margin-bottom: var(--cp-space-3); }
+.cp-pp-detail-solution { border-left: 3px solid var(--cp-success); }
+
 /* Brand context dashboard section */
 .cp-dash-brand-context { margin-top: var(--cp-space-5); }
 .cp-brand-context-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--cp-space-4); }
