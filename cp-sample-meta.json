@@ -1,0 +1,212 @@
+{
+  "workspace": {
+    "name": "ContentGrow AI \u2014 Meta Ads",
+    "description": "Campaign planning for ContentGrow's Q2 2025 Meta Ads push targeting content creators and busy marketers.",
+    "created": "2025-02-01T09:00:00.000Z"
+  },
+  "setup": {
+    "product_name": "ContentGrow AI",
+    "objective": "Generate 500 trial signups per month via Meta Ads by Q2 2025",
+    "custom_instructions": "Always mention the 7-day free trial. Avoid comparing to specific competitors by name. Use \u20b9 for Indian audience variants and $ for US variants. Never use the word 'hack' \u2014 use 'strategy' or 'approach' instead.",
+    "setup_complete": true
+  },
+  "settings": {
+    "timezone": "Asia/Kolkata",
+    "default_view": "dashboard",
+    "card_density": "normal",
+    "funnel_stages": [
+      {
+        "id": "fs_top",
+        "name": "Top of Funnel",
+        "short": "TOFU",
+        "color": "#1a73e8",
+        "order": 0,
+        "system": true
+      },
+      {
+        "id": "fs_mid",
+        "name": "Middle of Funnel",
+        "short": "MOFU",
+        "color": "#e37400",
+        "order": 1,
+        "system": true
+      },
+      {
+        "id": "fs_bot",
+        "name": "Bottom of Funnel",
+        "short": "BOFU",
+        "color": "#0d904f",
+        "order": 2,
+        "system": true
+      },
+      {
+        "id": "fs_ret",
+        "name": "Retargeting",
+        "short": "RETG",
+        "color": "#9334e9",
+        "order": 3,
+        "system": false
+      }
+    ],
+    "campaign_objectives": [
+      {
+        "id": "obj_leads",
+        "name": "Lead Generation",
+        "icon": "user-plus"
+      },
+      {
+        "id": "obj_awareness",
+        "name": "Brand Awareness",
+        "icon": "eye"
+      },
+      {
+        "id": "obj_conversions",
+        "name": "Conversions",
+        "icon": "cart-shopping"
+      },
+      {
+        "id": "obj_traffic",
+        "name": "Traffic",
+        "icon": "arrow-up-right-from-square"
+      },
+      {
+        "id": "obj_engagement",
+        "name": "Engagement",
+        "icon": "comments"
+      }
+    ],
+    "visual_format_categories": [
+      {
+        "id": "vfc_shoot",
+        "name": "Shoot",
+        "icon": "camera"
+      },
+      {
+        "id": "vfc_ugc",
+        "name": "UGC",
+        "icon": "mobile"
+      },
+      {
+        "id": "vfc_graphic",
+        "name": "Graphic",
+        "icon": "pen-ruler"
+      },
+      {
+        "id": "vfc_animation",
+        "name": "Animation",
+        "icon": "film"
+      }
+    ],
+    "pain_point_categories": [
+      {
+        "id": "ppc_productivity",
+        "name": "Productivity"
+      },
+      {
+        "id": "ppc_cost",
+        "name": "Cost / Budget"
+      },
+      {
+        "id": "ppc_knowledge",
+        "name": "Knowledge Gap"
+      },
+      {
+        "id": "ppc_competition",
+        "name": "Competition"
+      },
+      {
+        "id": "ppc_growth",
+        "name": "Growth"
+      }
+    ],
+    "defaults": {
+      "priority": "medium",
+      "funnel_stage": "fs_top",
+      "recipe_status": "draft",
+      "campaign_status": "planning"
+    },
+    "brand_design": {
+      "colors": {
+        "primary": "#1a73e8",
+        "secondary": "#0d904f",
+        "accent": "#e37400",
+        "background": "#ffffff",
+        "text": "#202124"
+      },
+      "typography": {
+        "heading_style": "Bold DM Sans, all-caps for short headings, sentence case for long ones",
+        "body_style": "DM Sans Regular, 16px, 1.6 line height, clean and readable"
+      },
+      "visual_style": "Modern SaaS aesthetic. Clean layouts with generous whitespace. Blue-dominant with orange accents for CTAs. Light gradients for depth. Avoid stock photo clich\u00e9s \u2014 use real screenshots and authentic creator imagery.",
+      "layout_rules": "Hero text left-aligned, product screenshots right. Stats always centered with large bold numbers. CTAs in orange (#e37400) with rounded corners. Avoid pure white backgrounds \u2014 use subtle gray (#f8f9fa) for dimension.",
+      "brand_prompt_prefix": ""
+    }
+  },
+  "aiPreferences": {
+    "appDefault": {
+      "provider": "gemini",
+      "model": "gemini-2.0-flash"
+    },
+    "perAction": {
+      "ai-generate-content": {
+        "provider": "claude",
+        "model": "claude-sonnet-4-20250514"
+      },
+      "ai-generate-script": {
+        "provider": "claude",
+        "model": "claude-sonnet-4-20250514"
+      }
+    },
+    "lastProvider": "gemini",
+    "lastModel": "gemini-2.0-flash"
+  },
+  "reference_images": {},
+  "image_categories": [
+    {
+      "id": "ref_product",
+      "label": "Product Screenshots"
+    },
+    {
+      "id": "ref_lifestyle",
+      "label": "Creator Lifestyle"
+    },
+    {
+      "id": "ref_brand",
+      "label": "Brand Elements"
+    },
+    {
+      "id": "ref_competitor",
+      "label": "Competitor Reference"
+    },
+    {
+      "id": "ref_mood",
+      "label": "Mood Board"
+    },
+    {
+      "id": "ref_talent",
+      "label": "Talent / UGC Reference"
+    }
+  ],
+  "recipe_templates": [
+    {
+      "id": "tpl_001",
+      "name": "Aspiring Creator \u00d7 Time Freedom \u00d7 Relatable \u00d7 Talking Head",
+      "persona_id": "per_aspire",
+      "message_id": "msg_timefr",
+      "style_id": "sty_relat",
+      "visual_format_id": "vf_talkg",
+      "media_type": "video",
+      "created": "2025-03-20T10:00:00Z"
+    },
+    {
+      "id": "tpl_002",
+      "name": "Busy Marketer \u00d7 Social Proof \u00d7 Authoritative \u00d7 UGC",
+      "persona_id": "per_busymm",
+      "message_id": "msg_proof",
+      "style_id": "sty_authr",
+      "visual_format_id": "vf_ugcph",
+      "media_type": "image",
+      "created": "2025-03-22T14:30:00Z"
+    }
+  ]
+}

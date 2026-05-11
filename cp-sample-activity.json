@@ -1,0 +1,300 @@
+[
+  {
+    "id": "act_001",
+    "type": "setup_completed",
+    "entity_type": "",
+    "entity_id": "",
+    "entity_title": "",
+    "description": "Setup wizard completed \u2014 ContentGrow AI campaign planner initialized",
+    "timestamp": "2025-02-01T09:00:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_002",
+    "type": "category_created",
+    "entity_type": "persona_category",
+    "entity_id": "pcat_creatr",
+    "entity_title": "Content Creators",
+    "description": "Created persona category",
+    "timestamp": "2025-02-01T09:05:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_003",
+    "type": "category_created",
+    "entity_type": "persona_category",
+    "entity_id": "pcat_busown",
+    "entity_title": "Business Owners",
+    "description": "Created persona category",
+    "timestamp": "2025-02-01T09:06:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_004",
+    "type": "campaign_created",
+    "entity_type": "campaign",
+    "entity_id": "cmp_q2lead",
+    "entity_title": "Q2 Lead Generation",
+    "description": "Created campaign",
+    "timestamp": "2025-02-01T09:30:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_005",
+    "type": "persona_created",
+    "entity_type": "persona",
+    "entity_id": "per_aspire",
+    "entity_title": "The Aspiring Creator",
+    "description": "Created persona with demographics and psychographics",
+    "timestamp": "2025-02-01T10:00:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_006",
+    "type": "pain_point_created",
+    "entity_type": "pain_point",
+    "entity_id": "pp_noview",
+    "entity_title": "",
+    "description": "Created pain point: Spending hours creating content that gets barely any views",
+    "timestamp": "2025-02-01T10:30:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_007",
+    "type": "persona_created",
+    "entity_type": "persona",
+    "entity_id": "per_busymm",
+    "entity_title": "The Busy Marketer",
+    "description": "Created persona with demographics and psychographics",
+    "timestamp": "2025-02-02T11:00:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_008",
+    "type": "message_created",
+    "entity_type": "message",
+    "entity_id": "msg_timefr",
+    "entity_title": "Time Freedom Angle",
+    "description": "Created message with 2 hooks",
+    "timestamp": "2025-02-03T14:00:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_009",
+    "type": "style_created",
+    "entity_type": "style",
+    "entity_id": "sty_relat",
+    "entity_title": "Friendly & Relatable",
+    "description": "Created style",
+    "timestamp": "2025-02-03T10:00:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_010",
+    "type": "format_created",
+    "entity_type": "visual_format",
+    "entity_id": "vf_talkg",
+    "entity_title": "Talking Head Studio",
+    "description": "Created visual format in Shoot category",
+    "timestamp": "2025-02-04T08:00:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_011",
+    "type": "recipe_created",
+    "entity_type": "recipe",
+    "entity_id": "rec_001",
+    "entity_title": "The Aspiring Creator \u00d7 Time Freedom \u00d7 Friendly \u00d7 Talking Head",
+    "description": "Created recipe",
+    "timestamp": "2025-02-10T09:00:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_012",
+    "type": "hook_generated",
+    "entity_type": "recipe",
+    "entity_id": "rec_001",
+    "entity_title": "The Aspiring Creator \u00d7 Time Freedom \u00d7 Friendly \u00d7 Talking Head",
+    "description": "Selected hook: I wasted 3 months posting content nobody watched",
+    "timestamp": "2025-02-12T10:00:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_013",
+    "type": "content_generated",
+    "entity_type": "recipe",
+    "entity_id": "rec_001",
+    "entity_title": "The Aspiring Creator \u00d7 Time Freedom \u00d7 Friendly \u00d7 Talking Head",
+    "description": "Ad copy generated via AI (Claude)",
+    "timestamp": "2025-02-15T14:00:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_014",
+    "type": "recipe_status_changed",
+    "entity_type": "recipe",
+    "entity_id": "rec_001",
+    "entity_title": "The Aspiring Creator \u00d7 Time Freedom \u00d7 Friendly \u00d7 Talking Head",
+    "description": "Status: draft \u2192 content_ready (content written)",
+    "timestamp": "2025-02-15T14:05:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_015",
+    "type": "recipe_created",
+    "entity_type": "recipe",
+    "entity_id": "rec_006",
+    "entity_title": "The Side Hustler \u00d7 FOMO \u00d7 Urgent \u00d7 Motion Graphics",
+    "description": "Created recipe",
+    "timestamp": "2025-02-20T10:00:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_016",
+    "type": "brief_generated",
+    "entity_type": "recipe",
+    "entity_id": "rec_006",
+    "entity_title": "The Side Hustler \u00d7 FOMO \u00d7 Urgent \u00d7 Motion Graphics",
+    "description": "Creative brief and AI image prompt generated",
+    "timestamp": "2025-02-25T11:00:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_017",
+    "type": "recipe_status_changed",
+    "entity_type": "recipe",
+    "entity_id": "rec_006",
+    "entity_title": "The Side Hustler \u00d7 FOMO \u00d7 Urgent \u00d7 Motion Graphics",
+    "description": "Status: media_ready \u2192 approved (Approved by creative director)",
+    "timestamp": "2025-02-28T17:00:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "id": "act_018",
+    "type": "settings_changed",
+    "entity_type": "",
+    "entity_id": "",
+    "entity_title": "",
+    "description": "Settings updated \u2014 added Retargeting funnel stage, configured AI preferences",
+    "timestamp": "2025-02-28T18:00:00.000Z",
+    "user_id": "user_1",
+    "user_name": "admin"
+  },
+  {
+    "type": "campaign_created",
+    "entity_type": "campaign",
+    "entity_id": "cmp_q2lead",
+    "entity_title": "Q2 Lead Generation",
+    "description": "Campaign wizard: created with 4 recipes",
+    "timestamp": "2025-03-15T09:00:00Z",
+    "user_id": "usr_debendra",
+    "user_name": "Debendra"
+  },
+  {
+    "type": "recipe_batch_generated",
+    "entity_type": "campaign",
+    "entity_id": "cmp_q2lead",
+    "entity_title": "Q2 Lead Generation",
+    "description": "AI suggested 4 recipes for campaign",
+    "timestamp": "2025-03-15T09:15:00Z",
+    "user_id": "usr_debendra",
+    "user_name": "Debendra"
+  },
+  {
+    "type": "brief_generated",
+    "entity_type": "campaign",
+    "entity_id": "cmp_q2lead",
+    "entity_title": "Q2 Lead Generation",
+    "description": "Campaign brief generated via AI",
+    "timestamp": "2025-03-16T10:30:00Z",
+    "user_id": "usr_debendra",
+    "user_name": "Debendra"
+  },
+  {
+    "type": "content_generated",
+    "entity_type": "recipe",
+    "entity_id": "rec_001",
+    "entity_title": "The Aspiring Creator \u00d7 Time Freedom",
+    "description": "Ad copy selected from AI alternatives",
+    "timestamp": "2025-03-17T14:00:00Z",
+    "user_id": "usr_debendra",
+    "user_name": "Debendra"
+  },
+  {
+    "type": "recipe_batch_updated",
+    "entity_type": "recipe",
+    "entity_id": "",
+    "entity_title": "",
+    "description": "Bulk status changed 3 recipes to hook_ready",
+    "timestamp": "2025-03-18T09:45:00Z",
+    "user_id": "usr_debendra",
+    "user_name": "Debendra"
+  },
+  {
+    "type": "content_generated",
+    "entity_type": "recipe",
+    "entity_id": "rec_002",
+    "entity_title": "The Busy Marketer \u00d7 Social Proof",
+    "description": "Ad copy improved via AI",
+    "timestamp": "2025-03-19T11:00:00Z",
+    "user_id": "usr_debendra",
+    "user_name": "Debendra"
+  },
+  {
+    "type": "campaign_updated",
+    "entity_type": "campaign",
+    "entity_id": "cmp_q2lead",
+    "entity_title": "Q2 Lead Generation",
+    "description": "Campaign phases updated (3 phases)",
+    "timestamp": "2025-03-20T08:30:00Z",
+    "user_id": "usr_debendra",
+    "user_name": "Debendra"
+  },
+  {
+    "type": "image_uploaded",
+    "entity_type": "",
+    "entity_id": "",
+    "entity_title": "",
+    "description": "Uploaded reference image: studio-shot-01.jpg",
+    "timestamp": "2025-03-21T16:00:00Z",
+    "user_id": "usr_debendra",
+    "user_name": "Debendra"
+  },
+  {
+    "type": "campaign_created",
+    "entity_type": "campaign",
+    "entity_id": "cmp_retarg",
+    "entity_title": "Retargeting \u2014 Warm Audience",
+    "description": "Created campaign",
+    "timestamp": "2025-03-22T10:00:00Z",
+    "user_id": "usr_debendra",
+    "user_name": "Debendra"
+  },
+  {
+    "type": "brief_generated",
+    "entity_type": "recipe",
+    "entity_id": "rec_003",
+    "entity_title": "The Side Hustler \u00d7 Cost vs. Value",
+    "description": "Creative brief selected from alternatives",
+    "timestamp": "2025-03-23T13:30:00Z",
+    "user_id": "usr_debendra",
+    "user_name": "Debendra"
+  }
+]

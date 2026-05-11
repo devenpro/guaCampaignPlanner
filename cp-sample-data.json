@@ -1,0 +1,997 @@
+{
+  "persona_categories": [
+    {
+      "id": "pcat_creatr",
+      "name": "Content Creators",
+      "description": "Individuals who create content as a primary or side activity",
+      "order": 0,
+      "created": "2025-02-01T09:00:00.000Z",
+      "updated": "2025-02-01T09:00:00.000Z"
+    },
+    {
+      "id": "pcat_busown",
+      "name": "Business Owners",
+      "description": "Small business owners and entrepreneurs looking to grow through content",
+      "order": 1,
+      "created": "2025-02-01T09:00:00.000Z",
+      "updated": "2025-02-01T09:00:00.000Z"
+    }
+  ],
+  "personas": [
+    {
+      "id": "per_aspire",
+      "category_id": "pcat_creatr",
+      "name": "The Aspiring Creator",
+      "description": "20-something just starting their YouTube or Instagram journey. Has ideas but struggles with consistency and strategy. Wants to go full-time but can't yet justify leaving their day job.",
+      "demographics": {
+        "age_range": "22-30",
+        "gender": "all",
+        "location": "Tier 1 cities, India & US",
+        "income_level": "\u20b94-8 LPA / $30-50K",
+        "education": "Graduate",
+        "occupation": "Content Creator (part-time)",
+        "custom": {}
+      },
+      "psychographics": {
+        "desires": "Financial freedom through content, a loyal audience, creative fulfillment",
+        "requirements": "Affordable tools, proven frameworks, quick wins to stay motivated",
+        "emotional_triggers": "Seeing peers succeed, FOMO on trending topics, frustration with slow growth",
+        "motivations": "Creative expression, building a personal brand, escaping 9-to-5",
+        "fears": "Wasting time on the wrong strategy, never getting enough views, looking unprofessional",
+        "values": "Authenticity, efficiency, community",
+        "custom": {}
+      },
+      "pain_point_ids": [
+        "pp_noview",
+        "pp_nostra"
+      ],
+      "custom_pain_points": [],
+      "notes": "Key segment for TOFU content. Responds well to relatable, story-driven hooks.",
+      "tags": [
+        "tag_q2camp",
+        "tag_topfun"
+      ],
+      "created": "2025-02-01T10:00:00.000Z",
+      "updated": "2025-02-15T14:30:00.000Z",
+      "created_by": "user_1"
+    },
+    {
+      "id": "per_busymm",
+      "category_id": "pcat_busown",
+      "name": "The Busy Marketer",
+      "description": "Marketing manager or solo marketer at a growing company. Stretched thin across channels. Needs to produce more content with fewer resources, without sacrificing quality.",
+      "demographics": {
+        "age_range": "28-40",
+        "gender": "all",
+        "location": "Metro areas, US & UK",
+        "income_level": "$60-100K",
+        "education": "Graduate / MBA",
+        "occupation": "Marketing Manager",
+        "custom": {}
+      },
+      "psychographics": {
+        "desires": "Scalable content workflows, impressive reporting metrics, career advancement",
+        "requirements": "Team collaboration features, analytics integration, brand consistency tools",
+        "emotional_triggers": "Pressure from leadership, competitor success, content deadline anxiety",
+        "motivations": "Professional growth, proving ROI, efficiency gains",
+        "fears": "Falling behind competitors, producing low-performing content, budget cuts",
+        "values": "Data-driven decisions, professionalism, scalability",
+        "custom": {}
+      },
+      "pain_point_ids": [
+        "pp_nocont",
+        "pp_nostra",
+        "pp_nobdgt"
+      ],
+      "custom_pain_points": [],
+      "notes": "Key segment for MOFU/BOFU. Responds to data, case studies, ROI claims.",
+      "tags": [
+        "tag_q2camp"
+      ],
+      "created": "2025-02-02T11:00:00.000Z",
+      "updated": "2025-02-20T09:15:00.000Z",
+      "created_by": "user_1"
+    },
+    {
+      "id": "per_sidehr",
+      "category_id": "pcat_creatr",
+      "name": "The Side Hustler",
+      "description": "Working professional with a creative side project. Creates content on weekends and evenings. Needs maximum output from minimal time investment.",
+      "demographics": {
+        "age_range": "25-35",
+        "gender": "all",
+        "location": "Global, English-speaking",
+        "income_level": "$40-70K primary + side income",
+        "education": "Graduate",
+        "occupation": "Tech / Finance professional + Creator",
+        "custom": {}
+      },
+      "psychographics": {
+        "desires": "Build passive income stream, eventually transition to full-time creator",
+        "requirements": "Time-saving automation, mobile-friendly, batch content creation",
+        "emotional_triggers": "Jealousy of full-time creators, burnout from juggling two roles",
+        "motivations": "Financial independence, creative outlet, building something of their own",
+        "fears": "Burnout, never having enough time, audience not caring",
+        "values": "Time efficiency, work-life balance, smart shortcuts",
+        "custom": {}
+      },
+      "pain_point_ids": [
+        "pp_notime",
+        "pp_noview"
+      ],
+      "custom_pain_points": [],
+      "notes": "Responds well to 'time-saving' and 'batch creation' messaging.",
+      "tags": [
+        "tag_topfun"
+      ],
+      "created": "2025-02-05T08:30:00.000Z",
+      "updated": "2025-02-18T16:00:00.000Z",
+      "created_by": "user_1"
+    }
+  ],
+  "pain_points": [
+    {
+      "id": "pp_noview",
+      "pain_point": "Spending hours creating content that gets barely any views or engagement",
+      "solution": "AI-powered content analysis predicts what topics and formats will perform, so you invest time in content that actually works",
+      "category": "ppc_productivity",
+      "tags": [],
+      "created": "2025-02-01T10:30:00.000Z",
+      "updated": "2025-02-01T10:30:00.000Z"
+    },
+    {
+      "id": "pp_nostra",
+      "pain_point": "No clear content strategy \u2014 posting randomly without a plan",
+      "solution": "ContentGrow's campaign planner organizes ideas into strategic funnels with clear goals for each piece of content",
+      "category": "ppc_knowledge",
+      "tags": [],
+      "created": "2025-02-01T10:35:00.000Z",
+      "updated": "2025-02-01T10:35:00.000Z"
+    },
+    {
+      "id": "pp_nocont",
+      "pain_point": "Can't produce enough content to stay consistent across all channels",
+      "solution": "Batch creation tools let you plan a month of content in one session, with AI-assisted variations for each platform",
+      "category": "ppc_productivity",
+      "tags": [],
+      "created": "2025-02-02T11:15:00.000Z",
+      "updated": "2025-02-02T11:15:00.000Z"
+    },
+    {
+      "id": "pp_nobdgt",
+      "pain_point": "Limited marketing budget with pressure to show ROI on every piece of content",
+      "solution": "Performance prediction helps allocate budget to high-potential content, maximizing returns before spending on production",
+      "category": "ppc_cost",
+      "tags": [],
+      "created": "2025-02-02T11:20:00.000Z",
+      "updated": "2025-02-02T11:20:00.000Z"
+    },
+    {
+      "id": "pp_notime",
+      "pain_point": "Only 5-10 hours per week for content \u2014 can't afford to waste any of it",
+      "solution": "AI-powered workflows compress research, writing, and scheduling into 2-hour batch sessions that cover an entire week",
+      "category": "ppc_productivity",
+      "tags": [],
+      "created": "2025-02-05T08:45:00.000Z",
+      "updated": "2025-02-05T08:45:00.000Z"
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg_timefr",
+      "title": "Time Freedom Angle",
+      "body": "<p>You didn't start creating to spend all day optimizing. Stop trading hours for views \u2014 let AI handle the strategy so you can focus on what you love: making great content.</p>",
+      "funnel_stages": [
+        "fs_top"
+      ],
+      "delivery_notes": "Conversational, slightly frustrated opening that shifts to hopeful. Speak like a friend who just discovered a shortcut.",
+      "theme": "Productivity",
+      "hooks": [
+        {
+          "id": "hk_time1",
+          "text": "I wasted 3 months posting content nobody watched",
+          "type": "story"
+        },
+        {
+          "id": "hk_time2",
+          "text": "What if your next video could 10x your reach?",
+          "type": "question"
+        }
+      ],
+      "tags": [
+        "tag_topfun"
+      ],
+      "notes": "Works best with Aspiring Creator and Side Hustler personas.",
+      "created": "2025-02-03T14:00:00.000Z",
+      "updated": "2025-02-17T10:20:00.000Z",
+      "created_by": "user_1"
+    },
+    {
+      "id": "msg_proof",
+      "title": "Social Proof / Results",
+      "body": "<p>10,000 creators grew their audience 3x faster using ContentGrow. The difference? They stopped guessing and started using data to drive every content decision.</p>",
+      "funnel_stages": [
+        "fs_mid",
+        "fs_bot"
+      ],
+      "delivery_notes": "Confident, authoritative tone. Lead with specific numbers. Use testimonial-style delivery for video.",
+      "theme": "Social Proof",
+      "hooks": [
+        {
+          "id": "hk_proo1",
+          "text": "10,000 creators can't be wrong",
+          "type": "data"
+        },
+        {
+          "id": "hk_proo2",
+          "text": "They told me AI couldn't replace a content strategist",
+          "type": "bold"
+        }
+      ],
+      "tags": [
+        "tag_q2camp"
+      ],
+      "notes": "Best for retargeting warm audiences. Pair with Busy Marketer persona.",
+      "created": "2025-02-04T09:30:00.000Z",
+      "updated": "2025-02-19T11:45:00.000Z",
+      "created_by": "user_1"
+    },
+    {
+      "id": "msg_costv",
+      "title": "Cost vs. Value Reframe",
+      "body": "<p>An agency charges \u20b950K/month for a content strategy. ContentGrow gives you the same AI-powered planning for less than a coffee a day. Your content deserves a strategy \u2014 your wallet deserves a break.</p>",
+      "funnel_stages": [
+        "fs_bot"
+      ],
+      "delivery_notes": "Direct, numbers-first approach. Use split-screen visual: agency cost vs. ContentGrow cost. End with urgency.",
+      "theme": "Value Proposition",
+      "hooks": [
+        {
+          "id": "hk_cost1",
+          "text": "I was paying \u20b950K/month for what this tool does for \u20b9500",
+          "type": "data"
+        },
+        {
+          "id": "hk_cost2",
+          "text": "Your content strategy shouldn't cost more than your rent",
+          "type": "bold"
+        }
+      ],
+      "tags": [
+        "tag_q2camp",
+        "tag_botfun"
+      ],
+      "notes": "Conversion-focused. Best paired with Side Hustler and Busy Marketer.",
+      "created": "2025-02-06T16:00:00.000Z",
+      "updated": "2025-02-22T08:30:00.000Z",
+      "created_by": "user_1"
+    },
+    {
+      "id": "msg_feare",
+      "title": "Fear of Missing Out",
+      "body": "<p>While you're still guessing what to post, your competitors are using AI to plan content that actually converts. Every day without a strategy is a day your audience grows somewhere else.</p>",
+      "funnel_stages": [
+        "fs_top",
+        "fs_mid"
+      ],
+      "delivery_notes": "Urgent, slightly provocative. Build tension in first half, offer relief in second. Works great as Reel with quick cuts.",
+      "theme": "Urgency",
+      "hooks": [
+        {
+          "id": "hk_fear1",
+          "text": "Your competitor just planned next month's content in 2 hours",
+          "type": "direct"
+        },
+        {
+          "id": "hk_fear2",
+          "text": "Why are some creators growing 10x faster than you?",
+          "type": "question"
+        }
+      ],
+      "tags": [
+        "tag_topfun"
+      ],
+      "notes": "High-energy delivery. Pair with Aspiring Creator for max impact.",
+      "created": "2025-02-08T13:00:00.000Z",
+      "updated": "2025-02-23T15:10:00.000Z",
+      "created_by": "user_1"
+    }
+  ],
+  "styles": [
+    {
+      "id": "sty_relat",
+      "name": "Friendly & Relatable",
+      "description": "Warm, approachable tone like talking to a knowledgeable friend. Uses casual language, personal anecdotes, and 'we' framing. Avoids corporate jargon.",
+      "tags": [],
+      "created": "2025-02-03T10:00:00.000Z",
+      "updated": "2025-02-03T10:00:00.000Z"
+    },
+    {
+      "id": "sty_authr",
+      "name": "Bold & Authoritative",
+      "description": "Confident, data-backed assertions. Short punchy sentences. Uses numbers and specific claims. Positions brand as the expert. Slightly provocative edge.",
+      "tags": [],
+      "created": "2025-02-03T10:05:00.000Z",
+      "updated": "2025-02-03T10:05:00.000Z"
+    },
+    {
+      "id": "sty_urgnt",
+      "name": "Urgent & Direct",
+      "description": "High-energy, action-oriented. Creates FOMO without being manipulative. Uses countdown language, 'right now' framing, and clear CTAs. Fast pacing for video.",
+      "tags": [],
+      "created": "2025-02-03T10:10:00.000Z",
+      "updated": "2025-02-03T10:10:00.000Z"
+    }
+  ],
+  "visual_formats": [
+    {
+      "id": "vf_talkg",
+      "name": "Talking Head Studio",
+      "description": "Clean indoor setup with professional lighting. Talent speaks directly to camera. Subtle branded background or color-matched wall. Trust-building format.",
+      "category": "vfc_shoot",
+      "reference_image_ids": [],
+      "tags": [],
+      "created": "2025-02-04T08:00:00.000Z",
+      "updated": "2025-02-04T08:00:00.000Z"
+    },
+    {
+      "id": "vf_ugcph",
+      "name": "UGC Phone Style",
+      "description": "Selfie-camera, casual setting (home office, coffee shop). Feels authentic and unscripted. Low production value is intentional \u2014 builds trust with younger audiences.",
+      "category": "vfc_ugc",
+      "reference_image_ids": [],
+      "tags": [],
+      "created": "2025-02-04T08:05:00.000Z",
+      "updated": "2025-02-04T08:05:00.000Z"
+    },
+    {
+      "id": "vf_motgr",
+      "name": "Motion Graphics Explainer",
+      "description": "Animated infographic style with brand colors. Text animations, icon transitions, data visualizations. Works great for stats-heavy messages. No talent needed.",
+      "category": "vfc_graphic",
+      "reference_image_ids": [],
+      "tags": [],
+      "created": "2025-02-04T08:10:00.000Z",
+      "updated": "2025-02-04T08:10:00.000Z"
+    }
+  ],
+  "recipes": [
+    {
+      "id": "rec_001",
+      "title": "The Aspiring Creator \u00d7 Time Freedom \u00d7 Friendly \u00d7 Talking Head",
+      "status": "content_ready",
+      "priority": "high",
+      "campaign_id": "cmp_q2lead",
+      "persona_id": "per_aspire",
+      "message_id": "msg_timefr",
+      "style_id": "sty_relat",
+      "visual_format_id": "vf_talkg",
+      "selected_pain_point_ids": [
+        "pp_noview",
+        "pp_nostra"
+      ],
+      "media_type": "video",
+      "hook": {
+        "selected_hook_id": "hk_time1",
+        "custom_hook": "",
+        "hook_type": ""
+      },
+      "content": {
+        "ad_copy": "<p>I wasted 3 months posting content nobody watched.</p><p>Then I discovered that content strategy isn't about posting more \u2014 it's about posting smarter. ContentGrow's AI analyzed my niche and told me exactly what my audience wanted to see.</p><p>Within 2 weeks, my views tripled. Not because I worked harder, but because every piece of content had a purpose.</p><p>Stop guessing. Start growing.</p>",
+        "headline": "Stop Guessing. Start Growing.",
+        "description": "AI-powered content strategy for creators who are tired of posting into the void.",
+        "cta": "Try Free for 7 Days",
+        "variants": [
+          {
+            "text": "What if every video you made actually got views? That's not a dream \u2014 that's what happens when AI plans your content strategy.",
+            "label": "Variant A: Dream opener"
+          }
+        ],
+        "notes": "Test both story hook and question hook in A/B"
+      },
+      "image_brief": {
+        "creative_brief": "",
+        "ai_prompt": "",
+        "prompt_params": {
+          "aspect_ratio": "1:1",
+          "visual_approach": "photography",
+          "mood": "",
+          "negative_prompt": ""
+        },
+        "reference_image_ids": []
+      },
+      "video": {
+        "duration_seconds": 30,
+        "format": "Reel",
+        "aspect_ratio": "9:16",
+        "concept": "Creator sharing their frustration-to-success story with ContentGrow",
+        "blueprint": {
+          "scenes": [
+            {
+              "name": "Hook \u2014 Frustration",
+              "description": "Talent sitting at desk, frustrated, scrolling through low-view analytics. Dim lighting.",
+              "timestamp": "0:00-0:05",
+              "duration": "5s"
+            },
+            {
+              "name": "The Problem",
+              "description": "Quick cuts of posting content, checking phone, disappointed reactions. Numbers overlay showing low views.",
+              "timestamp": "0:05-0:10",
+              "duration": "5s"
+            },
+            {
+              "name": "Discovery",
+              "description": "Talent discovers ContentGrow. Screen recording of AI suggestions. Lighting brightens.",
+              "timestamp": "0:10-0:17",
+              "duration": "7s"
+            },
+            {
+              "name": "Results",
+              "description": "Analytics going up. Happy reactions. Views counter climbing. Energetic music.",
+              "timestamp": "0:17-0:24",
+              "duration": "7s"
+            },
+            {
+              "name": "CTA",
+              "description": "Talent speaks to camera: 'Try it free for 7 days.' ContentGrow logo + URL overlay.",
+              "timestamp": "0:24-0:30",
+              "duration": "6s"
+            }
+          ]
+        },
+        "script": {
+          "rows": [
+            {
+              "time": "0:00",
+              "dialogue": "I wasted 3 months posting content nobody watched.",
+              "visual": "Close-up frustrated face, dim lighting",
+              "camera": "Close-up, handheld",
+              "audio": "Lo-fi background, slightly melancholic"
+            },
+            {
+              "time": "0:05",
+              "dialogue": "(VO) No views. No engagement. Just wasted hours.",
+              "visual": "Quick cuts: posting, refreshing analytics, disappointed face",
+              "camera": "Jump cuts, phone screen inserts",
+              "audio": "Subtle tension build"
+            },
+            {
+              "time": "0:10",
+              "dialogue": "Then I found a tool that changed everything.",
+              "visual": "Talent opens laptop, ContentGrow AI interface visible",
+              "camera": "Over-shoulder, rack focus to screen",
+              "audio": "Mood shift \u2014 uplifting"
+            },
+            {
+              "time": "0:17",
+              "dialogue": "(VO) My views tripled in 2 weeks.",
+              "visual": "Split screen: analytics before/after, celebration reactions",
+              "camera": "Dynamic cuts, bold text overlays",
+              "audio": "Energetic, building momentum"
+            },
+            {
+              "time": "0:24",
+              "dialogue": "Stop guessing. Start growing. Link in bio.",
+              "visual": "Talent to camera, smile. Logo + URL lower third.",
+              "camera": "Medium shot, clean background, confident posture",
+              "audio": "Music resolve, subtle chime on logo"
+            }
+          ]
+        }
+      },
+      "review_notes": "",
+      "production_notes": "Need talent with authentic creator vibe \u2014 not too polished. Shoot in real home office.",
+      "assigned_to": "",
+      "due_date": "2025-04-07",
+      "delivery_notes": "",
+      "creative_brief": "",
+      "tags": [
+        "tag_q2camp",
+        "tag_topfun"
+      ],
+      "batch_id": "",
+      "created": "2025-02-10T09:00:00.000Z",
+      "updated": "2025-02-25T14:30:00.000Z",
+      "created_by": "user_1"
+    },
+    {
+      "id": "rec_002",
+      "title": "The Busy Marketer \u00d7 Social Proof \u00d7 Bold \u00d7 Motion Graphics",
+      "status": "hook_ready",
+      "priority": "high",
+      "campaign_id": "cmp_q2lead",
+      "persona_id": "per_busymm",
+      "message_id": "msg_proof",
+      "style_id": "sty_authr",
+      "visual_format_id": "vf_motgr",
+      "selected_pain_point_ids": [
+        "pp_nocont",
+        "pp_nobdgt"
+      ],
+      "media_type": "image",
+      "hook": {
+        "selected_hook_id": "hk_proo1",
+        "custom_hook": "",
+        "hook_type": ""
+      },
+      "content": {
+        "ad_copy": "",
+        "headline": "",
+        "description": "",
+        "cta": "",
+        "variants": [],
+        "notes": ""
+      },
+      "image_brief": {
+        "creative_brief": "",
+        "ai_prompt": "",
+        "prompt_params": {
+          "aspect_ratio": "1:1",
+          "visual_approach": "3d_render",
+          "mood": "Professional, clean",
+          "negative_prompt": ""
+        },
+        "reference_image_ids": []
+      },
+      "video": {
+        "duration_seconds": 30,
+        "format": "Reel",
+        "aspect_ratio": "9:16",
+        "concept": "",
+        "blueprint": {
+          "scenes": []
+        },
+        "script": {
+          "rows": []
+        }
+      },
+      "review_notes": "",
+      "production_notes": "",
+      "assigned_to": "",
+      "due_date": "2025-04-10",
+      "delivery_notes": "",
+      "creative_brief": "",
+      "tags": [
+        "tag_q2camp"
+      ],
+      "batch_id": "",
+      "created": "2025-02-12T11:00:00.000Z",
+      "updated": "2025-02-20T16:00:00.000Z",
+      "created_by": "user_1"
+    },
+    {
+      "id": "rec_003",
+      "title": "The Side Hustler \u00d7 Cost vs. Value \u00d7 Urgent \u00d7 UGC",
+      "status": "media_ready",
+      "priority": "medium",
+      "campaign_id": "cmp_q2lead",
+      "persona_id": "per_sidehr",
+      "message_id": "msg_costv",
+      "style_id": "sty_urgnt",
+      "visual_format_id": "vf_ugcph",
+      "selected_pain_point_ids": [
+        "pp_notime",
+        "pp_nobdgt"
+      ],
+      "media_type": "video",
+      "hook": {
+        "selected_hook_id": "hk_cost1",
+        "custom_hook": "",
+        "hook_type": ""
+      },
+      "content": {
+        "ad_copy": "<p>I was paying \u20b950K/month for a content agency. They gave me a spreadsheet and a monthly call.</p><p>ContentGrow gives me AI-powered content planning, performance predictions, and a full month's strategy \u2014 for less than a coffee a day.</p><p>If you're still paying agency prices for basic strategy, you need to see this.</p>",
+        "headline": "Agency Strategy. Coffee Budget.",
+        "description": "AI content planning from \u20b9500/month",
+        "cta": "Start Free Trial",
+        "variants": [],
+        "notes": ""
+      },
+      "image_brief": {
+        "creative_brief": "",
+        "ai_prompt": "",
+        "prompt_params": {
+          "aspect_ratio": "9:16",
+          "visual_approach": "photography",
+          "mood": "Casual, authentic",
+          "negative_prompt": ""
+        },
+        "reference_image_ids": []
+      },
+      "video": {
+        "duration_seconds": 20,
+        "format": "Reel",
+        "aspect_ratio": "9:16",
+        "concept": "Creator comparing agency cost vs ContentGrow in casual selfie style",
+        "blueprint": {
+          "scenes": [
+            {
+              "name": "Cost Shock",
+              "description": "Creator holds phone showing \u20b950K invoice. Shocked face.",
+              "timestamp": "0:00-0:06",
+              "duration": "6s"
+            },
+            {
+              "name": "The Switch",
+              "description": "Creator opens ContentGrow app. Quick tour of features. Text: 'Same strategy, 100x cheaper'",
+              "timestamp": "0:06-0:14",
+              "duration": "8s"
+            },
+            {
+              "name": "CTA",
+              "description": "Creator to camera: 'Link in bio, seriously.' Casual, genuine delivery.",
+              "timestamp": "0:14-0:20",
+              "duration": "6s"
+            }
+          ]
+        },
+        "script": {
+          "rows": []
+        }
+      },
+      "review_notes": "",
+      "production_notes": "UGC talent \u2014 real creator, not actor. Must feel authentic.",
+      "assigned_to": "",
+      "due_date": "2025-04-18",
+      "delivery_notes": "",
+      "creative_brief": "",
+      "tags": [
+        "tag_q2camp",
+        "tag_botfun"
+      ],
+      "batch_id": "",
+      "created": "2025-02-14T15:00:00.000Z",
+      "updated": "2025-02-26T10:00:00.000Z",
+      "created_by": "user_1"
+    },
+    {
+      "id": "rec_004",
+      "title": "The Aspiring Creator \u00d7 FOMO \u00d7 Bold \u00d7 UGC",
+      "status": "draft",
+      "priority": "medium",
+      "campaign_id": "cmp_q2lead",
+      "persona_id": "per_aspire",
+      "message_id": "msg_feare",
+      "style_id": "sty_authr",
+      "visual_format_id": "vf_ugcph",
+      "selected_pain_point_ids": [
+        "pp_noview"
+      ],
+      "media_type": "image",
+      "hook": {
+        "selected_hook_id": "",
+        "custom_hook": "",
+        "hook_type": ""
+      },
+      "content": {
+        "ad_copy": "",
+        "headline": "",
+        "description": "",
+        "cta": "",
+        "variants": [],
+        "notes": ""
+      },
+      "image_brief": {
+        "creative_brief": "",
+        "ai_prompt": "",
+        "prompt_params": {
+          "aspect_ratio": "1:1",
+          "visual_approach": "photography",
+          "mood": "",
+          "negative_prompt": ""
+        },
+        "reference_image_ids": []
+      },
+      "video": {
+        "duration_seconds": 30,
+        "format": "Reel",
+        "aspect_ratio": "9:16",
+        "concept": "",
+        "blueprint": {
+          "scenes": []
+        },
+        "script": {
+          "rows": []
+        }
+      },
+      "review_notes": "",
+      "production_notes": "",
+      "assigned_to": "",
+      "due_date": "2025-05-08",
+      "delivery_notes": "",
+      "creative_brief": "",
+      "tags": [
+        "tag_topfun"
+      ],
+      "batch_id": "",
+      "created": "2025-02-16T09:00:00.000Z",
+      "updated": "2025-02-16T09:00:00.000Z",
+      "created_by": "user_1"
+    },
+    {
+      "id": "rec_005",
+      "title": "The Busy Marketer \u00d7 Time Freedom \u00d7 Friendly \u00d7 Talking Head",
+      "status": "draft",
+      "priority": "low",
+      "campaign_id": "cmp_retarg",
+      "persona_id": "per_busymm",
+      "message_id": "msg_timefr",
+      "style_id": "sty_relat",
+      "visual_format_id": "vf_talkg",
+      "selected_pain_point_ids": [
+        "pp_nocont"
+      ],
+      "media_type": "video",
+      "hook": {
+        "selected_hook_id": "",
+        "custom_hook": "",
+        "hook_type": ""
+      },
+      "content": {
+        "ad_copy": "",
+        "headline": "",
+        "description": "",
+        "cta": "",
+        "variants": [],
+        "notes": ""
+      },
+      "image_brief": {
+        "creative_brief": "",
+        "ai_prompt": "",
+        "prompt_params": {
+          "aspect_ratio": "1:1",
+          "visual_approach": "photography",
+          "mood": "",
+          "negative_prompt": ""
+        },
+        "reference_image_ids": []
+      },
+      "video": {
+        "duration_seconds": 45,
+        "format": "Feed",
+        "aspect_ratio": "1:1",
+        "concept": "",
+        "blueprint": {
+          "scenes": []
+        },
+        "script": {
+          "rows": []
+        }
+      },
+      "review_notes": "",
+      "production_notes": "",
+      "assigned_to": "",
+      "due_date": "2025-05-12",
+      "delivery_notes": "",
+      "creative_brief": "",
+      "tags": [],
+      "batch_id": "",
+      "created": "2025-02-18T12:00:00.000Z",
+      "updated": "2025-02-18T12:00:00.000Z",
+      "created_by": "user_1"
+    },
+    {
+      "id": "rec_006",
+      "title": "The Side Hustler \u00d7 FOMO \u00d7 Urgent \u00d7 Motion Graphics",
+      "status": "approved",
+      "priority": "critical",
+      "campaign_id": "cmp_q2lead",
+      "persona_id": "per_sidehr",
+      "message_id": "msg_feare",
+      "style_id": "sty_urgnt",
+      "visual_format_id": "vf_motgr",
+      "selected_pain_point_ids": [
+        "pp_notime",
+        "pp_noview"
+      ],
+      "media_type": "image",
+      "hook": {
+        "selected_hook_id": "hk_fear1",
+        "custom_hook": "",
+        "hook_type": ""
+      },
+      "content": {
+        "ad_copy": "<p>Your competitor just planned next month's content in 2 hours.</p><p>While you're still deciding what to post, they're using AI to build a content strategy that converts. ContentGrow gives side hustlers the same planning power as agencies \u2014 without the agency price tag.</p><p>Don't let limited time be your excuse. Make it your advantage.</p>",
+        "headline": "Your Competitors Already Started.",
+        "description": "AI content strategy built for creators with limited time.",
+        "cta": "Plan Your Month in 2 Hours",
+        "variants": [],
+        "notes": ""
+      },
+      "image_brief": {
+        "creative_brief": "Bold motion graphics with split screen: left side shows chaotic random posting (scattered post-its, confused emoji), right side shows organized ContentGrow calendar with green checkmarks. Brand colors dominate. Big stat overlay: '3x faster growth'. Clean, modern, slightly urgent feel.",
+        "ai_prompt": "Professional motion graphics style infographic, split screen comparison, left side chaos right side organized, blue and orange brand colors, clean modern corporate design, bold typography, data visualization, 1080x1080",
+        "prompt_params": {
+          "aspect_ratio": "1:1",
+          "visual_approach": "3d_render",
+          "mood": "Urgent, professional",
+          "negative_prompt": "blurry, low quality, text errors, cluttered"
+        },
+        "reference_image_ids": []
+      },
+      "video": {
+        "duration_seconds": 30,
+        "format": "Reel",
+        "aspect_ratio": "9:16",
+        "concept": "",
+        "blueprint": {
+          "scenes": []
+        },
+        "script": {
+          "rows": []
+        }
+      },
+      "review_notes": "Approved by creative director. Ready for production.",
+      "production_notes": "Motion graphics team to handle. Use brand color palette. Animate the split screen transition at 0:08.",
+      "assigned_to": "",
+      "due_date": "2025-03-01",
+      "delivery_notes": "",
+      "creative_brief": "",
+      "tags": [
+        "tag_q2camp",
+        "tag_topfun"
+      ],
+      "batch_id": "",
+      "created": "2025-02-20T10:00:00.000Z",
+      "updated": "2025-02-28T17:00:00.000Z",
+      "created_by": "user_1"
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "cmp_q2lead",
+      "name": "Q2 Lead Generation",
+      "description": "Spring campaign targeting new creators and marketers. Goal: 500 trial signups from Meta Ads. Mix of TOFU awareness and BOFU conversion creative.",
+      "objective": "obj_leads",
+      "funnel_stage": "fs_top",
+      "date_start": "2025-04-01",
+      "date_end": "2025-06-30",
+      "status": "planning",
+      "budget_notes": "\u20b92L/month ad spend. \u20b950K creative production.",
+      "target_audience_notes": "Primary: Aspiring creators 22-30. Secondary: Busy marketers 28-40.",
+      "tags": [
+        "tag_q2camp"
+      ],
+      "notes": "Phase 1: TOFU (April). Phase 2: Retargeting (May). Phase 3: Conversion push (June).",
+      "created": "2025-02-01T09:30:00.000Z",
+      "updated": "2025-02-25T11:00:00.000Z",
+      "created_by": "user_1",
+      "persona_ids": [
+        "per_aspire",
+        "per_busymm",
+        "per_sidehr"
+      ],
+      "message_ids": [
+        "msg_timefr",
+        "msg_proof",
+        "msg_costv",
+        "msg_feare"
+      ],
+      "style_ids": [
+        "sty_relat",
+        "sty_urgnt"
+      ],
+      "format_ids": [
+        "vf_talkg",
+        "vf_ugcph"
+      ],
+      "ai_instructions": "Focus on the transformation story \u2014 show before/after of content creation workflow. Emphasize time savings and professional output quality. Avoid mentioning competitors by name.",
+      "phases": [
+        {
+          "name": "TOFU \u2014 Awareness",
+          "date_start": "2025-04-01",
+          "date_end": "2025-04-14",
+          "funnel_stage": "TOFU"
+        },
+        {
+          "name": "MOFU \u2014 Consideration",
+          "date_start": "2025-04-15",
+          "date_end": "2025-05-05",
+          "funnel_stage": "MOFU"
+        },
+        {
+          "name": "BOFU \u2014 Conversion",
+          "date_start": "2025-05-06",
+          "date_end": "2025-05-31",
+          "funnel_stage": "BOFU"
+        }
+      ],
+      "brief": "Q2 campaign targeting emerging creators and busy marketers who struggle with content creation. The campaign will demonstrate how ContentGrow AI transforms the content workflow from hours to minutes. Phase 1 builds awareness through relatable pain-point stories. Phase 2 delivers social proof and feature demos. Phase 3 drives conversions with urgency and risk-reversal."
+    },
+    {
+      "id": "cmp_retarg",
+      "name": "Retargeting \u2014 Warm Audience",
+      "description": "Retarget website visitors and trial dropoffs with social proof and value messaging.",
+      "objective": "obj_conversions",
+      "funnel_stage": "fs_bot",
+      "date_start": "2025-05-01",
+      "date_end": "2025-06-30",
+      "status": "planning",
+      "budget_notes": "\u20b91L/month. Lower CPA target.",
+      "target_audience_notes": "Website visitors, trial users who didn't convert, engaged social followers.",
+      "tags": [
+        "tag_q2camp",
+        "tag_botfun"
+      ],
+      "notes": "",
+      "created": "2025-02-10T14:00:00.000Z",
+      "updated": "2025-02-20T09:00:00.000Z",
+      "created_by": "user_1",
+      "persona_ids": [
+        "per_busymm",
+        "per_sidehr"
+      ],
+      "message_ids": [
+        "msg_timefr",
+        "msg_proof"
+      ],
+      "style_ids": [
+        "sty_authr",
+        "sty_urgnt"
+      ],
+      "format_ids": [
+        "vf_talkg",
+        "vf_motgr"
+      ],
+      "ai_instructions": "These users have already visited our site. Use specific feature references and case study data. Higher urgency tone is appropriate. Include limited-time offer messaging.",
+      "phases": [
+        {
+          "name": "Re-engage",
+          "date_start": "2025-05-01",
+          "date_end": "2025-05-15",
+          "funnel_stage": "MOFU"
+        },
+        {
+          "name": "Convert",
+          "date_start": "2025-05-16",
+          "date_end": "2025-06-15",
+          "funnel_stage": "BOFU"
+        }
+      ],
+      "brief": "Retargeting campaign for warm audiences who visited our pricing page or started a trial but didn't convert. Use authoritative tone with specific data points. Focus on removing objections and creating urgency."
+    }
+  ],
+  "tags": [
+    {
+      "id": "tag_q2camp",
+      "name": "Q2 Campaign",
+      "color": "#1a73e8",
+      "description": "All Q2 2025 campaign assets",
+      "created": "2025-02-01T09:00:00.000Z"
+    },
+    {
+      "id": "tag_topfun",
+      "name": "TOFU",
+      "color": "#9334e9",
+      "description": "Top of funnel awareness content",
+      "created": "2025-02-01T09:00:00.000Z"
+    },
+    {
+      "id": "tag_botfun",
+      "name": "BOFU",
+      "color": "#0d904f",
+      "description": "Bottom of funnel conversion content",
+      "created": "2025-02-01T09:00:00.000Z"
+    },
+    {
+      "id": "tag_urgent",
+      "name": "Urgent",
+      "color": "#d93025",
+      "description": "High priority items needing immediate attention",
+      "created": "2025-02-05T09:00:00.000Z"
+    }
+  ],
+  "research": {
+    "sessions": [
+      {
+        "id": "rs_init01",
+        "title": "Initial persona brainstorm",
+        "topic": "Content creator audience segments for ContentGrow AI",
+        "type": "quick",
+        "results": [],
+        "created": "2025-02-01T08:30:00.000Z",
+        "updated": "2025-02-01T08:30:00.000Z"
+      }
+    ]
+  }
+}
