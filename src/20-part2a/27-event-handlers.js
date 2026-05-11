@@ -195,10 +195,25 @@
       e.preventDefault();
       var type = $(this).data('type');
       var recipe = getSelectedRecipe();
-      if (recipe && type) {
-        saveEntityField('recipe', recipe.id, 'media_type', type);
-        snapshot('Change media type');
+      if (!recipe || !type) return;
+      // Guard: media type is locked once a production node exists for the recipe.
+      if (typeof getRecipeProduction === 'function' && getRecipeProduction(recipe)) {
+        toast('Media type is locked — a production node exists for this recipe', 'warning');
+        return;
       }
+      saveEntityField('recipe', recipe.id, 'media_type', type);
+      snapshot('Change media type');
+    });
+
+    // Refresh production data from the page (re-parse view-media-productions
+    // block, then re-render). Used by the "Refresh from page" button on the
+    // production-exists card.
+    $(document).off('click.cp2a-refresh-prod').on('click.cp2a-refresh-prod', '[data-action="refresh-production"]', function(e) {
+      e.preventDefault();
+      if (typeof parseProductionData !== 'function') { toast('Refresh unavailable', 'warning'); return; }
+      parseProductionData();
+      toast('Production data refreshed', 'success');
+      if (typeof window._cpRender === 'function') window._cpRender();
     });
 
     // Save recipe title
