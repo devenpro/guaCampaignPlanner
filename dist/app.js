@@ -500,8 +500,11 @@
     });
     // Mirror into recipe.production for any recipes that don't yet have a
     // cached production. Append-only: existing recipe.production is kept
-    // as-is even if the view's snapshot has changed.
+    // as-is even if the view's snapshot has changed. For each newly-seeded
+    // recipe, log a "production attached" activity entry and try to
+    // auto-advance the recipe status (typically to media_ready).
     var seeded = 0;
+    var advanced = 0;
     var recipes = (S.data && S.data.recipes) || [];
     for (var i = 0; i < recipes.length; i++) {
       var r = recipes[i];
@@ -510,8 +513,22 @@
       if (r.production && r.production.node_id) continue;
       r.production = $.extend(true, {}, live);
       seeded++;
+      // First-time discovery → activity log entry
+      if (typeof logActivity === 'function') {
+        var prodType = live.media_type || live.type || 'production';
+        var prodLabel = live.title || ('node ' + (live.node_id || '?'));
+        logActivity('production_attached', 'recipe', r.id, r.title,
+          'Production node attached: ' + prodLabel + ' (' + prodType + ')');
+      }
+      // Production existence is a strong signal — try to advance status.
+      if (typeof maybeAdvanceRecipeStatus === 'function') {
+        if (maybeAdvanceRecipeStatus(r, 'production node detected')) advanced++;
+      }
     }
-    console.log('[CP] Parsed ' + Object.keys(S.productionMap).length + ' production node(s)' + (seeded ? ', seeded ' + seeded + ' recipe.production cache entries' : ''));
+    console.log('[CP] Parsed ' + Object.keys(S.productionMap).length +
+      ' production node(s)' +
+      (seeded   ? ', seeded ' + seeded + ' recipe.production cache entries' : '') +
+      (advanced ? ', advanced ' + advanced + ' recipe status to media_ready'  : ''));
   }
 
   function _readProductionItem($item, plannerId) {
@@ -5041,9 +5058,14 @@
     // carousel_production, video_production). The recipe is considered
     // production-ready as soon as a media type is chosen for handoff and
     // ad copy is in place — the actual creative is built downstream.
+    // A production node attached to the recipe is the strongest possible
+    // signal and advances us regardless of intermediate state.
     sugIdx = STATUS_ORDER.indexOf(suggested);
     if (STATUS_ORDER.indexOf('media_ready') > sugIdx) {
-      if (recipe.media_type && suggested === 'content_ready') {
+      var hasProd = typeof getRecipeProduction === 'function' && !!getRecipeProduction(recipe);
+      if (hasProd) {
+        suggested = 'media_ready';
+      } else if (recipe.media_type && suggested === 'content_ready') {
         suggested = 'media_ready';
       }
     }

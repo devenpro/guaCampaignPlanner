@@ -31,9 +31,14 @@
     // carousel_production, video_production). The recipe is considered
     // production-ready as soon as a media type is chosen for handoff and
     // ad copy is in place — the actual creative is built downstream.
+    // A production node attached to the recipe is the strongest possible
+    // signal and advances us regardless of intermediate state.
     sugIdx = STATUS_ORDER.indexOf(suggested);
     if (STATUS_ORDER.indexOf('media_ready') > sugIdx) {
-      if (recipe.media_type && suggested === 'content_ready') {
+      var hasProd = typeof getRecipeProduction === 'function' && !!getRecipeProduction(recipe);
+      if (hasProd) {
+        suggested = 'media_ready';
+      } else if (recipe.media_type && suggested === 'content_ready') {
         suggested = 'media_ready';
       }
     }
