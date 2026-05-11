@@ -14,6 +14,7 @@
   var getPersonaPainPoints, getPersona, getMessage, getStyle, getFormat;
   var getCategory, getCampaign, getTag, getPainPoint, getFunnelStage;
   var getRecipe, getImages, getAllImageTags, parseImageField, isSetupComplete;
+  var getRecipeProduction, getProductionStatusStyle, parseProductionData;
   var Constants;
   var snapshot, openModal, closeModal, openConfirmDialog, closeConfirmDialog, collectModalFields;
   var collectFunnelChips, getSelectedRecipe, getEffectiveHook, renderTagInput;
@@ -71,6 +72,9 @@
     getCategory = window._cpGetCategory; getCampaign = window._cpGetCampaign;
     getTag = window._cpGetTag; getPainPoint = window._cpGetPainPoint;
     getFunnelStage = window._cpGetFunnelStage; getRecipe = window._cpGetRecipe;
+    getRecipeProduction = window._cpGetRecipeProduction;
+    getProductionStatusStyle = window._cpGetProductionStatusStyle;
+    parseProductionData = window._cpParseProductionData;
     getImages = window._cpGetImages; getAllImageTags = window._cpGetAllImageTags;
     parseImageField = window._cpParseImageField; isSetupComplete = window._cpIsSetupComplete;
 

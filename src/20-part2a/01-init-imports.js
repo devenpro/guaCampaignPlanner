@@ -14,6 +14,7 @@
   var getPersonaPainPoints, getPersona, getMessage, getStyle, getFormat;
   var getCategory, getCampaign, getTag, getPainPoint, getFunnelStage;
   var getFilteredRecipes, getRecipe;
+  var getRecipeProduction, getProductionStatusStyle, parseProductionData;
   var Constants;
 
   console.log('[CP] Part 2A script loaded');
@@ -67,6 +68,9 @@
     getTag = window._cpGetTag; getPainPoint = window._cpGetPainPoint;
     getFunnelStage = window._cpGetFunnelStage;
     getFilteredRecipes = window._cpGetFilteredRecipes; getRecipe = window._cpGetRecipe;
+    getRecipeProduction = window._cpGetRecipeProduction;
+    getProductionStatusStyle = window._cpGetProductionStatusStyle;
+    parseProductionData = window._cpParseProductionData;
     Constants = window._cpConstants;
 
     // AI picker helper — lazy evaluation (Part 2B may not be loaded yet)

@@ -131,6 +131,63 @@
 
     // Parse brand data from DOM
     parseBrandData();
+
+    // Parse production-node list from the Drupal media-productions view block
+    parseProductionData();
+  }
+
+  // Build S.productionMap from the Drupal view-media-productions block
+  // and mirror new entries into recipe.production (append-only — never
+  // overwrites or removes existing recipe.production records).
+  function parseProductionData() {
+    S.productionMap = {};
+    var $items = $('.media-production-data .media-production-item, .view-media-productions .media-production-item');
+    if (!$items.length) {
+      console.log('[CP] No media-production-data view block found on page');
+      return;
+    }
+    $items.each(function() {
+      var $item = $(this);
+      var plannerId = ($item.attr('data-planner-id') || '').trim();
+      if (!plannerId) return;
+      var entry = _readProductionItem($item, plannerId);
+      if (!entry.node_id) return;
+      S.productionMap[plannerId] = entry;
+    });
+    // Mirror into recipe.production for any recipes that don't yet have a
+    // cached production. Append-only: existing recipe.production is kept
+    // as-is even if the view's snapshot has changed.
+    var seeded = 0;
+    var recipes = (S.data && S.data.recipes) || [];
+    for (var i = 0; i < recipes.length; i++) {
+      var r = recipes[i];
+      var live = S.productionMap[r.id];
+      if (!live) continue;
+      if (r.production && r.production.node_id) continue;
+      r.production = $.extend(true, {}, live);
+      seeded++;
+    }
+    console.log('[CP] Parsed ' + Object.keys(S.productionMap).length + ' production node(s)' + (seeded ? ', seeded ' + seeded + ' recipe.production cache entries' : ''));
+  }
+
+  function _readProductionItem($item, plannerId) {
+    var $created = $item.find('.mp-created time').first();
+    var $updated = $item.find('.mp-updated time').first();
+    var rawType = ($item.find('.mp-type').text() || $item.attr('data-mp-type') || '').trim();
+    var typeKey = rawType.replace(/-/g, '_').toLowerCase();
+    return {
+      node_id:    ($item.find('.mp-id').text() || '').trim(),
+      title:      ($item.find('.mp-title').text() || '').trim(),
+      url:        ($item.find('.mp-url').text() || '').trim(),
+      status:     ($item.find('.mp-status').text() || '').trim(),
+      type:       rawType,
+      media_type: PRODUCTION_TYPE_TO_MEDIA[typeKey] || '',
+      director:   ($item.find('.mp-director').text() || '').trim(),
+      created:    ($created.attr('datetime') || $item.find('.mp-created').text() || '').trim(),
+      updated:    ($updated.attr('datetime') || $item.find('.mp-updated').text() || '').trim(),
+      planner_id: plannerId,
+      _parsed_at: new Date().toISOString()
+    };
   }
 
   function parseImageField() {
