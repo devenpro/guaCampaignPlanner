@@ -314,6 +314,9 @@
       html += '<p>' + esc(p.notes) + '</p></div>';
     }
 
+    // Workspace usage (only when meta_v2 is on)
+    html += renderLibraryWorkspaceUsage('persona', p.id);
+
     html += '</div>';
     return html;
   }

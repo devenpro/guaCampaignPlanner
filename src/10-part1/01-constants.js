@@ -3,19 +3,23 @@
   // ============================================================
 
   var APP_VIEWS = {
-    'dashboard':   { order: 1,  label: 'Dashboard',    icon: 'chart-pie',          group: 'main',    description: 'Overview & stats' },
-    'personas':    { order: 2,  label: 'Personas',     icon: 'users',              group: 'library', description: 'Audience personas' },
-    'pain_points': { order: 3,  label: 'Pain Points',  icon: 'bolt',               group: 'library', description: 'Pain points & solutions' },
-    'messages':    { order: 4,  label: 'Messages',     icon: 'comments',           group: 'library', description: 'Message library' },
-    'styles':      { order: 5,  label: 'Styles',       icon: 'palette',            group: 'library', description: 'Creative styles' },
-    'formats':     { order: 6,  label: 'Formats',      icon: 'clapperboard',       group: 'library', description: 'Visual formats' },
-    'recipes':     { order: 7,  label: 'Recipes',      icon: 'shuffle',            group: 'core',    description: 'Creative recipes' },
-    'campaigns':   { order: 8,  label: 'Campaigns',    icon: 'bullhorn',           group: 'core',    description: 'Campaign planning' },
-    'calendar':    { order: 9,  label: 'Calendar',     icon: 'calendar',           group: 'core',    description: 'Timeline view' },
-    'research':    { order: 10, label: 'Research Lab',  icon: 'flask',             group: 'tools',   description: 'AI research hub' },
-    'images':      { order: 11, label: 'Images',       icon: 'images',             group: 'tools',   description: 'Reference images' },
-    'activity':    { order: 12, label: 'Activity',     icon: 'clock-rotate-left',  group: 'tools',   description: 'Activity log' },
-    'settings':    { order: 13, label: 'Settings',     icon: 'gear',               group: 'tools',   description: 'Workspace config' }
+    'dashboard':         { order: 1,  label: 'Dashboard',         icon: 'chart-pie',          group: 'main',    description: 'Overview & stats' },
+    'personas':          { order: 2,  label: 'Personas',          icon: 'users',              group: 'library', description: 'Audience personas' },
+    'pain_points':       { order: 3,  label: 'Pain Points',       icon: 'bolt',               group: 'library', description: 'Pain points & solutions' },
+    'messages':          { order: 4,  label: 'Messages',          icon: 'comments',           group: 'library', description: 'Message library' },
+    'styles':            { order: 5,  label: 'Styles',            icon: 'palette',            group: 'library', description: 'Creative styles' },
+    'formats':           { order: 6,  label: 'Formats',           icon: 'clapperboard',       group: 'library', description: 'Visual formats' },
+    'recipes':           { order: 7,  label: 'Recipes',           icon: 'shuffle',            group: 'core',    description: 'Creative recipes (legacy)', legacy: true },
+    'campaigns':         { order: 8,  label: 'Campaigns (v1)',    icon: 'bullhorn',           group: 'core',    description: 'Legacy campaigns',          legacy: true },
+    // Meta v2 — the new working surface. Sidebar shows these when
+    // S.meta.setup.meta_v2 === true.
+    'meta_campaigns':    { order: 7,  label: 'Campaigns',         icon: 'bullhorn',           group: 'core',    description: 'Meta Campaigns',            metaV2: true },
+    'campaign_workspace':{ order: 8,  label: 'Campaign Workspace',icon: 'sitemap',            group: 'core',    description: 'Campaign → Ad Set → Ad',    metaV2: true, hidden: true },
+    'calendar':          { order: 9,  label: 'Calendar',          icon: 'calendar',           group: 'core',    description: 'Timeline view' },
+    'research':          { order: 10, label: 'Research Lab',      icon: 'flask',              group: 'tools',   description: 'AI research hub' },
+    'images':            { order: 11, label: 'Images',            icon: 'images',             group: 'tools',   description: 'Reference images' },
+    'activity':          { order: 12, label: 'Activity',          icon: 'clock-rotate-left',  group: 'tools',   description: 'Activity log' },
+    'settings':          { order: 13, label: 'Settings',          icon: 'gear',               group: 'tools',   description: 'Workspace config' }
   };
 
   var SIDEBAR_GROUPS = {
@@ -188,7 +192,22 @@
     'settings_changed':          { icon: 'gear',           color: '#80868b' },
     'data_imported':             { icon: 'upload',         color: '#1a73e8' },
     'data_exported':             { icon: 'download',       color: '#1a73e8' },
-    'setup_completed':           { icon: 'circle-check',   color: '#0d904f' }
+    'setup_completed':           { icon: 'circle-check',   color: '#0d904f' },
+    // --- Meta v2 hierarchy (Campaign → Ad Set → Ad) ---
+    'campaign_v2_created':       { icon: 'bullhorn',       color: '#0891b2' },
+    'campaign_v2_updated':       { icon: 'bullhorn',       color: '#0891b2' },
+    'campaign_v2_deleted':       { icon: 'trash',          color: '#d93025' },
+    'ad_set_created':            { icon: 'crosshairs',     color: '#9334e9' },
+    'ad_set_updated':            { icon: 'crosshairs',     color: '#9334e9' },
+    'ad_set_deleted':            { icon: 'trash',          color: '#d93025' },
+    'ad_created':                { icon: 'rectangle-ad',   color: '#1a73e8' },
+    'ad_updated':                { icon: 'rectangle-ad',   color: '#1a73e8' },
+    'ad_deleted':                { icon: 'trash',          color: '#d93025' },
+    'ad_status_changed':         { icon: 'refresh',        color: '#1a73e8' },
+    'snapshot_resynced':         { icon: 'refresh',        color: '#0d904f' },
+    'campaign_tree_generated':   { icon: 'sparkles',       color: '#7c3aed' },
+    'legacy_migrated':           { icon: 'circle-check',   color: '#0d904f' },
+    'meta_csv_exported':         { icon: 'download',       color: '#1a73e8' }
   };
 
   var CARD_DENSITIES = {

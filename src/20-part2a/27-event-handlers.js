@@ -920,6 +920,428 @@
       }
     });
 
+    // --- Meta v2 actions (Campaign Workspace, Meta Campaigns list, modals) ---
+    setupMetaV2EventHandlers();
+
     console.log('[CP] Part 2A event handlers ready');
+  }
+
+  function setupMetaV2EventHandlers() {
+    // List view + workspace navigation
+    $(document).off('click.cpv2-new-campaign').on('click.cpv2-new-campaign', '[data-action="new-campaign-v2"]', function(e) {
+      e.preventDefault(); openMetaCampaignModal();
+    });
+    $(document).off('click.cpv2-open-campaign').on('click.cpv2-open-campaign', '[data-action="open-campaign-v2"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var id = $(this).data('id');
+      if (id && window._cpNavigateToCampaignV2) window._cpNavigateToCampaignV2(id);
+    });
+    $(document).off('click.cpv2-edit-campaign').on('click.cpv2-edit-campaign', '[data-action="edit-campaign-v2"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); openMetaCampaignModal($(this).data('id'));
+    });
+    $(document).off('click.cpv2-delete-campaign').on('click.cpv2-delete-campaign', '[data-action="delete-campaign-v2"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); confirmDeleteMetaCampaign($(this).data('id'));
+    });
+
+    // Ad Set CRUD
+    $(document).off('click.cpv2-add-adset').on('click.cpv2-add-adset', '[data-action="ws-add-ad-set"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var campId = $(this).data('campaign-id') || S.selectedCampaignV2Id;
+      if (campId) openMetaAdSetModal(campId, { create: true });
+    });
+    $(document).off('click.cpv2-edit-adset').on('click.cpv2-edit-adset', '[data-action="edit-ad-set"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); openMetaAdSetModal($(this).data('id'));
+    });
+    $(document).off('click.cpv2-delete-adset').on('click.cpv2-delete-adset', '[data-action="delete-ad-set"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); confirmDeleteMetaAdSet($(this).data('id'));
+    });
+
+    // Ad CRUD
+    $(document).off('click.cpv2-add-ad').on('click.cpv2-add-ad', '[data-action="ws-add-ad"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var setId = $(this).data('ad-set-id') || S.selectedAdSetId;
+      if (setId) openMetaAdModal(setId, { create: true });
+    });
+    $(document).off('click.cpv2-edit-ad').on('click.cpv2-edit-ad', '[data-action="edit-ad"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); openMetaAdModal($(this).data('id'));
+    });
+    $(document).off('click.cpv2-delete-ad').on('click.cpv2-delete-ad', '[data-action="delete-ad"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); confirmDeleteMetaAd($(this).data('id'));
+    });
+
+    // Workspace tree selection
+    $(document).off('click.cpv2-sel-camp').on('click.cpv2-sel-camp', '[data-action="ws-select-campaign"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id') || S.selectedCampaignV2Id;
+      if (!id) return;
+      S.selectedAdSetId = null; S.selectedAdId = null;
+      navigate('campaign_workspace', { hash: 'campaign/' + id });
+    });
+    $(document).off('click.cpv2-sel-set').on('click.cpv2-sel-set', '[data-action="ws-select-ad-set"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var set = id ? getAdSet(id) : null;
+      if (!set) return;
+      S.selectedAdSetId = id; S.selectedAdId = null;
+      navigate('campaign_workspace', { hash: 'campaign/' + set.campaign_id + '/ad_set/' + id });
+    });
+    $(document).off('click.cpv2-sel-ad').on('click.cpv2-sel-ad', '[data-action="ws-select-ad"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = id ? getAd(id) : null;
+      if (!ad) return;
+      var set = getAdSet(ad.ad_set_id);
+      S.selectedAdSetId = ad.ad_set_id; S.selectedAdId = id;
+      navigate('campaign_workspace', { hash: 'campaign/' + (set ? set.campaign_id : '') + '/ad_set/' + ad.ad_set_id + '/ad/' + id });
+    });
+
+    // Tree branch collapse toggle
+    $(document).off('click.cpv2-tree-toggle').on('click.cpv2-tree-toggle', '[data-action="ws-toggle-tree"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var id = $(this).data('id');
+      if (!id) return;
+      S.workspaceTreeCollapsed = S.workspaceTreeCollapsed || {};
+      S.workspaceTreeCollapsed[id] = !S.workspaceTreeCollapsed[id];
+      render();
+    });
+
+    // Meta Campaigns list filters
+    $(document).off('input.cpv2-camp-search').on('input.cpv2-camp-search', '#cpCampaignV2Search', debounce(function() {
+      S.campaignV2Filter = S.campaignV2Filter || {};
+      S.campaignV2Filter.search = $(this).val() || '';
+      render();
+    }, 250));
+    $(document).off('change.cpv2-camp-status').on('change.cpv2-camp-status', '#cpCampaignV2StatusFilter', function() {
+      S.campaignV2Filter = S.campaignV2Filter || {};
+      S.campaignV2Filter.status = $(this).val();
+      render();
+    });
+    $(document).off('change.cpv2-camp-obj').on('change.cpv2-camp-obj', '#cpCampaignV2ObjectiveFilter', function() {
+      S.campaignV2Filter = S.campaignV2Filter || {};
+      S.campaignV2Filter.objective = $(this).val();
+      render();
+    });
+
+    // Modal: chip toggles for Special Ad Categories + placements
+    $(document).off('change.cpv2-chip').on('change.cpv2-chip', '.cp-modal-body .cp-chip input[type="checkbox"]', function() {
+      var $label = $(this).closest('.cp-chip');
+      $label.toggleClass('cp-chip-active', this.checked);
+      // Special-case: if "NONE" is being toggled on, clear other categories
+      if (this.checked && $(this).hasClass('cp-v2-special-cat') && $(this).data('key') === 'NONE') {
+        $('.cp-v2-special-cat').not(this).each(function() {
+          this.checked = false; $(this).closest('.cp-chip').removeClass('cp-chip-active');
+        });
+      }
+      // If toggling a non-NONE category on, deselect NONE
+      else if (this.checked && $(this).hasClass('cp-v2-special-cat') && $(this).data('key') !== 'NONE') {
+        var $none = $('.cp-v2-special-cat[data-key="NONE"]');
+        if ($none.is(':checked')) { $none.prop('checked', false); $none.closest('.cp-chip').removeClass('cp-chip-active'); }
+      }
+    });
+    // Ad Set: Advantage Placements toggle hides/shows custom-placements section
+    $(document).off('change.cpv2-adv-pl').on('change.cpv2-adv-pl', '.cp-v2-placements-advantage', function() {
+      $('.cp-v2-custom-placements').toggle(!this.checked);
+    });
+
+    // (Stage 4: AI buttons are now handled in Part 2B — no Part 2A stubs needed.)
+
+    // --- Stage 5: A/B testing ---
+    $(document).off('click.cpv2-ab-config').on('click.cpv2-ab-config', '[data-action="ws-ab-config"]', function(e) {
+      e.preventDefault(); openABTestConfigModal($(this).data('id'));
+    });
+    $(document).off('click.cpv2-ab-compare').on('click.cpv2-ab-compare', '[data-action="ws-ab-compare"]', function(e) {
+      e.preventDefault(); openCompareVariantsModal($(this).data('id'));
+    });
+    $(document).off('click.cpv2-ab-mark').on('click.cpv2-ab-mark', '[data-action="ws-mark-ab-winner"]', function(e) {
+      e.preventDefault(); setABWinner($(this).data('campaign-id'), $(this).data('set-id'), true);
+    });
+    $(document).off('click.cpv2-ab-clear').on('click.cpv2-ab-clear', '[data-action="ws-clear-ab-winner"]', function(e) {
+      e.preventDefault(); setABWinner($(this).data('campaign-id'), $(this).data('set-id'), false);
+    });
+
+    // Stage 2: inspector tab switching
+    $(document).off('click.cpv2-set-tab').on('click.cpv2-set-tab', '[data-action="set-inspector-tab"]', function(e) {
+      e.preventDefault();
+      S.workspaceInspectorTab = $(this).data('tab') || 'overview';
+      render();
+    });
+
+    // Inline field save (blur for text/textarea; change for select/date)
+    $(document).off('blur.cpv2-inline change.cpv2-inline').on('blur.cpv2-inline change.cpv2-inline', '.cp-v2-inline-field', function() {
+      var $f = $(this);
+      var entityType = $f.data('entity-type');
+      var entityId = $f.data('entity-id');
+      var field = $f.data('field');
+      if (!entityType || !entityId || !field) return;
+      var value = $f.val();
+      if ($f.attr('type') === 'number') value = (value === '' ? null : Number(value));
+      saveEntityField(entityType, entityId, field, value);
+      // Auto-status for ads
+      if (entityType === 'ad') {
+        var ad = getAd(entityId);
+        if (ad && typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'edit');
+      }
+    });
+
+    // Brief chip toggles (Ad Set message_ids / style_ids / format_ids)
+    $(document).off('change.cpv2-brief-id').on('change.cpv2-brief-id', '.cp-v2-brief-id', function() {
+      var $f = $(this);
+      var field = $f.data('field');               // e.g. 'brief.message_ids'
+      var entityId = $f.data('entity-id');
+      var itemId = $f.data('id');
+      var adSet = getAdSet(entityId);
+      if (!adSet || !field) return;
+      adSet.brief = adSet.brief || {};
+      // Get the array via nested path
+      var pathParts = field.split('.');
+      var arr = adSet[pathParts[0]][pathParts[1]] || [];
+      var idx = arr.indexOf(itemId);
+      if (this.checked && idx === -1) arr.push(itemId);
+      if (!this.checked && idx > -1)  arr.splice(idx, 1);
+      saveEntityField('ad_set', entityId, field, arr);
+      // Toggle visual state
+      $(this).closest('.cp-chip').toggleClass('cp-chip-active', this.checked);
+    });
+
+    // Hook angles add/remove + edit (blur on the input)
+    $(document).off('click.cpv2-add-angle').on('click.cpv2-add-angle', '[data-action="ws-add-hook-angle"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var adSet = getAdSet(id);
+      if (!adSet) return;
+      adSet.brief = adSet.brief || {};
+      adSet.brief.hook_angles = (adSet.brief.hook_angles || []).concat(['']);
+      snapshot('Add hook angle');
+      saveEntityField('ad_set', id, 'brief.hook_angles', adSet.brief.hook_angles);
+    });
+    $(document).off('click.cpv2-rm-angle').on('click.cpv2-rm-angle', '[data-action="ws-remove-hook-angle"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id'); var idx = $(this).data('index');
+      var adSet = getAdSet(id);
+      if (!adSet || !adSet.brief) return;
+      adSet.brief.hook_angles = (adSet.brief.hook_angles || []).filter(function(_, i) { return i !== idx; });
+      snapshot('Remove hook angle');
+      saveEntityField('ad_set', id, 'brief.hook_angles', adSet.brief.hook_angles);
+    });
+    $(document).off('blur.cpv2-edit-angle').on('blur.cpv2-edit-angle', '.cp-v2-hook-angle', function() {
+      var $f = $(this);
+      var id = $f.data('entity-id'); var idx = $f.data('index');
+      var adSet = getAdSet(id);
+      if (!adSet || !adSet.brief) return;
+      var angles = adSet.brief.hook_angles || [];
+      if (angles[idx] === $f.val()) return;
+      angles[idx] = $f.val();
+      saveEntityField('ad_set', id, 'brief.hook_angles', angles);
+    });
+
+    // Pull a hook from a library message into an Ad (also captures snapshot)
+    $(document).off('click.cpv2-pull-hook').on('click.cpv2-pull-hook', '[data-action="ws-pull-hook"]', function(e) {
+      e.preventDefault();
+      var adId = $(this).data('ad-id');
+      var msgId = $(this).data('message-id');
+      var hookId = $(this).data('hook-id');
+      var ad = getAd(adId);
+      var msg = getMessage(msgId);
+      if (!ad || !msg) return;
+      var hook = (msg.hooks || []).find(function(h) { return h.id === hookId; });
+      if (!hook) return;
+      snapshot('Pull hook from message');
+      ad.hook = ad.hook || {};
+      ad.hook.text = hook.text;
+      ad.hook.type = hook.type || 'direct';
+      ad.hook.source_message_id = msg.id;
+      ad.hook.selected_hook_id = hook.id;
+      // Capture message snapshot
+      ad.message_snapshot = {
+        captured_at: new Date().toISOString(),
+        source_id: msg.id,
+        source_updated: msg.updated || msg.created || '',
+        title: msg.title || '',
+        body: msg.body || '',
+        funnel_stages: (msg.funnel_stages || []).slice(),
+        hook_snapshot: { id: hook.id, text: hook.text, type: hook.type || 'direct' }
+      };
+      ad.updated = new Date().toISOString();
+      if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'hook pulled');
+      buildMaps(); syncToTextarea(); render();
+      toast('Hook pulled from "' + msg.title + '"', 'success');
+    });
+
+    // Re-sync persona snapshot (stage 3 surfaces the button)
+    $(document).off('click.cpv2-resync-persona').on('click.cpv2-resync-persona', '[data-action="resync-persona-snapshot"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var adSet = getAdSet(id);
+      if (!adSet || !adSet.persona_id) return;
+      var persona = getPersona(adSet.persona_id);
+      if (!persona) return;
+      snapshot('Re-sync persona snapshot');
+      adSet.persona_snapshot = buildPersonaSnapshot(persona);
+      adSet.updated = new Date().toISOString();
+      logActivity('snapshot_resynced', 'ad_set', adSet.id, adSet.name, 'Re-synced persona snapshot from library');
+      buildMaps(); syncToTextarea(); render();
+      toast('Persona snapshot re-synced', 'success');
+    });
+
+    // Ad creative-type switch (media tab segmented control)
+    $(document).off('change.cpv2-mediatype').on('change.cpv2-mediatype', '.cp-v2-media-type-switch', function() {
+      var id = $(this).data('entity-id');
+      var val = $(this).val();
+      saveEntityField('ad', id, 'creative_type', val);
+    });
+
+    // Ad set pipeline status setter (Review tab)
+    $(document).off('click.cpv2-set-ad-status').on('click.cpv2-set-ad-status', '[data-action="ws-set-ad-status"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var status = $(this).data('status');
+      saveEntityField('ad', id, 'pipeline_status', status);
+    });
+
+    // Video scene rows
+    $(document).off('click.cpv2-add-scene').on('click.cpv2-add-scene', '[data-action="ws-ad-add-scene"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = getAd(id); if (!ad) return;
+      ad.media = ad.media || {};
+      ad.media.video = ad.media.video || { blueprint: { scenes: [] }, script: { rows: [] } };
+      ad.media.video.blueprint = ad.media.video.blueprint || { scenes: [] };
+      ad.media.video.blueprint.scenes.push({ name: '', description: '', timestamp: '', duration: 5 });
+      snapshot('Add scene');
+      saveEntityField('ad', id, 'media.video.blueprint.scenes', ad.media.video.blueprint.scenes);
+    });
+    $(document).off('click.cpv2-rm-scene').on('click.cpv2-rm-scene', '[data-action="ws-ad-remove-scene"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id'); var idx = $(this).data('index');
+      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
+      var arr = (ad.media.video.blueprint && ad.media.video.blueprint.scenes) || [];
+      arr.splice(idx, 1);
+      snapshot('Remove scene');
+      saveEntityField('ad', id, 'media.video.blueprint.scenes', arr);
+    });
+    $(document).off('blur.cpv2-scene-field').on('blur.cpv2-scene-field', '.cp-v2-scene-field', function() {
+      var $f = $(this);
+      var id = $f.data('entity-id'); var idx = $f.data('index'); var key = $f.data('key');
+      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
+      var arr = (ad.media.video.blueprint && ad.media.video.blueprint.scenes) || [];
+      if (!arr[idx]) return;
+      if (arr[idx][key] === $f.val()) return;
+      arr[idx][key] = $f.val();
+      saveEntityField('ad', id, 'media.video.blueprint.scenes', arr);
+    });
+
+    // Video script rows
+    $(document).off('click.cpv2-add-row').on('click.cpv2-add-row', '[data-action="ws-ad-add-script-row"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = getAd(id); if (!ad) return;
+      ad.media = ad.media || {};
+      ad.media.video = ad.media.video || { blueprint: { scenes: [] }, script: { rows: [] } };
+      ad.media.video.script = ad.media.video.script || { rows: [] };
+      ad.media.video.script.rows.push({ time: '', dialogue: '', visual: '', camera: '', audio: '' });
+      snapshot('Add script row');
+      saveEntityField('ad', id, 'media.video.script.rows', ad.media.video.script.rows);
+    });
+    $(document).off('click.cpv2-rm-row').on('click.cpv2-rm-row', '[data-action="ws-ad-remove-script-row"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id'); var idx = $(this).data('index');
+      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
+      var arr = (ad.media.video.script && ad.media.video.script.rows) || [];
+      arr.splice(idx, 1);
+      snapshot('Remove script row');
+      saveEntityField('ad', id, 'media.video.script.rows', arr);
+    });
+    $(document).off('blur.cpv2-script-field').on('blur.cpv2-script-field', '.cp-v2-script-field', function() {
+      var $f = $(this);
+      var id = $f.data('entity-id'); var idx = $f.data('index'); var key = $f.data('key');
+      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
+      var arr = (ad.media.video.script && ad.media.video.script.rows) || [];
+      if (!arr[idx]) return;
+      if (arr[idx][key] === $f.val()) return;
+      arr[idx][key] = $f.val();
+      saveEntityField('ad', id, 'media.video.script.rows', arr);
+    });
+
+    // --- Stage 3: Library ↔ Workspace integration ---
+
+    // Open an Ad Set in the workspace (from a library usage row)
+    $(document).off('click.cpv2-lib-open-set').on('click.cpv2-lib-open-set', '[data-action="lib-open-ad-set"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var campaignId = $(this).data('campaign-id');
+      if (!id || !campaignId) return;
+      window._cpNavigateToCampaignV2(campaignId, id);
+    });
+    // Open an Ad in the workspace
+    $(document).off('click.cpv2-lib-open-ad').on('click.cpv2-lib-open-ad', '[data-action="lib-open-ad"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = id ? getAd(id) : null;
+      if (!ad) return;
+      var set = getAdSet(ad.ad_set_id);
+      if (!set) return;
+      window._cpNavigateToCampaignV2(set.campaign_id, set.id, ad.id);
+    });
+
+    // Create Ad Set from a library Persona. Opens a chooser if multiple
+    // campaigns exist; otherwise opens the modal pre-populated.
+    $(document).off('click.cpv2-lib-create-set').on('click.cpv2-lib-create-set', '[data-action="lib-create-ad-set-from-persona"]', function(e) {
+      e.preventDefault();
+      var personaId = $(this).data('id');
+      var camps = getAllCampaignsV2();
+      if (camps.length === 0) {
+        // No campaigns yet — prompt to create one first
+        toast('Create a Campaign first, then add Ad Sets to it', 'info');
+        navigate('meta_campaigns');
+        return;
+      }
+      if (camps.length === 1) {
+        // Single campaign: open Ad Set modal under it, pre-pop persona
+        openMetaAdSetModalWithPersona(camps[0].id, personaId);
+        return;
+      }
+      // Multiple campaigns: show a quick picker
+      openCampaignPickerForAdSet(personaId);
+    });
+
+    // Attach a library Message / Style / Format to an Ad Set's brief.
+    // Opens a picker showing all Ad Sets across all campaigns.
+    $(document).off('click.cpv2-lib-attach').on('click.cpv2-lib-attach', '[data-action="lib-attach-to-ad-set-brief"]', function(e) {
+      e.preventDefault();
+      var type = $(this).data('type');  // 'message' | 'style' | 'visual_format'
+      var id = $(this).data('id');
+      openAdSetBriefAttachPicker(type, id);
+    });
+
+    // Carousel cards
+    $(document).off('click.cpv2-add-card').on('click.cpv2-add-card', '[data-action="ws-ad-add-card"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = getAd(id); if (!ad) return;
+      ad.media = ad.media || {};
+      ad.media.carousel_cards = ad.media.carousel_cards || [];
+      ad.media.carousel_cards.push({ image_asset_id: '', headline: '', description: '', link: '' });
+      snapshot('Add carousel card');
+      saveEntityField('ad', id, 'media.carousel_cards', ad.media.carousel_cards);
+    });
+    $(document).off('click.cpv2-rm-card').on('click.cpv2-rm-card', '[data-action="ws-ad-remove-card"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id'); var idx = $(this).data('index');
+      var ad = getAd(id); if (!ad) return;
+      var arr = ad.media.carousel_cards || [];
+      arr.splice(idx, 1);
+      snapshot('Remove carousel card');
+      saveEntityField('ad', id, 'media.carousel_cards', arr);
+    });
+    $(document).off('blur.cpv2-card-field').on('blur.cpv2-card-field', '.cp-v2-card-field', function() {
+      var $f = $(this);
+      var id = $f.data('entity-id'); var idx = $f.data('index'); var key = $f.data('key');
+      var ad = getAd(id); if (!ad || !ad.media) return;
+      var arr = ad.media.carousel_cards || [];
+      if (!arr[idx]) return;
+      if (arr[idx][key] === $f.val()) return;
+      arr[idx][key] = $f.val();
+      saveEntityField('ad', id, 'media.carousel_cards', arr);
+    });
   }
 

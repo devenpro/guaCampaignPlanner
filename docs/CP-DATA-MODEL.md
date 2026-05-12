@@ -1,5 +1,44 @@
 # Campaign Planner — Data Model
 
+> **v2 note**: As of the Meta restructure, the working hierarchy is
+> `campaigns_v2 → ad_sets → ads` (gated behind `S.meta.setup.meta_v2`).
+> The legacy `campaigns` + `recipes` schemas below are preserved during
+> migration; once `migrated_to_v2 = true`, the legacy arrays are
+> emptied and live on in `S.meta.legacy_backup` until discarded.
+>
+> The complete new Meta-shaped schemas are documented in
+> `docs/CP-RESTRUCTURE-PLAN.md` under "Target data model". The
+> condensed summary:
+>
+> ```
+> campaigns_v2: [{ id, name, objective: 'OUTCOME_LEADS'|..., buying_type,
+>   budget_mode: 'CBO'|'ABO', daily_budget, lifetime_budget, spend_cap,
+>   bid_strategy, special_ad_categories[], start_time, stop_time,
+>   status: 'DRAFT'|'ACTIVE'|'PAUSED'|'ARCHIVED'|'DELETED',
+>   ab_test: { enabled, primary_metric, variants[] }, brief,
+>   ai_instructions, tags[], notes, created, updated }]
+>
+> ad_sets: [{ id, campaign_id, name, persona_id, persona_snapshot,
+>   audience_overrides, placements: { advantage_enabled, custom_placements[] },
+>   optimization_goal, billing_event, attribution_setting, bid_amount,
+>   daily_budget, lifetime_budget, start_time, stop_time,
+>   brief: { creative_direction, message_ids[], style_ids[], format_ids[],
+>            hook_angles[], ai_notes },
+>   ab_role: null|'CONTROL'|'VARIANT_A'|'VARIANT_B',
+>   status, created, updated }]
+>
+> ads: [{ id, ad_set_id, name, creative_type: 'single_image'|'single_video'|'carousel',
+>   creative: { primary_text, headline, description, cta_type, cta_link,
+>               display_link, tracking_params },
+>   hook: { source_message_id, selected_hook_id, text, type },
+>   media: { image{}, video{}, carousel_cards[] },
+>   message_snapshot, style_snapshot, format_snapshot,
+>   pipeline_status: 'hook_ready'|'copy_ready'|'media_ready'|'in_review'|
+>                    'approved'|'live'|'paused'|'archived',
+>   review_notes, production_notes, assigned_to, due_date, tags[],
+>   created, updated }]
+> ```
+
 ## field_json_data (S.data)
 
 ### persona_categories

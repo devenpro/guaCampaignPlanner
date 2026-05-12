@@ -10,6 +10,7 @@
       { key: 'categories',   label: 'Categories',   icon: 'folder' },
       { key: 'ai',           label: 'AI',           icon: 'sparkles' },
       { key: 'brand_design', label: 'Brand Design', icon: 'palette' },
+      { key: 'meta_v2',      label: 'Meta v2',      icon: 'bullhorn' },
       { key: 'import_export', label: 'Import/Export', icon: 'download' }
     ];
     var html = '<div class="cp-view cp-view-settings">';
@@ -27,6 +28,7 @@
       case 'categories':    html += renderCategorySettings(); break;
       case 'ai':            html += renderAISettings(); break;
       case 'brand_design':  html += renderBrandDesignSettings(); break;
+      case 'meta_v2':       html += renderMetaV2Settings(); break;
       case 'import_export': html += renderImportExportSettings(); break;
     }
     html += '</div></div>';

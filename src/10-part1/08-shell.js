@@ -31,7 +31,7 @@
     var setup = (S.meta && S.meta.setup) || {};
     var html = '<div class="cp-header"><div class="cp-header-left">';
     html += '<button class="cp-btn-icon cp-sidebar-toggle" id="cpSidebarToggle">' + icon('menu') + '</button>';
-    html += '<div class="cp-header-logo"><span class="cp-header-logo-accent">Campaign</span> Planner</div>';
+    html += '<div class="cp-header-logo"><span class="cp-header-logo-accent">Meta</span> Campaign Planner</div>';
     if (ws.name) html += '<div class="cp-header-workspace">' + esc(ws.name) + '</div>';
     // Brand identity pill
     if (S.brand && S.brand.configured && S.brand.identity.name) {
@@ -69,9 +69,13 @@
       html += '<div class="cp-nav-group">';
       html += '<div class="cp-nav-group-label">' + esc(grp.label) + '</div>';
 
+      var metaV2 = !!(S.meta && S.meta.setup && S.meta.setup.meta_v2);
       for (var key in APP_VIEWS) {
         var v = APP_VIEWS[key];
         if (v.group !== gk) continue;
+        if (v.hidden) continue;                       // never in sidebar (e.g. campaign_workspace)
+        if (v.metaV2 && !metaV2) continue;            // gated to v2-enabled workspaces
+        if (v.legacy && metaV2) continue;             // hide legacy entries once v2 is on
         var active = S.currentView === key ? ' cp-nav-item-active' : '';
         var badgeHtml = renderSidebarBadge(key);
         html += '<a href="#' + key + '" class="cp-nav-item' + active + '" data-view="' + key + '">';
@@ -89,8 +93,8 @@
     var setup = (S.meta && S.meta.setup) || {};
     html += '<div class="cp-sidebar-footer">';
     html += '<div class="cp-sidebar-footer-label">Workspace</div>';
-    html += '<div class="cp-sidebar-footer-name">' + esc(ws.name || 'Campaign Planner') + '</div>';
-    html += '<div class="cp-sidebar-footer-meta">Meta Ads' + (setup.setup_complete ? ' · Setup ✓' : '') + '</div>';
+    html += '<div class="cp-sidebar-footer-name">' + esc(ws.name || 'Meta Campaign Planner') + '</div>';
+    html += '<div class="cp-sidebar-footer-meta">Meta Ads' + (setup.setup_complete ? ' · Setup ✓' : '') + (setup.meta_v2 ? ' · v2' : '') + '</div>';
     html += '</div>';
 
     html += '</div></div>';
@@ -105,6 +109,7 @@
       case 'styles': count = S.totalStyles + S.totalFormats; break;
       case 'recipes': count = S.activeRecipes; break;
       case 'campaigns': count = S.activeCampaigns; break;
+      case 'meta_campaigns': count = S.activeCampaignsV2; break;
       case 'images': count = S.images.length; break;
       case 'activity':
         var recent24h = (S.activity || []).filter(function(a) {

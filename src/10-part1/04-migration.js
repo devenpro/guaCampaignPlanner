@@ -7,14 +7,35 @@
       persona_categories: [], personas: [], pain_points: [],
       messages: [], styles: [], visual_formats: [],
       recipes: [], campaigns: [], tags: [],
-      research_sessions: []
+      research_sessions: [],
+      // Meta v2 hierarchy. Empty until the user creates them through the
+      // new Workspace, or until the migration importer runs.
+      campaigns_v2: [], ad_sets: [], ads: []
+    };
+  }
+
+  function getDefaultMetaDefaults() {
+    return {
+      page_id: '',
+      instagram_actor_id: '',
+      pixel_id: '',
+      attribution_window: '7d_click',
+      currency: 'USD',
+      time_zone: 'UTC',
+      business_manager_id: ''
     };
   }
 
   function getDefaultMeta() {
     return {
       workspace: { name: '', description: '', created: new Date().toISOString() },
-      setup: { product_name: '', objective: '', custom_instructions: '', setup_complete: false },
+      setup: {
+        product_name: '', objective: '', custom_instructions: '', setup_complete: false,
+        // Meta v2 gate: false = old recipe-centric UI; true = new Workspace.
+        // Flipped by the Stage 6 migration wizard.
+        meta_v2: false,
+        migrated_to_v2: false
+      },
       settings: {
         timezone: 'Asia/Kolkata',
         default_view: 'dashboard',
@@ -28,7 +49,12 @@
       },
       aiPreferences: { appDefault: { provider: '', model: '' }, perAction: {}, lastProvider: '', lastModel: '' },
       reference_images: {},
-      image_categories: getDefaultImageCategories()
+      image_categories: getDefaultImageCategories(),
+      // Meta v2 workspace-level defaults (Page, Pixel, attribution, currency etc.)
+      meta_defaults: getDefaultMetaDefaults(),
+      // Legacy backup populated by the migration importer (Stage 6) so users
+      // can recover their pre-v2 data until they explicitly discard it.
+      legacy_backup: null
     };
   }
 
@@ -66,6 +92,15 @@
     d.campaigns = d.campaigns || [];
     d.tags = d.tags || [];
     d.research_sessions = d.research_sessions || [];
+    // Meta v2 hierarchy
+    d.campaigns_v2 = d.campaigns_v2 || [];
+    d.ad_sets = d.ad_sets || [];
+    d.ads = d.ads || [];
+
+    // Field-level fillers for Meta v2 entities (idempotent)
+    migrateCampaignsV2(d.campaigns_v2);
+    migrateAdSets(d.ad_sets);
+    migrateAds(d.ads);
 
     // Ensure each persona has all fields
     for (var pi = 0; pi < d.personas.length; pi++) {
@@ -215,10 +250,130 @@
     }
   }
 
+  // ---- Meta v2 entity migrations (idempotent field fillers) ----
+
+  function migrateCampaignsV2(arr) {
+    for (var i = 0; i < arr.length; i++) {
+      var c = arr[i];
+      c.name = c.name || '';
+      c.description = c.description || '';
+      c.objective = c.objective || META_CAMPAIGN_DEFAULTS.objective;
+      c.buying_type = c.buying_type || META_CAMPAIGN_DEFAULTS.buying_type;
+      c.budget_mode = c.budget_mode || META_CAMPAIGN_DEFAULTS.budget_mode;
+      c.daily_budget = (c.daily_budget == null) ? null : c.daily_budget;
+      c.lifetime_budget = (c.lifetime_budget == null) ? null : c.lifetime_budget;
+      c.spend_cap = (c.spend_cap == null) ? null : c.spend_cap;
+      c.bid_strategy = c.bid_strategy || META_CAMPAIGN_DEFAULTS.bid_strategy;
+      c.special_ad_categories = c.special_ad_categories || META_CAMPAIGN_DEFAULTS.special_ad_categories.slice();
+      c.start_time = c.start_time || '';
+      c.stop_time = c.stop_time || '';
+      c.status = c.status || META_CAMPAIGN_DEFAULTS.status;
+      c.ab_test = c.ab_test || { enabled: false, primary_metric: '', variants: [] };
+      c.ab_test.variants = c.ab_test.variants || [];
+      c.ai_instructions = c.ai_instructions || '';
+      c.brief = c.brief || '';
+      c.tags = c.tags || [];
+      c.notes = c.notes || '';
+      c.created = c.created || new Date().toISOString();
+      c.updated = c.updated || c.created;
+      c.created_by = c.created_by || '';
+    }
+  }
+
+  function migrateAdSets(arr) {
+    for (var i = 0; i < arr.length; i++) {
+      var s = arr[i];
+      s.campaign_id = s.campaign_id || '';
+      s.name = s.name || '';
+      // Audience (v1: persona link + override notes)
+      s.persona_id = s.persona_id || '';
+      s.persona_snapshot = s.persona_snapshot || null;
+      s.audience_overrides = s.audience_overrides || '';
+      // Placements
+      s.placements = s.placements || { advantage_enabled: true, custom_placements: [] };
+      s.placements.advantage_enabled = (s.placements.advantage_enabled !== false);
+      s.placements.custom_placements = s.placements.custom_placements || [];
+      // Optimization
+      s.optimization_goal = s.optimization_goal || META_AD_SET_DEFAULTS.optimization_goal;
+      s.billing_event = s.billing_event || META_AD_SET_DEFAULTS.billing_event;
+      s.attribution_setting = s.attribution_setting || META_AD_SET_DEFAULTS.attribution_setting;
+      s.bid_amount = (s.bid_amount == null) ? null : s.bid_amount;
+      // Budget (ABO)
+      s.daily_budget = (s.daily_budget == null) ? null : s.daily_budget;
+      s.lifetime_budget = (s.lifetime_budget == null) ? null : s.lifetime_budget;
+      // Schedule
+      s.start_time = s.start_time || '';
+      s.stop_time = s.stop_time || '';
+      s.dayparting = s.dayparting || null;
+      // Strategic brief (Ad Set tier of the two-tier workflow)
+      s.brief = s.brief || { creative_direction: '', message_ids: [], style_ids: [], format_ids: [], hook_angles: [], ai_notes: '' };
+      s.brief.creative_direction = s.brief.creative_direction || '';
+      s.brief.message_ids = s.brief.message_ids || [];
+      s.brief.style_ids = s.brief.style_ids || [];
+      s.brief.format_ids = s.brief.format_ids || [];
+      s.brief.hook_angles = s.brief.hook_angles || [];
+      s.brief.ai_notes = s.brief.ai_notes || '';
+      // A/B
+      s.ab_role = s.ab_role || null;
+      // Status + misc
+      s.status = s.status || META_AD_SET_DEFAULTS.status;
+      s.notes = s.notes || '';
+      s.created = s.created || new Date().toISOString();
+      s.updated = s.updated || s.created;
+      s.created_by = s.created_by || '';
+    }
+  }
+
+  function migrateAds(arr) {
+    for (var i = 0; i < arr.length; i++) {
+      var a = arr[i];
+      a.ad_set_id = a.ad_set_id || '';
+      a.name = a.name || '';
+      a.creative_type = a.creative_type || META_AD_DEFAULTS.creative_type;
+      a.creative = a.creative || { primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' };
+      a.creative.primary_text = a.creative.primary_text || '';
+      a.creative.headline = a.creative.headline || '';
+      a.creative.description = a.creative.description || '';
+      a.creative.cta_type = a.creative.cta_type || 'LEARN_MORE';
+      a.creative.cta_link = a.creative.cta_link || '';
+      a.creative.display_link = a.creative.display_link || '';
+      a.creative.tracking_params = a.creative.tracking_params || '';
+      a.hook = a.hook || { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' };
+      a.hook.source_message_id = a.hook.source_message_id || '';
+      a.hook.selected_hook_id = a.hook.selected_hook_id || '';
+      a.hook.text = a.hook.text || '';
+      a.hook.type = a.hook.type || 'direct';
+      a.media = a.media || {};
+      a.media.image = a.media.image || { asset_id: '', ai_prompt: '', brief: '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] };
+      a.media.image.reference_image_ids = a.media.image.reference_image_ids || [];
+      a.media.video = a.media.video || { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', blueprint: { scenes: [] }, script: { rows: [] } };
+      a.media.video.blueprint = a.media.video.blueprint || { scenes: [] };
+      a.media.video.script = a.media.video.script || { rows: [] };
+      a.media.carousel_cards = a.media.carousel_cards || [];
+      // Snapshots
+      a.message_snapshot = a.message_snapshot || null;
+      a.style_snapshot = a.style_snapshot || null;
+      a.format_snapshot = a.format_snapshot || null;
+      // Pipeline
+      a.pipeline_status = a.pipeline_status || META_AD_DEFAULTS.pipeline_status;
+      a.review_notes = a.review_notes || '';
+      a.production_notes = a.production_notes || '';
+      a.assigned_to = a.assigned_to || '';
+      a.due_date = a.due_date || '';
+      a.tags = a.tags || [];
+      a.created = a.created || new Date().toISOString();
+      a.updated = a.updated || a.created;
+      a.created_by = a.created_by || '';
+    }
+  }
+
   function migrateMeta() {
     var m = S.meta;
     m.workspace = m.workspace || { name: '', description: '', created: new Date().toISOString() };
     m.setup = m.setup || { product_name: '', objective: '', custom_instructions: '', setup_complete: false };
+    // Meta v2 setup flags (idempotent — don't clobber existing values)
+    if (typeof m.setup.meta_v2 !== 'boolean') m.setup.meta_v2 = false;
+    if (typeof m.setup.migrated_to_v2 !== 'boolean') m.setup.migrated_to_v2 = false;
     m.settings = m.settings || {};
     m.settings.timezone = m.settings.timezone || 'Asia/Kolkata';
     m.settings.default_view = m.settings.default_view || 'dashboard';
@@ -237,6 +392,15 @@
     m.reference_images = m.reference_images || {};
     m.image_categories = m.image_categories || getDefaultImageCategories();
     m.recipe_templates = m.recipe_templates || [];
+
+    // Meta v2: workspace-level Page / Pixel / attribution / currency defaults
+    m.meta_defaults = m.meta_defaults || {};
+    var defaults = getDefaultMetaDefaults();
+    for (var dk in defaults) {
+      if (m.meta_defaults[dk] === undefined) m.meta_defaults[dk] = defaults[dk];
+    }
+    // Legacy backup (populated by Stage 6 importer; null until then)
+    if (m.legacy_backup === undefined) m.legacy_backup = null;
 
     S.cardDensity = m.settings.card_density;
     S.currentView = readHash();

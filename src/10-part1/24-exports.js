@@ -8,6 +8,7 @@
   window._cpRender = renderCurrentView;
   window._cpRenderAppShell = renderAppShell;
   window._cpNavigate = navigate;
+  window._cpNavigateToCampaignV2 = navigateToCampaignV2;
   window._cpToast = toast;
   window._cpGenerateId = generateId;
   window._cpBuildMaps = buildMaps;
@@ -60,6 +61,12 @@
   window._cpGetProductionStatusStyle = getProductionStatusStyle;
   window._cpParseProductionData = parseProductionData;
 
+  // Meta v2 entity getters
+  window._cpGetCampaignV2 = getCampaignV2;
+  window._cpGetAdSet = getAdSet;
+  window._cpGetAd = getAd;
+  window._cpIsMetaV2Enabled = isMetaV2Enabled;
+
   // Collection getters
   window._cpGetAllTags = getAllTags;
   window._cpGetAllPersonas = getAllPersonas;
@@ -70,6 +77,14 @@
   window._cpGetAllCampaigns = getAllCampaigns;
   window._cpGetAllPainPoints = getAllPainPoints;
   window._cpGetAllCategories = getAllCategories;
+
+  // Meta v2 collection getters
+  window._cpGetAllCampaignsV2 = getAllCampaignsV2;
+  window._cpGetAllAdSets = getAllAdSets;
+  window._cpGetAllAds = getAllAds;
+  window._cpGetAdSetsByCampaign = getAdSetsByCampaign;
+  window._cpGetAdsByAdSet = getAdsByAdSet;
+  window._cpGetAdsByCampaign = getAdsByCampaign;
   window._cpGetRecentActivity = getRecentActivity;
   window._cpGetPersonasByCategory = getPersonasByCategory;
   window._cpGetRecipesByCampaign = getRecipesByCampaign;
@@ -91,8 +106,44 @@
     FORMAT_CATEGORIES: FORMAT_CATEGORIES, PAIN_POINT_CATEGORIES: PAIN_POINT_CATEGORIES,
     ACTIVITY_TYPES: ACTIVITY_TYPES, CARD_DENSITIES: CARD_DENSITIES, GROUPING_OPTIONS: GROUPING_OPTIONS,
     PRODUCTION_STATUSES: PRODUCTION_STATUSES, PRODUCTION_STATUS_DEFAULT: PRODUCTION_STATUS_DEFAULT,
-    PRODUCTION_TYPE_TO_MEDIA: PRODUCTION_TYPE_TO_MEDIA
+    PRODUCTION_TYPE_TO_MEDIA: PRODUCTION_TYPE_TO_MEDIA,
+    // Meta v2 constants
+    META_OBJECTIVES: META_OBJECTIVES,
+    META_BUYING_TYPES: META_BUYING_TYPES,
+    META_BUDGET_MODES: META_BUDGET_MODES,
+    META_BID_STRATEGIES: META_BID_STRATEGIES,
+    META_SPECIAL_AD_CATEGORIES: META_SPECIAL_AD_CATEGORIES,
+    META_CAMPAIGN_STATUSES: META_CAMPAIGN_STATUSES,
+    META_OPTIMIZATION_GOALS: META_OPTIMIZATION_GOALS,
+    META_OBJECTIVE_OPTIMIZATION_GOALS: META_OBJECTIVE_OPTIMIZATION_GOALS,
+    META_BILLING_EVENTS: META_BILLING_EVENTS,
+    META_ATTRIBUTION_SETTINGS: META_ATTRIBUTION_SETTINGS,
+    META_PLACEMENTS: META_PLACEMENTS,
+    META_AD_SET_STATUSES: META_AD_SET_STATUSES,
+    META_AD_CREATIVE_TYPES: META_AD_CREATIVE_TYPES,
+    META_CTA_TYPES: META_CTA_TYPES,
+    META_AD_PIPELINE_STEPS: META_AD_PIPELINE_STEPS,
+    META_AD_STATUSES: META_AD_STATUSES,
+    META_AD_STATUS_ORDER: META_AD_STATUS_ORDER,
+    META_AD_ACTIVE_STATUSES: META_AD_ACTIVE_STATUSES,
+    META_AB_ROLES: META_AB_ROLES,
+    META_AB_METRICS: META_AB_METRICS,
+    META_DEFAULT_PLACEMENT_MODE: META_DEFAULT_PLACEMENT_MODE,
+    META_CAMPAIGN_DEFAULTS: META_CAMPAIGN_DEFAULTS,
+    META_AD_SET_DEFAULTS: META_AD_SET_DEFAULTS,
+    META_AD_DEFAULTS: META_AD_DEFAULTS
   };
+
+  // Meta v2 lookup helpers
+  window._cpMetaObjective = metaObjective;
+  window._cpMetaOptimizationGoal = metaOptimizationGoal;
+  window._cpMetaBillingEvent = metaBillingEvent;
+  window._cpMetaPlacement = metaPlacement;
+  window._cpMetaCTA = metaCTA;
+  window._cpMetaCampaignStatus = metaCampaignStatus;
+  window._cpMetaAdSetStatus = metaAdSetStatus;
+  window._cpMetaAdStatus = metaAdStatus;
+  window._cpMetaOptimizationGoalsForObjective = metaOptimizationGoalsForObjective;
 
   // Setup
   window._cpCompleteSetup = completeSetup;
@@ -122,6 +173,21 @@
   // Auto-status
   window._cpEvaluateAutoStatus = evaluateAutoStatus;
   window._cpMaybeAdvanceRecipeStatus = maybeAdvanceRecipeStatus;
+
+  // Meta v2 snapshot + auto-status (Stage 2)
+  window._cpIsPersonaSnapshotStale = isPersonaSnapshotStale;
+  window._cpIsMessageSnapshotStale = isMessageSnapshotStale;
+  window._cpEvaluateAdAutoStatus = evaluateAdAutoStatus;
+  window._cpMaybeAdvanceAdStatus = maybeAdvanceAdStatus;
+
+  // Library ↔ Workspace integration (Stage 3)
+  window._cpFindAdSetsUsingPersona = findAdSetsUsingPersona;
+  window._cpFindAdSetsUsingMessage = findAdSetsUsingMessage;
+  window._cpFindAdSetsUsingStyle = findAdSetsUsingStyle;
+  window._cpFindAdSetsUsingFormat = findAdSetsUsingFormat;
+  window._cpFindAdsUsingMessage = findAdsUsingMessage;
+  window._cpFindAdSetsUsingPainPoint = findAdSetsUsingPainPoint;
+  window._cpRenderLibraryWorkspaceUsage = renderLibraryWorkspaceUsage;
 
   console.log('[CP] Part 1 loaded');
 })(jQuery, Drupal);

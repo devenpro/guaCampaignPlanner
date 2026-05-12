@@ -345,6 +345,80 @@
       toast('Reference image removed', 'success');
     });
 
+    // --- Stage 4: Meta v2 AI buttons (replace Stage 1/2 stubs) ---
+    $(document).off('click.cp2b-ai-tree').on('click.cp2b-ai-tree', '[data-action="ai-generate-campaign-tree"]', function(e) {
+      e.preventDefault(); aiGenerateCampaignTree();
+    });
+    $(document).off('click.cp2b-ai-sug-sets').on('click.cp2b-ai-sug-sets', '[data-action="ai-suggest-ad-sets"]', function(e) {
+      e.preventDefault(); aiSuggestAdSets($(this).data('campaign-id'));
+    });
+    $(document).off('click.cp2b-ai-sug-ads').on('click.cp2b-ai-sug-ads', '[data-action="ai-suggest-ads"]', function(e) {
+      e.preventDefault(); aiSuggestAds($(this).data('ad-set-id'));
+    });
+    $(document).off('click.cp2b-ai-set-brief').on('click.cp2b-ai-set-brief', '[data-action="ai-generate-ad-set-brief"]', function(e) {
+      e.preventDefault(); aiGenerateAdSetBrief($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-hooks').on('click.cp2b-ai-hooks', '[data-action="ai-generate-ad-hooks"]', function(e) {
+      e.preventDefault(); aiGenerateAdHooks($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-copy').on('click.cp2b-ai-copy', '[data-action="ai-write-ad-copy"]', function(e) {
+      e.preventDefault(); aiWriteAdCopy($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-improve').on('click.cp2b-ai-improve', '[data-action="ai-improve-ad-copy"]', function(e) {
+      e.preventDefault(); aiImproveAdCopy($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-img-prompt').on('click.cp2b-ai-img-prompt', '[data-action="ai-generate-ad-image-prompt"]', function(e) {
+      e.preventDefault(); aiGenerateAdImagePrompt($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-video-bp').on('click.cp2b-ai-video-bp', '[data-action="ai-generate-video-blueprint"]', function(e) {
+      e.preventDefault(); aiGenerateVideoBlueprint($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-video-scr').on('click.cp2b-ai-video-scr', '[data-action="ai-generate-video-script"]', function(e) {
+      e.preventDefault(); aiGenerateVideoScript($(this).data('id'));
+    });
+
+    // --- Stage 6: migration wizard + feature flag toggle ---
+    $(document).off('click.cp2b-v2-mig').on('click.cp2b-v2-mig', '[data-action="v2-open-migration"]', function(e) {
+      e.preventDefault(); openMigrationWizard();
+    });
+    $(document).off('click.cp2b-v2-discard').on('click.cp2b-v2-discard', '[data-action="v2-discard-legacy"]', function(e) {
+      e.preventDefault(); discardLegacyBackup();
+    });
+    $(document).off('change.cp2b-v2-flag').on('change.cp2b-v2-flag', '.cp-v2-toggle-flag', function() {
+      snapshot('Toggle Meta v2');
+      S.meta.setup = S.meta.setup || {};
+      S.meta.setup.meta_v2 = !!this.checked;
+      syncToTextarea();
+      // Re-render the whole shell so sidebar regroups
+      if (window._cpRenderAppShell) {
+        $('#cpApp').html(window._cpRenderAppShell());
+        render();
+      }
+      toast(this.checked ? 'Meta v2 enabled' : 'Meta v2 disabled', 'success');
+    });
+    $(document).off('change.cp2b-v2-def').on('change.cp2b-v2-def', '.cp-v2-defaults-field', function() {
+      var key = $(this).data('key');
+      var val = $(this).val();
+      S.meta.meta_defaults = S.meta.meta_defaults || {};
+      S.meta.meta_defaults[key] = val;
+      syncToTextarea();
+    });
+
+    // --- Stage 7: Export + per-field copy ---
+    $(document).off('click.cp2b-v2-exp-open').on('click.cp2b-v2-exp-open', '[data-action="v2-export-open"]', function(e) {
+      e.preventDefault(); openExportModal($(this).data('campaign-id') || null);
+    });
+    $(document).off('click.cp2b-v2-exp-json').on('click.cp2b-v2-exp-json', '[data-action="v2-export-json"]', function(e) {
+      e.preventDefault(); exportV2JSON($(this).data('campaign-id') || null);
+    });
+    $(document).off('click.cp2b-v2-exp-csv').on('click.cp2b-v2-exp-csv', '[data-action="v2-export-csv"]', function(e) {
+      e.preventDefault(); exportV2CSV($(this).data('campaign-id') || null);
+    });
+    $(document).off('click.cp2b-v2-copy').on('click.cp2b-v2-copy', '[data-action="v2-copy-ad-field"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      copyAdField($(this).data('id'), $(this).data('field'));
+    });
+
     console.log('[CP] Part 2B event handlers ready');
   }
 

@@ -122,6 +122,83 @@
         logActivity('tag_created', 'tag', entity.id, entity.name, 'Created tag');
         break;
 
+      // --- Meta v2 hierarchy ---
+
+      case 'campaign_v2':
+        entity = $.extend(true, {
+          id: generateId('cmpv2'),
+          name: '', description: '',
+          objective: META_CAMPAIGN_DEFAULTS.objective,
+          buying_type: META_CAMPAIGN_DEFAULTS.buying_type,
+          budget_mode: META_CAMPAIGN_DEFAULTS.budget_mode,
+          daily_budget: null, lifetime_budget: null, spend_cap: null,
+          bid_strategy: META_CAMPAIGN_DEFAULTS.bid_strategy,
+          special_ad_categories: META_CAMPAIGN_DEFAULTS.special_ad_categories.slice(),
+          start_time: '', stop_time: '',
+          status: META_CAMPAIGN_DEFAULTS.status,
+          ab_test: { enabled: false, primary_metric: '', variants: [] },
+          ai_instructions: '', brief: '',
+          tags: [], notes: '',
+          created: now, updated: now, created_by: S.user.id || ''
+        }, data);
+        S.data.campaigns_v2.push(entity);
+        logActivity('campaign_v2_created', 'campaign_v2', entity.id, entity.name, 'Created campaign');
+        break;
+
+      case 'ad_set':
+        entity = $.extend(true, {
+          id: generateId('adset'),
+          campaign_id: '', name: '',
+          persona_id: '', persona_snapshot: null, audience_overrides: '',
+          placements: { advantage_enabled: true, custom_placements: [] },
+          optimization_goal: META_AD_SET_DEFAULTS.optimization_goal,
+          billing_event: META_AD_SET_DEFAULTS.billing_event,
+          attribution_setting: META_AD_SET_DEFAULTS.attribution_setting,
+          bid_amount: null,
+          daily_budget: null, lifetime_budget: null,
+          start_time: '', stop_time: '', dayparting: null,
+          brief: { creative_direction: '', message_ids: [], style_ids: [], format_ids: [], hook_angles: [], ai_notes: '' },
+          ab_role: null,
+          status: META_AD_SET_DEFAULTS.status,
+          notes: '',
+          created: now, updated: now, created_by: S.user.id || ''
+        }, data);
+        if (!entity.name) {
+          var camp = S.campaignV2Map[entity.campaign_id];
+          var persona = S.personaMap[entity.persona_id];
+          entity.name = (camp ? camp.name + ' — ' : '') + (persona ? persona.name : 'New Ad Set');
+        }
+        S.data.ad_sets.push(entity);
+        logActivity('ad_set_created', 'ad_set', entity.id, entity.name, 'Created ad set');
+        break;
+
+      case 'ad':
+        entity = $.extend(true, {
+          id: generateId('ad'),
+          ad_set_id: '', name: '',
+          creative_type: META_AD_DEFAULTS.creative_type,
+          creative: { primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' },
+          hook: { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' },
+          media: {
+            image: { asset_id: '', ai_prompt: '', brief: '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] },
+            video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', blueprint: { scenes: [] }, script: { rows: [] } },
+            carousel_cards: []
+          },
+          message_snapshot: null, style_snapshot: null, format_snapshot: null,
+          pipeline_status: META_AD_DEFAULTS.pipeline_status,
+          review_notes: '', production_notes: '', assigned_to: '', due_date: '',
+          tags: [],
+          created: now, updated: now, created_by: S.user.id || ''
+        }, data);
+        if (!entity.name) {
+          var adSet = S.adSetMap[entity.ad_set_id];
+          var existing = (S.adsByAdSet[entity.ad_set_id] || []).length;
+          entity.name = (adSet ? adSet.name + ' — Ad ' : 'Ad ') + (existing + 1);
+        }
+        S.data.ads.push(entity);
+        logActivity('ad_created', 'ad', entity.id, entity.name, 'Created ad');
+        break;
+
       default:
         console.warn('[CP] Unknown entity type:', type);
         return null;
@@ -222,7 +299,7 @@
         entityTitle = entity.name;
         idx = S.data.tags.findIndex(function(t) { return t.id === id; });
         if (idx > -1) S.data.tags.splice(idx, 1);
-        var allArrays = [S.data.personas, S.data.messages, S.data.styles, S.data.visual_formats, S.data.recipes, S.data.campaigns];
+        var allArrays = [S.data.personas, S.data.messages, S.data.styles, S.data.visual_formats, S.data.recipes, S.data.campaigns, S.data.campaigns_v2, S.data.ads];
         allArrays.forEach(function(arr) {
           (arr || []).forEach(function(item) {
             if (item.tags) item.tags = item.tags.filter(function(tid) { return tid !== id; });
@@ -230,6 +307,47 @@
         });
         if (S.selectedTagId === id) S.selectedTagId = null;
         logActivity('tag_deleted', 'tag', id, entityTitle, 'Deleted tag');
+        break;
+
+      case 'campaign_v2':
+        entity = S.campaignV2Map[id]; if (!entity) return false;
+        entityTitle = entity.name;
+        idx = S.data.campaigns_v2.findIndex(function(c) { return c.id === id; });
+        if (idx > -1) S.data.campaigns_v2.splice(idx, 1);
+        // Cascade: delete all Ad Sets + Ads under this campaign
+        var orphanSets = (S.data.ad_sets || []).filter(function(s) { return s.campaign_id === id; });
+        var orphanSetIds = orphanSets.map(function(s) { return s.id; });
+        S.data.ad_sets = (S.data.ad_sets || []).filter(function(s) { return s.campaign_id !== id; });
+        S.data.ads = (S.data.ads || []).filter(function(a) { return orphanSetIds.indexOf(a.ad_set_id) === -1; });
+        if (S.selectedCampaignV2Id === id) { S.selectedCampaignV2Id = null; S.selectedAdSetId = null; S.selectedAdId = null; }
+        logActivity('campaign_v2_deleted', 'campaign_v2', id, entityTitle, 'Deleted campaign and ' + orphanSets.length + ' ad set(s)');
+        break;
+
+      case 'ad_set':
+        entity = S.adSetMap[id]; if (!entity) return false;
+        entityTitle = entity.name;
+        idx = S.data.ad_sets.findIndex(function(s) { return s.id === id; });
+        if (idx > -1) S.data.ad_sets.splice(idx, 1);
+        // Cascade: delete all Ads under this Ad Set
+        var orphanAds = (S.data.ads || []).filter(function(a) { return a.ad_set_id === id; });
+        S.data.ads = (S.data.ads || []).filter(function(a) { return a.ad_set_id !== id; });
+        // Remove from parent campaign's A/B variants list if present
+        (S.data.campaigns_v2 || []).forEach(function(c) {
+          if (c.ab_test && Array.isArray(c.ab_test.variants)) {
+            c.ab_test.variants = c.ab_test.variants.filter(function(v) { return v.ad_set_id !== id; });
+          }
+        });
+        if (S.selectedAdSetId === id) { S.selectedAdSetId = null; S.selectedAdId = null; }
+        logActivity('ad_set_deleted', 'ad_set', id, entityTitle, 'Deleted ad set and ' + orphanAds.length + ' ad(s)');
+        break;
+
+      case 'ad':
+        entity = S.adMap[id]; if (!entity) return false;
+        entityTitle = entity.name;
+        idx = S.data.ads.findIndex(function(a) { return a.id === id; });
+        if (idx > -1) S.data.ads.splice(idx, 1);
+        if (S.selectedAdId === id) S.selectedAdId = null;
+        logActivity('ad_deleted', 'ad', id, entityTitle, 'Deleted ad');
         break;
 
       default:
@@ -248,7 +366,8 @@
     var collections = {
       persona: S.data.personas, message: S.data.messages, style: S.data.styles,
       visual_format: S.data.visual_formats, recipe: S.data.recipes, campaign: S.data.campaigns,
-      pain_point: S.data.pain_points, persona_category: S.data.persona_categories, tag: S.data.tags
+      pain_point: S.data.pain_points, persona_category: S.data.persona_categories, tag: S.data.tags,
+      campaign_v2: S.data.campaigns_v2, ad_set: S.data.ad_sets, ad: S.data.ads
     };
     var coll = collections[type];
     if (!coll) { console.warn('[CP] Unknown entity type for save:', type); return; }
@@ -279,6 +398,21 @@
       var newLabel = (RECIPE_STATUSES[value] || {}).label || value;
       logActivity('recipe_status_changed', 'recipe', id, entity.title, 'Status changed to ' + newLabel);
     }
+    // Ad pipeline status change logging
+    if (type === 'ad' && field === 'pipeline_status') {
+      var adLabel = (META_AD_STATUSES[value] || {}).label || value;
+      logActivity('ad_status_changed', 'ad', id, entity.name, 'Pipeline status → ' + adLabel);
+    }
+    // Touch parent updated timestamps for Meta v2 entities so the workspace
+    // reflects recent activity at any level
+    if (type === 'ad' && entity.ad_set_id) {
+      var pSet = S.adSetMap[entity.ad_set_id];
+      if (pSet) pSet.updated = new Date().toISOString();
+    }
+    if (type === 'ad_set' && entity.campaign_id) {
+      var pCamp = S.campaignV2Map[entity.campaign_id];
+      if (pCamp) pCamp.updated = new Date().toISOString();
+    }
 
     buildMaps();
     syncToTextarea();
@@ -288,7 +422,8 @@
   function duplicateEntity(type, id) {
     var collections = {
       persona: S.data.personas, message: S.data.messages, style: S.data.styles,
-      visual_format: S.data.visual_formats, recipe: S.data.recipes, campaign: S.data.campaigns
+      visual_format: S.data.visual_formats, recipe: S.data.recipes, campaign: S.data.campaigns,
+      campaign_v2: S.data.campaigns_v2, ad_set: S.data.ad_sets, ad: S.data.ads
     };
     var coll = collections[type];
     if (!coll) return null;
@@ -296,14 +431,18 @@
     var source = coll.find(function(e) { return e.id === id; });
     if (!source) return null;
 
+    var idPrefixes = { campaign_v2: 'cmpv2', ad_set: 'adset', ad: 'ad' };
     var clone = deepClone(source);
-    clone.id = generateId(type.substring(0, 3));
+    clone.id = generateId(idPrefixes[type] || type.substring(0, 3));
     clone.created = new Date().toISOString();
     clone.updated = clone.created;
     clone.created_by = S.user.id || '';
     if (clone.title) clone.title += ' (copy)';
     if (clone.name) clone.name += ' (copy)';
     if (type === 'recipe') { clone.status = 'draft'; clone.batch_id = ''; clone.review_notes = ''; clone.assigned_to = ''; }
+    if (type === 'campaign_v2') { clone.status = 'DRAFT'; clone.ab_test = { enabled: false, primary_metric: '', variants: [] }; }
+    if (type === 'ad_set')      { clone.status = 'DRAFT'; clone.ab_role = null; }
+    if (type === 'ad')          { clone.pipeline_status = 'hook_ready'; clone.review_notes = ''; clone.assigned_to = ''; }
 
     coll.push(clone);
     logActivity(type + '_created', type, clone.id, clone.title || clone.name, 'Duplicated');

@@ -56,11 +56,19 @@
     var html = '';
 
     // View header
+    var v2 = isMetaV2Enabled();
     html += '<div class="cp-view-header"><div class="cp-view-header-left"><h1>' + icon('chart-pie') + ' Dashboard</h1></div>';
     html += '<div class="cp-view-header-right">';
-    html += '<button class="cp-btn cp-btn-ai" data-action="open-campaign-wizard">' + icon('wand-magic') + ' New Campaign</button>';
+    if (v2) {
+      html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-campaign-tree">' + icon('wand-magic') + ' Generate Campaign</button>';
+    } else {
+      html += '<button class="cp-btn cp-btn-ai" data-action="open-campaign-wizard">' + icon('wand-magic') + ' New Campaign</button>';
+    }
     html += '<button class="cp-btn cp-btn-outline" data-action="go-view" data-view="research">' + icon('flask') + ' Research Lab</button>';
     html += '</div></div>';
+
+    // Meta v2 widget (only when enabled)
+    if (v2) html += renderDashMetaV2Widget();
 
     // Continue working card (last edited recipe)
     var lastRecipe = (S.data.recipes || []).slice().sort(function(a, b) { return (b.updated || '') > (a.updated || '') ? 1 : -1; })[0];

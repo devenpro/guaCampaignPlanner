@@ -18,6 +18,11 @@
   var Constants;
   var snapshot, openModal, closeModal, openConfirmDialog, closeConfirmDialog, collectModalFields;
   var collectFunnelChips, getSelectedRecipe, getEffectiveHook, renderTagInput;
+  // Meta v2 (Stage 4 imports)
+  var getCampaignV2, getAdSet, getAd;
+  var getAllCampaignsV2, getAllAdSets, getAllAds;
+  var getAdSetsByCampaign, getAdsByAdSet, getAdsByCampaign;
+  var buildPersonaSnapshot, maybeAdvanceAdStatus;
 
   console.log('[CP] Part 2B script loaded');
 
@@ -89,6 +94,12 @@
     collectModalFields = P2A.collectModalFields; collectFunnelChips = P2A.collectFunnelChips;
     getSelectedRecipe = P2A.getSelectedRecipe; getEffectiveHook = P2A.getEffectiveHook;
     renderTagInput = P2A.renderTagInput;
+    buildPersonaSnapshot = P2A.buildPersonaSnapshot;
+    // Meta v2 helpers from Part 1
+    getCampaignV2 = window._cpGetCampaignV2; getAdSet = window._cpGetAdSet; getAd = window._cpGetAd;
+    getAllCampaignsV2 = window._cpGetAllCampaignsV2; getAllAdSets = window._cpGetAllAdSets; getAllAds = window._cpGetAllAds;
+    getAdSetsByCampaign = window._cpGetAdSetsByCampaign; getAdsByAdSet = window._cpGetAdsByAdSet; getAdsByCampaign = window._cpGetAdsByCampaign;
+    maybeAdvanceAdStatus = window._cpMaybeAdvanceAdStatus;
 
     // Register view renderers
     var R = window._cpRenderers = window._cpRenderers || {};

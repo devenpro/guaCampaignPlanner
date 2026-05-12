@@ -1,4 +1,4 @@
-/* Campaign Planner — built from 82 source files (see src/) */
+/* Campaign Planner — built from 97 source files (see src/) */
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -46,19 +46,23 @@
   // ============================================================
 
   var APP_VIEWS = {
-    'dashboard':   { order: 1,  label: 'Dashboard',    icon: 'chart-pie',          group: 'main',    description: 'Overview & stats' },
-    'personas':    { order: 2,  label: 'Personas',     icon: 'users',              group: 'library', description: 'Audience personas' },
-    'pain_points': { order: 3,  label: 'Pain Points',  icon: 'bolt',               group: 'library', description: 'Pain points & solutions' },
-    'messages':    { order: 4,  label: 'Messages',     icon: 'comments',           group: 'library', description: 'Message library' },
-    'styles':      { order: 5,  label: 'Styles',       icon: 'palette',            group: 'library', description: 'Creative styles' },
-    'formats':     { order: 6,  label: 'Formats',      icon: 'clapperboard',       group: 'library', description: 'Visual formats' },
-    'recipes':     { order: 7,  label: 'Recipes',      icon: 'shuffle',            group: 'core',    description: 'Creative recipes' },
-    'campaigns':   { order: 8,  label: 'Campaigns',    icon: 'bullhorn',           group: 'core',    description: 'Campaign planning' },
-    'calendar':    { order: 9,  label: 'Calendar',     icon: 'calendar',           group: 'core',    description: 'Timeline view' },
-    'research':    { order: 10, label: 'Research Lab',  icon: 'flask',             group: 'tools',   description: 'AI research hub' },
-    'images':      { order: 11, label: 'Images',       icon: 'images',             group: 'tools',   description: 'Reference images' },
-    'activity':    { order: 12, label: 'Activity',     icon: 'clock-rotate-left',  group: 'tools',   description: 'Activity log' },
-    'settings':    { order: 13, label: 'Settings',     icon: 'gear',               group: 'tools',   description: 'Workspace config' }
+    'dashboard':         { order: 1,  label: 'Dashboard',         icon: 'chart-pie',          group: 'main',    description: 'Overview & stats' },
+    'personas':          { order: 2,  label: 'Personas',          icon: 'users',              group: 'library', description: 'Audience personas' },
+    'pain_points':       { order: 3,  label: 'Pain Points',       icon: 'bolt',               group: 'library', description: 'Pain points & solutions' },
+    'messages':          { order: 4,  label: 'Messages',          icon: 'comments',           group: 'library', description: 'Message library' },
+    'styles':            { order: 5,  label: 'Styles',            icon: 'palette',            group: 'library', description: 'Creative styles' },
+    'formats':           { order: 6,  label: 'Formats',           icon: 'clapperboard',       group: 'library', description: 'Visual formats' },
+    'recipes':           { order: 7,  label: 'Recipes',           icon: 'shuffle',            group: 'core',    description: 'Creative recipes (legacy)', legacy: true },
+    'campaigns':         { order: 8,  label: 'Campaigns (v1)',    icon: 'bullhorn',           group: 'core',    description: 'Legacy campaigns',          legacy: true },
+    // Meta v2 — the new working surface. Sidebar shows these when
+    // S.meta.setup.meta_v2 === true.
+    'meta_campaigns':    { order: 7,  label: 'Campaigns',         icon: 'bullhorn',           group: 'core',    description: 'Meta Campaigns',            metaV2: true },
+    'campaign_workspace':{ order: 8,  label: 'Campaign Workspace',icon: 'sitemap',            group: 'core',    description: 'Campaign → Ad Set → Ad',    metaV2: true, hidden: true },
+    'calendar':          { order: 9,  label: 'Calendar',          icon: 'calendar',           group: 'core',    description: 'Timeline view' },
+    'research':          { order: 10, label: 'Research Lab',      icon: 'flask',              group: 'tools',   description: 'AI research hub' },
+    'images':            { order: 11, label: 'Images',            icon: 'images',             group: 'tools',   description: 'Reference images' },
+    'activity':          { order: 12, label: 'Activity',          icon: 'clock-rotate-left',  group: 'tools',   description: 'Activity log' },
+    'settings':          { order: 13, label: 'Settings',          icon: 'gear',               group: 'tools',   description: 'Workspace config' }
   };
 
   var SIDEBAR_GROUPS = {
@@ -231,7 +235,22 @@
     'settings_changed':          { icon: 'gear',           color: '#80868b' },
     'data_imported':             { icon: 'upload',         color: '#1a73e8' },
     'data_exported':             { icon: 'download',       color: '#1a73e8' },
-    'setup_completed':           { icon: 'circle-check',   color: '#0d904f' }
+    'setup_completed':           { icon: 'circle-check',   color: '#0d904f' },
+    // --- Meta v2 hierarchy (Campaign → Ad Set → Ad) ---
+    'campaign_v2_created':       { icon: 'bullhorn',       color: '#0891b2' },
+    'campaign_v2_updated':       { icon: 'bullhorn',       color: '#0891b2' },
+    'campaign_v2_deleted':       { icon: 'trash',          color: '#d93025' },
+    'ad_set_created':            { icon: 'crosshairs',     color: '#9334e9' },
+    'ad_set_updated':            { icon: 'crosshairs',     color: '#9334e9' },
+    'ad_set_deleted':            { icon: 'trash',          color: '#d93025' },
+    'ad_created':                { icon: 'rectangle-ad',   color: '#1a73e8' },
+    'ad_updated':                { icon: 'rectangle-ad',   color: '#1a73e8' },
+    'ad_deleted':                { icon: 'trash',          color: '#d93025' },
+    'ad_status_changed':         { icon: 'refresh',        color: '#1a73e8' },
+    'snapshot_resynced':         { icon: 'refresh',        color: '#0d904f' },
+    'campaign_tree_generated':   { icon: 'sparkles',       color: '#7c3aed' },
+    'legacy_migrated':           { icon: 'circle-check',   color: '#0d904f' },
+    'meta_csv_exported':         { icon: 'download',       color: '#1a73e8' }
   };
 
   var CARD_DENSITIES = {
@@ -250,6 +269,262 @@
   ];
 
 
+/* ===== src/10-part1/01b-meta-constants.js ===== */
+  // ============================================================
+  // SECTION 1B: META CONSTANTS (Campaign → Ad Set → Ad)
+  // ============================================================
+  //
+  // Storage uses Meta API enum values (e.g. OUTCOME_LEADS). UI surfaces
+  // friendly labels via the `label` property. Keep values stable: they are
+  // the same strings Meta's Marketing API and bulk-upload CSV expect.
+
+  // --- Campaign-level constants ---
+
+  var META_OBJECTIVES = {
+    'OUTCOME_AWARENESS':     { key: 'OUTCOME_AWARENESS',     label: 'Awareness',     icon: 'eye',           color: '#9334e9', description: 'Show ads to people most likely to remember them' },
+    'OUTCOME_TRAFFIC':       { key: 'OUTCOME_TRAFFIC',       label: 'Traffic',       icon: 'arrow-pointer', color: '#1a73e8', description: 'Send people to a destination (website, app, Messenger, WhatsApp)' },
+    'OUTCOME_ENGAGEMENT':    { key: 'OUTCOME_ENGAGEMENT',    label: 'Engagement',    icon: 'heart',         color: '#e37400', description: 'Get more messages, video views, post engagement, page likes, or event responses' },
+    'OUTCOME_LEADS':         { key: 'OUTCOME_LEADS',         label: 'Leads',         icon: 'user-plus',     color: '#0d904f', description: 'Collect leads for your business via forms, calls, sign-ups, or messages' },
+    'OUTCOME_APP_PROMOTION': { key: 'OUTCOME_APP_PROMOTION', label: 'App promotion', icon: 'mobile',        color: '#0891b2', description: 'Find new users for your app, or get existing users to take actions' },
+    'OUTCOME_SALES':         { key: 'OUTCOME_SALES',         label: 'Sales',         icon: 'cart-shopping', color: '#be123c', description: 'Find people likely to purchase your product or service' }
+  };
+
+  var META_BUYING_TYPES = {
+    'AUCTION':  { key: 'AUCTION',  label: 'Auction',                description: 'Standard ad auction. Best for most advertisers.' },
+    'RESERVED': { key: 'RESERVED', label: 'Reach and Frequency',    description: 'Predictable reach and frequency at a fixed CPM. Requires Meta approval.' }
+  };
+
+  var META_BUDGET_MODES = {
+    'CBO': { key: 'CBO', label: 'Advantage Campaign Budget',  short: 'CBO', description: 'Meta distributes your budget across Ad Sets to get the best results' },
+    'ABO': { key: 'ABO', label: 'Ad Set Budget',              short: 'ABO', description: 'Set a separate budget for each Ad Set' }
+  };
+
+  var META_BID_STRATEGIES = {
+    'LOWEST_COST_WITHOUT_CAP':   { key: 'LOWEST_COST_WITHOUT_CAP',   label: 'Highest volume',   description: 'Get the most results for your budget (default)' },
+    'LOWEST_COST_WITH_BID_CAP':  { key: 'LOWEST_COST_WITH_BID_CAP',  label: 'Bid cap',          description: 'Cap the maximum bid per auction' },
+    'COST_CAP':                  { key: 'COST_CAP',                  label: 'Cost per result',  description: 'Average cost per result close to your target' },
+    'LOWEST_COST_WITH_MIN_ROAS': { key: 'LOWEST_COST_WITH_MIN_ROAS', label: 'ROAS goal',        description: 'Maintain a minimum return on ad spend' }
+  };
+
+  var META_SPECIAL_AD_CATEGORIES = {
+    'NONE':                      { key: 'NONE',                      label: 'None',                          description: 'No special category applies' },
+    'CREDIT':                    { key: 'CREDIT',                    label: 'Credit',                        description: 'Credit cards, loans, long-term financing' },
+    'EMPLOYMENT':                { key: 'EMPLOYMENT',                label: 'Employment',                    description: 'Job listings, internships, work programs' },
+    'HOUSING':                   { key: 'HOUSING',                   label: 'Housing',                       description: 'Sales/rentals of homes, mortgages, insurance' },
+    'ISSUES_ELECTIONS_POLITICS': { key: 'ISSUES_ELECTIONS_POLITICS', label: 'Social, elections or politics', description: 'Political ads or ads about social issues' }
+  };
+
+  // Meta-shaped campaign statuses (replaces v1's planning/active/paused/completed/archived)
+  var META_CAMPAIGN_STATUSES = {
+    'DRAFT':    { key: 'DRAFT',    label: 'Draft',    icon: 'pencil',         color: '#80868b', order: 0 },
+    'ACTIVE':   { key: 'ACTIVE',   label: 'Active',   icon: 'bolt',           color: '#0d904f', order: 1 },
+    'PAUSED':   { key: 'PAUSED',   label: 'Paused',   icon: 'pause',          color: '#be123c', order: 2 },
+    'ARCHIVED': { key: 'ARCHIVED', label: 'Archived', icon: 'box-archive',    color: '#80868b', order: 3 },
+    'DELETED':  { key: 'DELETED',  label: 'Deleted',  icon: 'trash',          color: '#d93025', order: 4 }
+  };
+
+  // --- Ad Set-level constants ---
+
+  // Optimization goals — superset across all objectives. The UI filters by
+  // parent objective via META_OBJECTIVE_OPTIMIZATION_GOALS below.
+  var META_OPTIMIZATION_GOALS = {
+    'REACH':              { key: 'REACH',              label: 'Reach',                  description: 'Show ads to the maximum number of people' },
+    'IMPRESSIONS':        { key: 'IMPRESSIONS',        label: 'Impressions',            description: 'Show ads as many times as possible' },
+    'AD_RECALL_LIFT':     { key: 'AD_RECALL_LIFT',     label: 'Ad recall lift',         description: 'Maximise people likely to remember your ad' },
+    'LINK_CLICKS':        { key: 'LINK_CLICKS',        label: 'Link clicks',            description: 'Drive clicks to your destination' },
+    'LANDING_PAGE_VIEWS': { key: 'LANDING_PAGE_VIEWS', label: 'Landing page views',     description: 'People who click and load your landing page' },
+    'POST_ENGAGEMENT':    { key: 'POST_ENGAGEMENT',    label: 'Post engagement',        description: 'Reactions, comments, shares, saves' },
+    'PAGE_LIKES':         { key: 'PAGE_LIKES',         label: 'Page likes',             description: 'Grow your Page audience' },
+    'EVENT_RESPONSES':    { key: 'EVENT_RESPONSES',    label: 'Event responses',        description: 'Maximise RSVPs to an event' },
+    'THRUPLAY':           { key: 'THRUPLAY',           label: 'ThruPlay',               description: 'Video views to completion (or 15s, whichever first)' },
+    'VIDEO_VIEWS':        { key: 'VIDEO_VIEWS',        label: 'Video views (2s)',       description: 'At least 2 seconds of continuous viewing' },
+    'LEAD_GENERATION':    { key: 'LEAD_GENERATION',    label: 'Leads',                  description: 'Submitted Meta lead forms' },
+    'QUALITY_LEAD':       { key: 'QUALITY_LEAD',       label: 'Conversion leads',       description: 'Optimise for leads that convert downstream (CRM integration required)' },
+    'QUALITY_CALL':       { key: 'QUALITY_CALL',       label: 'Quality calls',          description: 'Call-tracked leads that meet a quality threshold' },
+    'OFFSITE_CONVERSIONS':{ key: 'OFFSITE_CONVERSIONS',label: 'Conversions',            description: 'Pixel/CAPI events on your site or app' },
+    'CONVERSATIONS':      { key: 'CONVERSATIONS',      label: 'Conversations',          description: 'Messenger / WhatsApp / Instagram message threads' },
+    'MESSAGING_PURCHASE_CONVERSION': { key: 'MESSAGING_PURCHASE_CONVERSION', label: 'Purchases in messaging', description: 'Purchases that complete inside a message thread' },
+    'APP_INSTALLS':       { key: 'APP_INSTALLS',       label: 'App installs',           description: 'Drive new installs of your app' },
+    'APP_INSTALLS_AND_OFFSITE_CONVERSIONS': { key: 'APP_INSTALLS_AND_OFFSITE_CONVERSIONS', label: 'App installs + events', description: 'Optimise for installs + a chosen in-app event' },
+    'VALUE':              { key: 'VALUE',              label: 'Value',                  description: 'Maximise total purchase value (requires value optimisation setup)' }
+  };
+
+  // Which optimization goals are allowed under each objective (UI guidance)
+  var META_OBJECTIVE_OPTIMIZATION_GOALS = {
+    'OUTCOME_AWARENESS':     ['REACH', 'IMPRESSIONS', 'AD_RECALL_LIFT', 'THRUPLAY', 'VIDEO_VIEWS'],
+    'OUTCOME_TRAFFIC':       ['LINK_CLICKS', 'LANDING_PAGE_VIEWS', 'REACH', 'IMPRESSIONS', 'CONVERSATIONS'],
+    'OUTCOME_ENGAGEMENT':    ['POST_ENGAGEMENT', 'PAGE_LIKES', 'EVENT_RESPONSES', 'THRUPLAY', 'VIDEO_VIEWS', 'CONVERSATIONS', 'REACH', 'IMPRESSIONS'],
+    'OUTCOME_LEADS':         ['LEAD_GENERATION', 'QUALITY_LEAD', 'OFFSITE_CONVERSIONS', 'CONVERSATIONS', 'QUALITY_CALL'],
+    'OUTCOME_APP_PROMOTION': ['APP_INSTALLS', 'APP_INSTALLS_AND_OFFSITE_CONVERSIONS', 'OFFSITE_CONVERSIONS'],
+    'OUTCOME_SALES':         ['OFFSITE_CONVERSIONS', 'VALUE', 'CONVERSATIONS', 'LANDING_PAGE_VIEWS', 'LINK_CLICKS']
+  };
+
+  var META_BILLING_EVENTS = {
+    'IMPRESSIONS':  { key: 'IMPRESSIONS',  label: 'Impressions',   description: 'Billed when your ad is shown' },
+    'LINK_CLICKS':  { key: 'LINK_CLICKS',  label: 'Link clicks',   description: 'Billed for clicks on your destination link' },
+    'THRUPLAY':     { key: 'THRUPLAY',     label: 'ThruPlay',      description: 'Billed for video completes (or 15s)' },
+    'APP_INSTALLS': { key: 'APP_INSTALLS', label: 'App installs',  description: 'Billed for tracked app installs' }
+  };
+
+  var META_ATTRIBUTION_SETTINGS = {
+    '1d_view':         { key: '1d_view',         label: '1-day view',                  short: '1V' },
+    '1d_click':        { key: '1d_click',        label: '1-day click',                 short: '1C' },
+    '7d_click':        { key: '7d_click',        label: '7-day click',                 short: '7C' },
+    '1d_view_1d_click':{ key: '1d_view_1d_click',label: '1-day view + 1-day click',    short: '1V/1C' },
+    '1d_view_7d_click':{ key: '1d_view_7d_click',label: '1-day view + 7-day click',    short: '1V/7C' }
+  };
+
+  // Curated placement list. Each entry maps to Meta's `publisher_platform` +
+  // `facebook_positions` / `instagram_positions` / etc. on export.
+  var META_PLACEMENTS = {
+    'FACEBOOK_FEED':          { key: 'FACEBOOK_FEED',          label: 'Facebook Feed',           platform: 'facebook',  position: 'feed' },
+    'FACEBOOK_MARKETPLACE':   { key: 'FACEBOOK_MARKETPLACE',   label: 'Facebook Marketplace',    platform: 'facebook',  position: 'marketplace' },
+    'FACEBOOK_VIDEO_FEEDS':   { key: 'FACEBOOK_VIDEO_FEEDS',   label: 'Facebook Video Feeds',    platform: 'facebook',  position: 'video_feeds' },
+    'FACEBOOK_RIGHT_COLUMN':  { key: 'FACEBOOK_RIGHT_COLUMN',  label: 'Facebook Right Column',   platform: 'facebook',  position: 'right_hand_column' },
+    'FACEBOOK_STORIES':       { key: 'FACEBOOK_STORIES',       label: 'Facebook Stories',        platform: 'facebook',  position: 'story' },
+    'FACEBOOK_REELS':         { key: 'FACEBOOK_REELS',         label: 'Facebook Reels',          platform: 'facebook',  position: 'facebook_reels' },
+    'FACEBOOK_SEARCH':        { key: 'FACEBOOK_SEARCH',        label: 'Facebook Search',         platform: 'facebook',  position: 'search' },
+    'INSTAGRAM_FEED':         { key: 'INSTAGRAM_FEED',         label: 'Instagram Feed',          platform: 'instagram', position: 'stream' },
+    'INSTAGRAM_STORIES':      { key: 'INSTAGRAM_STORIES',      label: 'Instagram Stories',       platform: 'instagram', position: 'story' },
+    'INSTAGRAM_EXPLORE':      { key: 'INSTAGRAM_EXPLORE',      label: 'Instagram Explore',       platform: 'instagram', position: 'explore' },
+    'INSTAGRAM_REELS':        { key: 'INSTAGRAM_REELS',        label: 'Instagram Reels',         platform: 'instagram', position: 'reels' },
+    'INSTAGRAM_SEARCH':       { key: 'INSTAGRAM_SEARCH',       label: 'Instagram Search',        platform: 'instagram', position: 'ig_search' },
+    'INSTAGRAM_PROFILE_FEED': { key: 'INSTAGRAM_PROFILE_FEED', label: 'Instagram Profile Feed',  platform: 'instagram', position: 'profile_feed' },
+    'MESSENGER_INBOX':        { key: 'MESSENGER_INBOX',        label: 'Messenger Inbox',         platform: 'messenger', position: 'messenger_home' },
+    'MESSENGER_STORIES':      { key: 'MESSENGER_STORIES',      label: 'Messenger Stories',       platform: 'messenger', position: 'story' },
+    'AUDIENCE_NETWORK':       { key: 'AUDIENCE_NETWORK',       label: 'Audience Network',        platform: 'audience_network', position: 'classic' },
+    'AUDIENCE_NETWORK_REWARDED_VIDEO': { key: 'AUDIENCE_NETWORK_REWARDED_VIDEO', label: 'Audience Network Rewarded Video', platform: 'audience_network', position: 'rewarded_video' }
+  };
+
+  var META_AD_SET_STATUSES = {
+    'DRAFT':    { key: 'DRAFT',    label: 'Draft',    icon: 'pencil',      color: '#80868b', order: 0 },
+    'ACTIVE':   { key: 'ACTIVE',   label: 'Active',   icon: 'bolt',        color: '#0d904f', order: 1 },
+    'PAUSED':   { key: 'PAUSED',   label: 'Paused',   icon: 'pause',       color: '#be123c', order: 2 },
+    'ARCHIVED': { key: 'ARCHIVED', label: 'Archived', icon: 'box-archive', color: '#80868b', order: 3 },
+    'DELETED':  { key: 'DELETED',  label: 'Deleted',  icon: 'trash',       color: '#d93025', order: 4 }
+  };
+
+  // --- Ad-level constants ---
+
+  var META_AD_CREATIVE_TYPES = {
+    'single_image': { key: 'single_image', label: 'Single Image', icon: 'image',        color: '#1a73e8' },
+    'single_video': { key: 'single_video', label: 'Single Video', icon: 'video',        color: '#d93025' },
+    'carousel':     { key: 'carousel',     label: 'Carousel',     icon: 'images',       color: '#7c3aed' }
+  };
+
+  var META_CTA_TYPES = {
+    'NO_BUTTON':      { key: 'NO_BUTTON',      label: 'No button' },
+    'LEARN_MORE':     { key: 'LEARN_MORE',     label: 'Learn More' },
+    'SHOP_NOW':       { key: 'SHOP_NOW',       label: 'Shop Now' },
+    'SIGN_UP':        { key: 'SIGN_UP',        label: 'Sign Up' },
+    'SUBSCRIBE':      { key: 'SUBSCRIBE',      label: 'Subscribe' },
+    'GET_OFFER':      { key: 'GET_OFFER',      label: 'Get Offer' },
+    'DOWNLOAD':       { key: 'DOWNLOAD',       label: 'Download' },
+    'BOOK_TRAVEL':    { key: 'BOOK_TRAVEL',    label: 'Book Now' },
+    'CONTACT_US':     { key: 'CONTACT_US',     label: 'Contact Us' },
+    'APPLY_NOW':      { key: 'APPLY_NOW',      label: 'Apply Now' },
+    'GET_QUOTE':      { key: 'GET_QUOTE',      label: 'Get Quote' },
+    'MESSAGE_PAGE':   { key: 'MESSAGE_PAGE',   label: 'Send Message' },
+    'INSTALL_MOBILE_APP': { key: 'INSTALL_MOBILE_APP', label: 'Install Now' },
+    'USE_APP':        { key: 'USE_APP',        label: 'Use App' },
+    'WATCH_MORE':     { key: 'WATCH_MORE',     label: 'Watch More' },
+    'SEE_MENU':       { key: 'SEE_MENU',       label: 'See Menu' },
+    'DONATE_NOW':     { key: 'DONATE_NOW',     label: 'Donate' },
+    'GET_DIRECTIONS': { key: 'GET_DIRECTIONS', label: 'Get Directions' },
+    'CALL_NOW':       { key: 'CALL_NOW',       label: 'Call Now' },
+    'WHATSAPP_MESSAGE':{ key: 'WHATSAPP_MESSAGE', label: 'Send WhatsApp message' },
+    'PLAY_GAME':      { key: 'PLAY_GAME',      label: 'Play Game' }
+  };
+
+  // Ad-level creative pipeline (Hook → Copy → Media → Review). Composition is
+  // dropped here because it now lives at the Ad Set (brief tab).
+  var META_AD_PIPELINE_STEPS = [
+    { key: 'hook',   label: 'Hook',   icon: 'anchor',    order: 0 },
+    { key: 'copy',   label: 'Copy',   icon: 'pen-fancy', order: 1 },
+    { key: 'media',  label: 'Media',  icon: 'wand-magic',order: 2 },
+    { key: 'review', label: 'Review', icon: 'eye',       order: 3 }
+  ];
+
+  // Ad pipeline statuses — distinct from Meta's delivery statuses so the
+  // creative team can track production progress before the ad goes live.
+  var META_AD_STATUSES = {
+    'hook_ready':    { key: 'hook_ready',    label: 'Hook Ready',    icon: 'anchor',           color: '#9334e9', order: 0 },
+    'copy_ready':    { key: 'copy_ready',    label: 'Copy Ready',    icon: 'pen-fancy',        color: '#1a73e8', order: 1 },
+    'media_ready':   { key: 'media_ready',   label: 'Media Ready',   icon: 'wand-magic',       color: '#7c3aed', order: 2 },
+    'in_review':     { key: 'in_review',     label: 'In Review',     icon: 'magnifying-glass', color: '#e37400', order: 3 },
+    'approved':      { key: 'approved',      label: 'Approved',      icon: 'circle-check',     color: '#0d904f', order: 4 },
+    'live':          { key: 'live',          label: 'Live',          icon: 'signal',           color: '#0891b2', order: 5 },
+    'paused':        { key: 'paused',        label: 'Paused',        icon: 'pause',            color: '#be123c', order: 6 },
+    'archived':      { key: 'archived',      label: 'Archived',      icon: 'box-archive',      color: '#bdc1c6', order: 7 }
+  };
+
+  var META_AD_STATUS_ORDER = ['hook_ready', 'copy_ready', 'media_ready', 'in_review', 'approved', 'live', 'paused', 'archived'];
+  var META_AD_ACTIVE_STATUSES = ['hook_ready', 'copy_ready', 'media_ready', 'in_review', 'approved', 'live'];
+
+  // --- A/B test constants ---
+
+  var META_AB_ROLES = {
+    'CONTROL':   { key: 'CONTROL',   label: 'Control',   color: '#1a73e8' },
+    'VARIANT_A': { key: 'VARIANT_A', label: 'Variant A', color: '#e37400' },
+    'VARIANT_B': { key: 'VARIANT_B', label: 'Variant B', color: '#9334e9' }
+  };
+
+  var META_AB_METRICS = {
+    'COST_PER_RESULT':     { key: 'COST_PER_RESULT',     label: 'Cost per result' },
+    'COST_PER_LEAD':       { key: 'COST_PER_LEAD',       label: 'Cost per lead' },
+    'COST_PER_CONVERSION': { key: 'COST_PER_CONVERSION', label: 'Cost per conversion' },
+    'COST_PER_LINK_CLICK': { key: 'COST_PER_LINK_CLICK', label: 'Cost per link click' },
+    'CTR':                 { key: 'CTR',                 label: 'Click-through rate' },
+    'ROAS':                { key: 'ROAS',                label: 'Return on ad spend' },
+    'CPM':                 { key: 'CPM',                 label: 'Cost per 1,000 impressions' }
+  };
+
+  // --- Misc ---
+
+  // Default placement set: Advantage Placements (let Meta optimise across all)
+  var META_DEFAULT_PLACEMENT_MODE = 'advantage';
+
+  // Default new-Campaign skeleton — used by createEntity('campaign_v2')
+  var META_CAMPAIGN_DEFAULTS = {
+    objective: 'OUTCOME_LEADS',
+    buying_type: 'AUCTION',
+    budget_mode: 'CBO',
+    bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
+    special_ad_categories: ['NONE'],
+    status: 'DRAFT'
+  };
+
+  var META_AD_SET_DEFAULTS = {
+    optimization_goal: 'OFFSITE_CONVERSIONS',
+    billing_event: 'IMPRESSIONS',
+    attribution_setting: '7d_click',
+    placements: { advantage_enabled: true, custom_placements: [] },
+    status: 'DRAFT'
+  };
+
+  var META_AD_DEFAULTS = {
+    creative_type: 'single_image',
+    pipeline_status: 'hook_ready'
+  };
+
+  // --- Helper: lookup with fallback ---
+
+  function metaObjective(key)        { return META_OBJECTIVES[key] || null; }
+  function metaOptimizationGoal(key) { return META_OPTIMIZATION_GOALS[key] || null; }
+  function metaBillingEvent(key)     { return META_BILLING_EVENTS[key] || null; }
+  function metaPlacement(key)        { return META_PLACEMENTS[key] || null; }
+  function metaCTA(key)              { return META_CTA_TYPES[key] || null; }
+  function metaCampaignStatus(key)   { return META_CAMPAIGN_STATUSES[key] || { label: key, color: '#80868b', icon: 'circle' }; }
+  function metaAdSetStatus(key)      { return META_AD_SET_STATUSES[key] || { label: key, color: '#80868b', icon: 'circle' }; }
+  function metaAdStatus(key)         { return META_AD_STATUSES[key] || { label: key, color: '#80868b', icon: 'circle' }; }
+
+  // Get allowed optimization goals for a given objective
+  function metaOptimizationGoalsForObjective(objectiveKey) {
+    var allowed = META_OBJECTIVE_OPTIMIZATION_GOALS[objectiveKey] || [];
+    return allowed.map(function(k) { return META_OPTIMIZATION_GOALS[k]; }).filter(Boolean);
+  }
+
+
 /* ===== src/10-part1/02-state.js ===== */
   // ============================================================
   // SECTION 2: STATE OBJECT
@@ -257,8 +532,8 @@
 
   var S = {
     // Data (from JSON fields)
-    data: { persona_categories: [], personas: [], pain_points: [], messages: [], styles: [], visual_formats: [], recipes: [], campaigns: [], tags: [], research_sessions: [] },
-    meta: { workspace: {}, setup: {}, settings: {}, aiPreferences: {} },
+    data: { persona_categories: [], personas: [], pain_points: [], messages: [], styles: [], visual_formats: [], recipes: [], campaigns: [], tags: [], research_sessions: [], campaigns_v2: [], ad_sets: [], ads: [] },
+    meta: { workspace: {}, setup: {}, settings: {}, aiPreferences: {}, meta_defaults: {}, legacy_backup: null },
     activity: [],
     user: { id: '', name: '', email: '', fullName: '', timezone: '', roles: '' },
     brand: { configured: false, identity: {}, core: null, video: null, content: null, seo: null, social: null },
@@ -268,6 +543,13 @@
     messageMap: {}, styleMap: {}, formatMap: {},
     recipeMap: {}, campaignMap: {}, tagMap: {},
     funnelStageMap: {}, researchMap: {},
+
+    // Meta v2 hierarchy maps
+    campaignV2Map: {}, adSetMap: {}, adMap: {},
+    adSetsByCampaign: {}, adsByAdSet: {},
+    campaignV2StatusCounts: {}, adSetStatusCounts: {}, adStatusCounts: {},
+    totalCampaignsV2: 0, activeCampaignsV2: 0,
+    totalAdSets: 0, totalAds: 0, activeAds: 0,
 
     // Production node snapshot, keyed by `data-planner-id` (= recipe.id).
     // Rebuilt on every page load from the Drupal `view-media-productions`
@@ -310,6 +592,15 @@
     campaignFilter: { search: '', status: '' },
     selectedCampaignId: null,
     campaignDetailTab: 'overview',
+
+    // Meta v2 UI state (Campaign Workspace)
+    selectedCampaignV2Id: null,
+    selectedAdSetId: null,
+    selectedAdId: null,
+    campaignV2Filter: { search: '', status: '', objective: '' },
+    workspaceInspectorTab: 'overview',  // overview | brief | pipeline | settings
+    workspaceTreeCollapsed: {},          // { 'cmpv2_xxx': true, 'adset_xxx': false }
+    currentAdPipelineStep: 'hook',
     // Pain point filter + selection
     painPointFilter: { search: '', category: '' },
     selectedPainPointId: null,
@@ -646,14 +937,35 @@
       persona_categories: [], personas: [], pain_points: [],
       messages: [], styles: [], visual_formats: [],
       recipes: [], campaigns: [], tags: [],
-      research_sessions: []
+      research_sessions: [],
+      // Meta v2 hierarchy. Empty until the user creates them through the
+      // new Workspace, or until the migration importer runs.
+      campaigns_v2: [], ad_sets: [], ads: []
+    };
+  }
+
+  function getDefaultMetaDefaults() {
+    return {
+      page_id: '',
+      instagram_actor_id: '',
+      pixel_id: '',
+      attribution_window: '7d_click',
+      currency: 'USD',
+      time_zone: 'UTC',
+      business_manager_id: ''
     };
   }
 
   function getDefaultMeta() {
     return {
       workspace: { name: '', description: '', created: new Date().toISOString() },
-      setup: { product_name: '', objective: '', custom_instructions: '', setup_complete: false },
+      setup: {
+        product_name: '', objective: '', custom_instructions: '', setup_complete: false,
+        // Meta v2 gate: false = old recipe-centric UI; true = new Workspace.
+        // Flipped by the Stage 6 migration wizard.
+        meta_v2: false,
+        migrated_to_v2: false
+      },
       settings: {
         timezone: 'Asia/Kolkata',
         default_view: 'dashboard',
@@ -667,7 +979,12 @@
       },
       aiPreferences: { appDefault: { provider: '', model: '' }, perAction: {}, lastProvider: '', lastModel: '' },
       reference_images: {},
-      image_categories: getDefaultImageCategories()
+      image_categories: getDefaultImageCategories(),
+      // Meta v2 workspace-level defaults (Page, Pixel, attribution, currency etc.)
+      meta_defaults: getDefaultMetaDefaults(),
+      // Legacy backup populated by the migration importer (Stage 6) so users
+      // can recover their pre-v2 data until they explicitly discard it.
+      legacy_backup: null
     };
   }
 
@@ -705,6 +1022,15 @@
     d.campaigns = d.campaigns || [];
     d.tags = d.tags || [];
     d.research_sessions = d.research_sessions || [];
+    // Meta v2 hierarchy
+    d.campaigns_v2 = d.campaigns_v2 || [];
+    d.ad_sets = d.ad_sets || [];
+    d.ads = d.ads || [];
+
+    // Field-level fillers for Meta v2 entities (idempotent)
+    migrateCampaignsV2(d.campaigns_v2);
+    migrateAdSets(d.ad_sets);
+    migrateAds(d.ads);
 
     // Ensure each persona has all fields
     for (var pi = 0; pi < d.personas.length; pi++) {
@@ -854,10 +1180,130 @@
     }
   }
 
+  // ---- Meta v2 entity migrations (idempotent field fillers) ----
+
+  function migrateCampaignsV2(arr) {
+    for (var i = 0; i < arr.length; i++) {
+      var c = arr[i];
+      c.name = c.name || '';
+      c.description = c.description || '';
+      c.objective = c.objective || META_CAMPAIGN_DEFAULTS.objective;
+      c.buying_type = c.buying_type || META_CAMPAIGN_DEFAULTS.buying_type;
+      c.budget_mode = c.budget_mode || META_CAMPAIGN_DEFAULTS.budget_mode;
+      c.daily_budget = (c.daily_budget == null) ? null : c.daily_budget;
+      c.lifetime_budget = (c.lifetime_budget == null) ? null : c.lifetime_budget;
+      c.spend_cap = (c.spend_cap == null) ? null : c.spend_cap;
+      c.bid_strategy = c.bid_strategy || META_CAMPAIGN_DEFAULTS.bid_strategy;
+      c.special_ad_categories = c.special_ad_categories || META_CAMPAIGN_DEFAULTS.special_ad_categories.slice();
+      c.start_time = c.start_time || '';
+      c.stop_time = c.stop_time || '';
+      c.status = c.status || META_CAMPAIGN_DEFAULTS.status;
+      c.ab_test = c.ab_test || { enabled: false, primary_metric: '', variants: [] };
+      c.ab_test.variants = c.ab_test.variants || [];
+      c.ai_instructions = c.ai_instructions || '';
+      c.brief = c.brief || '';
+      c.tags = c.tags || [];
+      c.notes = c.notes || '';
+      c.created = c.created || new Date().toISOString();
+      c.updated = c.updated || c.created;
+      c.created_by = c.created_by || '';
+    }
+  }
+
+  function migrateAdSets(arr) {
+    for (var i = 0; i < arr.length; i++) {
+      var s = arr[i];
+      s.campaign_id = s.campaign_id || '';
+      s.name = s.name || '';
+      // Audience (v1: persona link + override notes)
+      s.persona_id = s.persona_id || '';
+      s.persona_snapshot = s.persona_snapshot || null;
+      s.audience_overrides = s.audience_overrides || '';
+      // Placements
+      s.placements = s.placements || { advantage_enabled: true, custom_placements: [] };
+      s.placements.advantage_enabled = (s.placements.advantage_enabled !== false);
+      s.placements.custom_placements = s.placements.custom_placements || [];
+      // Optimization
+      s.optimization_goal = s.optimization_goal || META_AD_SET_DEFAULTS.optimization_goal;
+      s.billing_event = s.billing_event || META_AD_SET_DEFAULTS.billing_event;
+      s.attribution_setting = s.attribution_setting || META_AD_SET_DEFAULTS.attribution_setting;
+      s.bid_amount = (s.bid_amount == null) ? null : s.bid_amount;
+      // Budget (ABO)
+      s.daily_budget = (s.daily_budget == null) ? null : s.daily_budget;
+      s.lifetime_budget = (s.lifetime_budget == null) ? null : s.lifetime_budget;
+      // Schedule
+      s.start_time = s.start_time || '';
+      s.stop_time = s.stop_time || '';
+      s.dayparting = s.dayparting || null;
+      // Strategic brief (Ad Set tier of the two-tier workflow)
+      s.brief = s.brief || { creative_direction: '', message_ids: [], style_ids: [], format_ids: [], hook_angles: [], ai_notes: '' };
+      s.brief.creative_direction = s.brief.creative_direction || '';
+      s.brief.message_ids = s.brief.message_ids || [];
+      s.brief.style_ids = s.brief.style_ids || [];
+      s.brief.format_ids = s.brief.format_ids || [];
+      s.brief.hook_angles = s.brief.hook_angles || [];
+      s.brief.ai_notes = s.brief.ai_notes || '';
+      // A/B
+      s.ab_role = s.ab_role || null;
+      // Status + misc
+      s.status = s.status || META_AD_SET_DEFAULTS.status;
+      s.notes = s.notes || '';
+      s.created = s.created || new Date().toISOString();
+      s.updated = s.updated || s.created;
+      s.created_by = s.created_by || '';
+    }
+  }
+
+  function migrateAds(arr) {
+    for (var i = 0; i < arr.length; i++) {
+      var a = arr[i];
+      a.ad_set_id = a.ad_set_id || '';
+      a.name = a.name || '';
+      a.creative_type = a.creative_type || META_AD_DEFAULTS.creative_type;
+      a.creative = a.creative || { primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' };
+      a.creative.primary_text = a.creative.primary_text || '';
+      a.creative.headline = a.creative.headline || '';
+      a.creative.description = a.creative.description || '';
+      a.creative.cta_type = a.creative.cta_type || 'LEARN_MORE';
+      a.creative.cta_link = a.creative.cta_link || '';
+      a.creative.display_link = a.creative.display_link || '';
+      a.creative.tracking_params = a.creative.tracking_params || '';
+      a.hook = a.hook || { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' };
+      a.hook.source_message_id = a.hook.source_message_id || '';
+      a.hook.selected_hook_id = a.hook.selected_hook_id || '';
+      a.hook.text = a.hook.text || '';
+      a.hook.type = a.hook.type || 'direct';
+      a.media = a.media || {};
+      a.media.image = a.media.image || { asset_id: '', ai_prompt: '', brief: '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] };
+      a.media.image.reference_image_ids = a.media.image.reference_image_ids || [];
+      a.media.video = a.media.video || { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', blueprint: { scenes: [] }, script: { rows: [] } };
+      a.media.video.blueprint = a.media.video.blueprint || { scenes: [] };
+      a.media.video.script = a.media.video.script || { rows: [] };
+      a.media.carousel_cards = a.media.carousel_cards || [];
+      // Snapshots
+      a.message_snapshot = a.message_snapshot || null;
+      a.style_snapshot = a.style_snapshot || null;
+      a.format_snapshot = a.format_snapshot || null;
+      // Pipeline
+      a.pipeline_status = a.pipeline_status || META_AD_DEFAULTS.pipeline_status;
+      a.review_notes = a.review_notes || '';
+      a.production_notes = a.production_notes || '';
+      a.assigned_to = a.assigned_to || '';
+      a.due_date = a.due_date || '';
+      a.tags = a.tags || [];
+      a.created = a.created || new Date().toISOString();
+      a.updated = a.updated || a.created;
+      a.created_by = a.created_by || '';
+    }
+  }
+
   function migrateMeta() {
     var m = S.meta;
     m.workspace = m.workspace || { name: '', description: '', created: new Date().toISOString() };
     m.setup = m.setup || { product_name: '', objective: '', custom_instructions: '', setup_complete: false };
+    // Meta v2 setup flags (idempotent — don't clobber existing values)
+    if (typeof m.setup.meta_v2 !== 'boolean') m.setup.meta_v2 = false;
+    if (typeof m.setup.migrated_to_v2 !== 'boolean') m.setup.migrated_to_v2 = false;
     m.settings = m.settings || {};
     m.settings.timezone = m.settings.timezone || 'Asia/Kolkata';
     m.settings.default_view = m.settings.default_view || 'dashboard';
@@ -876,6 +1322,15 @@
     m.reference_images = m.reference_images || {};
     m.image_categories = m.image_categories || getDefaultImageCategories();
     m.recipe_templates = m.recipe_templates || [];
+
+    // Meta v2: workspace-level Page / Pixel / attribution / currency defaults
+    m.meta_defaults = m.meta_defaults || {};
+    var defaults = getDefaultMetaDefaults();
+    for (var dk in defaults) {
+      if (m.meta_defaults[dk] === undefined) m.meta_defaults[dk] = defaults[dk];
+    }
+    // Legacy backup (populated by Stage 6 importer; null until then)
+    if (m.legacy_backup === undefined) m.legacy_backup = null;
 
     S.cardDensity = m.settings.card_density;
     S.currentView = readHash();
@@ -1027,6 +1482,56 @@
     S.imageCategoryMap = {};
     var imgCats = (S.meta && S.meta.image_categories) || [];
     for (i = 0; i < imgCats.length; i++) S.imageCategoryMap[imgCats[i].id] = imgCats[i];
+
+    // --- Meta v2 hierarchy maps ---
+
+    S.campaignV2Map = {};
+    S.campaignV2StatusCounts = {};
+    S.totalCampaignsV2 = 0; S.activeCampaignsV2 = 0;
+    for (var cv2k in META_CAMPAIGN_STATUSES) S.campaignV2StatusCounts[cv2k] = 0;
+    var campsV2 = S.data.campaigns_v2 || [];
+    for (i = 0; i < campsV2.length; i++) {
+      item = campsV2[i];
+      S.campaignV2Map[item.id] = item;
+      S.campaignV2StatusCounts[item.status] = (S.campaignV2StatusCounts[item.status] || 0) + 1;
+      S.totalCampaignsV2++;
+      if (item.status === 'ACTIVE' || item.status === 'DRAFT') S.activeCampaignsV2++;
+    }
+
+    S.adSetMap = {};
+    S.adSetsByCampaign = {};
+    S.adSetStatusCounts = {};
+    S.totalAdSets = 0;
+    for (var asKey in META_AD_SET_STATUSES) S.adSetStatusCounts[asKey] = 0;
+    var adSets = S.data.ad_sets || [];
+    for (i = 0; i < adSets.length; i++) {
+      item = adSets[i];
+      S.adSetMap[item.id] = item;
+      S.totalAdSets++;
+      S.adSetStatusCounts[item.status] = (S.adSetStatusCounts[item.status] || 0) + 1;
+      if (item.campaign_id) {
+        S.adSetsByCampaign[item.campaign_id] = S.adSetsByCampaign[item.campaign_id] || [];
+        S.adSetsByCampaign[item.campaign_id].push(item);
+      }
+    }
+
+    S.adMap = {};
+    S.adsByAdSet = {};
+    S.adStatusCounts = {};
+    S.totalAds = 0; S.activeAds = 0;
+    for (var aKey in META_AD_STATUSES) S.adStatusCounts[aKey] = 0;
+    var ads = S.data.ads || [];
+    for (i = 0; i < ads.length; i++) {
+      item = ads[i];
+      S.adMap[item.id] = item;
+      S.totalAds++;
+      S.adStatusCounts[item.pipeline_status] = (S.adStatusCounts[item.pipeline_status] || 0) + 1;
+      if (META_AD_ACTIVE_STATUSES.indexOf(item.pipeline_status) > -1) S.activeAds++;
+      if (item.ad_set_id) {
+        S.adsByAdSet[item.ad_set_id] = S.adsByAdSet[item.ad_set_id] || [];
+        S.adsByAdSet[item.ad_set_id].push(item);
+      }
+    }
   }
 
 
@@ -1042,8 +1547,20 @@
     S.currentView = viewName;
     updateSidebarActive(viewName);
     renderCurrentView();
-    if (!options.noHash) updateHash(viewName);
+    if (!options.noHash) updateHash(options.hash || viewName);
     if (options.scrollTop !== false) $('#cpContent').scrollTop(0);
+  }
+
+  // Convenience: jump to the Campaign Workspace focused on a Campaign,
+  // and optionally select an Ad Set / Ad within it.
+  function navigateToCampaignV2(campaignId, adSetId, adId) {
+    if (campaignId) S.selectedCampaignV2Id = campaignId;
+    S.selectedAdSetId = adSetId || null;
+    S.selectedAdId = adId || null;
+    var h = 'campaign/' + campaignId;
+    if (adSetId) h += '/ad_set/' + adSetId;
+    if (adId)    h += '/ad/' + adId;
+    navigate('campaign_workspace', { hash: h });
   }
 
   function updateHash(v) {
@@ -1051,8 +1568,26 @@
     else window.location.hash = v;
   }
 
+  // Parse a hash like `campaign/cmpv2_x/ad_set/adset_y/ad/ad_z` and update
+  // S.selectedCampaignV2Id / selectedAdSetId / selectedAdId. Returns the
+  // resolved view name.
+  function parseWorkspaceHash(h) {
+    if (!h || h.indexOf('campaign/') !== 0) return null;
+    var parts = h.split('/');
+    // parts: ['campaign', '<id>', 'ad_set'?, '<id>'?, 'ad'?, '<id>'?]
+    S.selectedCampaignV2Id = parts[1] || null;
+    S.selectedAdSetId = (parts[2] === 'ad_set') ? (parts[3] || null) : null;
+    S.selectedAdId    = (parts[4] === 'ad')     ? (parts[5] || null) : null;
+    return 'campaign_workspace';
+  }
+
   function readHash() {
     var h = window.location.hash.replace('#', '');
+    // Nested workspace routes
+    if (h.indexOf('campaign/') === 0) {
+      var w = parseWorkspaceHash(h);
+      if (w) return w;
+    }
     return (h && APP_VIEWS[h]) ? h : (S.meta && S.meta.settings && S.meta.settings.default_view) || 'dashboard';
   }
 
@@ -1082,6 +1617,8 @@
       case 'formats':      html = renderFormatsPageView(); break;
       case 'recipes':      html = renderRecipesView(); break;
       case 'campaigns':  html = renderCampaignsView(); break;
+      case 'meta_campaigns':     html = renderMetaCampaignsView(); break;
+      case 'campaign_workspace': html = renderCampaignWorkspaceView(); break;
       case 'calendar':   html = renderCalendarView(); break;
       case 'research':   html = (R.researchView) ? R.researchView() : renderResearchPlaceholder(); break;
       case 'images':     html = (R.imagesView) ? R.imagesView() : renderImagesPlaceholder(); break;
@@ -1188,6 +1725,13 @@
       'folder-plus': 'fa-folder-plus', 'trophy': 'fa-trophy',
       'blender': 'fa-blender', 'shuffle': 'fa-shuffle', 'sitemap': 'fa-sitemap',
       'diagram-project': 'fa-diagram-project', 'link-simple': 'fa-link',
+      'crosshairs': 'fa-crosshairs', 'bullseye-arrow': 'fa-bullseye-arrow',
+      'people-group': 'fa-people-group', 'circle-dot': 'fa-circle-dot',
+      'plus-circle': 'fa-circle-plus', 'minus-circle': 'fa-circle-minus',
+      'magnifying-glass-chart': 'fa-magnifying-glass-chart',
+      'arrows-up-down-left-right': 'fa-arrows-up-down-left-right',
+      'note-sticky': 'fa-note-sticky', 'rectangle-list': 'fa-rectangle-list',
+      'list-tree': 'fa-list-tree', 'object-group': 'fa-object-group',
       'chart-mixed': 'fa-chart-mixed', 'square-poll-vertical': 'fa-square-poll-vertical',
       // Brand icons (use fab class)
       'youtube': 'fa-youtube', 'instagram': 'fa-instagram', 'facebook': 'fa-facebook',
@@ -1270,6 +1814,12 @@
   function getResearchSession(id) { return S.researchMap[id] || null; }
   function getImageById(fid) { return S.imageMap[fid] || null; }
 
+  // --- Meta v2 entity getters ---
+  function getCampaignV2(id) { return S.campaignV2Map[id] || null; }
+  function getAdSet(id)      { return S.adSetMap[id] || null; }
+  function getAd(id)         { return S.adMap[id] || null; }
+  function isMetaV2Enabled() { return !!(S.meta && S.meta.setup && S.meta.setup.meta_v2); }
+
   // Returns the production node info for a recipe, preferring the live
   // snapshot from S.productionMap (rebuilt on each page load from the view
   // block) and falling back to the persistent recipe.production cache.
@@ -1301,6 +1851,22 @@
   function getAllCampaigns() { return (S.data.campaigns || []).slice(); }
   function getAllPainPoints() { return (S.data.pain_points || []).slice(); }
   function getAllCategories() { return (S.data.persona_categories || []).slice().sort(function(a, b) { return (a.order || 0) - (b.order || 0); }); }
+
+  // --- Meta v2 collection getters ---
+  function getAllCampaignsV2() { return (S.data.campaigns_v2 || []).slice(); }
+  function getAllAdSets()      { return (S.data.ad_sets || []).slice(); }
+  function getAllAds()         { return (S.data.ads || []).slice(); }
+  function getAdSetsByCampaign(campaignId) { return (S.adSetsByCampaign[campaignId] || []).slice(); }
+  function getAdsByAdSet(adSetId)          { return (S.adsByAdSet[adSetId] || []).slice(); }
+  function getAdsByCampaign(campaignId) {
+    var sets = S.adSetsByCampaign[campaignId] || [];
+    var out = [];
+    for (var i = 0; i < sets.length; i++) {
+      var ads = S.adsByAdSet[sets[i].id] || [];
+      for (var j = 0; j < ads.length; j++) out.push(ads[j]);
+    }
+    return out;
+  }
 
   function getRecentActivity(n) { return (S.activity || []).slice(-(n || 15)).reverse(); }
 
@@ -1420,7 +1986,7 @@
     var setup = (S.meta && S.meta.setup) || {};
     var html = '<div class="cp-header"><div class="cp-header-left">';
     html += '<button class="cp-btn-icon cp-sidebar-toggle" id="cpSidebarToggle">' + icon('menu') + '</button>';
-    html += '<div class="cp-header-logo"><span class="cp-header-logo-accent">Campaign</span> Planner</div>';
+    html += '<div class="cp-header-logo"><span class="cp-header-logo-accent">Meta</span> Campaign Planner</div>';
     if (ws.name) html += '<div class="cp-header-workspace">' + esc(ws.name) + '</div>';
     // Brand identity pill
     if (S.brand && S.brand.configured && S.brand.identity.name) {
@@ -1458,9 +2024,13 @@
       html += '<div class="cp-nav-group">';
       html += '<div class="cp-nav-group-label">' + esc(grp.label) + '</div>';
 
+      var metaV2 = !!(S.meta && S.meta.setup && S.meta.setup.meta_v2);
       for (var key in APP_VIEWS) {
         var v = APP_VIEWS[key];
         if (v.group !== gk) continue;
+        if (v.hidden) continue;                       // never in sidebar (e.g. campaign_workspace)
+        if (v.metaV2 && !metaV2) continue;            // gated to v2-enabled workspaces
+        if (v.legacy && metaV2) continue;             // hide legacy entries once v2 is on
         var active = S.currentView === key ? ' cp-nav-item-active' : '';
         var badgeHtml = renderSidebarBadge(key);
         html += '<a href="#' + key + '" class="cp-nav-item' + active + '" data-view="' + key + '">';
@@ -1478,8 +2048,8 @@
     var setup = (S.meta && S.meta.setup) || {};
     html += '<div class="cp-sidebar-footer">';
     html += '<div class="cp-sidebar-footer-label">Workspace</div>';
-    html += '<div class="cp-sidebar-footer-name">' + esc(ws.name || 'Campaign Planner') + '</div>';
-    html += '<div class="cp-sidebar-footer-meta">Meta Ads' + (setup.setup_complete ? ' · Setup ✓' : '') + '</div>';
+    html += '<div class="cp-sidebar-footer-name">' + esc(ws.name || 'Meta Campaign Planner') + '</div>';
+    html += '<div class="cp-sidebar-footer-meta">Meta Ads' + (setup.setup_complete ? ' · Setup ✓' : '') + (setup.meta_v2 ? ' · v2' : '') + '</div>';
     html += '</div>';
 
     html += '</div></div>';
@@ -1494,6 +2064,7 @@
       case 'styles': count = S.totalStyles + S.totalFormats; break;
       case 'recipes': count = S.activeRecipes; break;
       case 'campaigns': count = S.activeCampaigns; break;
+      case 'meta_campaigns': count = S.activeCampaignsV2; break;
       case 'images': count = S.images.length; break;
       case 'activity':
         var recent24h = (S.activity || []).filter(function(a) {
@@ -1630,11 +2201,19 @@
     var html = '';
 
     // View header
+    var v2 = isMetaV2Enabled();
     html += '<div class="cp-view-header"><div class="cp-view-header-left"><h1>' + icon('chart-pie') + ' Dashboard</h1></div>';
     html += '<div class="cp-view-header-right">';
-    html += '<button class="cp-btn cp-btn-ai" data-action="open-campaign-wizard">' + icon('wand-magic') + ' New Campaign</button>';
+    if (v2) {
+      html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-campaign-tree">' + icon('wand-magic') + ' Generate Campaign</button>';
+    } else {
+      html += '<button class="cp-btn cp-btn-ai" data-action="open-campaign-wizard">' + icon('wand-magic') + ' New Campaign</button>';
+    }
     html += '<button class="cp-btn cp-btn-outline" data-action="go-view" data-view="research">' + icon('flask') + ' Research Lab</button>';
     html += '</div></div>';
+
+    // Meta v2 widget (only when enabled)
+    if (v2) html += renderDashMetaV2Widget();
 
     // Continue working card (last edited recipe)
     var lastRecipe = (S.data.recipes || []).slice().sort(function(a, b) { return (b.updated || '') > (a.updated || '') ? 1 : -1; })[0];
@@ -1996,6 +2575,122 @@
     return html;
   }
 
+/* ===== src/10-part1/10a-view-dashboard-meta-v2.js ===== */
+  // ============================================================
+  // SECTION 10A: DASHBOARD — META v2 WIDGET (Stage 8)
+  // ============================================================
+  //
+  // Replaces the legacy "Active campaigns" card with a Meta v2 summary
+  // when S.meta.setup.meta_v2 is true. Surfaces:
+  //   - Active campaigns count
+  //   - Ad Set status rollup (active / paused / draft)
+  //   - Ads pipeline rollup (live / approved / in_review / draft+wip)
+  //   - Snapshot divergence count (library updated since attach)
+  //   - "Continue working" list (3 most recently updated Ads)
+
+  function renderDashMetaV2Widget() {
+    if (!isMetaV2Enabled()) return '';
+
+    var camps = getAllCampaignsV2();
+    var sets = getAllAdSets();
+    var ads = getAllAds();
+    var active = camps.filter(function(c) { return c.status === 'ACTIVE'; }).length;
+    var drafts = camps.filter(function(c) { return c.status === 'DRAFT'; }).length;
+
+    // Ads pipeline rollup
+    var liveAds = ads.filter(function(a) { return a.pipeline_status === 'live'; }).length;
+    var approvedAds = ads.filter(function(a) { return a.pipeline_status === 'approved'; }).length;
+    var reviewAds = ads.filter(function(a) { return a.pipeline_status === 'in_review'; }).length;
+    var wipAds = ads.filter(function(a) {
+      return ['hook_ready', 'copy_ready', 'media_ready'].indexOf(a.pipeline_status) > -1;
+    }).length;
+
+    // Snapshot divergence count (Ad Sets whose persona has moved on)
+    var divergent = 0;
+    sets.forEach(function(s) { if (isPersonaSnapshotStale(s)) divergent++; });
+
+    // Continue working: most recently updated ads, top 3
+    var recentAds = ads.slice().sort(function(a, b) {
+      return (b.updated || b.created || '') > (a.updated || a.created || '') ? 1 : -1;
+    }).slice(0, 3);
+
+    var html = '<div class="cp-dash-v2-card">';
+    html += '<div class="cp-dash-v2-card-header">';
+    html += '<h2>' + icon('bullhorn') + ' Meta Campaigns</h2>';
+    html += '<div style="display:flex;gap:6px">';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="go-view" data-view="meta_campaigns">View all</button>';
+    html += '<button class="cp-btn cp-btn-ai cp-btn-sm" data-action="ai-generate-campaign-tree">' + icon('wand-magic') + ' Generate</button>';
+    html += '</div></div>';
+
+    // Top stats row
+    html += '<div class="cp-dash-v2-stats">';
+    html += '<div class="cp-dash-v2-stat"><div class="cp-dash-v2-stat-val">' + camps.length + '</div><div class="cp-dash-v2-stat-lbl">Campaigns</div><div class="cp-dash-v2-stat-sub">' + active + ' active · ' + drafts + ' draft</div></div>';
+    html += '<div class="cp-dash-v2-stat"><div class="cp-dash-v2-stat-val">' + sets.length + '</div><div class="cp-dash-v2-stat-lbl">Ad Sets</div></div>';
+    html += '<div class="cp-dash-v2-stat"><div class="cp-dash-v2-stat-val">' + ads.length + '</div><div class="cp-dash-v2-stat-lbl">Ads</div><div class="cp-dash-v2-stat-sub">' + liveAds + ' live · ' + approvedAds + ' ready</div></div>';
+    html += '<div class="cp-dash-v2-stat"><div class="cp-dash-v2-stat-val" style="color:' + (divergent > 0 ? 'var(--cp-accent)' : 'var(--cp-success)') + '">' + divergent + '</div><div class="cp-dash-v2-stat-lbl">Diverged</div><div class="cp-dash-v2-stat-sub">snapshots</div></div>';
+    html += '</div>';
+
+    // Pipeline progress bar
+    if (ads.length > 0) {
+      html += '<div class="cp-dash-v2-pipeline">';
+      var segments = [
+        { count: wipAds,      color: '#1a73e8', label: 'In progress' },
+        { count: reviewAds,   color: '#e37400', label: 'In review' },
+        { count: approvedAds, color: '#0d904f', label: 'Approved' },
+        { count: liveAds,     color: '#0891b2', label: 'Live' }
+      ];
+      var totalWithStatus = wipAds + reviewAds + approvedAds + liveAds;
+      var remaining = ads.length - totalWithStatus;
+      if (remaining > 0) segments.unshift({ count: remaining, color: '#bdc1c6', label: 'Other' });
+
+      html += '<div class="cp-dash-v2-pipeline-bar">';
+      segments.forEach(function(seg) {
+        if (seg.count === 0) return;
+        var pct = (seg.count / ads.length) * 100;
+        html += '<div class="cp-dash-v2-pipeline-seg" style="width:' + pct + '%;background:' + seg.color + '" title="' + esc(seg.label) + ': ' + seg.count + '"></div>';
+      });
+      html += '</div>';
+      html += '<div class="cp-dash-v2-pipeline-legend">';
+      segments.forEach(function(seg) {
+        if (seg.count === 0) return;
+        html += '<span><span class="cp-dash-v2-legend-dot" style="background:' + seg.color + '"></span> ' + esc(seg.label) + ' (' + seg.count + ')</span>';
+      });
+      html += '</div></div>';
+    }
+
+    // Continue working
+    if (recentAds.length > 0) {
+      html += '<div class="cp-dash-v2-section-title">' + icon('pen-fancy') + ' Continue working</div>';
+      html += '<div class="cp-dash-v2-continue-list">';
+      for (var i = 0; i < recentAds.length; i++) {
+        var a = recentAds[i];
+        var status = metaAdStatus(a.pipeline_status);
+        var adSet = S.adSetMap[a.ad_set_id];
+        var campId = adSet ? adSet.campaign_id : '';
+        html += '<div class="cp-dash-v2-continue-item" data-action="lib-open-ad" data-id="' + esc(a.id) + '">';
+        html += '<span class="cp-tree-status-dot" style="background:' + status.color + '"></span>';
+        html += '<span class="cp-dash-v2-continue-name">' + esc(a.name) + '</span>';
+        if (adSet) html += '<span class="cp-text-muted">' + esc(adSet.name) + '</span>';
+        html += '<span class="cp-text-muted" style="font-size:11px">' + formatRelativeTime(a.updated || a.created) + '</span>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+
+    // Empty state CTA
+    if (camps.length === 0) {
+      html += '<div class="cp-dash-v2-empty">';
+      html += '<p>No Meta Campaigns yet. Get started with an AI-generated tree from a brief, or build manually.</p>';
+      html += '<div style="display:flex;gap:8px;margin-top:var(--cp-space-2)">';
+      html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-campaign-tree">' + icon('wand-magic') + ' Generate from brief</button>';
+      html += '<button class="cp-btn cp-btn-primary" data-action="new-campaign-v2">' + icon('plus') + ' New Campaign</button>';
+      html += '</div></div>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
 /* ===== src/10-part1/11-view-personas.js ===== */
   // ============================================================
   // SECTION 11: PERSONAS VIEW
@@ -2312,6 +3007,9 @@
       html += '<div class="cp-card cp-persona-section"><div class="cp-section-header"><h3>' + icon('file-text') + ' Notes</h3></div>';
       html += '<p>' + esc(p.notes) + '</p></div>';
     }
+
+    // Workspace usage (only when meta_v2 is on)
+    html += renderLibraryWorkspaceUsage('persona', p.id);
 
     html += '</div>';
     return html;
@@ -2816,6 +3514,9 @@
       }
     }
     html += '</div>';
+
+    // Workspace usage (meta_v2)
+    html += renderLibraryWorkspaceUsage('pain_point', pp.id);
 
     html += '<div class="cp-detail-footer"><span class="cp-text-muted">Created ' + formatDate(pp.created) + (pp.updated ? ' · Updated ' + formatRelativeTime(pp.updated) : '') + '</span></div>';
     return html;
@@ -3654,6 +4355,1282 @@
     return html;
   }
 
+
+/* ===== src/10-part1/17a-view-meta-campaigns.js ===== */
+  // ============================================================
+  // SECTION 15B: META CAMPAIGNS LIST VIEW (v2)
+  // ============================================================
+  //
+  // Lists campaigns_v2[] in a card grid. Each card is a click-target into
+  // the Campaign Workspace. Visible when S.meta.setup.meta_v2 === true.
+
+  function renderMetaCampaignsView() {
+    var camps = getAllCampaignsV2();
+    var f = S.campaignV2Filter || (S.campaignV2Filter = { search: '', status: '', objective: '' });
+
+    var filtered = camps.slice();
+    if (f.search) {
+      var q = f.search.toLowerCase();
+      filtered = filtered.filter(function(c) {
+        return (c.name || '').toLowerCase().indexOf(q) > -1 ||
+               (c.description || '').toLowerCase().indexOf(q) > -1;
+      });
+    }
+    if (f.status)    filtered = filtered.filter(function(c) { return c.status === f.status; });
+    if (f.objective) filtered = filtered.filter(function(c) { return c.objective === f.objective; });
+    filtered.sort(function(a, b) { return (b.updated || b.created || '') > (a.updated || a.created || '') ? 1 : -1; });
+
+    var html = '<div class="cp-view cp-view-meta-campaigns">';
+    html += '<div class="cp-view-header"><div class="cp-view-header-left">';
+    html += '<h1>' + icon('bullhorn') + ' Campaigns</h1>';
+    html += '<span class="cp-view-subtitle">' + filtered.length + ' campaign' + (filtered.length !== 1 ? 's' : '') + ' · Meta-native structure</span>';
+    html += '</div><div class="cp-view-header-right">';
+    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-campaign-tree">' + icon('wand-magic') + ' Generate from brief</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-export-open">' + icon('download') + ' Export all</button>';
+    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-campaign-v2">' + icon('plus') + ' New Campaign</button>';
+    html += '</div></div>';
+
+    // Toolbar
+    html += '<div class="cp-list-toolbar"><div class="cp-list-toolbar-row">';
+    html += '<div class="cp-search-wrapper">' + icon('search') + '<input type="text" class="cp-input" id="cpCampaignV2Search" placeholder="Search campaigns..." value="' + esc(f.search) + '"></div>';
+    html += '<select class="cp-select cp-select-sm" id="cpCampaignV2StatusFilter" style="width:auto;min-width:110px"><option value="">All statuses</option>';
+    for (var sk in META_CAMPAIGN_STATUSES) {
+      html += '<option value="' + sk + '"' + (f.status === sk ? ' selected' : '') + '>' + META_CAMPAIGN_STATUSES[sk].label + '</option>';
+    }
+    html += '</select>';
+    html += '<select class="cp-select cp-select-sm" id="cpCampaignV2ObjectiveFilter" style="width:auto;min-width:140px"><option value="">All objectives</option>';
+    for (var ok in META_OBJECTIVES) {
+      html += '<option value="' + ok + '"' + (f.objective === ok ? ' selected' : '') + '>' + META_OBJECTIVES[ok].label + '</option>';
+    }
+    html += '</select>';
+    html += '</div></div>';
+
+    if (filtered.length === 0) {
+      html += '<div class="cp-empty-state">';
+      html += '<div class="cp-empty-state-icon">' + icon('bullhorn') + '</div>';
+      if (camps.length === 0) {
+        html += '<div class="cp-empty-state-title">No campaigns yet</div>';
+        html += '<div class="cp-empty-state-text">Start with the AI brief-to-tree generator, or create one manually.</div>';
+        html += '<div style="display:flex;gap:var(--cp-space-2);justify-content:center;margin-top:var(--cp-space-3)">';
+        html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-campaign-tree">' + icon('wand-magic') + ' Generate from brief</button>';
+        html += '<button class="cp-btn cp-btn-primary" data-action="new-campaign-v2">' + icon('plus') + ' New Campaign</button>';
+        html += '</div>';
+      } else {
+        html += '<div class="cp-empty-state-title">No campaigns match</div>';
+        html += '<div class="cp-empty-state-text">Try clearing your filters.</div>';
+      }
+      html += '</div></div>';
+      return html;
+    }
+
+    // Card grid
+    html += '<div class="cp-meta-camp-grid">';
+    for (var i = 0; i < filtered.length; i++) html += renderMetaCampaignCard(filtered[i]);
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  function renderMetaCampaignCard(camp) {
+    var status = metaCampaignStatus(camp.status);
+    var objective = metaObjective(camp.objective);
+    var sets = getAdSetsByCampaign(camp.id);
+    var ads = getAdsByCampaign(camp.id);
+
+    // Per-status counts across ads in this campaign
+    var statusCounts = {};
+    ads.forEach(function(a) { statusCounts[a.pipeline_status] = (statusCounts[a.pipeline_status] || 0) + 1; });
+    var readyCount = (statusCounts.approved || 0) + (statusCounts.live || 0);
+    var progressPct = ads.length > 0 ? Math.round((readyCount / ads.length) * 100) : 0;
+
+    var html = '<div class="cp-meta-camp-card" data-action="open-campaign-v2" data-id="' + esc(camp.id) + '">';
+
+    // Header row
+    html += '<div class="cp-meta-camp-card-header">';
+    html += '<div class="cp-meta-camp-card-title">' + esc(camp.name || 'Untitled') + '</div>';
+    html += '<span class="cp-badge" style="background:' + status.color + '15;color:' + status.color + '">' + icon(status.icon) + ' ' + esc(status.label) + '</span>';
+    html += '</div>';
+
+    // Description
+    if (camp.description) {
+      html += '<div class="cp-meta-camp-card-desc">' + esc(truncate(camp.description, 140)) + '</div>';
+    }
+
+    // Meta row
+    html += '<div class="cp-meta-camp-card-meta">';
+    if (objective) html += '<span class="cp-meta-camp-tag">' + icon(objective.icon) + ' ' + esc(objective.label) + '</span>';
+    var bm = META_BUDGET_MODES[camp.budget_mode];
+    if (bm) html += '<span class="cp-meta-camp-tag">' + icon('dollar-sign') + ' ' + esc(bm.short) + '</span>';
+    if (camp.daily_budget)    html += '<span class="cp-meta-camp-tag">' + formatCurrency(camp.daily_budget) + '/d</span>';
+    if (camp.lifetime_budget) html += '<span class="cp-meta-camp-tag">' + formatCurrency(camp.lifetime_budget) + ' lifetime</span>';
+    if (camp.ab_test && camp.ab_test.enabled) html += '<span class="cp-meta-camp-tag cp-meta-camp-tag-ab">' + icon('flask') + ' A/B</span>';
+    html += '</div>';
+
+    // Children summary
+    html += '<div class="cp-meta-camp-card-children">';
+    html += '<div class="cp-meta-camp-card-stat"><span class="cp-meta-camp-card-stat-value">' + sets.length + '</span> <span class="cp-meta-camp-card-stat-label">Ad Set' + (sets.length !== 1 ? 's' : '') + '</span></div>';
+    html += '<div class="cp-meta-camp-card-stat"><span class="cp-meta-camp-card-stat-value">' + ads.length + '</span> <span class="cp-meta-camp-card-stat-label">Ad' + (ads.length !== 1 ? 's' : '') + '</span></div>';
+    if (ads.length > 0) html += '<div class="cp-meta-camp-card-stat"><span class="cp-meta-camp-card-stat-value" style="color:var(--cp-success)">' + progressPct + '%</span> <span class="cp-meta-camp-card-stat-label">Approved</span></div>';
+    html += '</div>';
+
+    // Footer
+    html += '<div class="cp-meta-camp-card-footer">';
+    html += '<span class="cp-text-muted">Updated ' + formatRelativeTime(camp.updated || camp.created) + '</span>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="open-campaign-v2" data-id="' + esc(camp.id) + '">Open ' + icon('arrow-right') + '</button>';
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  // Minimal currency formatter; respects S.meta.meta_defaults.currency.
+  function formatCurrency(amount) {
+    if (amount == null || amount === '') return '';
+    var ccy = (S.meta && S.meta.meta_defaults && S.meta.meta_defaults.currency) || 'USD';
+    try {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: ccy, maximumFractionDigits: 0 }).format(Number(amount));
+    } catch (_) {
+      return ccy + ' ' + amount;
+    }
+  }
+
+/* ===== src/10-part1/17b-view-campaign-workspace.js ===== */
+  // ============================================================
+  // SECTION 15C: CAMPAIGN WORKSPACE VIEW (v2)
+  // ============================================================
+  //
+  // Two-pane layout: left = Campaign tree (Campaign → Ad Sets → Ads),
+  // right = inspector for the currently-selected node. Selection is driven
+  // by S.selectedCampaignV2Id, S.selectedAdSetId, S.selectedAdId.
+
+  function renderCampaignWorkspaceView() {
+    var camp = S.campaignV2Map[S.selectedCampaignV2Id];
+
+    // Fallback: if no campaign selected, redirect to list view
+    if (!camp) {
+      return '<div class="cp-view cp-view-workspace">' +
+        '<div class="cp-empty-state cp-empty-state--center">' +
+        '<div class="cp-empty-state-icon">' + icon('bullhorn') + '</div>' +
+        '<div class="cp-empty-state-title">Pick a campaign to start</div>' +
+        '<div class="cp-empty-state-text">Open the Campaigns list and select one, or create a new campaign.</div>' +
+        '<div style="display:flex;gap:var(--cp-space-2);justify-content:center;margin-top:var(--cp-space-3)">' +
+        '<button class="cp-btn cp-btn-outline" data-action="go-view" data-view="meta_campaigns">' + icon('arrow-left') + ' Campaigns</button>' +
+        '<button class="cp-btn cp-btn-primary" data-action="new-campaign-v2">' + icon('plus') + ' New Campaign</button>' +
+        '</div></div></div>';
+    }
+
+    var html = '<div class="cp-view cp-view-workspace">';
+
+    // Workspace header — breadcrumbs + actions
+    html += renderWorkspaceBreadcrumbs(camp);
+
+    // Two-pane body
+    html += '<div class="cp-workspace-body">';
+    html += '<div class="cp-workspace-tree-pane">' + renderWorkspaceTree(camp) + '</div>';
+    html += '<div class="cp-workspace-inspector-pane">' + renderWorkspaceInspector(camp) + '</div>';
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  function renderWorkspaceBreadcrumbs(camp) {
+    var adSet = S.adSetMap[S.selectedAdSetId];
+    var ad = S.adMap[S.selectedAdId];
+
+    var html = '<div class="cp-workspace-breadcrumbs">';
+    html += '<a class="cp-workspace-breadcrumb" data-action="go-view" data-view="meta_campaigns" href="#meta_campaigns">' + icon('bullhorn') + ' Campaigns</a>';
+    html += '<span class="cp-workspace-breadcrumb-sep">' + icon('chevron-right') + '</span>';
+    html += '<a class="cp-workspace-breadcrumb cp-workspace-breadcrumb-current" data-action="ws-select-campaign" data-id="' + esc(camp.id) + '">' + esc(camp.name || 'Untitled') + '</a>';
+    if (adSet) {
+      html += '<span class="cp-workspace-breadcrumb-sep">' + icon('chevron-right') + '</span>';
+      html += '<a class="cp-workspace-breadcrumb' + (!ad ? ' cp-workspace-breadcrumb-current' : '') + '" data-action="ws-select-ad-set" data-id="' + esc(adSet.id) + '">' + esc(adSet.name || 'Ad Set') + '</a>';
+    }
+    if (ad) {
+      html += '<span class="cp-workspace-breadcrumb-sep">' + icon('chevron-right') + '</span>';
+      html += '<span class="cp-workspace-breadcrumb cp-workspace-breadcrumb-current">' + esc(ad.name || 'Ad') + '</span>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderWorkspaceTree(camp) {
+    var html = '';
+    var sets = getAdSetsByCampaign(camp.id);
+    var collapsed = S.workspaceTreeCollapsed || (S.workspaceTreeCollapsed = {});
+
+    // Tree toolbar
+    html += '<div class="cp-tree-toolbar">';
+    html += '<div class="cp-tree-toolbar-title">' + icon('sitemap') + ' Tree</div>';
+    html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-add-ad-set" data-campaign-id="' + esc(camp.id) + '" title="Add Ad Set">' + icon('plus') + '</button>';
+    html += '</div>';
+
+    // Campaign node (root)
+    var campSelected = (!S.selectedAdSetId && !S.selectedAdId);
+    var campStatus = metaCampaignStatus(camp.status);
+    html += '<div class="cp-tree-node cp-tree-node-campaign' + (campSelected ? ' cp-tree-node-selected' : '') + '" data-action="ws-select-campaign" data-id="' + esc(camp.id) + '">';
+    html += '<span class="cp-tree-node-icon">' + icon('bullhorn') + '</span>';
+    html += '<span class="cp-tree-node-label">' + esc(camp.name || 'Untitled') + '</span>';
+    html += '<span class="cp-tree-node-meta">';
+    html += '<span class="cp-tree-status-dot" style="background:' + campStatus.color + '" title="' + esc(campStatus.label) + '"></span>';
+    html += '<span class="cp-tree-node-count">' + sets.length + '</span>';
+    html += '</span>';
+    html += '</div>';
+
+    // Ad Set nodes
+    if (sets.length === 0) {
+      html += '<div class="cp-tree-empty-hint">';
+      html += icon('arrow-down') + ' No Ad Sets yet. ';
+      html += '<a href="#" data-action="ws-add-ad-set" data-campaign-id="' + esc(camp.id) + '">Add one</a>';
+      html += '</div>';
+    } else {
+      for (var i = 0; i < sets.length; i++) html += renderTreeAdSetNode(sets[i], collapsed);
+    }
+
+    return html;
+  }
+
+  function renderTreeAdSetNode(adSet, collapsed) {
+    var ads = getAdsByAdSet(adSet.id);
+    var isCollapsed = !!collapsed[adSet.id];
+    var setSelected = (S.selectedAdSetId === adSet.id && !S.selectedAdId);
+    var setStatus = metaAdSetStatus(adSet.status);
+    var persona = S.personaMap[adSet.persona_id];
+
+    var html = '<div class="cp-tree-branch">';
+
+    html += '<div class="cp-tree-node cp-tree-node-ad-set' + (setSelected ? ' cp-tree-node-selected' : '') + '" data-action="ws-select-ad-set" data-id="' + esc(adSet.id) + '">';
+    html += '<button class="cp-tree-toggle' + (isCollapsed ? ' cp-tree-toggle-collapsed' : '') + '" data-action="ws-toggle-tree" data-id="' + esc(adSet.id) + '">' + icon(isCollapsed ? 'chevron-right' : 'chevron-down') + '</button>';
+    html += '<span class="cp-tree-node-icon">' + icon('crosshairs') + '</span>';
+    html += '<span class="cp-tree-node-label">' + esc(adSet.name || 'Ad Set') + '</span>';
+    if (adSet.ab_role) {
+      var ab = META_AB_ROLES[adSet.ab_role];
+      if (ab) html += '<span class="cp-tree-ab-pill" style="background:' + ab.color + '15;color:' + ab.color + '">' + esc(ab.label) + '</span>';
+    }
+    html += '<span class="cp-tree-node-meta">';
+    if (persona) html += '<span class="cp-tree-node-sub" title="Persona">' + icon('user') + ' ' + esc(truncate(persona.name, 14)) + '</span>';
+    html += '<span class="cp-tree-status-dot" style="background:' + setStatus.color + '" title="' + esc(setStatus.label) + '"></span>';
+    html += '<span class="cp-tree-node-count">' + ads.length + '</span>';
+    html += '</span>';
+    html += '</div>';
+
+    // Children (ads)
+    if (!isCollapsed) {
+      html += '<div class="cp-tree-children">';
+      for (var i = 0; i < ads.length; i++) html += renderTreeAdNode(ads[i]);
+      html += '<button class="cp-tree-add-child" data-action="ws-add-ad" data-ad-set-id="' + esc(adSet.id) + '">' + icon('plus') + ' Add Ad</button>';
+      html += '</div>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  function renderTreeAdNode(ad) {
+    var selected = (S.selectedAdId === ad.id);
+    var status = metaAdStatus(ad.pipeline_status);
+    var ctype = META_AD_CREATIVE_TYPES[ad.creative_type] || { icon: 'rectangle-ad' };
+
+    var html = '<div class="cp-tree-node cp-tree-node-ad' + (selected ? ' cp-tree-node-selected' : '') + '" data-action="ws-select-ad" data-id="' + esc(ad.id) + '">';
+    html += '<span class="cp-tree-node-icon">' + icon(ctype.icon) + '</span>';
+    html += '<span class="cp-tree-node-label">' + esc(ad.name || 'Ad') + '</span>';
+    html += '<span class="cp-tree-node-meta">';
+    html += '<span class="cp-tree-status-dot" style="background:' + status.color + '" title="' + esc(status.label) + '"></span>';
+    html += '</span>';
+    html += '</div>';
+    return html;
+  }
+
+  // --- Inspector ---
+
+  function renderWorkspaceInspector(camp) {
+    if (S.selectedAdId) {
+      var ad = S.adMap[S.selectedAdId];
+      if (ad) return renderInspectorForAdTabbed(ad);
+    }
+    if (S.selectedAdSetId) {
+      var adSet = S.adSetMap[S.selectedAdSetId];
+      if (adSet) return renderInspectorForAdSetTabbed(adSet);
+    }
+    return renderInspectorForCampaign(camp);
+  }
+
+  function renderInspectorForCampaign(camp) {
+    var status = metaCampaignStatus(camp.status);
+    var objective = metaObjective(camp.objective) || { label: '—' };
+    var buying = META_BUYING_TYPES[camp.buying_type] || { label: '—' };
+    var budgetMode = META_BUDGET_MODES[camp.budget_mode] || { label: '—' };
+    var bid = META_BID_STRATEGIES[camp.bid_strategy] || { label: '—' };
+    var sets = getAdSetsByCampaign(camp.id);
+    var ads = getAdsByCampaign(camp.id);
+
+    var html = '';
+    html += '<div class="cp-inspector-header"><div>';
+    html += '<div class="cp-inspector-eyebrow">' + icon('bullhorn') + ' Campaign</div>';
+    html += '<h2 class="cp-inspector-title">' + esc(camp.name) + '</h2>';
+    html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap;margin-top:6px">';
+    html += '<span class="cp-badge" style="background:' + status.color + '15;color:' + status.color + '">' + icon(status.icon) + ' ' + esc(status.label) + '</span>';
+    html += '<span class="cp-badge" style="background:#1a73e815;color:#1a73e8">' + esc(objective.label) + '</span>';
+    if (camp.ab_test && camp.ab_test.enabled) html += '<span class="cp-badge" style="background:#9334e915;color:#9334e9">' + icon('flask') + ' A/B</span>';
+    html += '</div>';
+    html += '</div><div class="cp-inspector-header-actions">';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="edit-campaign-v2" data-id="' + esc(camp.id) + '">' + icon('edit') + ' Edit</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-campaign-v2" data-id="' + esc(camp.id) + '">' + icon('trash') + '</button>';
+    html += '</div></div>';
+
+    // Stats strip
+    html += '<div class="cp-inspector-stats">';
+    html += '<div class="cp-inspector-stat"><div class="cp-inspector-stat-value">' + sets.length + '</div><div class="cp-inspector-stat-label">Ad Sets</div></div>';
+    html += '<div class="cp-inspector-stat"><div class="cp-inspector-stat-value">' + ads.length + '</div><div class="cp-inspector-stat-label">Ads</div></div>';
+    var live = ads.filter(function(a) { return a.pipeline_status === 'live'; }).length;
+    var approved = ads.filter(function(a) { return a.pipeline_status === 'approved'; }).length;
+    html += '<div class="cp-inspector-stat"><div class="cp-inspector-stat-value" style="color:var(--cp-success)">' + approved + '</div><div class="cp-inspector-stat-label">Approved</div></div>';
+    html += '<div class="cp-inspector-stat"><div class="cp-inspector-stat-value" style="color:#0891b2">' + live + '</div><div class="cp-inspector-stat-label">Live</div></div>';
+    html += '</div>';
+
+    // Description
+    if (camp.description) {
+      html += '<div class="cp-inspector-section"><p>' + esc(camp.description) + '</p></div>';
+    }
+
+    // Meta-shaped settings grid
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('gear') + ' Campaign settings</div>';
+    html += '<div class="cp-inspector-grid">';
+    html += inspectorField('Objective', objective.label);
+    html += inspectorField('Buying type', buying.label);
+    html += inspectorField('Budget mode', budgetMode.label);
+    html += inspectorField('Bid strategy', bid.label);
+    html += inspectorField('Daily budget', camp.daily_budget ? formatCurrency(camp.daily_budget) : '—');
+    html += inspectorField('Lifetime budget', camp.lifetime_budget ? formatCurrency(camp.lifetime_budget) : '—');
+    html += inspectorField('Spend cap', camp.spend_cap ? formatCurrency(camp.spend_cap) : '—');
+    html += inspectorField('Schedule', renderScheduleSummary(camp.start_time, camp.stop_time));
+    var cats = (camp.special_ad_categories || []).filter(function(c) { return c && c !== 'NONE'; });
+    html += inspectorField('Special ad categories', cats.length ? cats.map(function(k) { return (META_SPECIAL_AD_CATEGORIES[k] || {}).label || k; }).join(', ') : 'None');
+    html += '</div></div>';
+
+    // Brief
+    if (camp.brief || camp.ai_instructions) {
+      html += '<div class="cp-inspector-section">';
+      if (camp.brief) {
+        html += '<div class="cp-inspector-section-title">' + icon('file-lines') + ' Brief</div>';
+        html += '<p>' + esc(camp.brief) + '</p>';
+      }
+      if (camp.ai_instructions) {
+        html += '<div class="cp-inspector-section-title" style="margin-top:var(--cp-space-3)">' + icon('sparkles') + ' AI instructions</div>';
+        html += '<p>' + esc(camp.ai_instructions) + '</p>';
+      }
+      html += '</div>';
+    }
+
+    // A/B test summary section
+    html += renderCampaignABSection(camp);
+
+    // Quick actions
+    html += '<div class="cp-inspector-actions">';
+    html += '<button class="cp-btn cp-btn-primary" data-action="ws-add-ad-set" data-campaign-id="' + esc(camp.id) + '">' + icon('plus') + ' Add Ad Set</button>';
+    html += '<button class="cp-btn cp-btn-ai" data-action="ai-suggest-ad-sets" data-campaign-id="' + esc(camp.id) + '">' + icon('sparkles') + ' Suggest Ad Sets</button>';
+    html += '<button class="cp-btn cp-btn-outline" data-action="ws-ab-config" data-id="' + esc(camp.id) + '">' + icon('flask') + ' A/B test setup</button>';
+    html += '<button class="cp-btn cp-btn-outline" data-action="v2-export-open" data-campaign-id="' + esc(camp.id) + '">' + icon('download') + ' Export</button>';
+    html += '</div>';
+
+    return html;
+  }
+
+  function renderCampaignABSection(camp) {
+    var ab = camp.ab_test || {};
+    if (!ab.enabled || !(ab.variants || []).length) return '';
+    var metric = (Constants.META_AB_METRICS[ab.primary_metric] || {}).label || '—';
+    var winner = (ab.variants || []).find(function(v) { return v.winner; });
+    var winnerSet = winner ? S.adSetMap[winner.ad_set_id] : null;
+
+    var html = '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('flask') + ' A/B test';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ab-compare" data-id="' + esc(camp.id) + '" style="margin-left:auto">' + icon('arrows-up-down-left-right') + ' Compare variants</button>';
+    html += '</div>';
+    html += '<div class="cp-inspector-grid">';
+    html += inspectorField('Primary metric', metric);
+    html += inspectorField('Variants', String((ab.variants || []).length));
+    if (winnerSet) html += inspectorField('Winner', winnerSet.name);
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderInspectorForAdSet(adSet) {
+    var camp = S.campaignV2Map[adSet.campaign_id];
+    var status = metaAdSetStatus(adSet.status);
+    var goal = metaOptimizationGoal(adSet.optimization_goal) || { label: '—' };
+    var billing = metaBillingEvent(adSet.billing_event) || { label: '—' };
+    var persona = S.personaMap[adSet.persona_id];
+    var ads = getAdsByAdSet(adSet.id);
+
+    var html = '';
+    html += '<div class="cp-inspector-header"><div>';
+    html += '<div class="cp-inspector-eyebrow">' + icon('crosshairs') + ' Ad Set' + (camp ? ' · ' + esc(camp.name) : '') + '</div>';
+    html += '<h2 class="cp-inspector-title">' + esc(adSet.name) + '</h2>';
+    html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap;margin-top:6px">';
+    html += '<span class="cp-badge" style="background:' + status.color + '15;color:' + status.color + '">' + icon(status.icon) + ' ' + esc(status.label) + '</span>';
+    if (adSet.ab_role) {
+      var ab = META_AB_ROLES[adSet.ab_role];
+      if (ab) html += '<span class="cp-badge" style="background:' + ab.color + '15;color:' + ab.color + '">' + icon('flask') + ' ' + esc(ab.label) + '</span>';
+    }
+    html += '</div></div><div class="cp-inspector-header-actions">';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="edit-ad-set" data-id="' + esc(adSet.id) + '">' + icon('edit') + ' Edit</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-ad-set" data-id="' + esc(adSet.id) + '">' + icon('trash') + '</button>';
+    html += '</div></div>';
+
+    // Stats
+    html += '<div class="cp-inspector-stats">';
+    html += '<div class="cp-inspector-stat"><div class="cp-inspector-stat-value">' + ads.length + '</div><div class="cp-inspector-stat-label">Ads</div></div>';
+    var approved = ads.filter(function(a) { return a.pipeline_status === 'approved' || a.pipeline_status === 'live'; }).length;
+    html += '<div class="cp-inspector-stat"><div class="cp-inspector-stat-value" style="color:var(--cp-success)">' + approved + '</div><div class="cp-inspector-stat-label">Approved+Live</div></div>';
+    html += '</div>';
+
+    // Audience
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('users') + ' Audience</div>';
+    if (persona) {
+      html += '<div class="cp-inspector-persona-card">';
+      html += '<div class="cp-inspector-persona-name">' + icon('user') + ' ' + esc(persona.name) + '</div>';
+      if (persona.description) html += '<div class="cp-inspector-persona-desc">' + esc(truncate(persona.description, 200)) + '</div>';
+      html += '</div>';
+    } else {
+      html += '<div class="cp-text-muted">No persona linked. <a href="#" data-action="edit-ad-set" data-id="' + esc(adSet.id) + '">Add one</a>.</div>';
+    }
+    if (adSet.audience_overrides) {
+      html += '<div class="cp-inspector-grid" style="margin-top:var(--cp-space-2)">';
+      html += inspectorField('Audience overrides', adSet.audience_overrides);
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // Placements
+    var placements = adSet.placements || { advantage_enabled: true, custom_placements: [] };
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('object-group') + ' Placements</div>';
+    if (placements.advantage_enabled) {
+      html += '<span class="cp-badge" style="background:#9334e915;color:#9334e9">' + icon('sparkles') + ' Advantage Placements (auto)</span>';
+    } else if ((placements.custom_placements || []).length) {
+      html += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+      placements.custom_placements.forEach(function(pk) {
+        var p = META_PLACEMENTS[pk];
+        if (p) html += '<span class="cp-badge">' + esc(p.label) + '</span>';
+      });
+      html += '</div>';
+    } else {
+      html += '<span class="cp-text-muted">No placements selected.</span>';
+    }
+    html += '</div>';
+
+    // Optimization
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('bullseye-arrow') + ' Optimization & delivery</div>';
+    html += '<div class="cp-inspector-grid">';
+    html += inspectorField('Optimization goal', goal.label);
+    html += inspectorField('Billing event', billing.label);
+    var attr = META_ATTRIBUTION_SETTINGS[adSet.attribution_setting];
+    html += inspectorField('Attribution', attr ? attr.label : '—');
+    html += inspectorField('Bid amount', adSet.bid_amount ? formatCurrency(adSet.bid_amount) : '—');
+    html += inspectorField('Daily budget',    adSet.daily_budget    ? formatCurrency(adSet.daily_budget)    : '— (CBO)');
+    html += inspectorField('Lifetime budget', adSet.lifetime_budget ? formatCurrency(adSet.lifetime_budget) : '—');
+    html += inspectorField('Schedule', renderScheduleSummary(adSet.start_time, adSet.stop_time));
+    html += '</div></div>';
+
+    // Brief preview (Stage 2 builds the editor)
+    var brief = adSet.brief || {};
+    var hasBrief = brief.creative_direction || (brief.message_ids || []).length || (brief.style_ids || []).length || (brief.format_ids || []).length || (brief.hook_angles || []).length;
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('file-lines') + ' Creative brief';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">strategic layer</span>';
+    html += '</div>';
+    if (hasBrief) {
+      if (brief.creative_direction) html += '<p>' + esc(brief.creative_direction) + '</p>';
+      if ((brief.message_ids || []).length) {
+        html += '<div class="cp-inspector-chip-row"><span class="cp-inspector-chip-label">Messages</span>';
+        brief.message_ids.forEach(function(id) { var m = S.messageMap[id]; if (m) html += '<span class="cp-badge">' + esc(m.title) + '</span>'; });
+        html += '</div>';
+      }
+      if ((brief.hook_angles || []).length) {
+        html += '<div class="cp-inspector-chip-row"><span class="cp-inspector-chip-label">Hook angles</span>';
+        brief.hook_angles.forEach(function(t) { html += '<span class="cp-badge">' + esc(t) + '</span>'; });
+        html += '</div>';
+      }
+    } else {
+      html += '<div class="cp-text-muted">No brief yet. Brief editor lands in Stage 2.</div>';
+    }
+    html += '</div>';
+
+    // Quick actions
+    html += '<div class="cp-inspector-actions">';
+    html += '<button class="cp-btn cp-btn-primary" data-action="ws-add-ad" data-ad-set-id="' + esc(adSet.id) + '">' + icon('plus') + ' Add Ad</button>';
+    html += '<button class="cp-btn cp-btn-ai" data-action="ai-suggest-ads" data-ad-set-id="' + esc(adSet.id) + '">' + icon('sparkles') + ' Suggest Ads</button>';
+    html += '</div>';
+
+    return html;
+  }
+
+  function renderInspectorForAd(ad) {
+    var adSet = S.adSetMap[ad.ad_set_id];
+    var camp = adSet ? S.campaignV2Map[adSet.campaign_id] : null;
+    var status = metaAdStatus(ad.pipeline_status);
+    var ctype = META_AD_CREATIVE_TYPES[ad.creative_type] || { label: 'Ad', icon: 'rectangle-ad' };
+    var cta = metaCTA((ad.creative || {}).cta_type);
+
+    var html = '';
+    html += '<div class="cp-inspector-header"><div>';
+    var crumb = (camp ? esc(camp.name) + ' · ' : '') + (adSet ? esc(adSet.name) : '');
+    html += '<div class="cp-inspector-eyebrow">' + icon(ctype.icon) + ' ' + esc(ctype.label) + (crumb ? ' · ' + crumb : '') + '</div>';
+    html += '<h2 class="cp-inspector-title">' + esc(ad.name) + '</h2>';
+    html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap;margin-top:6px">';
+    html += '<span class="cp-badge" style="background:' + status.color + '15;color:' + status.color + '">' + icon(status.icon) + ' ' + esc(status.label) + '</span>';
+    html += '</div></div><div class="cp-inspector-header-actions">';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-copy-ad-field" data-id="' + esc(ad.id) + '" data-field="all" title="Copy all ad fields">' + icon('copy') + '</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="edit-ad" data-id="' + esc(ad.id) + '">' + icon('edit') + ' Edit</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-ad" data-id="' + esc(ad.id) + '">' + icon('trash') + '</button>';
+    html += '</div></div>';
+
+    // Hook
+    var hook = ad.hook || {};
+    if (hook.text) {
+      html += '<div class="cp-inspector-section">';
+      html += '<div class="cp-inspector-section-title">' + icon('anchor') + ' Hook</div>';
+      html += '<blockquote class="cp-ad-hook">' + esc(hook.text) + '</blockquote>';
+      html += '</div>';
+    }
+
+    // Creative — primary text / headline / description / CTA / link (with per-field copy buttons)
+    var creative = ad.creative || {};
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('pen-fancy') + ' Creative</div>';
+    html += '<div class="cp-inspector-grid cp-inspector-grid-1">';
+    html += inspectorFieldCopy('Primary text', creative.primary_text || '—', ad.id, 'primary_text', true);
+    html += inspectorFieldCopy('Headline',     creative.headline     || '—', ad.id, 'headline');
+    html += inspectorFieldCopy('Description',  creative.description  || '—', ad.id, 'description');
+    html += inspectorFieldCopy('CTA',          cta ? cta.label : (creative.cta_type || '—'), ad.id, 'cta_type');
+    html += inspectorFieldCopy('Link',         creative.cta_link     || '—', ad.id, 'cta_link');
+    html += inspectorField('Display link',     creative.display_link || '—');
+    html += '</div></div>';
+
+    // Media (preview only — full editor in Stage 2)
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('image') + ' Media';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">' + esc(ctype.label) + '</span>';
+    html += '</div>';
+    var media = ad.media || {};
+    if (ad.creative_type === 'single_image') {
+      if (media.image && (media.image.brief || media.image.ai_prompt)) {
+        if (media.image.brief)     html += '<p><strong>Brief:</strong> ' + esc(media.image.brief) + '</p>';
+        if (media.image.ai_prompt) html += '<p><strong>Prompt:</strong> ' + esc(media.image.ai_prompt) + '</p>';
+      } else html += '<div class="cp-text-muted">No image brief yet.</div>';
+    } else if (ad.creative_type === 'single_video') {
+      if (media.video && (media.video.concept || (media.video.script && media.video.script.rows && media.video.script.rows.length))) {
+        if (media.video.concept) html += '<p><strong>Concept:</strong> ' + esc(media.video.concept) + '</p>';
+        if (media.video.script && media.video.script.rows && media.video.script.rows.length) {
+          html += '<p>' + media.video.script.rows.length + ' script rows · ' + (media.video.duration_seconds || '?') + 's · ' + (media.video.aspect_ratio || '') + '</p>';
+        }
+      } else html += '<div class="cp-text-muted">No video brief yet.</div>';
+    } else if (ad.creative_type === 'carousel') {
+      var cards = media.carousel_cards || [];
+      html += '<div>' + cards.length + ' card' + (cards.length !== 1 ? 's' : '') + '</div>';
+    }
+    html += '</div>';
+
+    // Review/production
+    if (ad.review_notes || ad.production_notes || ad.assigned_to || ad.due_date) {
+      html += '<div class="cp-inspector-section">';
+      html += '<div class="cp-inspector-section-title">' + icon('clipboard-list') + ' Review & production</div>';
+      html += '<div class="cp-inspector-grid">';
+      html += inspectorField('Assigned to',     ad.assigned_to     || '—');
+      html += inspectorField('Due date',        ad.due_date        || '—');
+      html += inspectorField('Review notes',    ad.review_notes    || '—');
+      html += inspectorField('Production notes',ad.production_notes|| '—');
+      html += '</div></div>';
+    }
+
+    return html;
+  }
+
+  // --- Small helpers ---
+
+  function inspectorField(label, value, wide) {
+    var cls = wide ? ' cp-inspector-field-wide' : '';
+    return '<div class="cp-inspector-field' + cls + '"><div class="cp-inspector-field-label">' + esc(label) + '</div><div class="cp-inspector-field-value">' + (typeof value === 'string' ? esc(value) : (value || '')) + '</div></div>';
+  }
+
+  // Same as inspectorField but with a small copy-to-clipboard button.
+  function inspectorFieldCopy(label, value, adId, field, wide) {
+    var cls = wide ? ' cp-inspector-field-wide' : '';
+    var hasValue = value && value !== '—';
+    var copyBtn = hasValue ? '<button class="cp-btn-icon cp-btn-icon-sm cp-inspector-field-copy" data-action="v2-copy-ad-field" data-id="' + esc(adId) + '" data-field="' + esc(field) + '" title="Copy ' + esc(label) + '">' + icon('copy') + '</button>' : '';
+    return '<div class="cp-inspector-field cp-inspector-field-with-copy' + cls + '"><div class="cp-inspector-field-label">' + esc(label) + copyBtn + '</div><div class="cp-inspector-field-value">' + (typeof value === 'string' ? esc(value) : (value || '')) + '</div></div>';
+  }
+
+  function renderScheduleSummary(start, end) {
+    if (!start && !end) return 'Always-on';
+    return (start ? formatDateShort(start) : 'Now') + ' → ' + (end ? formatDateShort(end) : 'Ongoing');
+  }
+
+/* ===== src/10-part1/17c-view-workspace-tabs.js ===== */
+  // ============================================================
+  // SECTION 15D: WORKSPACE INSPECTOR TABS (v2)
+  // ============================================================
+  //
+  // Tabbed inspector renderers — wraps the read-only renderers in 17b with
+  // an editor for the strategic brief (Ad Set) and the creative pipeline
+  // (Ad). Tab state lives in S.workspaceInspectorTab.
+
+  // --- Ad Set inspector (tabbed) ---
+
+  function renderInspectorForAdSetTabbed(adSet) {
+    var tab = S.workspaceInspectorTab;
+    var validTabs = ['overview', 'brief', 'settings'];
+    if (validTabs.indexOf(tab) === -1) tab = 'overview';
+
+    var html = '';
+    html += renderInspectorTabs([
+      { key: 'overview', label: 'Overview', icon: 'eye' },
+      { key: 'brief',    label: 'Brief',    icon: 'file-lines' },
+      { key: 'settings', label: 'Settings', icon: 'gear' }
+    ], tab);
+
+    html += '<div class="cp-workspace-inspector-tab-body">';
+    if (tab === 'overview')      html += renderInspectorForAdSet(adSet);
+    else if (tab === 'brief')    html += renderAdSetBriefEditor(adSet);
+    else if (tab === 'settings') html += renderAdSetSettingsTab(adSet);
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdSetBriefEditor(adSet) {
+    var brief = adSet.brief || {};
+    var messages = getAllMessages();
+    var styles = getAllStyles();
+    var formats = getAllFormats();
+
+    var html = '<div class="cp-inspector-editor" data-entity-type="ad_set" data-entity-id="' + esc(adSet.id) + '">';
+
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('file-lines') + ' Creative direction</div>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="brief.creative_direction" data-entity-type="ad_set" data-entity-id="' + esc(adSet.id) + '" rows="3" placeholder="Strategic angle for this Ad Set — what story, tone, and messaging direction.">' + esc(brief.creative_direction || '') + '</textarea>';
+    html += '</div>';
+
+    // Messages from library (multi-select chips)
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('comments') + ' Messages from library';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">attached as snapshots when used in Ads</span>';
+    html += '</div>';
+    if (messages.length === 0) {
+      html += '<div class="cp-text-muted">No messages in library. <a href="#" data-action="go-view" data-view="messages">Create some</a> to pull from.</div>';
+    } else {
+      html += '<div class="cp-chip-grid">';
+      var selMsgs = brief.message_ids || [];
+      for (var mi = 0; mi < messages.length; mi++) {
+        var m = messages[mi];
+        var isSel = selMsgs.indexOf(m.id) > -1;
+        html += '<label class="cp-chip' + (isSel ? ' cp-chip-active' : '') + '">';
+        html += '<input type="checkbox" class="cp-v2-brief-id" data-field="brief.message_ids" data-entity-id="' + esc(adSet.id) + '" data-id="' + esc(m.id) + '"' + (isSel ? ' checked' : '') + ' style="display:none">';
+        html += esc(m.title || 'Untitled') + '</label>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // Styles
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('palette') + ' Styles to use</div>';
+    if (styles.length === 0) {
+      html += '<div class="cp-text-muted">No styles in library. <a href="#" data-action="go-view" data-view="styles">Create some</a>.</div>';
+    } else {
+      html += '<div class="cp-chip-grid">';
+      var selStyles = brief.style_ids || [];
+      for (var si = 0; si < styles.length; si++) {
+        var st = styles[si];
+        var stSel = selStyles.indexOf(st.id) > -1;
+        html += '<label class="cp-chip' + (stSel ? ' cp-chip-active' : '') + '">';
+        html += '<input type="checkbox" class="cp-v2-brief-id" data-field="brief.style_ids" data-entity-id="' + esc(adSet.id) + '" data-id="' + esc(st.id) + '"' + (stSel ? ' checked' : '') + ' style="display:none">';
+        html += esc(st.name || 'Untitled') + '</label>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // Formats
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('clapperboard') + ' Visual formats</div>';
+    if (formats.length === 0) {
+      html += '<div class="cp-text-muted">No formats in library. <a href="#" data-action="go-view" data-view="formats">Create some</a>.</div>';
+    } else {
+      html += '<div class="cp-chip-grid">';
+      var selFmts = brief.format_ids || [];
+      for (var fi = 0; fi < formats.length; fi++) {
+        var f = formats[fi];
+        var fSel = selFmts.indexOf(f.id) > -1;
+        html += '<label class="cp-chip' + (fSel ? ' cp-chip-active' : '') + '">';
+        html += '<input type="checkbox" class="cp-v2-brief-id" data-field="brief.format_ids" data-entity-id="' + esc(adSet.id) + '" data-id="' + esc(f.id) + '"' + (fSel ? ' checked' : '') + ' style="display:none">';
+        html += esc(f.name || 'Untitled') + '</label>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // Hook angles (free-text list)
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('anchor') + ' Hook angles';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-add-hook-angle" data-id="' + esc(adSet.id) + '" style="margin-left:auto">' + icon('plus') + ' Add</button>';
+    html += '</div>';
+    var angles = brief.hook_angles || [];
+    if (angles.length === 0) {
+      html += '<div class="cp-text-muted">No hook angles yet. Add 3-5 distinct creative angles for this Ad Set\'s Ads.</div>';
+    } else {
+      html += '<div class="cp-hook-angle-list">';
+      for (var hai = 0; hai < angles.length; hai++) {
+        html += '<div class="cp-hook-angle-row">';
+        html += '<input type="text" class="cp-input cp-v2-hook-angle" data-entity-id="' + esc(adSet.id) + '" data-index="' + hai + '" value="' + esc(angles[hai]) + '">';
+        html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-remove-hook-angle" data-id="' + esc(adSet.id) + '" data-index="' + hai + '" title="Remove">' + icon('trash') + '</button>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // AI notes
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('sparkles') + ' AI notes</div>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="brief.ai_notes" data-entity-type="ad_set" data-entity-id="' + esc(adSet.id) + '" rows="2" placeholder="Hints for AI when generating Ads — tone, forbidden words, things to emphasize.">' + esc(brief.ai_notes || '') + '</textarea>';
+    html += '</div>';
+
+    html += '<div class="cp-inspector-actions">';
+    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-ad-set-brief" data-id="' + esc(adSet.id) + '">' + icon('sparkles') + ' AI Generate brief</button>';
+    html += '<button class="cp-btn cp-btn-primary" data-action="ws-add-ad" data-ad-set-id="' + esc(adSet.id) + '">' + icon('plus') + ' Add Ad with this brief</button>';
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdSetSettingsTab(adSet) {
+    // Read-only view of the targeting/optimization settings + a single
+    // "Edit Ad Set" CTA that opens the full modal.
+    var html = '';
+
+    // Audience block with divergence indicator
+    var persona = S.personaMap[adSet.persona_id];
+    var divergence = isPersonaSnapshotStale(adSet);
+
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('users') + ' Audience</div>';
+    if (persona) {
+      html += '<div class="cp-inspector-persona-card">';
+      html += '<div class="cp-inspector-persona-name">' + icon('user') + ' ' + esc(persona.name) + '</div>';
+      if (persona.description) html += '<div class="cp-inspector-persona-desc">' + esc(truncate(persona.description, 200)) + '</div>';
+      html += '</div>';
+      if (divergence) {
+        html += '<div class="cp-snapshot-divergence-pill">';
+        html += icon('warning') + ' Library copy has changed since this Ad Set was created.';
+        html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="resync-persona-snapshot" data-id="' + esc(adSet.id) + '" style="margin-left:auto">' + icon('refresh') + ' Re-sync from library</button>';
+        html += '</div>';
+      }
+    } else {
+      html += '<div class="cp-text-muted">No persona linked.</div>';
+    }
+    html += '</div>';
+
+    // Optimization + placements + schedule pulled from the existing overview helper
+    html += renderInspectorForAdSet(adSet).replace(/<div class="cp-inspector-header"[\s\S]*?<\/div><\/div>/, '');
+
+    return html;
+  }
+
+  // --- Ad inspector (tabbed) ---
+
+  function renderInspectorForAdTabbed(ad) {
+    var tab = S.workspaceInspectorTab;
+    var validTabs = ['overview', 'hook', 'copy', 'media', 'review'];
+    if (validTabs.indexOf(tab) === -1) tab = 'overview';
+
+    var html = '';
+    html += renderInspectorTabs([
+      { key: 'overview', label: 'Overview', icon: 'eye' },
+      { key: 'hook',     label: 'Hook',     icon: 'anchor' },
+      { key: 'copy',     label: 'Copy',     icon: 'pen-fancy' },
+      { key: 'media',    label: 'Media',    icon: 'wand-magic' },
+      { key: 'review',   label: 'Review',   icon: 'circle-check' }
+    ], tab);
+
+    html += '<div class="cp-workspace-inspector-tab-body">';
+    if (tab === 'overview')    html += renderInspectorForAd(ad);
+    else if (tab === 'hook')   html += renderAdHookStep(ad);
+    else if (tab === 'copy')   html += renderAdCopyStep(ad);
+    else if (tab === 'media')  html += renderAdMediaStep(ad);
+    else if (tab === 'review') html += renderAdReviewStep(ad);
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdHookStep(ad) {
+    var hook = ad.hook || {};
+    var adSet = S.adSetMap[ad.ad_set_id];
+    var briefMsgs = (adSet && adSet.brief && adSet.brief.message_ids) || [];
+    var hookAngles = (adSet && adSet.brief && adSet.brief.hook_angles) || [];
+
+    var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
+
+    // Pipeline status indicator
+    html += renderAdPipelineProgress(ad);
+
+    // Brief context (read from parent Ad Set)
+    if (hookAngles.length || briefMsgs.length) {
+      html += '<div class="cp-inspector-context-banner">';
+      html += '<strong>' + icon('file-lines') + ' Brief context:</strong> ';
+      if (hookAngles.length) html += hookAngles.slice(0, 3).map(function(a) { return '<em>"' + esc(truncate(a, 60)) + '"</em>'; }).join(' · ');
+      html += '</div>';
+    }
+
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('anchor') + ' Hook text</div>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="hook.text" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="3" placeholder="The first thing the viewer sees. Make it count.">' + esc(hook.text || '') + '</textarea>';
+    html += '<div class="cp-form-row" style="margin-top:var(--cp-space-2)">';
+    html += '<div class="cp-form-half"><label>Type</label>';
+    html += '<select class="cp-select cp-v2-inline-field" data-field="hook.type" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
+    var hookTypes = ['question','bold','story','data','direct','curiosity','challenge'];
+    for (var ht of hookTypes) {
+      var htSel = (hook.type === ht) ? ' selected' : '';
+      html += '<option value="' + ht + '"' + htSel + '>' + ht.charAt(0).toUpperCase() + ht.slice(1) + '</option>';
+    }
+    html += '</select></div></div>';
+    html += '</div>';
+
+    // Pull from parent Ad Set's library messages
+    if (briefMsgs.length) {
+      html += '<div class="cp-inspector-section">';
+      html += '<div class="cp-inspector-section-title">' + icon('comments') + ' Pull a hook from a library message</div>';
+      for (var mi = 0; mi < briefMsgs.length; mi++) {
+        var msg = S.messageMap[briefMsgs[mi]];
+        if (!msg) continue;
+        var hooks = msg.hooks || [];
+        html += '<div class="cp-pullable-message">';
+        html += '<div class="cp-pullable-message-title">' + esc(msg.title) + '</div>';
+        if (hooks.length) {
+          html += '<div class="cp-pullable-hooks">';
+          for (var hi = 0; hi < hooks.length; hi++) {
+            html += '<button class="cp-pullable-hook" data-action="ws-pull-hook" data-ad-id="' + esc(ad.id) + '" data-message-id="' + esc(msg.id) + '" data-hook-id="' + esc(hooks[hi].id) + '">';
+            html += '<span class="cp-pullable-hook-type">' + esc(hooks[hi].type || 'direct') + '</span>';
+            html += '<span class="cp-pullable-hook-text">' + esc(hooks[hi].text) + '</span>';
+            html += '</button>';
+          }
+          html += '</div>';
+        } else {
+          html += '<div class="cp-text-muted" style="font-size:12px">No hooks in this message yet.</div>';
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+
+    html += '<div class="cp-inspector-actions">';
+    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-ad-hooks" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate hooks</button>';
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdCopyStep(ad) {
+    var c = ad.creative || {};
+    var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
+    html += renderAdPipelineProgress(ad);
+
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('pen-fancy') + ' Primary text';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">125 chars recommended · main body copy</span>';
+    html += '</div>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="creative.primary_text" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="4" placeholder="The body copy above your media.">' + esc(c.primary_text || '') + '</textarea>';
+    html += '<div class="cp-char-counter">' + countChars(c.primary_text || '') + ' chars · ' + countWords(c.primary_text || '') + ' words</div>';
+    html += '</div>';
+
+    html += '<div class="cp-form-row">';
+    html += '<div class="cp-form-half">';
+    html += '<div class="cp-inspector-section-title">' + icon('heading') + ' Headline <span class="cp-text-muted" style="font-weight:400;font-size:11px">27 chars</span></div>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.headline" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" maxlength="60" value="' + esc(c.headline || '') + '">';
+    html += '</div>';
+    html += '<div class="cp-form-half">';
+    html += '<div class="cp-inspector-section-title">' + icon('align-left') + ' Description <span class="cp-text-muted" style="font-weight:400;font-size:11px">27 chars</span></div>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.description" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" maxlength="60" value="' + esc(c.description || '') + '">';
+    html += '</div></div>';
+
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('link') + ' Destination</div>';
+    html += '<div class="cp-form-row">';
+    html += '<div class="cp-form-third"><label>CTA</label>';
+    html += '<select class="cp-select cp-v2-inline-field" data-field="creative.cta_type" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
+    var C = Constants;
+    for (var ctk in C.META_CTA_TYPES) {
+      var ctSel = (c.cta_type === ctk) ? ' selected' : '';
+      html += '<option value="' + ctk + '"' + ctSel + '>' + esc(C.META_CTA_TYPES[ctk].label) + '</option>';
+    }
+    html += '</select></div>';
+    html += '<div class="cp-form-grow"><label>Destination URL</label>';
+    html += '<input type="url" class="cp-input cp-v2-inline-field" data-field="creative.cta_link" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.cta_link || '') + '" placeholder="https://example.com">';
+    html += '</div></div>';
+    html += '</div>';
+
+    html += '<div class="cp-inspector-actions">';
+    html += '<button class="cp-btn cp-btn-ai" data-action="ai-write-ad-copy" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' AI write copy</button>';
+    html += '<button class="cp-btn cp-btn-outline" data-action="ai-improve-ad-copy" data-id="' + esc(ad.id) + '">' + icon('wand-magic') + ' Improve</button>';
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdMediaStep(ad) {
+    var media = ad.media || {};
+    var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
+    html += renderAdPipelineProgress(ad);
+
+    // Creative type selector at top
+    var C = Constants;
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('rectangle-ad') + ' Creative type</div>';
+    html += '<div class="cp-segmented">';
+    for (var ctk in C.META_AD_CREATIVE_TYPES) {
+      var ct = C.META_AD_CREATIVE_TYPES[ctk];
+      var ctSel = (ad.creative_type === ctk) ? ' cp-segmented-active' : '';
+      html += '<label class="cp-segmented-option' + ctSel + '">';
+      html += '<input type="radio" name="cp-v2-ad-ct-' + esc(ad.id) + '" class="cp-v2-media-type-switch" data-entity-id="' + esc(ad.id) + '" value="' + ctk + '"' + (ctSel ? ' checked' : '') + ' style="display:none">';
+      html += icon(ct.icon) + ' ' + esc(ct.label);
+      html += '</label>';
+    }
+    html += '</div>';
+    html += '</div>';
+
+    // Per-type editor
+    if (ad.creative_type === 'single_image') {
+      html += renderAdMediaImage(ad);
+    } else if (ad.creative_type === 'single_video') {
+      html += renderAdMediaVideo(ad);
+    } else if (ad.creative_type === 'carousel') {
+      html += renderAdMediaCarousel(ad);
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdMediaImage(ad) {
+    var img = (ad.media && ad.media.image) || {};
+    var html = '';
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('image') + ' Image brief</div>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="media.image.brief" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="3" placeholder="What should the image show? Subject, composition, mood, lighting.">' + esc(img.brief || '') + '</textarea>';
+    html += '</div>';
+
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('wand-magic') + ' AI image prompt</div>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="media.image.ai_prompt" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="3" placeholder="Production-grade prompt for Midjourney / SDXL / Imagen.">' + esc(img.ai_prompt || '') + '</textarea>';
+    html += '<div class="cp-form-row" style="margin-top:var(--cp-space-2)">';
+    html += '<div class="cp-form-third"><label>Aspect ratio</label>';
+    html += '<select class="cp-select cp-v2-inline-field" data-field="media.image.aspect_ratio" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
+    var aspects = ['1:1','4:5','9:16','16:9'];
+    for (var i = 0; i < aspects.length; i++) {
+      var sel = (img.aspect_ratio === aspects[i]) ? ' selected' : '';
+      html += '<option value="' + aspects[i] + '"' + sel + '>' + aspects[i] + '</option>';
+    }
+    html += '</select></div>';
+    html += '<div class="cp-form-grow"><label>Negative prompt</label>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="media.image.negative_prompt" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(img.negative_prompt || '') + '" placeholder="things to avoid">';
+    html += '</div></div>';
+    html += '</div>';
+
+    html += '<div class="cp-inspector-actions">';
+    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-ad-image-prompt" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate prompt from brief</button>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdMediaVideo(ad) {
+    var vid = (ad.media && ad.media.video) || {};
+    var script = vid.script || { rows: [] };
+    var blueprint = vid.blueprint || { scenes: [] };
+
+    var html = '';
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('video') + ' Concept</div>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="media.video.concept" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="2" placeholder="One-line concept — what the video is about.">' + esc(vid.concept || '') + '</textarea>';
+    html += '<div class="cp-form-row" style="margin-top:var(--cp-space-2)">';
+    html += '<div class="cp-form-third"><label>Duration (s)</label>';
+    html += '<input type="number" class="cp-input cp-v2-inline-field" data-field="media.video.duration_seconds" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" min="1" max="60" value="' + esc(vid.duration_seconds || 30) + '">';
+    html += '</div>';
+    html += '<div class="cp-form-third"><label>Aspect ratio</label>';
+    html += '<select class="cp-select cp-v2-inline-field" data-field="media.video.aspect_ratio" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
+    var aspects = ['9:16','1:1','16:9','4:5'];
+    for (var i = 0; i < aspects.length; i++) {
+      var sel = (vid.aspect_ratio === aspects[i]) ? ' selected' : '';
+      html += '<option value="' + aspects[i] + '"' + sel + '>' + aspects[i] + '</option>';
+    }
+    html += '</select></div></div></div>';
+
+    // Blueprint scenes
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('film') + ' Storyboard scenes';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ad-add-scene" data-id="' + esc(ad.id) + '" style="margin-left:auto">' + icon('plus') + ' Add scene</button>';
+    html += '</div>';
+    if ((blueprint.scenes || []).length === 0) {
+      html += '<div class="cp-text-muted">No scenes yet.</div>';
+    } else {
+      html += '<div class="cp-v2-scenes">';
+      for (var si = 0; si < blueprint.scenes.length; si++) {
+        var sc = blueprint.scenes[si];
+        html += '<div class="cp-v2-scene"><div class="cp-v2-scene-num">' + (si + 1) + '</div>';
+        html += '<div class="cp-v2-scene-fields">';
+        html += '<input type="text" class="cp-input cp-v2-scene-field" data-entity-id="' + esc(ad.id) + '" data-index="' + si + '" data-key="name" value="' + esc(sc.name || '') + '" placeholder="Scene name">';
+        html += '<textarea class="cp-textarea cp-v2-scene-field" data-entity-id="' + esc(ad.id) + '" data-index="' + si + '" data-key="description" rows="2" placeholder="What happens">' + esc(sc.description || '') + '</textarea>';
+        html += '</div>';
+        html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-remove-scene" data-id="' + esc(ad.id) + '" data-index="' + si + '">' + icon('trash') + '</button>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+
+    // Script rows
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('list-tree') + ' Script';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ad-add-script-row" data-id="' + esc(ad.id) + '" style="margin-left:auto">' + icon('plus') + ' Add row</button>';
+    html += '</div>';
+    if ((script.rows || []).length === 0) {
+      html += '<div class="cp-text-muted">No script rows yet.</div>';
+    } else {
+      html += '<table class="cp-v2-script-table"><thead><tr><th>Time</th><th>Dialogue</th><th>Visual</th><th></th></tr></thead><tbody>';
+      for (var ri = 0; ri < script.rows.length; ri++) {
+        var row = script.rows[ri];
+        html += '<tr>';
+        html += '<td><input type="text" class="cp-input cp-input-sm cp-v2-script-field" data-entity-id="' + esc(ad.id) + '" data-index="' + ri + '" data-key="time" value="' + esc(row.time || '') + '" placeholder="0:00"></td>';
+        html += '<td><input type="text" class="cp-input cp-input-sm cp-v2-script-field" data-entity-id="' + esc(ad.id) + '" data-index="' + ri + '" data-key="dialogue" value="' + esc(row.dialogue || '') + '" placeholder="What\'s said"></td>';
+        html += '<td><input type="text" class="cp-input cp-input-sm cp-v2-script-field" data-entity-id="' + esc(ad.id) + '" data-index="' + ri + '" data-key="visual" value="' + esc(row.visual || '') + '" placeholder="What\'s shown"></td>';
+        html += '<td><button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-remove-script-row" data-id="' + esc(ad.id) + '" data-index="' + ri + '">' + icon('trash') + '</button></td>';
+        html += '</tr>';
+      }
+      html += '</tbody></table>';
+    }
+    html += '</div>';
+
+    html += '<div class="cp-inspector-actions">';
+    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-video-blueprint" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate scenes</button>';
+    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-video-script" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate script</button>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdMediaCarousel(ad) {
+    var cards = (ad.media && ad.media.carousel_cards) || [];
+    var html = '';
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('images') + ' Carousel cards (' + cards.length + ')';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ad-add-card" data-id="' + esc(ad.id) + '" style="margin-left:auto">' + icon('plus') + ' Add card</button>';
+    html += '</div>';
+    if (cards.length === 0) {
+      html += '<div class="cp-text-muted">No cards yet. Meta carousels need at least 2.</div>';
+    } else {
+      html += '<div class="cp-v2-carousel-cards">';
+      for (var i = 0; i < cards.length; i++) {
+        var card = cards[i];
+        html += '<div class="cp-v2-carousel-card"><div class="cp-v2-carousel-card-num">' + (i + 1) + '</div>';
+        html += '<div class="cp-v2-carousel-card-fields">';
+        html += '<input type="text" class="cp-input cp-v2-card-field" data-entity-id="' + esc(ad.id) + '" data-index="' + i + '" data-key="headline" value="' + esc(card.headline || '') + '" placeholder="Card headline">';
+        html += '<input type="text" class="cp-input cp-v2-card-field" data-entity-id="' + esc(ad.id) + '" data-index="' + i + '" data-key="description" value="' + esc(card.description || '') + '" placeholder="Card description">';
+        html += '<input type="url" class="cp-input cp-v2-card-field" data-entity-id="' + esc(ad.id) + '" data-index="' + i + '" data-key="link" value="' + esc(card.link || '') + '" placeholder="https://...">';
+        html += '</div>';
+        html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-remove-card" data-id="' + esc(ad.id) + '" data-index="' + i + '">' + icon('trash') + '</button>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdReviewStep(ad) {
+    var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
+    html += renderAdPipelineProgress(ad);
+
+    var C = Constants;
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('circle-check') + ' Pipeline status</div>';
+    html += '<div class="cp-status-buttons">';
+    for (var sk in C.META_AD_STATUSES) {
+      var st = C.META_AD_STATUSES[sk];
+      var isActive = ad.pipeline_status === sk;
+      html += '<button class="cp-status-button' + (isActive ? ' cp-status-button-active' : '') + '" data-action="ws-set-ad-status" data-id="' + esc(ad.id) + '" data-status="' + sk + '" style="' + (isActive ? '--btn-color:' + st.color + ';' : '') + '">';
+      html += icon(st.icon) + ' ' + esc(st.label);
+      html += '</button>';
+    }
+    html += '</div></div>';
+
+    html += '<div class="cp-form-row">';
+    html += '<div class="cp-form-half">';
+    html += '<div class="cp-inspector-section-title">' + icon('user') + ' Assigned to</div>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="assigned_to" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.assigned_to || '') + '" placeholder="Teammate name">';
+    html += '</div>';
+    html += '<div class="cp-form-half">';
+    html += '<div class="cp-inspector-section-title">' + icon('calendar') + ' Due date</div>';
+    html += '<input type="date" class="cp-input cp-v2-inline-field" data-field="due_date" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.due_date || '') + '">';
+    html += '</div></div>';
+
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('note-sticky') + ' Production notes</div>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="production_notes" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="2" placeholder="Where assets live, who is shooting, etc.">' + esc(ad.production_notes || '') + '</textarea>';
+    html += '</div>';
+
+    html += '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('comments') + ' Review notes</div>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="review_notes" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="3" placeholder="Feedback from reviewers...">' + esc(ad.review_notes || '') + '</textarea>';
+    html += '</div>';
+    return html;
+  }
+
+  // --- Pipeline progress strip ---
+
+  function renderAdPipelineProgress(ad) {
+    var C = Constants;
+    var steps = C.META_AD_PIPELINE_STEPS;
+    var currentIdx = pipelineStepIndexForStatus(ad.pipeline_status);
+    var html = '<div class="cp-pipeline-progress">';
+    for (var i = 0; i < steps.length; i++) {
+      var st = steps[i];
+      var cls = '';
+      if (i < currentIdx) cls = ' cp-pipeline-step-done';
+      else if (i === currentIdx) cls = ' cp-pipeline-step-active';
+      html += '<div class="cp-pipeline-step' + cls + '" data-action="set-inspector-tab" data-tab="' + st.key + '">';
+      html += '<div class="cp-pipeline-step-icon">' + icon(i < currentIdx ? 'circle-check' : st.icon) + '</div>';
+      html += '<div class="cp-pipeline-step-label">' + esc(st.label) + '</div>';
+      html += '</div>';
+      if (i < steps.length - 1) html += '<div class="cp-pipeline-connector' + (i < currentIdx ? ' cp-pipeline-connector-done' : '') + '"></div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  // Map an ad pipeline_status to its step index. live/paused/archived map
+  // to the review step (the rightmost meaningful step for the editor).
+  function pipelineStepIndexForStatus(status) {
+    switch (status) {
+      case 'hook_ready':  return 0;
+      case 'copy_ready':  return 1;
+      case 'media_ready': return 2;
+      case 'in_review':
+      case 'approved':
+      case 'live':
+      case 'paused':
+      case 'archived':    return 3;
+      default:            return 0;
+    }
+  }
+
+  // --- Inspector tab bar (shared) ---
+
+  function renderInspectorTabs(tabs, active) {
+    var html = '<div class="cp-inspector-tabs">';
+    for (var i = 0; i < tabs.length; i++) {
+      var t = tabs[i];
+      var cls = (active === t.key) ? ' cp-inspector-tab-active' : '';
+      html += '<button class="cp-inspector-tab' + cls + '" data-action="set-inspector-tab" data-tab="' + t.key + '">';
+      html += icon(t.icon) + ' ' + esc(t.label);
+      html += '</button>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  // --- Snapshot divergence helpers (for Stage 3 re-sync UI) ---
+
+  // Returns true if the library persona has been updated since the snapshot
+  // was captured on this Ad Set.
+  function isPersonaSnapshotStale(adSet) {
+    if (!adSet || !adSet.persona_id || !adSet.persona_snapshot) return false;
+    var src = S.personaMap[adSet.persona_id];
+    if (!src) return false;
+    var libUpdated = src.updated || src.created || '';
+    var snapWhen = adSet.persona_snapshot.source_updated || '';
+    return libUpdated && snapWhen && libUpdated > snapWhen;
+  }
+
+  function isMessageSnapshotStale(ad) {
+    if (!ad || !ad.message_snapshot || !ad.hook || !ad.hook.source_message_id) return false;
+    var src = S.messageMap[ad.hook.source_message_id];
+    if (!src) return false;
+    var libUpdated = src.updated || src.created || '';
+    var snapWhen = ad.message_snapshot.source_updated || '';
+    return libUpdated && snapWhen && libUpdated > snapWhen;
+  }
+
+  // --- Ad auto-status engine ---
+
+  // Promotes ad.pipeline_status forward only — never backward. Evaluates
+  // the fields in order: hook_ready → copy_ready → media_ready. The remaining
+  // statuses (in_review/approved/live/paused/archived) are manual transitions.
+  function evaluateAdAutoStatus(ad) {
+    if (!ad) return null;
+    var C = Constants;
+    var order = C.META_AD_STATUS_ORDER;
+    var currentIdx = order.indexOf(ad.pipeline_status);
+    if (currentIdx < 0) return null;
+
+    var suggested = ad.pipeline_status;
+    var hook = ad.hook || {};
+    var creative = ad.creative || {};
+    var media = ad.media || {};
+
+    function bump(target) {
+      var ti = order.indexOf(target);
+      var si = order.indexOf(suggested);
+      if (ti > si) suggested = target;
+    }
+
+    // hook_ready: any hook.text
+    if (hook.text && hook.text.trim().length >= 3) bump('hook_ready');
+
+    // copy_ready: primary_text + (headline OR description) + cta_link
+    var hasCopy = (creative.primary_text || '').trim().length >= 20 &&
+                  ((creative.headline || '').trim() || (creative.description || '').trim());
+    var hasLink = (creative.cta_link || '').trim().length > 0;
+    if (hasCopy && hasLink) bump('copy_ready');
+
+    // media_ready: type-specific
+    var hasMedia = false;
+    if (ad.creative_type === 'single_image') {
+      var img = media.image || {};
+      hasMedia = !!(img.asset_id || (img.ai_prompt && img.ai_prompt.length > 10) || (img.brief && img.brief.length > 20));
+    } else if (ad.creative_type === 'single_video') {
+      var vid = media.video || {};
+      hasMedia = !!(vid.asset_id || vid.concept || (vid.script && vid.script.rows && vid.script.rows.length) || (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length));
+    } else if (ad.creative_type === 'carousel') {
+      hasMedia = !!(media.carousel_cards && media.carousel_cards.length >= 2);
+    }
+    if (hasMedia) bump('media_ready');
+
+    return suggested === ad.pipeline_status ? null : suggested;
+  }
+
+  function maybeAdvanceAdStatus(ad, reason) {
+    if (!ad) return false;
+    var suggested = evaluateAdAutoStatus(ad);
+    if (!suggested) return false;
+    var C = Constants;
+    var order = C.META_AD_STATUS_ORDER;
+    var ci = order.indexOf(ad.pipeline_status), si = order.indexOf(suggested);
+    if (si <= ci) return false;
+
+    var oldLabel = (C.META_AD_STATUSES[ad.pipeline_status] || {}).label || ad.pipeline_status;
+    var newLabel = (C.META_AD_STATUSES[suggested] || {}).label || suggested;
+    ad.pipeline_status = suggested;
+    ad.updated = new Date().toISOString();
+    logActivity('ad_status_changed', 'ad', ad.id, ad.name, oldLabel + ' → ' + newLabel + (reason ? ' (' + reason + ')' : ''));
+    toast('Auto-advanced to ' + newLabel + (reason ? ' — ' + reason : ''), 'success', 4000);
+    return true;
+  }
 
 /* ===== src/10-part1/18-view-calendar.js ===== */
   // ============================================================
@@ -4829,6 +6806,83 @@
         logActivity('tag_created', 'tag', entity.id, entity.name, 'Created tag');
         break;
 
+      // --- Meta v2 hierarchy ---
+
+      case 'campaign_v2':
+        entity = $.extend(true, {
+          id: generateId('cmpv2'),
+          name: '', description: '',
+          objective: META_CAMPAIGN_DEFAULTS.objective,
+          buying_type: META_CAMPAIGN_DEFAULTS.buying_type,
+          budget_mode: META_CAMPAIGN_DEFAULTS.budget_mode,
+          daily_budget: null, lifetime_budget: null, spend_cap: null,
+          bid_strategy: META_CAMPAIGN_DEFAULTS.bid_strategy,
+          special_ad_categories: META_CAMPAIGN_DEFAULTS.special_ad_categories.slice(),
+          start_time: '', stop_time: '',
+          status: META_CAMPAIGN_DEFAULTS.status,
+          ab_test: { enabled: false, primary_metric: '', variants: [] },
+          ai_instructions: '', brief: '',
+          tags: [], notes: '',
+          created: now, updated: now, created_by: S.user.id || ''
+        }, data);
+        S.data.campaigns_v2.push(entity);
+        logActivity('campaign_v2_created', 'campaign_v2', entity.id, entity.name, 'Created campaign');
+        break;
+
+      case 'ad_set':
+        entity = $.extend(true, {
+          id: generateId('adset'),
+          campaign_id: '', name: '',
+          persona_id: '', persona_snapshot: null, audience_overrides: '',
+          placements: { advantage_enabled: true, custom_placements: [] },
+          optimization_goal: META_AD_SET_DEFAULTS.optimization_goal,
+          billing_event: META_AD_SET_DEFAULTS.billing_event,
+          attribution_setting: META_AD_SET_DEFAULTS.attribution_setting,
+          bid_amount: null,
+          daily_budget: null, lifetime_budget: null,
+          start_time: '', stop_time: '', dayparting: null,
+          brief: { creative_direction: '', message_ids: [], style_ids: [], format_ids: [], hook_angles: [], ai_notes: '' },
+          ab_role: null,
+          status: META_AD_SET_DEFAULTS.status,
+          notes: '',
+          created: now, updated: now, created_by: S.user.id || ''
+        }, data);
+        if (!entity.name) {
+          var camp = S.campaignV2Map[entity.campaign_id];
+          var persona = S.personaMap[entity.persona_id];
+          entity.name = (camp ? camp.name + ' — ' : '') + (persona ? persona.name : 'New Ad Set');
+        }
+        S.data.ad_sets.push(entity);
+        logActivity('ad_set_created', 'ad_set', entity.id, entity.name, 'Created ad set');
+        break;
+
+      case 'ad':
+        entity = $.extend(true, {
+          id: generateId('ad'),
+          ad_set_id: '', name: '',
+          creative_type: META_AD_DEFAULTS.creative_type,
+          creative: { primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' },
+          hook: { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' },
+          media: {
+            image: { asset_id: '', ai_prompt: '', brief: '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] },
+            video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', blueprint: { scenes: [] }, script: { rows: [] } },
+            carousel_cards: []
+          },
+          message_snapshot: null, style_snapshot: null, format_snapshot: null,
+          pipeline_status: META_AD_DEFAULTS.pipeline_status,
+          review_notes: '', production_notes: '', assigned_to: '', due_date: '',
+          tags: [],
+          created: now, updated: now, created_by: S.user.id || ''
+        }, data);
+        if (!entity.name) {
+          var adSet = S.adSetMap[entity.ad_set_id];
+          var existing = (S.adsByAdSet[entity.ad_set_id] || []).length;
+          entity.name = (adSet ? adSet.name + ' — Ad ' : 'Ad ') + (existing + 1);
+        }
+        S.data.ads.push(entity);
+        logActivity('ad_created', 'ad', entity.id, entity.name, 'Created ad');
+        break;
+
       default:
         console.warn('[CP] Unknown entity type:', type);
         return null;
@@ -4929,7 +6983,7 @@
         entityTitle = entity.name;
         idx = S.data.tags.findIndex(function(t) { return t.id === id; });
         if (idx > -1) S.data.tags.splice(idx, 1);
-        var allArrays = [S.data.personas, S.data.messages, S.data.styles, S.data.visual_formats, S.data.recipes, S.data.campaigns];
+        var allArrays = [S.data.personas, S.data.messages, S.data.styles, S.data.visual_formats, S.data.recipes, S.data.campaigns, S.data.campaigns_v2, S.data.ads];
         allArrays.forEach(function(arr) {
           (arr || []).forEach(function(item) {
             if (item.tags) item.tags = item.tags.filter(function(tid) { return tid !== id; });
@@ -4937,6 +6991,47 @@
         });
         if (S.selectedTagId === id) S.selectedTagId = null;
         logActivity('tag_deleted', 'tag', id, entityTitle, 'Deleted tag');
+        break;
+
+      case 'campaign_v2':
+        entity = S.campaignV2Map[id]; if (!entity) return false;
+        entityTitle = entity.name;
+        idx = S.data.campaigns_v2.findIndex(function(c) { return c.id === id; });
+        if (idx > -1) S.data.campaigns_v2.splice(idx, 1);
+        // Cascade: delete all Ad Sets + Ads under this campaign
+        var orphanSets = (S.data.ad_sets || []).filter(function(s) { return s.campaign_id === id; });
+        var orphanSetIds = orphanSets.map(function(s) { return s.id; });
+        S.data.ad_sets = (S.data.ad_sets || []).filter(function(s) { return s.campaign_id !== id; });
+        S.data.ads = (S.data.ads || []).filter(function(a) { return orphanSetIds.indexOf(a.ad_set_id) === -1; });
+        if (S.selectedCampaignV2Id === id) { S.selectedCampaignV2Id = null; S.selectedAdSetId = null; S.selectedAdId = null; }
+        logActivity('campaign_v2_deleted', 'campaign_v2', id, entityTitle, 'Deleted campaign and ' + orphanSets.length + ' ad set(s)');
+        break;
+
+      case 'ad_set':
+        entity = S.adSetMap[id]; if (!entity) return false;
+        entityTitle = entity.name;
+        idx = S.data.ad_sets.findIndex(function(s) { return s.id === id; });
+        if (idx > -1) S.data.ad_sets.splice(idx, 1);
+        // Cascade: delete all Ads under this Ad Set
+        var orphanAds = (S.data.ads || []).filter(function(a) { return a.ad_set_id === id; });
+        S.data.ads = (S.data.ads || []).filter(function(a) { return a.ad_set_id !== id; });
+        // Remove from parent campaign's A/B variants list if present
+        (S.data.campaigns_v2 || []).forEach(function(c) {
+          if (c.ab_test && Array.isArray(c.ab_test.variants)) {
+            c.ab_test.variants = c.ab_test.variants.filter(function(v) { return v.ad_set_id !== id; });
+          }
+        });
+        if (S.selectedAdSetId === id) { S.selectedAdSetId = null; S.selectedAdId = null; }
+        logActivity('ad_set_deleted', 'ad_set', id, entityTitle, 'Deleted ad set and ' + orphanAds.length + ' ad(s)');
+        break;
+
+      case 'ad':
+        entity = S.adMap[id]; if (!entity) return false;
+        entityTitle = entity.name;
+        idx = S.data.ads.findIndex(function(a) { return a.id === id; });
+        if (idx > -1) S.data.ads.splice(idx, 1);
+        if (S.selectedAdId === id) S.selectedAdId = null;
+        logActivity('ad_deleted', 'ad', id, entityTitle, 'Deleted ad');
         break;
 
       default:
@@ -4955,7 +7050,8 @@
     var collections = {
       persona: S.data.personas, message: S.data.messages, style: S.data.styles,
       visual_format: S.data.visual_formats, recipe: S.data.recipes, campaign: S.data.campaigns,
-      pain_point: S.data.pain_points, persona_category: S.data.persona_categories, tag: S.data.tags
+      pain_point: S.data.pain_points, persona_category: S.data.persona_categories, tag: S.data.tags,
+      campaign_v2: S.data.campaigns_v2, ad_set: S.data.ad_sets, ad: S.data.ads
     };
     var coll = collections[type];
     if (!coll) { console.warn('[CP] Unknown entity type for save:', type); return; }
@@ -4986,6 +7082,21 @@
       var newLabel = (RECIPE_STATUSES[value] || {}).label || value;
       logActivity('recipe_status_changed', 'recipe', id, entity.title, 'Status changed to ' + newLabel);
     }
+    // Ad pipeline status change logging
+    if (type === 'ad' && field === 'pipeline_status') {
+      var adLabel = (META_AD_STATUSES[value] || {}).label || value;
+      logActivity('ad_status_changed', 'ad', id, entity.name, 'Pipeline status → ' + adLabel);
+    }
+    // Touch parent updated timestamps for Meta v2 entities so the workspace
+    // reflects recent activity at any level
+    if (type === 'ad' && entity.ad_set_id) {
+      var pSet = S.adSetMap[entity.ad_set_id];
+      if (pSet) pSet.updated = new Date().toISOString();
+    }
+    if (type === 'ad_set' && entity.campaign_id) {
+      var pCamp = S.campaignV2Map[entity.campaign_id];
+      if (pCamp) pCamp.updated = new Date().toISOString();
+    }
 
     buildMaps();
     syncToTextarea();
@@ -4995,7 +7106,8 @@
   function duplicateEntity(type, id) {
     var collections = {
       persona: S.data.personas, message: S.data.messages, style: S.data.styles,
-      visual_format: S.data.visual_formats, recipe: S.data.recipes, campaign: S.data.campaigns
+      visual_format: S.data.visual_formats, recipe: S.data.recipes, campaign: S.data.campaigns,
+      campaign_v2: S.data.campaigns_v2, ad_set: S.data.ad_sets, ad: S.data.ads
     };
     var coll = collections[type];
     if (!coll) return null;
@@ -5003,14 +7115,18 @@
     var source = coll.find(function(e) { return e.id === id; });
     if (!source) return null;
 
+    var idPrefixes = { campaign_v2: 'cmpv2', ad_set: 'adset', ad: 'ad' };
     var clone = deepClone(source);
-    clone.id = generateId(type.substring(0, 3));
+    clone.id = generateId(idPrefixes[type] || type.substring(0, 3));
     clone.created = new Date().toISOString();
     clone.updated = clone.created;
     clone.created_by = S.user.id || '';
     if (clone.title) clone.title += ' (copy)';
     if (clone.name) clone.name += ' (copy)';
     if (type === 'recipe') { clone.status = 'draft'; clone.batch_id = ''; clone.review_notes = ''; clone.assigned_to = ''; }
+    if (type === 'campaign_v2') { clone.status = 'DRAFT'; clone.ab_test = { enabled: false, primary_metric: '', variants: [] }; }
+    if (type === 'ad_set')      { clone.status = 'DRAFT'; clone.ab_role = null; }
+    if (type === 'ad')          { clone.pipeline_status = 'hook_ready'; clone.review_notes = ''; clone.assigned_to = ''; }
 
     coll.push(clone);
     logActivity(type + '_created', type, clone.id, clone.title || clone.name, 'Duplicated');
@@ -5151,6 +7267,7 @@
   window._cpRender = renderCurrentView;
   window._cpRenderAppShell = renderAppShell;
   window._cpNavigate = navigate;
+  window._cpNavigateToCampaignV2 = navigateToCampaignV2;
   window._cpToast = toast;
   window._cpGenerateId = generateId;
   window._cpBuildMaps = buildMaps;
@@ -5203,6 +7320,12 @@
   window._cpGetProductionStatusStyle = getProductionStatusStyle;
   window._cpParseProductionData = parseProductionData;
 
+  // Meta v2 entity getters
+  window._cpGetCampaignV2 = getCampaignV2;
+  window._cpGetAdSet = getAdSet;
+  window._cpGetAd = getAd;
+  window._cpIsMetaV2Enabled = isMetaV2Enabled;
+
   // Collection getters
   window._cpGetAllTags = getAllTags;
   window._cpGetAllPersonas = getAllPersonas;
@@ -5213,6 +7336,14 @@
   window._cpGetAllCampaigns = getAllCampaigns;
   window._cpGetAllPainPoints = getAllPainPoints;
   window._cpGetAllCategories = getAllCategories;
+
+  // Meta v2 collection getters
+  window._cpGetAllCampaignsV2 = getAllCampaignsV2;
+  window._cpGetAllAdSets = getAllAdSets;
+  window._cpGetAllAds = getAllAds;
+  window._cpGetAdSetsByCampaign = getAdSetsByCampaign;
+  window._cpGetAdsByAdSet = getAdsByAdSet;
+  window._cpGetAdsByCampaign = getAdsByCampaign;
   window._cpGetRecentActivity = getRecentActivity;
   window._cpGetPersonasByCategory = getPersonasByCategory;
   window._cpGetRecipesByCampaign = getRecipesByCampaign;
@@ -5234,8 +7365,44 @@
     FORMAT_CATEGORIES: FORMAT_CATEGORIES, PAIN_POINT_CATEGORIES: PAIN_POINT_CATEGORIES,
     ACTIVITY_TYPES: ACTIVITY_TYPES, CARD_DENSITIES: CARD_DENSITIES, GROUPING_OPTIONS: GROUPING_OPTIONS,
     PRODUCTION_STATUSES: PRODUCTION_STATUSES, PRODUCTION_STATUS_DEFAULT: PRODUCTION_STATUS_DEFAULT,
-    PRODUCTION_TYPE_TO_MEDIA: PRODUCTION_TYPE_TO_MEDIA
+    PRODUCTION_TYPE_TO_MEDIA: PRODUCTION_TYPE_TO_MEDIA,
+    // Meta v2 constants
+    META_OBJECTIVES: META_OBJECTIVES,
+    META_BUYING_TYPES: META_BUYING_TYPES,
+    META_BUDGET_MODES: META_BUDGET_MODES,
+    META_BID_STRATEGIES: META_BID_STRATEGIES,
+    META_SPECIAL_AD_CATEGORIES: META_SPECIAL_AD_CATEGORIES,
+    META_CAMPAIGN_STATUSES: META_CAMPAIGN_STATUSES,
+    META_OPTIMIZATION_GOALS: META_OPTIMIZATION_GOALS,
+    META_OBJECTIVE_OPTIMIZATION_GOALS: META_OBJECTIVE_OPTIMIZATION_GOALS,
+    META_BILLING_EVENTS: META_BILLING_EVENTS,
+    META_ATTRIBUTION_SETTINGS: META_ATTRIBUTION_SETTINGS,
+    META_PLACEMENTS: META_PLACEMENTS,
+    META_AD_SET_STATUSES: META_AD_SET_STATUSES,
+    META_AD_CREATIVE_TYPES: META_AD_CREATIVE_TYPES,
+    META_CTA_TYPES: META_CTA_TYPES,
+    META_AD_PIPELINE_STEPS: META_AD_PIPELINE_STEPS,
+    META_AD_STATUSES: META_AD_STATUSES,
+    META_AD_STATUS_ORDER: META_AD_STATUS_ORDER,
+    META_AD_ACTIVE_STATUSES: META_AD_ACTIVE_STATUSES,
+    META_AB_ROLES: META_AB_ROLES,
+    META_AB_METRICS: META_AB_METRICS,
+    META_DEFAULT_PLACEMENT_MODE: META_DEFAULT_PLACEMENT_MODE,
+    META_CAMPAIGN_DEFAULTS: META_CAMPAIGN_DEFAULTS,
+    META_AD_SET_DEFAULTS: META_AD_SET_DEFAULTS,
+    META_AD_DEFAULTS: META_AD_DEFAULTS
   };
+
+  // Meta v2 lookup helpers
+  window._cpMetaObjective = metaObjective;
+  window._cpMetaOptimizationGoal = metaOptimizationGoal;
+  window._cpMetaBillingEvent = metaBillingEvent;
+  window._cpMetaPlacement = metaPlacement;
+  window._cpMetaCTA = metaCTA;
+  window._cpMetaCampaignStatus = metaCampaignStatus;
+  window._cpMetaAdSetStatus = metaAdSetStatus;
+  window._cpMetaAdStatus = metaAdStatus;
+  window._cpMetaOptimizationGoalsForObjective = metaOptimizationGoalsForObjective;
 
   // Setup
   window._cpCompleteSetup = completeSetup;
@@ -5266,8 +7433,147 @@
   window._cpEvaluateAutoStatus = evaluateAutoStatus;
   window._cpMaybeAdvanceRecipeStatus = maybeAdvanceRecipeStatus;
 
+  // Meta v2 snapshot + auto-status (Stage 2)
+  window._cpIsPersonaSnapshotStale = isPersonaSnapshotStale;
+  window._cpIsMessageSnapshotStale = isMessageSnapshotStale;
+  window._cpEvaluateAdAutoStatus = evaluateAdAutoStatus;
+  window._cpMaybeAdvanceAdStatus = maybeAdvanceAdStatus;
+
+  // Library ↔ Workspace integration (Stage 3)
+  window._cpFindAdSetsUsingPersona = findAdSetsUsingPersona;
+  window._cpFindAdSetsUsingMessage = findAdSetsUsingMessage;
+  window._cpFindAdSetsUsingStyle = findAdSetsUsingStyle;
+  window._cpFindAdSetsUsingFormat = findAdSetsUsingFormat;
+  window._cpFindAdsUsingMessage = findAdsUsingMessage;
+  window._cpFindAdSetsUsingPainPoint = findAdSetsUsingPainPoint;
+  window._cpRenderLibraryWorkspaceUsage = renderLibraryWorkspaceUsage;
+
   console.log('[CP] Part 1 loaded');
 })(jQuery, Drupal);
+
+/* ===== src/10-part1/24a-library-workspace-integration.js ===== */
+  // ============================================================
+  // SECTION 23: LIBRARY ↔ WORKSPACE INTEGRATION (v2)
+  // ============================================================
+  //
+  // Reverse-lookup helpers + "Used in workspace" widget injected into
+  // library entity detail panes. Only renders when meta_v2 is enabled.
+
+  // --- Reverse-lookup helpers ---
+
+  function findAdSetsUsingPersona(personaId) {
+    if (!personaId) return [];
+    return (S.data.ad_sets || []).filter(function(s) { return s.persona_id === personaId; });
+  }
+  function findAdSetsUsingMessage(messageId) {
+    if (!messageId) return [];
+    return (S.data.ad_sets || []).filter(function(s) {
+      return s.brief && (s.brief.message_ids || []).indexOf(messageId) > -1;
+    });
+  }
+  function findAdSetsUsingStyle(styleId) {
+    if (!styleId) return [];
+    return (S.data.ad_sets || []).filter(function(s) {
+      return s.brief && (s.brief.style_ids || []).indexOf(styleId) > -1;
+    });
+  }
+  function findAdSetsUsingFormat(formatId) {
+    if (!formatId) return [];
+    return (S.data.ad_sets || []).filter(function(s) {
+      return s.brief && (s.brief.format_ids || []).indexOf(formatId) > -1;
+    });
+  }
+  function findAdsUsingMessage(messageId) {
+    if (!messageId) return [];
+    return (S.data.ads || []).filter(function(a) {
+      return (a.hook && a.hook.source_message_id === messageId) ||
+             (a.message_snapshot && a.message_snapshot.source_id === messageId);
+    });
+  }
+  function findAdSetsUsingPainPoint(painPointId) {
+    if (!painPointId) return [];
+    // Pain points are attached to personas via persona.pain_point_ids.
+    // Forward to the persona-level lookup for each persona that has this pain.
+    var personasUsingPain = (S.data.personas || []).filter(function(p) {
+      return (p.pain_point_ids || []).indexOf(painPointId) > -1;
+    });
+    var sets = [];
+    personasUsingPain.forEach(function(p) {
+      findAdSetsUsingPersona(p.id).forEach(function(s) {
+        if (sets.indexOf(s) === -1) sets.push(s);
+      });
+    });
+    return sets;
+  }
+
+  // --- "Used in workspace" widget ---
+  //
+  // Returns an HTML block to inject at the bottom of a library entity
+  // detail pane. Empty string if meta_v2 is off (no clutter for legacy
+  // users). Shows: count of Ad Sets / Ads using this entity, list with
+  // links into the workspace, and a "Use in new Ad Set" / "Pull into
+  // an Ad" action depending on entity type.
+  function renderLibraryWorkspaceUsage(type, entityId) {
+    if (!isMetaV2Enabled()) return '';
+    if (!entityId) return '';
+
+    var html = '<div class="cp-card cp-library-workspace-usage">';
+    html += '<div class="cp-section-header"><h3>' + icon('sitemap') + ' Used in workspace</h3>';
+
+    // Type-specific CTA in the header
+    if (type === 'persona') {
+      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="lib-create-ad-set-from-persona" data-id="' + esc(entityId) + '">' + icon('plus') + ' Create Ad Set</button>';
+    } else if (type === 'message' || type === 'style' || type === 'visual_format') {
+      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="lib-attach-to-ad-set-brief" data-type="' + type + '" data-id="' + esc(entityId) + '">' + icon('plus') + ' Attach to Ad Set brief</button>';
+    }
+    html += '</div>';
+
+    var sets = [];
+    var ads = [];
+    switch (type) {
+      case 'persona':       sets = findAdSetsUsingPersona(entityId); break;
+      case 'message':       sets = findAdSetsUsingMessage(entityId); ads = findAdsUsingMessage(entityId); break;
+      case 'style':         sets = findAdSetsUsingStyle(entityId); break;
+      case 'visual_format': sets = findAdSetsUsingFormat(entityId); break;
+      case 'pain_point':    sets = findAdSetsUsingPainPoint(entityId); break;
+    }
+
+    if (sets.length === 0 && ads.length === 0) {
+      html += '<p class="cp-text-muted">Not used in any Ad Set or Ad yet.</p>';
+    } else {
+      if (sets.length > 0) {
+        html += '<div class="cp-library-usage-subhead">' + icon('crosshairs') + ' ' + sets.length + ' Ad Set' + (sets.length !== 1 ? 's' : '') + '</div>';
+        html += '<div class="cp-library-usage-list">';
+        for (var i = 0; i < sets.length; i++) {
+          var s = sets[i];
+          var camp = S.campaignV2Map[s.campaign_id];
+          html += '<a class="cp-library-usage-item" data-action="lib-open-ad-set" data-id="' + esc(s.id) + '" data-campaign-id="' + esc(s.campaign_id) + '">';
+          html += '<span class="cp-library-usage-icon">' + icon('crosshairs') + '</span>';
+          html += '<span class="cp-library-usage-text">' + esc(s.name) + (camp ? '<span class="cp-text-muted"> · ' + esc(camp.name) + '</span>' : '') + '</span>';
+          html += '<span class="cp-library-usage-arrow">' + icon('arrow-right') + '</span>';
+          html += '</a>';
+        }
+        html += '</div>';
+      }
+      if (ads.length > 0) {
+        html += '<div class="cp-library-usage-subhead">' + icon('rectangle-ad') + ' ' + ads.length + ' Ad' + (ads.length !== 1 ? 's' : '') + '</div>';
+        html += '<div class="cp-library-usage-list">';
+        for (var j = 0; j < ads.length; j++) {
+          var a = ads[j];
+          var adSet = S.adSetMap[a.ad_set_id];
+          html += '<a class="cp-library-usage-item" data-action="lib-open-ad" data-id="' + esc(a.id) + '">';
+          html += '<span class="cp-library-usage-icon">' + icon('rectangle-ad') + '</span>';
+          html += '<span class="cp-library-usage-text">' + esc(a.name) + (adSet ? '<span class="cp-text-muted"> · ' + esc(adSet.name) + '</span>' : '') + '</span>';
+          html += '<span class="cp-library-usage-arrow">' + icon('arrow-right') + '</span>';
+          html += '</a>';
+        }
+        html += '</div>';
+      }
+    }
+
+    html += '</div>';
+    return html;
+  }
 
 /* ===== src/20-part2a/00-header.js ===== */
 /**
@@ -5329,6 +7635,16 @@
   var getFilteredRecipes, getRecipe;
   var getRecipeProduction, getProductionStatusStyle, parseProductionData;
   var Constants;
+  // Meta v2 imports
+  var getCampaignV2, getAdSet, getAd;
+  var getAllCampaignsV2, getAllAdSets, getAllAds;
+  var getAdSetsByCampaign, getAdsByAdSet, getAdsByCampaign;
+  var isMetaV2Enabled;
+  var metaObjective, metaOptimizationGoal, metaBillingEvent, metaPlacement;
+  var metaCTA, metaCampaignStatus, metaAdSetStatus, metaAdStatus;
+  var metaOptimizationGoalsForObjective;
+  var isPersonaSnapshotStale, isMessageSnapshotStale;
+  var evaluateAdAutoStatus, maybeAdvanceAdStatus;
 
   console.log('[CP] Part 2A script loaded');
 
@@ -5385,6 +7701,20 @@
     getProductionStatusStyle = window._cpGetProductionStatusStyle;
     parseProductionData = window._cpParseProductionData;
     Constants = window._cpConstants;
+    // Meta v2 helpers
+    getCampaignV2 = window._cpGetCampaignV2; getAdSet = window._cpGetAdSet; getAd = window._cpGetAd;
+    getAllCampaignsV2 = window._cpGetAllCampaignsV2; getAllAdSets = window._cpGetAllAdSets; getAllAds = window._cpGetAllAds;
+    getAdSetsByCampaign = window._cpGetAdSetsByCampaign; getAdsByAdSet = window._cpGetAdsByAdSet; getAdsByCampaign = window._cpGetAdsByCampaign;
+    isMetaV2Enabled = window._cpIsMetaV2Enabled;
+    metaObjective = window._cpMetaObjective; metaOptimizationGoal = window._cpMetaOptimizationGoal;
+    metaBillingEvent = window._cpMetaBillingEvent; metaPlacement = window._cpMetaPlacement;
+    metaCTA = window._cpMetaCTA; metaCampaignStatus = window._cpMetaCampaignStatus;
+    metaAdSetStatus = window._cpMetaAdSetStatus; metaAdStatus = window._cpMetaAdStatus;
+    metaOptimizationGoalsForObjective = window._cpMetaOptimizationGoalsForObjective;
+    isPersonaSnapshotStale = window._cpIsPersonaSnapshotStale;
+    isMessageSnapshotStale = window._cpIsMessageSnapshotStale;
+    evaluateAdAutoStatus = window._cpEvaluateAdAutoStatus;
+    maybeAdvanceAdStatus = window._cpMaybeAdvanceAdStatus;
 
     // AI picker helper — lazy evaluation (Part 2B may not be loaded yet)
     window._cpAiSel = function(actionId) {
@@ -6245,6 +8575,1051 @@
     });
   }
 
+
+/* ===== src/20-part2a/09a-meta-campaign-crud.js ===== */
+  // ============================================================
+  // SECTION 9A: META CAMPAIGN (v2) CRUD
+  // ============================================================
+  //
+  // Modal for creating/editing a Meta-shaped Campaign. Storage uses Meta API
+  // enum values; UI shows friendly labels via the META_* constants.
+
+  function openMetaCampaignModal(campId) {
+    var C = Constants;
+    var isEdit = !!campId;
+    var c = isEdit ? getCampaignV2(campId) : null;
+
+    var html = '<div class="cp-editor-form">';
+
+    // --- Section: Basics ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('clipboard-list') + ' Basics</div>';
+    html += '<div class="cp-form-row"><div class="cp-form-grow">';
+    html += '<label>Campaign Name <span class="cp-required">*</span></label>';
+    html += '<input type="text" class="cp-input" data-field="name" value="' + esc(c ? c.name : '') + '" placeholder="e.g., Q3 SaaS Lead Generation">';
+    html += '</div><div class="cp-form-third"><label>Status</label>';
+    html += '<select class="cp-select" data-field="status">';
+    for (var sk in C.META_CAMPAIGN_STATUSES) {
+      var sSel = (c ? c.status === sk : sk === 'DRAFT') ? ' selected' : '';
+      html += '<option value="' + sk + '"' + sSel + '>' + esc(C.META_CAMPAIGN_STATUSES[sk].label) + '</option>';
+    }
+    html += '</select></div></div>';
+
+    html += '<div class="cp-form-group"><label>Description</label>';
+    html += '<textarea class="cp-textarea" data-field="description" rows="2" placeholder="What is this campaign about?">' + esc(c ? c.description || '' : '') + '</textarea></div>';
+    html += '</div>';
+
+    // --- Section: Objective & Buying ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('bullseye-arrow') + ' Objective & buying</div>';
+    html += '<div class="cp-form-row"><div class="cp-form-half"><label>Objective <span class="cp-required">*</span></label>';
+    html += '<select class="cp-select" data-field="objective" id="cpV2CampObjective">';
+    for (var ok in C.META_OBJECTIVES) {
+      var oSel = (c && c.objective === ok) ? ' selected' :
+                 (!c && ok === C.META_CAMPAIGN_DEFAULTS.objective) ? ' selected' : '';
+      html += '<option value="' + ok + '"' + oSel + '>' + esc(C.META_OBJECTIVES[ok].label) + '</option>';
+    }
+    html += '</select>';
+    var oCurrent = (c && C.META_OBJECTIVES[c.objective]) || C.META_OBJECTIVES[C.META_CAMPAIGN_DEFAULTS.objective];
+    html += '<div class="cp-form-help">' + esc(oCurrent.description) + '</div>';
+    html += '</div><div class="cp-form-half"><label>Buying type</label>';
+    html += '<select class="cp-select" data-field="buying_type">';
+    for (var bk in C.META_BUYING_TYPES) {
+      var bSel = (c ? c.buying_type === bk : bk === 'AUCTION') ? ' selected' : '';
+      html += '<option value="' + bk + '"' + bSel + '>' + esc(C.META_BUYING_TYPES[bk].label) + '</option>';
+    }
+    html += '</select></div></div></div>';
+
+    // --- Section: Budget & bidding ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('dollar-sign') + ' Budget & bidding</div>';
+    html += '<div class="cp-form-row"><div class="cp-form-half"><label>Budget mode</label>';
+    html += '<select class="cp-select" data-field="budget_mode">';
+    for (var bmk in C.META_BUDGET_MODES) {
+      var bmSel = (c ? c.budget_mode === bmk : bmk === 'CBO') ? ' selected' : '';
+      html += '<option value="' + bmk + '"' + bmSel + '>' + esc(C.META_BUDGET_MODES[bmk].label) + ' (' + C.META_BUDGET_MODES[bmk].short + ')</option>';
+    }
+    html += '</select>';
+    html += '<div class="cp-form-help">' + esc(C.META_BUDGET_MODES[c ? c.budget_mode : 'CBO'].description) + '</div>';
+    html += '</div><div class="cp-form-half"><label>Bid strategy</label>';
+    html += '<select class="cp-select" data-field="bid_strategy">';
+    for (var bsk in C.META_BID_STRATEGIES) {
+      var bsSel = (c ? c.bid_strategy === bsk : bsk === 'LOWEST_COST_WITHOUT_CAP') ? ' selected' : '';
+      html += '<option value="' + bsk + '"' + bsSel + '>' + esc(C.META_BID_STRATEGIES[bsk].label) + '</option>';
+    }
+    html += '</select></div></div>';
+
+    html += '<div class="cp-form-row"><div class="cp-form-third"><label>Daily budget</label>';
+    html += '<input type="number" class="cp-input" data-field="daily_budget" min="0" step="1" value="' + esc((c && c.daily_budget != null) ? c.daily_budget : '') + '" placeholder="0">';
+    html += '</div><div class="cp-form-third"><label>Lifetime budget</label>';
+    html += '<input type="number" class="cp-input" data-field="lifetime_budget" min="0" step="1" value="' + esc((c && c.lifetime_budget != null) ? c.lifetime_budget : '') + '" placeholder="0">';
+    html += '</div><div class="cp-form-third"><label>Spend cap</label>';
+    html += '<input type="number" class="cp-input" data-field="spend_cap" min="0" step="1" value="' + esc((c && c.spend_cap != null) ? c.spend_cap : '') + '" placeholder="0">';
+    html += '</div></div>';
+    html += '<div class="cp-form-hint">' + icon('info') + ' For CBO, set budget here. For ABO, set it on each Ad Set.</div>';
+    html += '</div>';
+
+    // --- Section: Schedule ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('calendar') + ' Schedule</div>';
+    html += '<div class="cp-form-row"><div class="cp-form-half"><label>Start time</label>';
+    html += '<input type="datetime-local" class="cp-input" data-field="start_time" value="' + esc(isoToDatetimeLocal(c ? c.start_time : '')) + '">';
+    html += '</div><div class="cp-form-half"><label>Stop time</label>';
+    html += '<input type="datetime-local" class="cp-input" data-field="stop_time" value="' + esc(isoToDatetimeLocal(c ? c.stop_time : '')) + '">';
+    html += '</div></div>';
+    html += '<div class="cp-form-hint">Leave blank for always-on.</div>';
+    html += '</div>';
+
+    // --- Section: Special Ad Categories ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('shield') + ' Special ad categories</div>';
+    html += '<div class="cp-form-hint" style="margin-bottom:8px">Required by Meta for credit, employment, housing, and social issue ads. Most campaigns: None.</div>';
+    html += '<div class="cp-chip-grid">';
+    var selCats = (c && c.special_ad_categories) ? c.special_ad_categories : ['NONE'];
+    for (var sak in C.META_SPECIAL_AD_CATEGORIES) {
+      var sa = C.META_SPECIAL_AD_CATEGORIES[sak];
+      var isSel = selCats.indexOf(sak) > -1;
+      html += '<label class="cp-chip' + (isSel ? ' cp-chip-active' : '') + '">';
+      html += '<input type="checkbox" class="cp-v2-special-cat" data-key="' + sak + '"' + (isSel ? ' checked' : '') + ' style="display:none">';
+      html += esc(sa.label) + '</label>';
+    }
+    html += '</div></div>';
+
+    // --- Section: Brief & AI instructions ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('file-lines') + ' Brief & AI</div>';
+    html += '<div class="cp-form-group"><label>Campaign brief</label>';
+    html += '<textarea class="cp-textarea" data-field="brief" rows="3" placeholder="Strategic context — target outcome, key messaging, why now...">' + esc(c ? c.brief || '' : '') + '</textarea></div>';
+    html += '<div class="cp-form-group"><label>' + icon('sparkles') + ' AI instructions</label>';
+    html += '<textarea class="cp-textarea" data-field="ai_instructions" rows="2" placeholder="Special instructions for AI when generating Ad Sets and Ads for this campaign...">' + esc(c ? c.ai_instructions || '' : '') + '</textarea></div>';
+    html += '</div>';
+
+    // --- Section: Notes ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('note-sticky') + ' Notes</div>';
+    html += '<div class="cp-form-group">';
+    html += '<textarea class="cp-textarea" data-field="notes" rows="2" placeholder="Internal notes...">' + esc(c ? c.notes || '' : '') + '</textarea></div>';
+    html += '</div>';
+
+    html += '</div>';
+
+    openModal(isEdit ? 'Edit Campaign' : 'New Campaign', html, {
+      titleIcon: 'bullhorn',
+      size: 'lg',
+      saveLabel: isEdit ? 'Save Campaign' : 'Create Campaign',
+      onSave: function() {
+        var fields = collectModalFields();
+        if (!fields.name || !fields.name.trim()) { toast('Campaign name is required', 'warning'); return; }
+
+        var cats = [];
+        $('.cp-v2-special-cat:checked').each(function() { cats.push($(this).data('key')); });
+        if (cats.length === 0) cats = ['NONE'];
+        // If NONE is mixed with others, drop NONE
+        if (cats.length > 1 && cats.indexOf('NONE') > -1) cats = cats.filter(function(k) { return k !== 'NONE'; });
+
+        var payload = {
+          name: fields.name.trim(),
+          description: fields.description || '',
+          objective: fields.objective || Constants.META_CAMPAIGN_DEFAULTS.objective,
+          buying_type: fields.buying_type || 'AUCTION',
+          budget_mode: fields.budget_mode || 'CBO',
+          daily_budget: fields.daily_budget !== '' ? Number(fields.daily_budget) : null,
+          lifetime_budget: fields.lifetime_budget !== '' ? Number(fields.lifetime_budget) : null,
+          spend_cap: fields.spend_cap !== '' ? Number(fields.spend_cap) : null,
+          bid_strategy: fields.bid_strategy || 'LOWEST_COST_WITHOUT_CAP',
+          start_time: datetimeLocalToIso(fields.start_time),
+          stop_time: datetimeLocalToIso(fields.stop_time),
+          status: fields.status || 'DRAFT',
+          special_ad_categories: cats,
+          brief: fields.brief || '',
+          ai_instructions: fields.ai_instructions || '',
+          notes: fields.notes || ''
+        };
+
+        if (isEdit) {
+          snapshot('Edit Meta campaign');
+          for (var k in payload) saveEntityField('campaign_v2', campId, k, payload[k]);
+          toast('Campaign saved', 'success');
+        } else {
+          snapshot('Create Meta campaign');
+          var created = createEntity('campaign_v2', payload);
+          if (created) {
+            S.selectedCampaignV2Id = created.id; S.selectedAdSetId = null; S.selectedAdId = null;
+            navigate('campaign_workspace', { hash: 'campaign/' + created.id });
+          }
+        }
+        closeModal();
+      }
+    });
+  }
+
+  function confirmDeleteMetaCampaign(campId) {
+    var c = getCampaignV2(campId);
+    if (!c) return;
+    var sets = getAdSetsByCampaign(campId).length;
+    var ads = getAdsByCampaign(campId).length;
+    var msg = 'Delete "' + c.name + '"?';
+    if (sets || ads) msg += ' This will also remove ' + sets + ' ad set' + (sets !== 1 ? 's' : '') + ' and ' + ads + ' ad' + (ads !== 1 ? 's' : '') + '.';
+    openConfirmDialog({
+      title: 'Delete Campaign',
+      message: msg,
+      confirmLabel: 'Delete', danger: true,
+      onConfirm: function() {
+        snapshot('Delete Meta campaign');
+        deleteEntity('campaign_v2', campId);
+        if (S.currentView === 'campaign_workspace') navigate('meta_campaigns');
+      }
+    });
+  }
+
+  // ---- Datetime helpers (Meta wants ISO 8601; HTML input wants local) ----
+
+  function isoToDatetimeLocal(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    // YYYY-MM-DDTHH:mm
+    var pad = function(n) { return String(n).padStart(2, '0'); };
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+           'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+  function datetimeLocalToIso(localStr) {
+    if (!localStr) return '';
+    var d = new Date(localStr);
+    return isNaN(d.getTime()) ? '' : d.toISOString();
+  }
+
+/* ===== src/20-part2a/09b-meta-ad-set-crud.js ===== */
+  // ============================================================
+  // SECTION 9B: META AD SET CRUD
+  // ============================================================
+  //
+  // Modal for creating/editing an Ad Set under a Campaign. Audience model
+  // for v1 = Persona link + audience_overrides notes. When a persona is
+  // attached, a snapshot is frozen so library edits don't silently change
+  // the campaign plan (Stage 3 surfaces divergence + re-sync UI).
+
+  function openMetaAdSetModal(adSetIdOrCampId, opts) {
+    opts = opts || {};
+    var C = Constants;
+    // Two call shapes:
+    //   openMetaAdSetModal('adset_xxx')                  -> edit existing
+    //   openMetaAdSetModal('cmpv2_xxx', { create: true }) -> create under campaign
+    var isEdit = !opts.create;
+    var adSet = isEdit ? getAdSet(adSetIdOrCampId) : null;
+    var campaignId = isEdit ? (adSet && adSet.campaign_id) : adSetIdOrCampId;
+    var camp = getCampaignV2(campaignId);
+
+    if (!camp) { toast('Parent campaign not found', 'error'); return; }
+
+    var s = adSet || {};
+    var brief = s.brief || {};
+    var placements = s.placements || { advantage_enabled: true, custom_placements: [] };
+    var personas = getAllPersonas();
+
+    var html = '<div class="cp-editor-form">';
+
+    // Context banner
+    html += '<div class="cp-modal-context">' + icon('bullhorn') + ' Under campaign: <strong>' + esc(camp.name || 'Untitled') + '</strong></div>';
+
+    // --- Section: Basics ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('clipboard-list') + ' Basics</div>';
+    html += '<div class="cp-form-row"><div class="cp-form-grow">';
+    html += '<label>Ad Set Name <span class="cp-required">*</span></label>';
+    html += '<input type="text" class="cp-input" data-field="name" value="' + esc(s.name || '') + '" placeholder="e.g., SaaS Marketers — Lookalike">';
+    html += '</div><div class="cp-form-third"><label>Status</label>';
+    html += '<select class="cp-select" data-field="status">';
+    for (var stk in C.META_AD_SET_STATUSES) {
+      var stSel = (s.status === stk) || (!isEdit && stk === 'DRAFT') ? ' selected' : '';
+      html += '<option value="' + stk + '"' + stSel + '>' + esc(C.META_AD_SET_STATUSES[stk].label) + '</option>';
+    }
+    html += '</select></div></div></div>';
+
+    // --- Section: Audience ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('users') + ' Audience</div>';
+    html += '<div class="cp-form-group"><label>Persona <span class="cp-required">*</span></label>';
+    html += '<select class="cp-select" data-field="persona_id">';
+    html += '<option value="">— Select a persona —</option>';
+    for (var pi = 0; pi < personas.length; pi++) {
+      var p = personas[pi];
+      var pSel = (s.persona_id === p.id) ? ' selected' : '';
+      html += '<option value="' + esc(p.id) + '"' + pSel + '>' + esc(p.name || 'Untitled') + '</option>';
+    }
+    html += '</select>';
+    html += '<div class="cp-form-help">Personas live in your library. A snapshot is frozen on attach so library edits don\'t silently change this plan.</div>';
+    html += '</div>';
+
+    html += '<div class="cp-form-group"><label>Audience overrides / targeting notes</label>';
+    html += '<textarea class="cp-textarea" data-field="audience_overrides" rows="2" placeholder="e.g., Exclude existing customers; add Mumbai+Bangalore only; min income ₹15L">' + esc(s.audience_overrides || '') + '</textarea>';
+    html += '<div class="cp-form-help">Free text for v1. Detailed Meta targeting (interests, behaviors, custom audiences, lookalikes) lands in a later phase.</div>';
+    html += '</div></div>';
+
+    // --- Section: Placements ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('object-group') + ' Placements</div>';
+    html += '<label class="cp-form-toggle">';
+    html += '<input type="checkbox" class="cp-v2-placements-advantage"' + (placements.advantage_enabled !== false ? ' checked' : '') + '>';
+    html += '<span>' + icon('sparkles') + ' Use <strong>Advantage Placements</strong> (Meta picks the best mix)</span>';
+    html += '</label>';
+
+    html += '<div class="cp-v2-custom-placements" style="' + (placements.advantage_enabled !== false ? 'display:none;' : '') + 'margin-top:var(--cp-space-2)">';
+    html += '<div class="cp-form-help">Choose specific placements:</div>';
+    html += '<div class="cp-chip-grid">';
+    var customSel = placements.custom_placements || [];
+    for (var pk in C.META_PLACEMENTS) {
+      var pl = C.META_PLACEMENTS[pk];
+      var isPSel = customSel.indexOf(pk) > -1;
+      html += '<label class="cp-chip' + (isPSel ? ' cp-chip-active' : '') + '">';
+      html += '<input type="checkbox" class="cp-v2-placement" data-key="' + pk + '"' + (isPSel ? ' checked' : '') + ' style="display:none">';
+      html += esc(pl.label) + '</label>';
+    }
+    html += '</div></div></div>';
+
+    // --- Section: Optimization & Delivery ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('bullseye-arrow') + ' Optimization & delivery</div>';
+
+    var allowed = metaOptimizationGoalsForObjective(camp.objective);
+    if (allowed.length === 0) {
+      // Fallback: show all
+      for (var ogk in C.META_OPTIMIZATION_GOALS) allowed.push(C.META_OPTIMIZATION_GOALS[ogk]);
+    }
+
+    html += '<div class="cp-form-row"><div class="cp-form-half"><label>Optimization goal</label>';
+    html += '<select class="cp-select" data-field="optimization_goal">';
+    for (var ogi = 0; ogi < allowed.length; ogi++) {
+      var og = allowed[ogi];
+      var ogSel = (s.optimization_goal === og.key) ? ' selected' :
+                  (!isEdit && og.key === C.META_AD_SET_DEFAULTS.optimization_goal) ? ' selected' : '';
+      html += '<option value="' + og.key + '"' + ogSel + '>' + esc(og.label) + '</option>';
+    }
+    html += '</select>';
+    html += '<div class="cp-form-help">Filtered to goals valid under <strong>' + esc((C.META_OBJECTIVES[camp.objective] || {}).label || camp.objective) + '</strong>.</div>';
+    html += '</div><div class="cp-form-half"><label>Billing event</label>';
+    html += '<select class="cp-select" data-field="billing_event">';
+    for (var bek in C.META_BILLING_EVENTS) {
+      var beSel = (s.billing_event === bek) ? ' selected' :
+                  (!isEdit && bek === C.META_AD_SET_DEFAULTS.billing_event) ? ' selected' : '';
+      html += '<option value="' + bek + '"' + beSel + '>' + esc(C.META_BILLING_EVENTS[bek].label) + '</option>';
+    }
+    html += '</select></div></div>';
+
+    html += '<div class="cp-form-row"><div class="cp-form-half"><label>Attribution setting</label>';
+    html += '<select class="cp-select" data-field="attribution_setting">';
+    for (var ask in C.META_ATTRIBUTION_SETTINGS) {
+      var asSel = (s.attribution_setting === ask) ? ' selected' :
+                  (!isEdit && ask === C.META_AD_SET_DEFAULTS.attribution_setting) ? ' selected' : '';
+      html += '<option value="' + ask + '"' + asSel + '>' + esc(C.META_ATTRIBUTION_SETTINGS[ask].label) + '</option>';
+    }
+    html += '</select></div><div class="cp-form-half"><label>Bid amount</label>';
+    html += '<input type="number" class="cp-input" data-field="bid_amount" min="0" step="0.01" value="' + esc((s.bid_amount != null) ? s.bid_amount : '') + '" placeholder="Auto (leave blank)">';
+    html += '<div class="cp-form-help">Used by Bid Cap / Cost Cap strategies. Optional otherwise.</div>';
+    html += '</div></div></div>';
+
+    // --- Section: Budget (ABO only — but always show, hint about CBO) ---
+    var isABO = camp.budget_mode === 'ABO';
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('dollar-sign') + ' Budget';
+    if (!isABO) html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">(Campaign is CBO — budget lives on the campaign)</span>';
+    html += '</div>';
+    html += '<div class="cp-form-row"><div class="cp-form-half"><label>Daily budget</label>';
+    html += '<input type="number" class="cp-input" data-field="daily_budget" min="0" step="1" value="' + esc((s.daily_budget != null) ? s.daily_budget : '') + '" placeholder="0"' + (isABO ? '' : ' disabled') + '>';
+    html += '</div><div class="cp-form-half"><label>Lifetime budget</label>';
+    html += '<input type="number" class="cp-input" data-field="lifetime_budget" min="0" step="1" value="' + esc((s.lifetime_budget != null) ? s.lifetime_budget : '') + '" placeholder="0"' + (isABO ? '' : ' disabled') + '>';
+    html += '</div></div></div>';
+
+    // --- Section: Schedule ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('calendar') + ' Schedule</div>';
+    html += '<div class="cp-form-row"><div class="cp-form-half"><label>Start time</label>';
+    html += '<input type="datetime-local" class="cp-input" data-field="start_time" value="' + esc(isoToDatetimeLocal(s.start_time)) + '">';
+    html += '</div><div class="cp-form-half"><label>Stop time</label>';
+    html += '<input type="datetime-local" class="cp-input" data-field="stop_time" value="' + esc(isoToDatetimeLocal(s.stop_time)) + '">';
+    html += '</div></div>';
+    html += '<div class="cp-form-hint">Leave blank to inherit from campaign.</div>';
+    html += '</div>';
+
+    // --- Section: Notes ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('note-sticky') + ' Notes</div>';
+    html += '<textarea class="cp-textarea" data-field="notes" rows="2" placeholder="Internal notes...">' + esc(s.notes || '') + '</textarea>';
+    html += '</div>';
+
+    html += '</div>';
+
+    openModal(isEdit ? 'Edit Ad Set' : 'New Ad Set', html, {
+      titleIcon: 'crosshairs',
+      size: 'lg',
+      saveLabel: isEdit ? 'Save Ad Set' : 'Create Ad Set',
+      onSave: function() {
+        var fields = collectModalFields();
+        if (!fields.name || !fields.name.trim()) { toast('Ad Set name is required', 'warning'); return; }
+        if (!fields.persona_id) { toast('Pick a persona for this Ad Set', 'warning'); return; }
+
+        var advAdv = $('.cp-v2-placements-advantage').is(':checked');
+        var customP = [];
+        $('.cp-v2-placement:checked').each(function() { customP.push($(this).data('key')); });
+
+        // Build persona snapshot
+        var persona = getPersona(fields.persona_id);
+        var newSnap = persona ? buildPersonaSnapshot(persona) : null;
+
+        var payload = {
+          campaign_id: campaignId,
+          name: fields.name.trim(),
+          persona_id: fields.persona_id || '',
+          // Keep existing snapshot unless persona changed
+          persona_snapshot: (isEdit && s.persona_id === fields.persona_id) ? (s.persona_snapshot || newSnap) : newSnap,
+          audience_overrides: fields.audience_overrides || '',
+          placements: { advantage_enabled: advAdv, custom_placements: customP },
+          optimization_goal: fields.optimization_goal || Constants.META_AD_SET_DEFAULTS.optimization_goal,
+          billing_event: fields.billing_event || 'IMPRESSIONS',
+          attribution_setting: fields.attribution_setting || '7d_click',
+          bid_amount: fields.bid_amount !== '' ? Number(fields.bid_amount) : null,
+          daily_budget: fields.daily_budget !== '' ? Number(fields.daily_budget) : null,
+          lifetime_budget: fields.lifetime_budget !== '' ? Number(fields.lifetime_budget) : null,
+          start_time: datetimeLocalToIso(fields.start_time),
+          stop_time: datetimeLocalToIso(fields.stop_time),
+          status: fields.status || 'DRAFT',
+          notes: fields.notes || ''
+        };
+
+        if (isEdit) {
+          snapshot('Edit Ad Set');
+          for (var k in payload) saveEntityField('ad_set', adSetIdOrCampId, k, payload[k]);
+          toast('Ad Set saved', 'success');
+        } else {
+          snapshot('Create Ad Set');
+          var created = createEntity('ad_set', payload);
+          if (created) {
+            S.selectedCampaignV2Id = campaignId;
+            S.selectedAdSetId = created.id;
+            S.selectedAdId = null;
+            navigate('campaign_workspace', { hash: 'campaign/' + campaignId + '/ad_set/' + created.id });
+          }
+        }
+        closeModal();
+      }
+    });
+  }
+
+  // Build a snapshot of a Persona at the moment it's attached to an Ad Set.
+  // Stores only fields useful for audience reasoning. captured_at lets us
+  // detect divergence later (Stage 3) without diffing the entire object.
+  function buildPersonaSnapshot(persona) {
+    if (!persona) return null;
+    return {
+      captured_at: new Date().toISOString(),
+      source_id: persona.id,
+      source_updated: persona.updated || persona.created || '',
+      name: persona.name || '',
+      description: persona.description || '',
+      demographics: deepClone(persona.demographics || {}),
+      psychographics: deepClone(persona.psychographics || {}),
+      pain_point_ids: (persona.pain_point_ids || []).slice()
+    };
+  }
+
+  function confirmDeleteMetaAdSet(adSetId) {
+    var s = getAdSet(adSetId);
+    if (!s) return;
+    var ads = getAdsByAdSet(adSetId).length;
+    var msg = 'Delete "' + s.name + '"?';
+    if (ads) msg += ' This will also remove ' + ads + ' ad' + (ads !== 1 ? 's' : '') + '.';
+    openConfirmDialog({
+      title: 'Delete Ad Set',
+      message: msg,
+      confirmLabel: 'Delete', danger: true,
+      onConfirm: function() {
+        snapshot('Delete Ad Set');
+        var camp = s.campaign_id;
+        deleteEntity('ad_set', adSetId);
+        if (S.currentView === 'campaign_workspace' && camp) {
+          navigate('campaign_workspace', { hash: 'campaign/' + camp });
+        }
+      }
+    });
+  }
+
+/* ===== src/20-part2a/09c-meta-ad-crud.js ===== */
+  // ============================================================
+  // SECTION 9C: META AD CRUD
+  // ============================================================
+  //
+  // Modal for creating/editing an Ad. Stage 1 covers the basics (name,
+  // creative type, primary text, headline, description, CTA, link, hook).
+  // The fuller pipeline editor (Hook → Copy → Media → Review with rich
+  // editors per step) lands in Stage 2.
+
+  function openMetaAdModal(adIdOrAdSetId, opts) {
+    opts = opts || {};
+    var C = Constants;
+    // Two call shapes:
+    //   openMetaAdModal('ad_xxx')                     -> edit existing
+    //   openMetaAdModal('adset_xxx', { create: true }) -> create under ad set
+    var isEdit = !opts.create;
+    var ad = isEdit ? getAd(adIdOrAdSetId) : null;
+    var adSetId = isEdit ? (ad && ad.ad_set_id) : adIdOrAdSetId;
+    var adSet = getAdSet(adSetId);
+
+    if (!adSet) { toast('Parent ad set not found', 'error'); return; }
+    var camp = getCampaignV2(adSet.campaign_id);
+
+    var a = ad || {};
+    var creative = a.creative || {};
+    var hook = a.hook || {};
+    var media = a.media || {};
+    var img = media.image || {};
+    var vid = media.video || {};
+
+    var html = '<div class="cp-editor-form">';
+
+    // Context banner
+    html += '<div class="cp-modal-context">';
+    if (camp) html += icon('bullhorn') + ' ' + esc(camp.name) + ' · ';
+    html += icon('crosshairs') + ' ' + esc(adSet.name) + '</div>';
+
+    // --- Section: Basics ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('clipboard-list') + ' Basics</div>';
+    html += '<div class="cp-form-row"><div class="cp-form-grow"><label>Ad Name <span class="cp-required">*</span></label>';
+    html += '<input type="text" class="cp-input" data-field="name" value="' + esc(a.name || '') + '" placeholder="e.g., Lookalike — Bold ROI hook">';
+    html += '</div><div class="cp-form-third"><label>Pipeline status</label>';
+    html += '<select class="cp-select" data-field="pipeline_status">';
+    for (var stk in C.META_AD_STATUSES) {
+      var stSel = (a.pipeline_status === stk) || (!isEdit && stk === 'hook_ready') ? ' selected' : '';
+      html += '<option value="' + stk + '"' + stSel + '>' + esc(C.META_AD_STATUSES[stk].label) + '</option>';
+    }
+    html += '</select></div></div>';
+
+    html += '<div class="cp-form-group"><label>Creative type</label>';
+    html += '<div class="cp-segmented">';
+    for (var ctk in C.META_AD_CREATIVE_TYPES) {
+      var ct = C.META_AD_CREATIVE_TYPES[ctk];
+      var ctSel = (a.creative_type === ctk) || (!isEdit && ctk === 'single_image') ? ' cp-segmented-active' : '';
+      html += '<label class="cp-segmented-option' + ctSel + '">';
+      html += '<input type="radio" name="cp-v2-ad-creative-type" data-field="creative_type" value="' + ctk + '"' + (ctSel ? ' checked' : '') + ' style="display:none">';
+      html += icon(ct.icon) + ' ' + esc(ct.label);
+      html += '</label>';
+    }
+    html += '</div></div></div>';
+
+    // --- Section: Hook ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('anchor') + ' Hook';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">Polish layer — first 3 words decide everything</span>';
+    html += '</div>';
+    html += '<div class="cp-form-row"><div class="cp-form-grow"><label>Hook text</label>';
+    html += '<textarea class="cp-textarea" data-field="hook.text" rows="2" placeholder="e.g., Stop wasting 40% of your ad spend on the wrong audience.">' + esc(hook.text || '') + '</textarea>';
+    html += '</div><div class="cp-form-third"><label>Hook type</label>';
+    html += '<select class="cp-select" data-field="hook.type">';
+    var hookTypes = ['question','bold','story','data','direct','curiosity','challenge'];
+    for (var hti = 0; hti < hookTypes.length; hti++) {
+      var ht = hookTypes[hti];
+      var htSel = (hook.type === ht) || (!isEdit && ht === 'direct') ? ' selected' : '';
+      html += '<option value="' + ht + '"' + htSel + '>' + esc(ht.charAt(0).toUpperCase() + ht.slice(1)) + '</option>';
+    }
+    html += '</select></div></div></div>';
+
+    // --- Section: Copy ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('pen-fancy') + ' Copy</div>';
+    html += '<div class="cp-form-group"><label>Primary text <span class="cp-text-muted" style="font-weight:400">(125 chars recommended)</span></label>';
+    html += '<textarea class="cp-textarea" data-field="creative.primary_text" rows="3" placeholder="The main body copy that appears above your media.">' + esc(creative.primary_text || '') + '</textarea></div>';
+    html += '<div class="cp-form-row"><div class="cp-form-half"><label>Headline <span class="cp-text-muted" style="font-weight:400">(27 chars)</span></label>';
+    html += '<input type="text" class="cp-input" data-field="creative.headline" value="' + esc(creative.headline || '') + '" maxlength="60">';
+    html += '</div><div class="cp-form-half"><label>Description <span class="cp-text-muted" style="font-weight:400">(27 chars)</span></label>';
+    html += '<input type="text" class="cp-input" data-field="creative.description" value="' + esc(creative.description || '') + '" maxlength="60">';
+    html += '</div></div></div>';
+
+    // --- Section: Destination ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('link') + ' Destination</div>';
+    html += '<div class="cp-form-row"><div class="cp-form-third"><label>Call to action</label>';
+    html += '<select class="cp-select" data-field="creative.cta_type">';
+    for (var ctak in C.META_CTA_TYPES) {
+      var ctaSel = (creative.cta_type === ctak) || (!isEdit && ctak === 'LEARN_MORE') ? ' selected' : '';
+      html += '<option value="' + ctak + '"' + ctaSel + '>' + esc(C.META_CTA_TYPES[ctak].label) + '</option>';
+    }
+    html += '</select></div><div class="cp-form-grow"><label>Destination link</label>';
+    html += '<input type="url" class="cp-input" data-field="creative.cta_link" value="' + esc(creative.cta_link || '') + '" placeholder="https://example.com/landing">';
+    html += '</div></div>';
+    html += '<div class="cp-form-row"><div class="cp-form-half"><label>Display link <span class="cp-text-muted" style="font-weight:400">(optional)</span></label>';
+    html += '<input type="text" class="cp-input" data-field="creative.display_link" value="' + esc(creative.display_link || '') + '" placeholder="example.com/sale">';
+    html += '</div><div class="cp-form-half"><label>Tracking params <span class="cp-text-muted" style="font-weight:400">(utm_*)</span></label>';
+    html += '<input type="text" class="cp-input" data-field="creative.tracking_params" value="' + esc(creative.tracking_params || '') + '" placeholder="utm_source=meta&utm_campaign=...">';
+    html += '</div></div></div>';
+
+    // --- Section: Media brief (basic — full editor in Stage 2) ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('image') + ' Media brief';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">Detailed editor lands in Stage 2</span>';
+    html += '</div>';
+
+    // Single image fields
+    html += '<div class="cp-v2-media-image" data-show-for="single_image">';
+    html += '<div class="cp-form-group"><label>Image brief</label>';
+    html += '<textarea class="cp-textarea" data-field="media.image.brief" rows="2" placeholder="What should the image show? Mood, subject, composition...">' + esc(img.brief || '') + '</textarea></div>';
+    html += '<div class="cp-form-row"><div class="cp-form-grow"><label>AI image prompt</label>';
+    html += '<textarea class="cp-textarea" data-field="media.image.ai_prompt" rows="2" placeholder="Auto-generated or hand-crafted Midjourney / SDXL / Imagen prompt.">' + esc(img.ai_prompt || '') + '</textarea>';
+    html += '</div><div class="cp-form-third"><label>Aspect ratio</label>';
+    html += '<select class="cp-select" data-field="media.image.aspect_ratio">';
+    var imgAspects = ['1:1','4:5','9:16','16:9'];
+    for (var iai = 0; iai < imgAspects.length; iai++) {
+      var ia = imgAspects[iai];
+      var iaSel = (img.aspect_ratio === ia) || (!isEdit && ia === '1:1') ? ' selected' : '';
+      html += '<option value="' + ia + '"' + iaSel + '>' + ia + '</option>';
+    }
+    html += '</select></div></div></div>';
+
+    // Single video fields
+    html += '<div class="cp-v2-media-video" data-show-for="single_video" style="display:none">';
+    html += '<div class="cp-form-group"><label>Video concept</label>';
+    html += '<textarea class="cp-textarea" data-field="media.video.concept" rows="2" placeholder="One-line concept — what happens in the video.">' + esc(vid.concept || '') + '</textarea></div>';
+    html += '<div class="cp-form-row"><div class="cp-form-third"><label>Duration (s)</label>';
+    html += '<input type="number" class="cp-input" data-field="media.video.duration_seconds" min="1" max="60" value="' + esc(vid.duration_seconds || 30) + '">';
+    html += '</div><div class="cp-form-third"><label>Aspect ratio</label>';
+    html += '<select class="cp-select" data-field="media.video.aspect_ratio">';
+    var vidAspects = ['9:16','1:1','16:9','4:5'];
+    for (var vai = 0; vai < vidAspects.length; vai++) {
+      var va = vidAspects[vai];
+      var vaSel = (vid.aspect_ratio === va) || (!isEdit && va === '9:16') ? ' selected' : '';
+      html += '<option value="' + va + '"' + vaSel + '>' + va + '</option>';
+    }
+    html += '</select></div></div></div>';
+
+    // Carousel — Stage 2 will build proper cards editor
+    html += '<div class="cp-v2-media-carousel" data-show-for="carousel" style="display:none">';
+    html += '<div class="cp-form-hint">Carousel cards editor lands in Stage 2. For now, save this Ad and the cards array will initialise empty.</div>';
+    html += '</div>';
+
+    html += '</div>';
+
+    // --- Section: Review & production ---
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('clipboard-list') + ' Review & production</div>';
+    html += '<div class="cp-form-row"><div class="cp-form-half"><label>Assigned to</label>';
+    html += '<input type="text" class="cp-input" data-field="assigned_to" value="' + esc(a.assigned_to || '') + '" placeholder="Teammate name or email">';
+    html += '</div><div class="cp-form-half"><label>Due date</label>';
+    html += '<input type="date" class="cp-input" data-field="due_date" value="' + esc(a.due_date || '') + '">';
+    html += '</div></div>';
+    html += '<div class="cp-form-group"><label>Production notes</label>';
+    html += '<textarea class="cp-textarea" data-field="production_notes" rows="2" placeholder="Where assets live, who is shooting, etc.">' + esc(a.production_notes || '') + '</textarea></div>';
+    html += '<div class="cp-form-group"><label>Review notes</label>';
+    html += '<textarea class="cp-textarea" data-field="review_notes" rows="2" placeholder="Feedback from reviewers...">' + esc(a.review_notes || '') + '</textarea></div>';
+    html += '</div>';
+
+    html += '</div>';
+
+    openModal(isEdit ? 'Edit Ad' : 'New Ad', html, {
+      titleIcon: 'rectangle-ad',
+      size: 'lg',
+      saveLabel: isEdit ? 'Save Ad' : 'Create Ad',
+      onSave: function() {
+        var fields = collectModalFields();
+        if (!fields.name || !fields.name.trim()) { toast('Ad name is required', 'warning'); return; }
+        // creative_type is a radio — pick the checked one
+        var creativeType = $('input[name="cp-v2-ad-creative-type"]:checked').val() || 'single_image';
+
+        var payload = {
+          ad_set_id: adSetId,
+          name: fields.name.trim(),
+          pipeline_status: fields.pipeline_status || 'hook_ready',
+          creative_type: creativeType,
+          creative: {
+            primary_text: fields['creative.primary_text'] || '',
+            headline: fields['creative.headline'] || '',
+            description: fields['creative.description'] || '',
+            cta_type: fields['creative.cta_type'] || 'LEARN_MORE',
+            cta_link: fields['creative.cta_link'] || '',
+            display_link: fields['creative.display_link'] || '',
+            tracking_params: fields['creative.tracking_params'] || ''
+          },
+          hook: {
+            source_message_id: hook.source_message_id || '',
+            selected_hook_id: hook.selected_hook_id || '',
+            text: fields['hook.text'] || '',
+            type: fields['hook.type'] || 'direct'
+          },
+          media: {
+            image: $.extend({}, img, {
+              brief: fields['media.image.brief'] || '',
+              ai_prompt: fields['media.image.ai_prompt'] || '',
+              aspect_ratio: fields['media.image.aspect_ratio'] || '1:1'
+            }),
+            video: $.extend({}, vid, {
+              concept: fields['media.video.concept'] || '',
+              duration_seconds: fields['media.video.duration_seconds'] !== '' ? Number(fields['media.video.duration_seconds']) : 30,
+              aspect_ratio: fields['media.video.aspect_ratio'] || '9:16'
+            }),
+            carousel_cards: media.carousel_cards || []
+          },
+          assigned_to: fields.assigned_to || '',
+          due_date: fields.due_date || '',
+          production_notes: fields.production_notes || '',
+          review_notes: fields.review_notes || ''
+        };
+
+        if (isEdit) {
+          snapshot('Edit Ad');
+          for (var k in payload) saveEntityField('ad', adIdOrAdSetId, k, payload[k]);
+          toast('Ad saved', 'success');
+        } else {
+          snapshot('Create Ad');
+          var created = createEntity('ad', payload);
+          if (created) {
+            S.selectedCampaignV2Id = adSet.campaign_id;
+            S.selectedAdSetId = adSetId;
+            S.selectedAdId = created.id;
+            navigate('campaign_workspace', { hash: 'campaign/' + adSet.campaign_id + '/ad_set/' + adSetId + '/ad/' + created.id });
+          }
+        }
+        closeModal();
+      }
+    });
+
+    // Wire up creative-type toggling (show/hide media sub-sections)
+    $(document).off('change.cp-v2-ad-ctype').on('change.cp-v2-ad-ctype', 'input[name="cp-v2-ad-creative-type"]', function() {
+      var v = $(this).val();
+      $('.cp-segmented-option').removeClass('cp-segmented-active');
+      $(this).closest('.cp-segmented-option').addClass('cp-segmented-active');
+      $('[data-show-for]').each(function() {
+        $(this).toggle($(this).data('show-for') === v);
+      });
+    });
+  }
+
+  function confirmDeleteMetaAd(adId) {
+    var a = getAd(adId);
+    if (!a) return;
+    openConfirmDialog({
+      title: 'Delete Ad',
+      message: 'Delete "' + a.name + '"?',
+      confirmLabel: 'Delete', danger: true,
+      onConfirm: function() {
+        snapshot('Delete Ad');
+        var setId = a.ad_set_id;
+        var adSet = getAdSet(setId);
+        deleteEntity('ad', adId);
+        if (S.currentView === 'campaign_workspace' && adSet) {
+          navigate('campaign_workspace', { hash: 'campaign/' + adSet.campaign_id + '/ad_set/' + setId });
+        }
+      }
+    });
+  }
+
+/* ===== src/20-part2a/09d-library-integration-pickers.js ===== */
+  // ============================================================
+  // SECTION 9D: LIBRARY ↔ WORKSPACE PICKERS (v2 Stage 3)
+  // ============================================================
+  //
+  // Two small picker modals that bridge from a library entity detail
+  // pane into the Meta v2 workspace:
+  //   - Pick which Campaign to create an Ad Set under (when a Persona
+  //     "Create Ad Set" action fires and >1 campaigns exist)
+  //   - Pick which Ad Set's brief to attach a Message/Style/Format to
+
+  function openMetaAdSetModalWithPersona(campaignId, personaId) {
+    // Open the Ad Set modal pre-populated with a persona link. We do this
+    // by stashing the desired persona on a global and intercepting in the
+    // modal — simpler than threading another argument through.
+    window._cpV2PendingPersonaId = personaId;
+    openMetaAdSetModal(campaignId, { create: true });
+    // The modal reads from `s.persona_id` which is empty for new sets.
+    // Pre-select after a tick.
+    setTimeout(function() {
+      var $sel = $('.cp-modal-body select[data-field="persona_id"]');
+      if ($sel.length && personaId) {
+        $sel.val(personaId).trigger('change');
+      }
+      window._cpV2PendingPersonaId = null;
+    }, 50);
+  }
+
+  function openCampaignPickerForAdSet(personaId) {
+    var camps = getAllCampaignsV2();
+    var persona = getPersona(personaId);
+
+    var html = '<div class="cp-editor-form">';
+    html += '<p>Pick a campaign to add an Ad Set targeting <strong>' + esc(persona ? persona.name : 'this persona') + '</strong> to:</p>';
+    html += '<div class="cp-picker-list">';
+    for (var i = 0; i < camps.length; i++) {
+      var c = camps[i];
+      var sets = getAdSetsByCampaign(c.id).length;
+      var obj = metaObjective(c.objective);
+      html += '<button class="cp-picker-item" data-pick-id="' + esc(c.id) + '">';
+      html += '<div class="cp-picker-item-title">' + icon('bullhorn') + ' ' + esc(c.name || 'Untitled') + '</div>';
+      html += '<div class="cp-picker-item-meta">' + (obj ? esc(obj.label) + ' · ' : '') + sets + ' Ad Set' + (sets !== 1 ? 's' : '') + '</div>';
+      html += '</button>';
+    }
+    html += '</div></div>';
+
+    openModal('Create Ad Set under...', html, {
+      titleIcon: 'crosshairs', size: 'md', footer: false
+    });
+
+    $(document).off('click.cpv2-picker').on('click.cpv2-picker', '.cp-picker-item', function() {
+      var campaignId = $(this).data('pick-id');
+      if (!campaignId) return;
+      closeModal();
+      openMetaAdSetModalWithPersona(campaignId, personaId);
+    });
+  }
+
+  function openAdSetBriefAttachPicker(type, libraryEntityId) {
+    var allSets = getAllAdSets();
+    var typeLabel = type === 'visual_format' ? 'Format' : (type.charAt(0).toUpperCase() + type.slice(1));
+    var fieldKey = type === 'visual_format' ? 'format_ids' : (type + '_ids');
+
+    if (allSets.length === 0) {
+      toast('No Ad Sets to attach to. Create a Campaign + Ad Set first.', 'info');
+      navigate('meta_campaigns');
+      return;
+    }
+
+    // Get the library entity for the title
+    var libEntity = null;
+    if (type === 'message') libEntity = getMessage(libraryEntityId);
+    else if (type === 'style') libEntity = getStyle(libraryEntityId);
+    else if (type === 'visual_format') libEntity = getFormat(libraryEntityId);
+    var libName = libEntity ? (libEntity.title || libEntity.name) : 'this item';
+
+    var html = '<div class="cp-editor-form">';
+    html += '<p>Attach ' + esc(typeLabel) + ' "<strong>' + esc(libName) + '</strong>" to one or more Ad Set briefs:</p>';
+    html += '<div class="cp-picker-list" style="max-height:60vh;overflow-y:auto">';
+    for (var i = 0; i < allSets.length; i++) {
+      var s = allSets[i];
+      var c = S.campaignV2Map[s.campaign_id];
+      var already = (s.brief && (s.brief[fieldKey] || []).indexOf(libraryEntityId) > -1);
+      html += '<label class="cp-picker-item' + (already ? ' cp-picker-item-active' : '') + '">';
+      html += '<input type="checkbox" class="cp-v2-attach-target" data-set-id="' + esc(s.id) + '"' + (already ? ' checked' : '') + ' style="margin-right:8px">';
+      html += '<div style="flex:1">';
+      html += '<div class="cp-picker-item-title">' + icon('crosshairs') + ' ' + esc(s.name) + '</div>';
+      html += '<div class="cp-picker-item-meta">' + (c ? esc(c.name) : 'No campaign') + '</div>';
+      html += '</div></label>';
+    }
+    html += '</div></div>';
+
+    openModal('Attach to Ad Set brief', html, {
+      titleIcon: 'plus', size: 'md',
+      saveLabel: 'Apply',
+      onSave: function() {
+        var targetIds = [];
+        $('.cp-v2-attach-target:checked').each(function() { targetIds.push($(this).data('set-id')); });
+        snapshot('Attach ' + typeLabel + ' to Ad Set briefs');
+        var added = 0, removed = 0;
+        // Apply: for each Ad Set, ensure libraryEntityId is in field iff selected
+        allSets.forEach(function(s) {
+          var isSelected = targetIds.indexOf(s.id) > -1;
+          s.brief = s.brief || {};
+          var arr = s.brief[fieldKey] || [];
+          var hasIt = arr.indexOf(libraryEntityId) > -1;
+          if (isSelected && !hasIt)  { arr.push(libraryEntityId); s.brief[fieldKey] = arr; s.updated = new Date().toISOString(); added++; }
+          if (!isSelected && hasIt)  { arr = arr.filter(function(id) { return id !== libraryEntityId; }); s.brief[fieldKey] = arr; s.updated = new Date().toISOString(); removed++; }
+        });
+        buildMaps(); syncToTextarea(); render();
+        if (added || removed) toast('Updated ' + (added + removed) + ' Ad Set' + ((added + removed) !== 1 ? 's' : ''), 'success');
+        closeModal();
+      }
+    });
+  }
+
+/* ===== src/20-part2a/09e-meta-ab-testing.js ===== */
+  // ============================================================
+  // SECTION 9E: META v2 — A/B TESTING (Stage 5)
+  // ============================================================
+  //
+  // A/B tests are scoped to a Campaign. The campaign.ab_test object stores
+  // { enabled, primary_metric, variants: [{ ad_set_id, role, winner }] }.
+  // Each participating Ad Set's ab_role is mirrored on the Ad Set itself
+  // (CONTROL / VARIANT_A / VARIANT_B).
+
+  function openABTestConfigModal(campaignId) {
+    var camp = getCampaignV2(campaignId);
+    if (!camp) return;
+    var sets = getAdSetsByCampaign(campaignId);
+    if (sets.length < 2) {
+      toast('Need at least 2 Ad Sets in this Campaign before setting up an A/B test', 'warning');
+      return;
+    }
+
+    var ab = camp.ab_test || { enabled: false, primary_metric: '', variants: [] };
+    var C = Constants;
+    var existingVariants = {};
+    (ab.variants || []).forEach(function(v) { existingVariants[v.ad_set_id] = v; });
+
+    var html = '<div class="cp-editor-form">';
+
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('flask') + ' A/B test configuration</div>';
+
+    html += '<label class="cp-form-toggle">';
+    html += '<input type="checkbox" id="cpV2ABEnable"' + (ab.enabled ? ' checked' : '') + '>';
+    html += '<span>Enable A/B test for this campaign</span></label>';
+
+    html += '<div class="cp-form-group" style="margin-top:var(--cp-space-3)"><label>Primary metric</label>';
+    html += '<select class="cp-select" id="cpV2ABMetric">';
+    html += '<option value="">— Pick a metric —</option>';
+    for (var mk in C.META_AB_METRICS) {
+      var mSel = (ab.primary_metric === mk) ? ' selected' : '';
+      html += '<option value="' + mk + '"' + mSel + '>' + esc(C.META_AB_METRICS[mk].label) + '</option>';
+    }
+    html += '</select>';
+    html += '<div class="cp-form-help">The metric the test will be judged on. You\'ll mark a winner after the test ends.</div>';
+    html += '</div></div>';
+
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('crosshairs') + ' Assign Ad Sets to variants</div>';
+    html += '<div class="cp-form-help" style="margin-bottom:8px">Each Ad Set can be Control, Variant A, Variant B, or excluded from the test.</div>';
+
+    for (var i = 0; i < sets.length; i++) {
+      var s = sets[i];
+      var currentRole = existingVariants[s.id] ? existingVariants[s.id].role : (s.ab_role || '');
+      html += '<div class="cp-v2-ab-row">';
+      html += '<div class="cp-v2-ab-row-name">' + icon('crosshairs') + ' ' + esc(s.name) + '</div>';
+      html += '<div class="cp-v2-ab-row-roles">';
+      var roles = ['', 'CONTROL', 'VARIANT_A', 'VARIANT_B'];
+      var roleLabels = ['Exclude', 'Control', 'Variant A', 'Variant B'];
+      for (var ri = 0; ri < roles.length; ri++) {
+        var r = roles[ri];
+        var rSel = (currentRole === r) || (!currentRole && r === '') ? ' cp-v2-ab-role-selected' : '';
+        var rColor = r ? (C.META_AB_ROLES[r] || {}).color : '#80868b';
+        html += '<label class="cp-v2-ab-role' + rSel + '" style="--ab-color:' + rColor + '">';
+        html += '<input type="radio" name="cp-v2-ab-role-' + esc(s.id) + '" data-set-id="' + esc(s.id) + '" value="' + r + '"' + (rSel ? ' checked' : '') + ' style="display:none">';
+        html += esc(roleLabels[ri]);
+        html += '</label>';
+      }
+      html += '</div></div>';
+    }
+    html += '</div>';
+    html += '</div>';
+
+    openModal('A/B Test setup', html, {
+      titleIcon: 'flask', size: 'lg',
+      saveLabel: 'Save A/B test',
+      onSave: function() {
+        var enabled = $('#cpV2ABEnable').is(':checked');
+        var metric = $('#cpV2ABMetric').val();
+
+        // Collect role per Ad Set
+        var variants = [];
+        var rolesBySet = {};
+        sets.forEach(function(s) {
+          var role = $('input[name="cp-v2-ab-role-' + s.id + '"]:checked').val() || '';
+          rolesBySet[s.id] = role;
+          if (role) variants.push({ ad_set_id: s.id, role: role, winner: !!(existingVariants[s.id] && existingVariants[s.id].winner) });
+        });
+
+        if (enabled && variants.length < 2) {
+          toast('Pick at least 2 Ad Sets (e.g., Control + Variant A)', 'warning'); return;
+        }
+
+        snapshot('A/B test setup');
+        // Update campaign
+        camp.ab_test = { enabled: enabled, primary_metric: metric || '', variants: variants };
+        camp.updated = new Date().toISOString();
+        // Update per-Ad-Set ab_role to keep tree badges in sync
+        sets.forEach(function(s) {
+          var newRole = enabled ? (rolesBySet[s.id] || null) : null;
+          if (s.ab_role !== newRole) {
+            s.ab_role = newRole;
+            s.updated = new Date().toISOString();
+          }
+        });
+        buildMaps(); syncToTextarea(); render();
+        logActivity('campaign_v2_updated', 'campaign_v2', camp.id, camp.name, enabled ? 'A/B test enabled (' + variants.length + ' variants)' : 'A/B test disabled');
+        toast(enabled ? 'A/B test saved' : 'A/B test disabled', 'success');
+        closeModal();
+      }
+    });
+
+    // Role-selector click → set radio checked + visual state
+    $(document).off('click.cpv2-ab-role').on('click.cpv2-ab-role', '.cp-v2-ab-role', function() {
+      var $radio = $(this).find('input[type="radio"]');
+      $radio.prop('checked', true);
+      $(this).siblings('.cp-v2-ab-role').removeClass('cp-v2-ab-role-selected');
+      $(this).addClass('cp-v2-ab-role-selected');
+    });
+  }
+
+  // --- Compare Variants modal ---
+
+  function openCompareVariantsModal(campaignId) {
+    var camp = getCampaignV2(campaignId);
+    if (!camp || !camp.ab_test || !camp.ab_test.enabled) {
+      toast('No A/B test set up for this campaign', 'info'); return;
+    }
+    var variants = camp.ab_test.variants || [];
+    if (variants.length === 0) { toast('No variants assigned', 'warning'); return; }
+    var C = Constants;
+    var metricLabel = (C.META_AB_METRICS[camp.ab_test.primary_metric] || {}).label || '—';
+
+    var html = '<div class="cp-editor-form">';
+    html += '<p class="cp-text-muted">Primary metric: <strong>' + esc(metricLabel) + '</strong>. Mark the winner once your test concludes.</p>';
+
+    html += '<div class="cp-v2-ab-compare-grid">';
+    for (var i = 0; i < variants.length; i++) {
+      var v = variants[i];
+      var s = S.adSetMap[v.ad_set_id];
+      if (!s) continue;
+      var roleInfo = C.META_AB_ROLES[v.role] || { label: v.role, color: '#80868b' };
+      var persona = S.personaMap[s.persona_id];
+      var ads = getAdsByAdSet(s.id);
+      var brief = s.brief || {};
+      var goal = (C.META_OPTIMIZATION_GOALS[s.optimization_goal] || {}).label || s.optimization_goal;
+
+      html += '<div class="cp-v2-ab-variant-card' + (v.winner ? ' cp-v2-ab-variant-winner' : '') + '" style="--variant-color:' + roleInfo.color + '">';
+      html += '<div class="cp-v2-ab-variant-header">';
+      html += '<span class="cp-v2-ab-variant-role">' + icon('flask') + ' ' + esc(roleInfo.label) + '</span>';
+      if (v.winner) html += '<span class="cp-v2-ab-variant-winner-badge">' + icon('trophy') + ' Winner</span>';
+      html += '</div>';
+
+      html += '<h3>' + icon('crosshairs') + ' ' + esc(s.name) + '</h3>';
+      html += '<div class="cp-v2-ab-variant-meta">';
+      if (persona) html += '<div>' + icon('user') + ' ' + esc(persona.name) + '</div>';
+      if (goal) html += '<div>' + icon('bullseye-arrow') + ' ' + esc(goal) + '</div>';
+      html += '<div>' + icon('rectangle-ad') + ' ' + ads.length + ' Ad' + (ads.length !== 1 ? 's' : '') + '</div>';
+      html += '</div>';
+
+      if (brief.creative_direction) {
+        html += '<div class="cp-v2-ab-variant-section"><div class="cp-v2-ab-variant-section-title">Creative direction</div>';
+        html += '<p>' + esc(truncate(brief.creative_direction, 220)) + '</p></div>';
+      }
+      if ((brief.hook_angles || []).length) {
+        html += '<div class="cp-v2-ab-variant-section"><div class="cp-v2-ab-variant-section-title">Hook angles</div>';
+        html += '<ul>' + brief.hook_angles.slice(0, 3).map(function(a) { return '<li>' + esc(truncate(a, 80)) + '</li>'; }).join('') + '</ul></div>';
+      }
+
+      // Top ads
+      if (ads.length) {
+        html += '<div class="cp-v2-ab-variant-section"><div class="cp-v2-ab-variant-section-title">Ads</div>';
+        for (var ai = 0; ai < Math.min(ads.length, 3); ai++) {
+          var ad = ads[ai];
+          html += '<div class="cp-v2-ab-variant-ad">';
+          html += '<div class="cp-v2-ab-variant-ad-name">' + esc(ad.name) + '</div>';
+          if (ad.hook && ad.hook.text) html += '<div class="cp-v2-ab-variant-ad-hook">"' + esc(truncate(ad.hook.text, 80)) + '"</div>';
+          html += '</div>';
+        }
+        if (ads.length > 3) html += '<div class="cp-text-muted" style="font-size:11px">+ ' + (ads.length - 3) + ' more</div>';
+        html += '</div>';
+      }
+
+      // Mark winner button
+      html += '<div class="cp-v2-ab-variant-footer">';
+      if (!v.winner) {
+        html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="ws-mark-ab-winner" data-campaign-id="' + esc(camp.id) + '" data-set-id="' + esc(s.id) + '">' + icon('trophy') + ' Mark as winner</button>';
+      } else {
+        html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-clear-ab-winner" data-campaign-id="' + esc(camp.id) + '" data-set-id="' + esc(s.id) + '">' + icon('refresh') + ' Clear winner</button>';
+      }
+      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="lib-open-ad-set" data-id="' + esc(s.id) + '" data-campaign-id="' + esc(camp.id) + '">' + icon('arrow-right') + ' Open</button>';
+      html += '</div>';
+
+      html += '</div>';
+    }
+    html += '</div></div>';
+
+    openModal('Compare variants — ' + camp.name, html, {
+      titleIcon: 'flask', size: 'xl', footer: false
+    });
+  }
+
+  // Winner mark/clear
+  function setABWinner(campaignId, adSetId, isWinner) {
+    var camp = getCampaignV2(campaignId);
+    if (!camp || !camp.ab_test) return;
+    snapshot(isWinner ? 'Mark A/B winner' : 'Clear A/B winner');
+    (camp.ab_test.variants || []).forEach(function(v) {
+      v.winner = isWinner && v.ad_set_id === adSetId;
+    });
+    camp.updated = new Date().toISOString();
+    buildMaps(); syncToTextarea(); render();
+    var s = S.adSetMap[adSetId];
+    logActivity('campaign_v2_updated', 'campaign_v2', camp.id, camp.name, isWinner ? ('Marked "' + (s ? s.name : '') + '" as A/B winner') : 'Cleared A/B winner');
+    toast(isWinner ? 'Winner marked' : 'Winner cleared', 'success');
+    // Re-open the compare modal with fresh state
+    closeModal();
+    setTimeout(function() { openCompareVariantsModal(campaignId); }, 100);
+  }
 
 /* ===== src/20-part2a/10-campaign-phases-crud.js ===== */
   // ============================================================
@@ -10321,7 +13696,429 @@
       }
     });
 
+    // --- Meta v2 actions (Campaign Workspace, Meta Campaigns list, modals) ---
+    setupMetaV2EventHandlers();
+
     console.log('[CP] Part 2A event handlers ready');
+  }
+
+  function setupMetaV2EventHandlers() {
+    // List view + workspace navigation
+    $(document).off('click.cpv2-new-campaign').on('click.cpv2-new-campaign', '[data-action="new-campaign-v2"]', function(e) {
+      e.preventDefault(); openMetaCampaignModal();
+    });
+    $(document).off('click.cpv2-open-campaign').on('click.cpv2-open-campaign', '[data-action="open-campaign-v2"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var id = $(this).data('id');
+      if (id && window._cpNavigateToCampaignV2) window._cpNavigateToCampaignV2(id);
+    });
+    $(document).off('click.cpv2-edit-campaign').on('click.cpv2-edit-campaign', '[data-action="edit-campaign-v2"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); openMetaCampaignModal($(this).data('id'));
+    });
+    $(document).off('click.cpv2-delete-campaign').on('click.cpv2-delete-campaign', '[data-action="delete-campaign-v2"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); confirmDeleteMetaCampaign($(this).data('id'));
+    });
+
+    // Ad Set CRUD
+    $(document).off('click.cpv2-add-adset').on('click.cpv2-add-adset', '[data-action="ws-add-ad-set"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var campId = $(this).data('campaign-id') || S.selectedCampaignV2Id;
+      if (campId) openMetaAdSetModal(campId, { create: true });
+    });
+    $(document).off('click.cpv2-edit-adset').on('click.cpv2-edit-adset', '[data-action="edit-ad-set"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); openMetaAdSetModal($(this).data('id'));
+    });
+    $(document).off('click.cpv2-delete-adset').on('click.cpv2-delete-adset', '[data-action="delete-ad-set"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); confirmDeleteMetaAdSet($(this).data('id'));
+    });
+
+    // Ad CRUD
+    $(document).off('click.cpv2-add-ad').on('click.cpv2-add-ad', '[data-action="ws-add-ad"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var setId = $(this).data('ad-set-id') || S.selectedAdSetId;
+      if (setId) openMetaAdModal(setId, { create: true });
+    });
+    $(document).off('click.cpv2-edit-ad').on('click.cpv2-edit-ad', '[data-action="edit-ad"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); openMetaAdModal($(this).data('id'));
+    });
+    $(document).off('click.cpv2-delete-ad').on('click.cpv2-delete-ad', '[data-action="delete-ad"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); confirmDeleteMetaAd($(this).data('id'));
+    });
+
+    // Workspace tree selection
+    $(document).off('click.cpv2-sel-camp').on('click.cpv2-sel-camp', '[data-action="ws-select-campaign"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id') || S.selectedCampaignV2Id;
+      if (!id) return;
+      S.selectedAdSetId = null; S.selectedAdId = null;
+      navigate('campaign_workspace', { hash: 'campaign/' + id });
+    });
+    $(document).off('click.cpv2-sel-set').on('click.cpv2-sel-set', '[data-action="ws-select-ad-set"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var set = id ? getAdSet(id) : null;
+      if (!set) return;
+      S.selectedAdSetId = id; S.selectedAdId = null;
+      navigate('campaign_workspace', { hash: 'campaign/' + set.campaign_id + '/ad_set/' + id });
+    });
+    $(document).off('click.cpv2-sel-ad').on('click.cpv2-sel-ad', '[data-action="ws-select-ad"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = id ? getAd(id) : null;
+      if (!ad) return;
+      var set = getAdSet(ad.ad_set_id);
+      S.selectedAdSetId = ad.ad_set_id; S.selectedAdId = id;
+      navigate('campaign_workspace', { hash: 'campaign/' + (set ? set.campaign_id : '') + '/ad_set/' + ad.ad_set_id + '/ad/' + id });
+    });
+
+    // Tree branch collapse toggle
+    $(document).off('click.cpv2-tree-toggle').on('click.cpv2-tree-toggle', '[data-action="ws-toggle-tree"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var id = $(this).data('id');
+      if (!id) return;
+      S.workspaceTreeCollapsed = S.workspaceTreeCollapsed || {};
+      S.workspaceTreeCollapsed[id] = !S.workspaceTreeCollapsed[id];
+      render();
+    });
+
+    // Meta Campaigns list filters
+    $(document).off('input.cpv2-camp-search').on('input.cpv2-camp-search', '#cpCampaignV2Search', debounce(function() {
+      S.campaignV2Filter = S.campaignV2Filter || {};
+      S.campaignV2Filter.search = $(this).val() || '';
+      render();
+    }, 250));
+    $(document).off('change.cpv2-camp-status').on('change.cpv2-camp-status', '#cpCampaignV2StatusFilter', function() {
+      S.campaignV2Filter = S.campaignV2Filter || {};
+      S.campaignV2Filter.status = $(this).val();
+      render();
+    });
+    $(document).off('change.cpv2-camp-obj').on('change.cpv2-camp-obj', '#cpCampaignV2ObjectiveFilter', function() {
+      S.campaignV2Filter = S.campaignV2Filter || {};
+      S.campaignV2Filter.objective = $(this).val();
+      render();
+    });
+
+    // Modal: chip toggles for Special Ad Categories + placements
+    $(document).off('change.cpv2-chip').on('change.cpv2-chip', '.cp-modal-body .cp-chip input[type="checkbox"]', function() {
+      var $label = $(this).closest('.cp-chip');
+      $label.toggleClass('cp-chip-active', this.checked);
+      // Special-case: if "NONE" is being toggled on, clear other categories
+      if (this.checked && $(this).hasClass('cp-v2-special-cat') && $(this).data('key') === 'NONE') {
+        $('.cp-v2-special-cat').not(this).each(function() {
+          this.checked = false; $(this).closest('.cp-chip').removeClass('cp-chip-active');
+        });
+      }
+      // If toggling a non-NONE category on, deselect NONE
+      else if (this.checked && $(this).hasClass('cp-v2-special-cat') && $(this).data('key') !== 'NONE') {
+        var $none = $('.cp-v2-special-cat[data-key="NONE"]');
+        if ($none.is(':checked')) { $none.prop('checked', false); $none.closest('.cp-chip').removeClass('cp-chip-active'); }
+      }
+    });
+    // Ad Set: Advantage Placements toggle hides/shows custom-placements section
+    $(document).off('change.cpv2-adv-pl').on('change.cpv2-adv-pl', '.cp-v2-placements-advantage', function() {
+      $('.cp-v2-custom-placements').toggle(!this.checked);
+    });
+
+    // (Stage 4: AI buttons are now handled in Part 2B — no Part 2A stubs needed.)
+
+    // --- Stage 5: A/B testing ---
+    $(document).off('click.cpv2-ab-config').on('click.cpv2-ab-config', '[data-action="ws-ab-config"]', function(e) {
+      e.preventDefault(); openABTestConfigModal($(this).data('id'));
+    });
+    $(document).off('click.cpv2-ab-compare').on('click.cpv2-ab-compare', '[data-action="ws-ab-compare"]', function(e) {
+      e.preventDefault(); openCompareVariantsModal($(this).data('id'));
+    });
+    $(document).off('click.cpv2-ab-mark').on('click.cpv2-ab-mark', '[data-action="ws-mark-ab-winner"]', function(e) {
+      e.preventDefault(); setABWinner($(this).data('campaign-id'), $(this).data('set-id'), true);
+    });
+    $(document).off('click.cpv2-ab-clear').on('click.cpv2-ab-clear', '[data-action="ws-clear-ab-winner"]', function(e) {
+      e.preventDefault(); setABWinner($(this).data('campaign-id'), $(this).data('set-id'), false);
+    });
+
+    // Stage 2: inspector tab switching
+    $(document).off('click.cpv2-set-tab').on('click.cpv2-set-tab', '[data-action="set-inspector-tab"]', function(e) {
+      e.preventDefault();
+      S.workspaceInspectorTab = $(this).data('tab') || 'overview';
+      render();
+    });
+
+    // Inline field save (blur for text/textarea; change for select/date)
+    $(document).off('blur.cpv2-inline change.cpv2-inline').on('blur.cpv2-inline change.cpv2-inline', '.cp-v2-inline-field', function() {
+      var $f = $(this);
+      var entityType = $f.data('entity-type');
+      var entityId = $f.data('entity-id');
+      var field = $f.data('field');
+      if (!entityType || !entityId || !field) return;
+      var value = $f.val();
+      if ($f.attr('type') === 'number') value = (value === '' ? null : Number(value));
+      saveEntityField(entityType, entityId, field, value);
+      // Auto-status for ads
+      if (entityType === 'ad') {
+        var ad = getAd(entityId);
+        if (ad && typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'edit');
+      }
+    });
+
+    // Brief chip toggles (Ad Set message_ids / style_ids / format_ids)
+    $(document).off('change.cpv2-brief-id').on('change.cpv2-brief-id', '.cp-v2-brief-id', function() {
+      var $f = $(this);
+      var field = $f.data('field');               // e.g. 'brief.message_ids'
+      var entityId = $f.data('entity-id');
+      var itemId = $f.data('id');
+      var adSet = getAdSet(entityId);
+      if (!adSet || !field) return;
+      adSet.brief = adSet.brief || {};
+      // Get the array via nested path
+      var pathParts = field.split('.');
+      var arr = adSet[pathParts[0]][pathParts[1]] || [];
+      var idx = arr.indexOf(itemId);
+      if (this.checked && idx === -1) arr.push(itemId);
+      if (!this.checked && idx > -1)  arr.splice(idx, 1);
+      saveEntityField('ad_set', entityId, field, arr);
+      // Toggle visual state
+      $(this).closest('.cp-chip').toggleClass('cp-chip-active', this.checked);
+    });
+
+    // Hook angles add/remove + edit (blur on the input)
+    $(document).off('click.cpv2-add-angle').on('click.cpv2-add-angle', '[data-action="ws-add-hook-angle"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var adSet = getAdSet(id);
+      if (!adSet) return;
+      adSet.brief = adSet.brief || {};
+      adSet.brief.hook_angles = (adSet.brief.hook_angles || []).concat(['']);
+      snapshot('Add hook angle');
+      saveEntityField('ad_set', id, 'brief.hook_angles', adSet.brief.hook_angles);
+    });
+    $(document).off('click.cpv2-rm-angle').on('click.cpv2-rm-angle', '[data-action="ws-remove-hook-angle"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id'); var idx = $(this).data('index');
+      var adSet = getAdSet(id);
+      if (!adSet || !adSet.brief) return;
+      adSet.brief.hook_angles = (adSet.brief.hook_angles || []).filter(function(_, i) { return i !== idx; });
+      snapshot('Remove hook angle');
+      saveEntityField('ad_set', id, 'brief.hook_angles', adSet.brief.hook_angles);
+    });
+    $(document).off('blur.cpv2-edit-angle').on('blur.cpv2-edit-angle', '.cp-v2-hook-angle', function() {
+      var $f = $(this);
+      var id = $f.data('entity-id'); var idx = $f.data('index');
+      var adSet = getAdSet(id);
+      if (!adSet || !adSet.brief) return;
+      var angles = adSet.brief.hook_angles || [];
+      if (angles[idx] === $f.val()) return;
+      angles[idx] = $f.val();
+      saveEntityField('ad_set', id, 'brief.hook_angles', angles);
+    });
+
+    // Pull a hook from a library message into an Ad (also captures snapshot)
+    $(document).off('click.cpv2-pull-hook').on('click.cpv2-pull-hook', '[data-action="ws-pull-hook"]', function(e) {
+      e.preventDefault();
+      var adId = $(this).data('ad-id');
+      var msgId = $(this).data('message-id');
+      var hookId = $(this).data('hook-id');
+      var ad = getAd(adId);
+      var msg = getMessage(msgId);
+      if (!ad || !msg) return;
+      var hook = (msg.hooks || []).find(function(h) { return h.id === hookId; });
+      if (!hook) return;
+      snapshot('Pull hook from message');
+      ad.hook = ad.hook || {};
+      ad.hook.text = hook.text;
+      ad.hook.type = hook.type || 'direct';
+      ad.hook.source_message_id = msg.id;
+      ad.hook.selected_hook_id = hook.id;
+      // Capture message snapshot
+      ad.message_snapshot = {
+        captured_at: new Date().toISOString(),
+        source_id: msg.id,
+        source_updated: msg.updated || msg.created || '',
+        title: msg.title || '',
+        body: msg.body || '',
+        funnel_stages: (msg.funnel_stages || []).slice(),
+        hook_snapshot: { id: hook.id, text: hook.text, type: hook.type || 'direct' }
+      };
+      ad.updated = new Date().toISOString();
+      if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'hook pulled');
+      buildMaps(); syncToTextarea(); render();
+      toast('Hook pulled from "' + msg.title + '"', 'success');
+    });
+
+    // Re-sync persona snapshot (stage 3 surfaces the button)
+    $(document).off('click.cpv2-resync-persona').on('click.cpv2-resync-persona', '[data-action="resync-persona-snapshot"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var adSet = getAdSet(id);
+      if (!adSet || !adSet.persona_id) return;
+      var persona = getPersona(adSet.persona_id);
+      if (!persona) return;
+      snapshot('Re-sync persona snapshot');
+      adSet.persona_snapshot = buildPersonaSnapshot(persona);
+      adSet.updated = new Date().toISOString();
+      logActivity('snapshot_resynced', 'ad_set', adSet.id, adSet.name, 'Re-synced persona snapshot from library');
+      buildMaps(); syncToTextarea(); render();
+      toast('Persona snapshot re-synced', 'success');
+    });
+
+    // Ad creative-type switch (media tab segmented control)
+    $(document).off('change.cpv2-mediatype').on('change.cpv2-mediatype', '.cp-v2-media-type-switch', function() {
+      var id = $(this).data('entity-id');
+      var val = $(this).val();
+      saveEntityField('ad', id, 'creative_type', val);
+    });
+
+    // Ad set pipeline status setter (Review tab)
+    $(document).off('click.cpv2-set-ad-status').on('click.cpv2-set-ad-status', '[data-action="ws-set-ad-status"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var status = $(this).data('status');
+      saveEntityField('ad', id, 'pipeline_status', status);
+    });
+
+    // Video scene rows
+    $(document).off('click.cpv2-add-scene').on('click.cpv2-add-scene', '[data-action="ws-ad-add-scene"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = getAd(id); if (!ad) return;
+      ad.media = ad.media || {};
+      ad.media.video = ad.media.video || { blueprint: { scenes: [] }, script: { rows: [] } };
+      ad.media.video.blueprint = ad.media.video.blueprint || { scenes: [] };
+      ad.media.video.blueprint.scenes.push({ name: '', description: '', timestamp: '', duration: 5 });
+      snapshot('Add scene');
+      saveEntityField('ad', id, 'media.video.blueprint.scenes', ad.media.video.blueprint.scenes);
+    });
+    $(document).off('click.cpv2-rm-scene').on('click.cpv2-rm-scene', '[data-action="ws-ad-remove-scene"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id'); var idx = $(this).data('index');
+      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
+      var arr = (ad.media.video.blueprint && ad.media.video.blueprint.scenes) || [];
+      arr.splice(idx, 1);
+      snapshot('Remove scene');
+      saveEntityField('ad', id, 'media.video.blueprint.scenes', arr);
+    });
+    $(document).off('blur.cpv2-scene-field').on('blur.cpv2-scene-field', '.cp-v2-scene-field', function() {
+      var $f = $(this);
+      var id = $f.data('entity-id'); var idx = $f.data('index'); var key = $f.data('key');
+      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
+      var arr = (ad.media.video.blueprint && ad.media.video.blueprint.scenes) || [];
+      if (!arr[idx]) return;
+      if (arr[idx][key] === $f.val()) return;
+      arr[idx][key] = $f.val();
+      saveEntityField('ad', id, 'media.video.blueprint.scenes', arr);
+    });
+
+    // Video script rows
+    $(document).off('click.cpv2-add-row').on('click.cpv2-add-row', '[data-action="ws-ad-add-script-row"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = getAd(id); if (!ad) return;
+      ad.media = ad.media || {};
+      ad.media.video = ad.media.video || { blueprint: { scenes: [] }, script: { rows: [] } };
+      ad.media.video.script = ad.media.video.script || { rows: [] };
+      ad.media.video.script.rows.push({ time: '', dialogue: '', visual: '', camera: '', audio: '' });
+      snapshot('Add script row');
+      saveEntityField('ad', id, 'media.video.script.rows', ad.media.video.script.rows);
+    });
+    $(document).off('click.cpv2-rm-row').on('click.cpv2-rm-row', '[data-action="ws-ad-remove-script-row"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id'); var idx = $(this).data('index');
+      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
+      var arr = (ad.media.video.script && ad.media.video.script.rows) || [];
+      arr.splice(idx, 1);
+      snapshot('Remove script row');
+      saveEntityField('ad', id, 'media.video.script.rows', arr);
+    });
+    $(document).off('blur.cpv2-script-field').on('blur.cpv2-script-field', '.cp-v2-script-field', function() {
+      var $f = $(this);
+      var id = $f.data('entity-id'); var idx = $f.data('index'); var key = $f.data('key');
+      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
+      var arr = (ad.media.video.script && ad.media.video.script.rows) || [];
+      if (!arr[idx]) return;
+      if (arr[idx][key] === $f.val()) return;
+      arr[idx][key] = $f.val();
+      saveEntityField('ad', id, 'media.video.script.rows', arr);
+    });
+
+    // --- Stage 3: Library ↔ Workspace integration ---
+
+    // Open an Ad Set in the workspace (from a library usage row)
+    $(document).off('click.cpv2-lib-open-set').on('click.cpv2-lib-open-set', '[data-action="lib-open-ad-set"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var campaignId = $(this).data('campaign-id');
+      if (!id || !campaignId) return;
+      window._cpNavigateToCampaignV2(campaignId, id);
+    });
+    // Open an Ad in the workspace
+    $(document).off('click.cpv2-lib-open-ad').on('click.cpv2-lib-open-ad', '[data-action="lib-open-ad"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = id ? getAd(id) : null;
+      if (!ad) return;
+      var set = getAdSet(ad.ad_set_id);
+      if (!set) return;
+      window._cpNavigateToCampaignV2(set.campaign_id, set.id, ad.id);
+    });
+
+    // Create Ad Set from a library Persona. Opens a chooser if multiple
+    // campaigns exist; otherwise opens the modal pre-populated.
+    $(document).off('click.cpv2-lib-create-set').on('click.cpv2-lib-create-set', '[data-action="lib-create-ad-set-from-persona"]', function(e) {
+      e.preventDefault();
+      var personaId = $(this).data('id');
+      var camps = getAllCampaignsV2();
+      if (camps.length === 0) {
+        // No campaigns yet — prompt to create one first
+        toast('Create a Campaign first, then add Ad Sets to it', 'info');
+        navigate('meta_campaigns');
+        return;
+      }
+      if (camps.length === 1) {
+        // Single campaign: open Ad Set modal under it, pre-pop persona
+        openMetaAdSetModalWithPersona(camps[0].id, personaId);
+        return;
+      }
+      // Multiple campaigns: show a quick picker
+      openCampaignPickerForAdSet(personaId);
+    });
+
+    // Attach a library Message / Style / Format to an Ad Set's brief.
+    // Opens a picker showing all Ad Sets across all campaigns.
+    $(document).off('click.cpv2-lib-attach').on('click.cpv2-lib-attach', '[data-action="lib-attach-to-ad-set-brief"]', function(e) {
+      e.preventDefault();
+      var type = $(this).data('type');  // 'message' | 'style' | 'visual_format'
+      var id = $(this).data('id');
+      openAdSetBriefAttachPicker(type, id);
+    });
+
+    // Carousel cards
+    $(document).off('click.cpv2-add-card').on('click.cpv2-add-card', '[data-action="ws-ad-add-card"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = getAd(id); if (!ad) return;
+      ad.media = ad.media || {};
+      ad.media.carousel_cards = ad.media.carousel_cards || [];
+      ad.media.carousel_cards.push({ image_asset_id: '', headline: '', description: '', link: '' });
+      snapshot('Add carousel card');
+      saveEntityField('ad', id, 'media.carousel_cards', ad.media.carousel_cards);
+    });
+    $(document).off('click.cpv2-rm-card').on('click.cpv2-rm-card', '[data-action="ws-ad-remove-card"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id'); var idx = $(this).data('index');
+      var ad = getAd(id); if (!ad) return;
+      var arr = ad.media.carousel_cards || [];
+      arr.splice(idx, 1);
+      snapshot('Remove carousel card');
+      saveEntityField('ad', id, 'media.carousel_cards', arr);
+    });
+    $(document).off('blur.cpv2-card-field').on('blur.cpv2-card-field', '.cp-v2-card-field', function() {
+      var $f = $(this);
+      var id = $f.data('entity-id'); var idx = $f.data('index'); var key = $f.data('key');
+      var ad = getAd(id); if (!ad || !ad.media) return;
+      var arr = ad.media.carousel_cards || [];
+      if (!arr[idx]) return;
+      if (arr[idx][key] === $f.val()) return;
+      arr[idx][key] = $f.val();
+      saveEntityField('ad', id, 'media.carousel_cards', arr);
+    });
   }
 
 
@@ -10356,6 +14153,16 @@
 
     // Campaign CRUD
     openCampaignModal: openCampaignModal, confirmDeleteCampaign: confirmDeleteCampaign,
+
+    // Meta v2 CRUD
+    openMetaCampaignModal: openMetaCampaignModal, confirmDeleteMetaCampaign: confirmDeleteMetaCampaign,
+    openMetaAdSetModal: openMetaAdSetModal, confirmDeleteMetaAdSet: confirmDeleteMetaAdSet,
+    openMetaAdModal: openMetaAdModal, confirmDeleteMetaAd: confirmDeleteMetaAd,
+    buildPersonaSnapshot: buildPersonaSnapshot,
+    // Stage 5: A/B testing
+    openABTestConfigModal: openABTestConfigModal,
+    openCompareVariantsModal: openCompareVariantsModal,
+    setABWinner: setABWinner,
 
     // Tag CRUD
     openTagModal: openTagModal, confirmDeleteTag: confirmDeleteTag,
@@ -10462,6 +14269,11 @@
   var Constants;
   var snapshot, openModal, closeModal, openConfirmDialog, closeConfirmDialog, collectModalFields;
   var collectFunnelChips, getSelectedRecipe, getEffectiveHook, renderTagInput;
+  // Meta v2 (Stage 4 imports)
+  var getCampaignV2, getAdSet, getAd;
+  var getAllCampaignsV2, getAllAdSets, getAllAds;
+  var getAdSetsByCampaign, getAdsByAdSet, getAdsByCampaign;
+  var buildPersonaSnapshot, maybeAdvanceAdStatus;
 
   console.log('[CP] Part 2B script loaded');
 
@@ -10533,6 +14345,12 @@
     collectModalFields = P2A.collectModalFields; collectFunnelChips = P2A.collectFunnelChips;
     getSelectedRecipe = P2A.getSelectedRecipe; getEffectiveHook = P2A.getEffectiveHook;
     renderTagInput = P2A.renderTagInput;
+    buildPersonaSnapshot = P2A.buildPersonaSnapshot;
+    // Meta v2 helpers from Part 1
+    getCampaignV2 = window._cpGetCampaignV2; getAdSet = window._cpGetAdSet; getAd = window._cpGetAd;
+    getAllCampaignsV2 = window._cpGetAllCampaignsV2; getAllAdSets = window._cpGetAllAdSets; getAllAds = window._cpGetAllAds;
+    getAdSetsByCampaign = window._cpGetAdSetsByCampaign; getAdsByAdSet = window._cpGetAdsByAdSet; getAdsByCampaign = window._cpGetAdsByCampaign;
+    maybeAdvanceAdStatus = window._cpMaybeAdvanceAdStatus;
 
     // Register view renderers
     var R = window._cpRenderers = window._cpRenderers || {};
@@ -11985,6 +15803,605 @@
   }
 
 
+/* ===== src/30-part2b/17a-ai-meta-v2.js ===== */
+  // ============================================================
+  // SECTION 17A: AI — META v2 (Campaign Tree + per-level assists)
+  // ============================================================
+  //
+  // Stage 4 of the restructure. All functions follow the existing pattern:
+  //   callAIWithRetry(prompt, onSuccess, onError, actionId, systemPrompt, parseJSON)
+  // and use BrandService.getSystemPrompt + brandSnippet for brand context.
+  //
+  // For alternatives-style outputs (hooks, copy variants) we surface them
+  // through showAIPreview. For single-result outputs (image prompt, video
+  // script) we save directly and toast.
+
+  // --- Small helpers ---
+
+  function aiV2_assertConfigured() {
+    if (!LLMService.isConfigured()) {
+      toast('No AI providers configured — open Settings → AI', 'warning');
+      return false;
+    }
+    return true;
+  }
+
+  function aiV2_campaignContext(camp) {
+    if (!camp) return '';
+    var obj = (Constants.META_OBJECTIVES[camp.objective] || {}).label || camp.objective || '';
+    var lines = ['Campaign: ' + (camp.name || 'Untitled')];
+    if (obj) lines.push('Objective: ' + obj);
+    if (camp.budget_mode) lines.push('Budget mode: ' + camp.budget_mode);
+    if (camp.daily_budget) lines.push('Daily budget: ' + camp.daily_budget);
+    if (camp.lifetime_budget) lines.push('Lifetime budget: ' + camp.lifetime_budget);
+    if (camp.brief) lines.push('Brief: ' + camp.brief);
+    if (camp.ai_instructions) lines.push('Special instructions: ' + camp.ai_instructions);
+    return lines.join('\n');
+  }
+
+  function aiV2_adSetContext(adSet) {
+    if (!adSet) return '';
+    var p = S.personaMap[adSet.persona_id];
+    var goal = (Constants.META_OPTIMIZATION_GOALS[adSet.optimization_goal] || {}).label || adSet.optimization_goal || '';
+    var brief = adSet.brief || {};
+    var lines = ['Ad Set: ' + (adSet.name || 'Untitled')];
+    if (goal) lines.push('Optimization goal: ' + goal);
+    if (p) lines.push('Persona: ' + p.name + (p.description ? ' — ' + truncate(p.description, 120) : ''));
+    if (adSet.audience_overrides) lines.push('Audience overrides: ' + adSet.audience_overrides);
+    if (brief.creative_direction) lines.push('Creative direction: ' + brief.creative_direction);
+    if ((brief.hook_angles || []).length) lines.push('Hook angles: ' + brief.hook_angles.join(' | '));
+    if (brief.ai_notes) lines.push('AI notes: ' + brief.ai_notes);
+    // Library context
+    var msgs = (brief.message_ids || []).map(function(id) { var m = S.messageMap[id]; return m ? m.title + (m.body ? ' — ' + truncate(stripHtml(m.body), 80) : '') : null; }).filter(Boolean);
+    if (msgs.length) lines.push('Attached messages: ' + msgs.join(' | '));
+    var styles = (brief.style_ids || []).map(function(id) { var s = S.styleMap[id]; return s ? s.name : null; }).filter(Boolean);
+    if (styles.length) lines.push('Attached styles: ' + styles.join(', '));
+    return lines.join('\n');
+  }
+
+  // --- 1. Generate Campaign Tree (flagship: brief → full Campaign/AdSets/Ads) ---
+
+  function aiGenerateCampaignTree() {
+    if (!aiV2_assertConfigured()) return;
+    openCampaignTreeBriefModal();
+  }
+
+  function openCampaignTreeBriefModal() {
+    var html = '<div class="cp-editor-form">';
+    html += '<p>Describe the campaign you want — what you\'re selling, who you want to reach, what success looks like, any constraints.</p>';
+    html += '<textarea class="cp-textarea" id="cpV2TreeBrief" rows="6" placeholder="e.g., Lead-gen campaign for our project management SaaS targeting growth marketers in India. Budget ~₹2L/month. Push the &quot;ship in days, not weeks&quot; angle. Avoid corporate-stock imagery."></textarea>';
+    html += '<div class="cp-form-help">AI will draft 1 Campaign, 2-3 Ad Sets, and 2-3 Ads per Ad Set. You can edit before accepting.</div>';
+    html += '</div>';
+
+    openModal('Generate Campaign tree from brief', html, {
+      titleIcon: 'wand-magic', size: 'md', saveLabel: icon('sparkles') + ' Generate',
+      onSave: function() {
+        var brief = ($('#cpV2TreeBrief').val() || '').trim();
+        if (!brief) { toast('Write a brief first', 'warning'); return; }
+        closeModal();
+        aiV2_runCampaignTree(brief);
+      }
+    });
+  }
+
+  function aiV2_runCampaignTree(brief) {
+    var availablePersonas = (S.data.personas || []).map(function(p) { return { id: p.id, name: p.name, description: truncate(p.description || '', 100) }; });
+    var availableMessages = (S.data.messages || []).map(function(m) { return { id: m.id, title: m.title }; });
+
+    var objList = Object.keys(Constants.META_OBJECTIVES).map(function(k) { return k + ' (' + Constants.META_OBJECTIVES[k].label + ')'; }).join(', ');
+    var goalList = Object.keys(Constants.META_OPTIMIZATION_GOALS).join(', ');
+    var ctaList = Object.keys(Constants.META_CTA_TYPES).slice(0, 12).join(', ');
+
+    var prompt = 'You are a Meta Ads strategist. Generate a complete campaign tree from this brief.\n\n';
+    prompt += 'Brief:\n' + brief + '\n\n';
+
+    prompt += 'Available Meta Objectives: ' + objList + '\n';
+    prompt += 'Available Optimization Goals: ' + goalList + '\n';
+    prompt += 'Available CTAs: ' + ctaList + '\n\n';
+
+    if (availablePersonas.length) {
+      prompt += 'Existing Personas in library (use their id if matching):\n';
+      prompt += availablePersonas.slice(0, 20).map(function(p) { return '- ' + p.id + ': ' + p.name + (p.description ? ' (' + p.description + ')' : ''); }).join('\n') + '\n\n';
+    }
+
+    prompt += brandSnippet('research');
+
+    prompt += '\n\nRules:\n';
+    prompt += '- Pick exactly ONE objective for the Campaign.\n';
+    prompt += '- Generate 2-3 Ad Sets, each targeting a distinct angle/audience cut.\n';
+    prompt += '- For each Ad Set, set persona_id to a matching library persona id if there\'s a strong match; otherwise leave empty.\n';
+    prompt += '- Optimization goal must be valid under the chosen Objective.\n';
+    prompt += '- Generate 2-3 Ads per Ad Set, each with a distinct hook angle.\n';
+    prompt += '- Primary text: 90-140 chars. Headline: ≤27 chars. Description: ≤27 chars.\n';
+    prompt += '- Output strict JSON ONLY, no preamble:\n';
+    prompt += '{"campaign":{"name":"","description":"","objective":"OUTCOME_...","budget_mode":"CBO|ABO","bid_strategy":"LOWEST_COST_WITHOUT_CAP|...","daily_budget":NUMBER_OR_NULL,"brief":""},';
+    prompt += '"ad_sets":[{"name":"","persona_id":"","audience_overrides":"","optimization_goal":"...","billing_event":"IMPRESSIONS","attribution_setting":"7d_click",';
+    prompt += '"brief":{"creative_direction":"","hook_angles":["","",""],"ai_notes":""},';
+    prompt += '"ads":[{"name":"","creative_type":"single_image|single_video|carousel","hook":{"text":"","type":"question|bold|story|data|direct|curiosity|challenge"},';
+    prompt += '"creative":{"primary_text":"","headline":"","description":"","cta_type":"LEARN_MORE","cta_link":""},';
+    prompt += '"media":{"image_brief":"","image_prompt":"","video_concept":""}}]}]}';
+
+    toast('AI drafting your Campaign tree (15-30s)...', 'info', 5000);
+
+    callAIWithRetry(prompt, function(parsed) {
+      if (!parsed || !parsed.campaign || !Array.isArray(parsed.ad_sets)) {
+        toast('AI returned an invalid tree', 'error'); return;
+      }
+      openCampaignTreePreviewModal(parsed);
+    }, function(err) { toast('AI error: ' + err, 'error'); },
+       'ai-generate-campaign-tree', BrandService.getSystemPrompt('research'), parseJSON);
+  }
+
+  // Preview the proposed tree with checkboxes; accept the user's selection.
+  function openCampaignTreePreviewModal(tree) {
+    var camp = tree.campaign;
+    var sets = tree.ad_sets || [];
+
+    var html = '<div class="cp-tree-preview">';
+
+    // Campaign
+    var objLabel = (Constants.META_OBJECTIVES[camp.objective] || {}).label || camp.objective;
+    html += '<div class="cp-tree-preview-campaign">';
+    html += '<label class="cp-tree-preview-row"><input type="checkbox" class="cp-tp-camp-check" checked>';
+    html += '<div><div class="cp-tree-preview-title">' + icon('bullhorn') + ' ' + esc(camp.name || 'Untitled') + '</div>';
+    html += '<div class="cp-tree-preview-meta">' + esc(objLabel || '') + ' · ' + esc(camp.budget_mode || '') + (camp.daily_budget ? ' · ' + camp.daily_budget + '/d' : '') + '</div>';
+    if (camp.description) html += '<div class="cp-tree-preview-desc">' + esc(camp.description) + '</div>';
+    html += '</div></label>';
+    html += '</div>';
+
+    // Ad sets + ads
+    for (var i = 0; i < sets.length; i++) {
+      var s = sets[i];
+      var ads = s.ads || [];
+      var personaName = s.persona_id ? ((S.personaMap[s.persona_id] || {}).name || 'unknown') : '(no persona)';
+      var goalLabel = (Constants.META_OPTIMIZATION_GOALS[s.optimization_goal] || {}).label || s.optimization_goal;
+      html += '<div class="cp-tree-preview-ad-set">';
+      html += '<label class="cp-tree-preview-row"><input type="checkbox" class="cp-tp-set-check" data-set-idx="' + i + '" checked>';
+      html += '<div><div class="cp-tree-preview-title">' + icon('crosshairs') + ' ' + esc(s.name || 'Ad Set ' + (i+1)) + '</div>';
+      html += '<div class="cp-tree-preview-meta">' + icon('user') + ' ' + esc(personaName) + ' · ' + esc(goalLabel || '') + '</div>';
+      if (s.brief && s.brief.creative_direction) html += '<div class="cp-tree-preview-desc">' + esc(s.brief.creative_direction) + '</div>';
+      html += '</div></label>';
+
+      for (var j = 0; j < ads.length; j++) {
+        var a = ads[j];
+        html += '<label class="cp-tree-preview-row cp-tree-preview-row-ad">';
+        html += '<input type="checkbox" class="cp-tp-ad-check" data-set-idx="' + i + '" data-ad-idx="' + j + '" checked>';
+        var ctype = (Constants.META_AD_CREATIVE_TYPES[a.creative_type] || { icon: 'rectangle-ad', label: 'Ad' });
+        html += '<div><div class="cp-tree-preview-title">' + icon(ctype.icon) + ' ' + esc(a.name || 'Ad ' + (j+1)) + '</div>';
+        if (a.hook && a.hook.text) html += '<div class="cp-tree-preview-hook">"' + esc(a.hook.text) + '"</div>';
+        if (a.creative && a.creative.primary_text) html += '<div class="cp-tree-preview-desc">' + esc(truncate(a.creative.primary_text, 140)) + '</div>';
+        html += '</div></label>';
+      }
+      html += '</div>';
+    }
+
+    html += '</div>';
+
+    openModal('AI Campaign Tree — review & accept', html, {
+      titleIcon: 'sparkles', size: 'xl', saveLabel: icon('check') + ' Create selected',
+      onSave: function() {
+        if (!$('.cp-tp-camp-check').is(':checked')) { toast('Campaign must be selected to create the tree', 'warning'); return; }
+        closeModal();
+        applyCampaignTree(tree);
+      }
+    });
+  }
+
+  function applyCampaignTree(tree) {
+    snapshot('AI Campaign tree');
+    var camp = createEntity('campaign_v2', $.extend({}, Constants.META_CAMPAIGN_DEFAULTS, {
+      name: tree.campaign.name || 'Untitled',
+      description: tree.campaign.description || '',
+      objective: tree.campaign.objective || Constants.META_CAMPAIGN_DEFAULTS.objective,
+      budget_mode: tree.campaign.budget_mode || 'CBO',
+      bid_strategy: tree.campaign.bid_strategy || 'LOWEST_COST_WITHOUT_CAP',
+      daily_budget: tree.campaign.daily_budget || null,
+      brief: tree.campaign.brief || ''
+    }));
+    if (!camp) { toast('Failed to create Campaign', 'error'); return; }
+
+    var counts = { sets: 0, ads: 0 };
+    var setsToCreate = [];
+    $('.cp-tp-set-check:checked').each(function() { setsToCreate.push(parseInt($(this).data('set-idx'), 10)); });
+
+    setsToCreate.forEach(function(idx) {
+      var sData = (tree.ad_sets || [])[idx]; if (!sData) return;
+
+      var persona = sData.persona_id ? getPersona(sData.persona_id) : null;
+      var personaSnap = persona ? buildPersonaSnapshot(persona) : null;
+
+      var set = createEntity('ad_set', {
+        campaign_id: camp.id,
+        name: sData.name || 'Ad Set ' + (idx + 1),
+        persona_id: persona ? persona.id : '',
+        persona_snapshot: personaSnap,
+        audience_overrides: sData.audience_overrides || '',
+        optimization_goal: sData.optimization_goal || Constants.META_AD_SET_DEFAULTS.optimization_goal,
+        billing_event: sData.billing_event || 'IMPRESSIONS',
+        attribution_setting: sData.attribution_setting || '7d_click',
+        brief: $.extend({ creative_direction: '', message_ids: [], style_ids: [], format_ids: [], hook_angles: [], ai_notes: '' }, sData.brief || {})
+      });
+      if (!set) return;
+      counts.sets++;
+
+      // Ads under this Ad Set
+      $('.cp-tp-ad-check[data-set-idx="' + idx + '"]:checked').each(function() {
+        var adIdx = parseInt($(this).data('ad-idx'), 10);
+        var aData = (sData.ads || [])[adIdx]; if (!aData) return;
+        var ad = createEntity('ad', {
+          ad_set_id: set.id,
+          name: aData.name || 'Ad ' + (adIdx + 1),
+          creative_type: aData.creative_type || 'single_image',
+          hook: { text: (aData.hook && aData.hook.text) || '', type: (aData.hook && aData.hook.type) || 'direct', source_message_id: '', selected_hook_id: '' },
+          creative: $.extend({ primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' }, aData.creative || {}),
+          media: {
+            image: { asset_id: '', ai_prompt: (aData.media && aData.media.image_prompt) || '', brief: (aData.media && aData.media.image_brief) || '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] },
+            video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: (aData.media && aData.media.video_concept) || '', blueprint: { scenes: [] }, script: { rows: [] } },
+            carousel_cards: []
+          }
+        });
+        if (ad) { counts.ads++; if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI tree'); }
+      });
+    });
+
+    logActivity('campaign_tree_generated', 'campaign_v2', camp.id, camp.name, 'AI tree: ' + counts.sets + ' Ad Set(s), ' + counts.ads + ' Ad(s)');
+    toast('Created Campaign + ' + counts.sets + ' Ad Sets + ' + counts.ads + ' Ads', 'success', 5000);
+
+    // Jump to the new campaign in the workspace
+    S.selectedCampaignV2Id = camp.id; S.selectedAdSetId = null; S.selectedAdId = null;
+    navigate('campaign_workspace', { hash: 'campaign/' + camp.id });
+  }
+
+  // --- 2. Suggest Ad Sets for an existing Campaign ---
+
+  function aiSuggestAdSets(campaignId) {
+    if (!aiV2_assertConfigured()) return;
+    var camp = getCampaignV2(campaignId); if (!camp) return;
+
+    var prompt = 'You are a Meta Ads strategist. Suggest 3 distinct Ad Sets for this Campaign.\n\n';
+    prompt += aiV2_campaignContext(camp) + '\n\n';
+    var personas = (S.data.personas || []).map(function(p) { return { id: p.id, name: p.name }; });
+    if (personas.length) prompt += 'Library personas (use id if matching): ' + personas.map(function(p) { return p.id + '=' + p.name; }).join(', ') + '\n\n';
+    prompt += brandSnippet('research');
+    prompt += '\n\nRespond JSON only: {"ad_sets":[{"name":"","persona_id":"","audience_overrides":"","optimization_goal":"","brief":{"creative_direction":"","hook_angles":["","",""]}}]}';
+
+    toast('AI suggesting Ad Sets...', 'info');
+    callAIWithRetry(prompt, function(parsed) {
+      var sets = parsed.ad_sets || [];
+      if (sets.length === 0) { toast('AI returned no Ad Sets', 'warning'); return; }
+      // Render preview with checkboxes
+      var html = '<div class="cp-tree-preview">';
+      for (var i = 0; i < sets.length; i++) {
+        var s = sets[i];
+        var personaName = s.persona_id ? ((S.personaMap[s.persona_id] || {}).name || '?') : '(no persona)';
+        var goalLabel = (Constants.META_OPTIMIZATION_GOALS[s.optimization_goal] || {}).label || s.optimization_goal;
+        html += '<label class="cp-tree-preview-row"><input type="checkbox" class="cp-tp-set-check" data-set-idx="' + i + '" checked>';
+        html += '<div><div class="cp-tree-preview-title">' + icon('crosshairs') + ' ' + esc(s.name) + '</div>';
+        html += '<div class="cp-tree-preview-meta">' + icon('user') + ' ' + esc(personaName) + ' · ' + esc(goalLabel || '') + '</div>';
+        if (s.brief && s.brief.creative_direction) html += '<div class="cp-tree-preview-desc">' + esc(s.brief.creative_direction) + '</div>';
+        html += '</div></label>';
+      }
+      html += '</div>';
+
+      openModal('AI suggested Ad Sets — review', html, {
+        titleIcon: 'sparkles', size: 'lg', saveLabel: icon('plus') + ' Create selected',
+        onSave: function() {
+          snapshot('AI suggest Ad Sets');
+          var created = 0;
+          $('.cp-tp-set-check:checked').each(function() {
+            var idx = parseInt($(this).data('set-idx'), 10);
+            var sData = sets[idx]; if (!sData) return;
+            var persona = sData.persona_id ? getPersona(sData.persona_id) : null;
+            createEntity('ad_set', {
+              campaign_id: campaignId,
+              name: sData.name || 'Ad Set',
+              persona_id: persona ? persona.id : '',
+              persona_snapshot: persona ? buildPersonaSnapshot(persona) : null,
+              audience_overrides: sData.audience_overrides || '',
+              optimization_goal: sData.optimization_goal || Constants.META_AD_SET_DEFAULTS.optimization_goal,
+              brief: $.extend({ creative_direction: '', message_ids: [], style_ids: [], format_ids: [], hook_angles: [], ai_notes: '' }, sData.brief || {})
+            });
+            created++;
+          });
+          closeModal();
+          toast('Created ' + created + ' Ad Set' + (created !== 1 ? 's' : ''), 'success');
+        }
+      });
+    }, function(err) { toast('AI error: ' + err, 'error'); },
+       'ai-suggest-ad-sets', BrandService.getSystemPrompt('research'), parseJSON);
+  }
+
+  // --- 3. Suggest Ads for an Ad Set ---
+
+  function aiSuggestAds(adSetId) {
+    if (!aiV2_assertConfigured()) return;
+    var adSet = getAdSet(adSetId); if (!adSet) return;
+    var camp = getCampaignV2(adSet.campaign_id);
+
+    var prompt = 'You are a Meta Ads creative director. Generate 3-4 Ads for this Ad Set.\n\n';
+    if (camp) prompt += aiV2_campaignContext(camp) + '\n';
+    prompt += aiV2_adSetContext(adSet) + '\n\n';
+    prompt += brandSnippet('content');
+    prompt += '\n\nRules: each Ad has a distinct hook angle. Primary text 90-140 chars, headline ≤27 chars, description ≤27 chars.\n';
+    prompt += 'Respond JSON only: {"ads":[{"name":"","creative_type":"single_image","hook":{"text":"","type":"direct"},"creative":{"primary_text":"","headline":"","description":"","cta_type":"LEARN_MORE","cta_link":""}}]}';
+
+    toast('AI suggesting Ads...', 'info');
+    callAIWithRetry(prompt, function(parsed) {
+      var ads = parsed.ads || [];
+      if (ads.length === 0) { toast('AI returned no Ads', 'warning'); return; }
+      var html = '<div class="cp-tree-preview">';
+      for (var i = 0; i < ads.length; i++) {
+        var a = ads[i];
+        html += '<label class="cp-tree-preview-row"><input type="checkbox" class="cp-tp-ad-check" data-ad-idx="' + i + '" checked>';
+        var ctype = (Constants.META_AD_CREATIVE_TYPES[a.creative_type] || { icon: 'rectangle-ad' });
+        html += '<div><div class="cp-tree-preview-title">' + icon(ctype.icon) + ' ' + esc(a.name) + '</div>';
+        if (a.hook && a.hook.text) html += '<div class="cp-tree-preview-hook">"' + esc(a.hook.text) + '"</div>';
+        if (a.creative && a.creative.primary_text) html += '<div class="cp-tree-preview-desc">' + esc(truncate(a.creative.primary_text, 140)) + '</div>';
+        html += '</div></label>';
+      }
+      html += '</div>';
+      openModal('AI suggested Ads — review', html, {
+        titleIcon: 'sparkles', size: 'lg', saveLabel: icon('plus') + ' Create selected',
+        onSave: function() {
+          snapshot('AI suggest Ads');
+          var created = 0;
+          $('.cp-tp-ad-check:checked').each(function() {
+            var idx = parseInt($(this).data('ad-idx'), 10);
+            var aData = ads[idx]; if (!aData) return;
+            var ad = createEntity('ad', {
+              ad_set_id: adSetId,
+              name: aData.name || 'Ad',
+              creative_type: aData.creative_type || 'single_image',
+              hook: $.extend({ text: '', type: 'direct', source_message_id: '', selected_hook_id: '' }, aData.hook || {}),
+              creative: $.extend({ primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' }, aData.creative || {})
+            });
+            if (ad) { created++; if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI suggested'); }
+          });
+          closeModal();
+          toast('Created ' + created + ' Ad' + (created !== 1 ? 's' : ''), 'success');
+        }
+      });
+    }, function(err) { toast('AI error: ' + err, 'error'); },
+       'ai-suggest-ads', BrandService.getSystemPrompt('content'), parseJSON);
+  }
+
+  // --- 4. Generate Ad Set Brief ---
+
+  function aiGenerateAdSetBrief(adSetId) {
+    if (!aiV2_assertConfigured()) return;
+    var adSet = getAdSet(adSetId); if (!adSet) return;
+    var camp = getCampaignV2(adSet.campaign_id);
+
+    var prompt = 'Generate a strategic Brief for this Ad Set.\n';
+    if (camp) prompt += aiV2_campaignContext(camp) + '\n';
+    prompt += aiV2_adSetContext(adSet) + '\n\n';
+    prompt += brandSnippet('research');
+    prompt += '\n\nRespond JSON only: {"creative_direction":"","hook_angles":["","",""],"ai_notes":""}';
+
+    toast('AI drafting brief...', 'info');
+    callAIWithRetry(prompt, function(parsed) {
+      if (!parsed) { toast('AI returned no brief', 'warning'); return; }
+      snapshot('AI Ad Set brief');
+      var brief = adSet.brief || {};
+      brief.creative_direction = parsed.creative_direction || brief.creative_direction;
+      brief.hook_angles = parsed.hook_angles && parsed.hook_angles.length ? parsed.hook_angles : brief.hook_angles;
+      brief.ai_notes = parsed.ai_notes || brief.ai_notes;
+      saveEntityField('ad_set', adSetId, 'brief', brief);
+      logActivity('brief_generated', 'ad_set', adSetId, adSet.name, 'AI generated brief');
+      toast('Brief generated', 'success');
+    }, function(err) { toast('AI error: ' + err, 'error'); },
+       'ai-generate-ad-set-brief', BrandService.getSystemPrompt('research'), parseJSON);
+  }
+
+  // --- 5. Generate Ad Hooks (alternatives) ---
+
+  function aiGenerateAdHooks(adId) {
+    if (!aiV2_assertConfigured()) return;
+    var ad = getAd(adId); if (!ad) return;
+    var adSet = getAdSet(ad.ad_set_id);
+    var camp = adSet ? getCampaignV2(adSet.campaign_id) : null;
+
+    var prompt = 'Write 3 distinct hook options for this Ad. Each should be 1 sentence, max 100 chars, with a different angle.\n\n';
+    if (camp) prompt += aiV2_campaignContext(camp) + '\n';
+    if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
+    if (ad.creative && ad.creative.primary_text) prompt += 'Current primary text: ' + ad.creative.primary_text + '\n';
+    prompt += '\n' + brandSnippet('content');
+    prompt += '\n\nHook types: question, bold, story, data, direct, curiosity, challenge.\n';
+    prompt += 'Respond JSON only: {"hooks":[{"text":"","type":""}]}';
+
+    toast('AI writing hooks...', 'info');
+    callAIWithRetry(prompt, function(parsed) {
+      var hooks = parsed.hooks || [];
+      if (hooks.length === 0) { toast('AI returned no hooks', 'warning'); return; }
+      showAIPreview('Pick a hook', hooks.map(function(h, i) { return { label: 'Option ' + (i+1) + ' (' + (h.type || 'direct') + ')', content: h.text, _hook: h }; }), function(selected) {
+        snapshot('AI hook');
+        ad.hook = ad.hook || {};
+        ad.hook.text = selected.content;
+        ad.hook.type = selected._hook.type || 'direct';
+        ad.updated = new Date().toISOString();
+        if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI hook');
+        buildMaps(); syncToTextarea(); render();
+        logActivity('hook_generated', 'ad', adId, ad.name, 'AI hook selected');
+        toast('Hook applied', 'success');
+      }, { formatItem: function(opt) { return '<blockquote class="cp-ad-hook">' + esc(opt.content) + '</blockquote>'; } });
+    }, function(err) { toast('AI error: ' + err, 'error'); },
+       'ai-generate-ad-hooks', BrandService.getSystemPrompt('content'), parseJSON);
+  }
+
+  // --- 6. Write Ad Copy (alternatives bundle: primary text + headline + description) ---
+
+  function aiWriteAdCopy(adId) {
+    if (!aiV2_assertConfigured()) return;
+    var ad = getAd(adId); if (!ad) return;
+    var adSet = getAdSet(ad.ad_set_id);
+    var camp = adSet ? getCampaignV2(adSet.campaign_id) : null;
+
+    var prompt = 'Write 3 distinct copy options for this Ad. Each option = {primary_text, headline, description}.\n';
+    prompt += 'Primary text 90-140 chars. Headline ≤27 chars (sales-y, scroll-stopping). Description ≤27 chars (supports the headline).\n\n';
+    if (camp) prompt += aiV2_campaignContext(camp) + '\n';
+    if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
+    if (ad.hook && ad.hook.text) prompt += 'Hook: ' + ad.hook.text + '\n';
+    prompt += '\n' + brandSnippet('content');
+    prompt += '\nRespond JSON only: {"options":[{"primary_text":"","headline":"","description":""}]}';
+
+    toast('AI writing copy...', 'info');
+    callAIWithRetry(prompt, function(parsed) {
+      var options = parsed.options || [];
+      if (options.length === 0) { toast('AI returned no copy', 'warning'); return; }
+      showAIPreview('Pick a copy variant', options.map(function(o, i) { return { label: 'Variant ' + (i+1), content: o.primary_text, _copy: o }; }), function(selected) {
+        snapshot('AI copy');
+        ad.creative = ad.creative || {};
+        ad.creative.primary_text = selected._copy.primary_text || ad.creative.primary_text;
+        ad.creative.headline     = selected._copy.headline     || ad.creative.headline;
+        ad.creative.description  = selected._copy.description  || ad.creative.description;
+        ad.updated = new Date().toISOString();
+        if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI copy');
+        buildMaps(); syncToTextarea(); render();
+        logActivity('content_generated', 'ad', adId, ad.name, 'AI wrote copy');
+        toast('Copy applied', 'success');
+      }, { formatItem: function(opt) {
+        return '<div><p><strong>' + esc(opt._copy.headline) + '</strong></p><p>' + esc(opt.content) + '</p><p class="cp-text-muted">' + esc(opt._copy.description) + '</p></div>';
+      } });
+    }, function(err) { toast('AI error: ' + err, 'error'); },
+       'ai-write-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
+  }
+
+  // --- 7. Improve Ad Copy (refinement) ---
+
+  function aiImproveAdCopy(adId) {
+    if (!aiV2_assertConfigured()) return;
+    var ad = getAd(adId); if (!ad) return;
+    var c = ad.creative || {};
+    if (!(c.primary_text || c.headline)) { toast('Write some copy first, then AI can improve it', 'info'); return; }
+
+    var prompt = 'Improve this Meta Ad copy. Make it more specific, more emotional, more scroll-stopping. Keep same intent.\n\n';
+    prompt += 'Current copy:\nPrimary text: ' + (c.primary_text || '') + '\nHeadline: ' + (c.headline || '') + '\nDescription: ' + (c.description || '') + '\n\n';
+    prompt += brandSnippet('content');
+    prompt += '\n\nRespond JSON only: {"primary_text":"","headline":"","description":""}';
+
+    toast('AI improving copy...', 'info');
+    callAIWithRetry(prompt, function(parsed) {
+      if (!parsed) { toast('AI returned nothing', 'warning'); return; }
+      showAIPreview('Compare improved copy', [
+        { label: 'Original',  content: c.primary_text, _copy: { primary_text: c.primary_text, headline: c.headline, description: c.description } },
+        { label: 'Improved',  content: parsed.primary_text, _copy: parsed }
+      ], function(selected) {
+        snapshot('AI improved copy');
+        ad.creative = ad.creative || {};
+        ad.creative.primary_text = selected._copy.primary_text || ad.creative.primary_text;
+        ad.creative.headline     = selected._copy.headline     || ad.creative.headline;
+        ad.creative.description  = selected._copy.description  || ad.creative.description;
+        ad.updated = new Date().toISOString();
+        if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI improved');
+        buildMaps(); syncToTextarea(); render();
+        toast('Applied', 'success');
+      }, { formatItem: function(opt) {
+        return '<div><p><strong>' + esc(opt._copy.headline) + '</strong></p><p>' + esc(opt.content) + '</p><p class="cp-text-muted">' + esc(opt._copy.description) + '</p></div>';
+      } });
+    }, function(err) { toast('AI error: ' + err, 'error'); },
+       'ai-improve-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
+  }
+
+  // --- 8. Generate Image Prompt ---
+
+  function aiGenerateAdImagePrompt(adId) {
+    if (!aiV2_assertConfigured()) return;
+    var ad = getAd(adId); if (!ad) return;
+    var img = (ad.media && ad.media.image) || {};
+    var adSet = getAdSet(ad.ad_set_id);
+    var camp = adSet ? getCampaignV2(adSet.campaign_id) : null;
+
+    var prompt = 'Generate a production-ready AI image prompt for this Meta Ad.\n';
+    prompt += 'Aspect ratio: ' + (img.aspect_ratio || '1:1') + '. Style: photorealistic unless brand says otherwise.\n\n';
+    if (camp) prompt += aiV2_campaignContext(camp) + '\n';
+    if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
+    if (ad.creative && ad.creative.primary_text) prompt += 'Ad copy: ' + ad.creative.primary_text + '\n';
+    if (img.brief) prompt += 'Image brief: ' + img.brief + '\n';
+    prompt += '\n' + BrandService.getBrandDesignPrompt();
+    prompt += '\n\nReturn JSON only: {"prompt":"","negative_prompt":""}';
+
+    toast('AI generating prompt...', 'info');
+    callAIWithRetry(prompt, function(parsed) {
+      if (!parsed || !parsed.prompt) { toast('AI returned no prompt', 'warning'); return; }
+      snapshot('AI image prompt');
+      ad.media = ad.media || {}; ad.media.image = ad.media.image || {};
+      ad.media.image.ai_prompt = parsed.prompt;
+      if (parsed.negative_prompt) ad.media.image.negative_prompt = parsed.negative_prompt;
+      ad.updated = new Date().toISOString();
+      if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'image prompt');
+      buildMaps(); syncToTextarea(); render();
+      logActivity('media_generated', 'ad', adId, ad.name, 'AI image prompt');
+      toast('Image prompt applied', 'success');
+    }, function(err) { toast('AI error: ' + err, 'error'); },
+       'ai-generate-ad-image-prompt', BrandService.getSystemPrompt('research'), parseJSON);
+  }
+
+  // --- 9. Generate Video Blueprint (scenes) ---
+
+  function aiGenerateVideoBlueprint(adId) {
+    if (!aiV2_assertConfigured()) return;
+    var ad = getAd(adId); if (!ad) return;
+    var vid = (ad.media && ad.media.video) || {};
+    var adSet = getAdSet(ad.ad_set_id);
+
+    var prompt = 'Create a scene-by-scene storyboard for this Meta video Ad. Target duration: ' + (vid.duration_seconds || 30) + 's. Aspect: ' + (vid.aspect_ratio || '9:16') + '.\n\n';
+    if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
+    if (vid.concept) prompt += 'Video concept: ' + vid.concept + '\n';
+    if (ad.hook && ad.hook.text) prompt += 'Hook: ' + ad.hook.text + '\n';
+    prompt += '\n' + brandSnippet('content');
+    prompt += '\n\nReturn 4-6 scenes. JSON only: {"scenes":[{"name":"","description":"","timestamp":"0:00","duration":5}]}';
+
+    toast('AI building storyboard...', 'info');
+    callAIWithRetry(prompt, function(parsed) {
+      var scenes = (parsed && parsed.scenes) || [];
+      if (scenes.length === 0) { toast('AI returned no scenes', 'warning'); return; }
+      snapshot('AI video blueprint');
+      ad.media = ad.media || {}; ad.media.video = ad.media.video || {};
+      ad.media.video.blueprint = { scenes: scenes };
+      ad.updated = new Date().toISOString();
+      if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'storyboard');
+      buildMaps(); syncToTextarea(); render();
+      logActivity('media_generated', 'ad', adId, ad.name, 'AI storyboard (' + scenes.length + ' scenes)');
+      toast('Storyboard added', 'success');
+    }, function(err) { toast('AI error: ' + err, 'error'); },
+       'ai-generate-video-blueprint', BrandService.getSystemPrompt('content'), parseJSON);
+  }
+
+  // --- 10. Generate Video Script ---
+
+  function aiGenerateVideoScript(adId) {
+    if (!aiV2_assertConfigured()) return;
+    var ad = getAd(adId); if (!ad) return;
+    var vid = (ad.media && ad.media.video) || {};
+    var adSet = getAdSet(ad.ad_set_id);
+
+    var prompt = 'Write a time-coded script for this Meta video Ad. Duration: ' + (vid.duration_seconds || 30) + 's. Aspect: ' + (vid.aspect_ratio || '9:16') + '.\n\n';
+    if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
+    if (vid.concept) prompt += 'Concept: ' + vid.concept + '\n';
+    if (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length) {
+      prompt += 'Storyboard:\n' + vid.blueprint.scenes.map(function(s, i) { return (i+1) + '. ' + s.name + ': ' + s.description; }).join('\n') + '\n';
+    }
+    if (ad.hook && ad.hook.text) prompt += 'Hook: ' + ad.hook.text + '\n';
+    if (ad.creative && ad.creative.cta_type) prompt += 'CTA: ' + (Constants.META_CTA_TYPES[ad.creative.cta_type] || {}).label + '\n';
+    prompt += '\n' + brandSnippet('content');
+    prompt += '\n\nReturn 6-12 rows. JSON only: {"rows":[{"time":"0:00-0:03","dialogue":"","visual":"","camera":"","audio":""}]}';
+
+    toast('AI writing script...', 'info');
+    callAIWithRetry(prompt, function(parsed) {
+      var rows = (parsed && parsed.rows) || [];
+      if (rows.length === 0) { toast('AI returned no script', 'warning'); return; }
+      snapshot('AI video script');
+      ad.media = ad.media || {}; ad.media.video = ad.media.video || {};
+      ad.media.video.script = { rows: rows };
+      ad.updated = new Date().toISOString();
+      if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'video script');
+      buildMaps(); syncToTextarea(); render();
+      logActivity('script_generated', 'ad', adId, ad.name, 'AI script (' + rows.length + ' rows)');
+      toast('Script generated', 'success');
+    }, function(err) { toast('AI error: ' + err, 'error'); },
+       'ai-generate-video-script', BrandService.getSystemPrompt('content'), parseJSON);
+  }
+
 /* ===== src/30-part2b/18-ai-setup-wizard.js ===== */
   // ============================================================
   // SECTION 15b: SETUP WIZARD AI GENERATORS
@@ -12549,6 +16966,7 @@
       { key: 'categories',   label: 'Categories',   icon: 'folder' },
       { key: 'ai',           label: 'AI',           icon: 'sparkles' },
       { key: 'brand_design', label: 'Brand Design', icon: 'palette' },
+      { key: 'meta_v2',      label: 'Meta v2',      icon: 'bullhorn' },
       { key: 'import_export', label: 'Import/Export', icon: 'download' }
     ];
     var html = '<div class="cp-view cp-view-settings">';
@@ -12566,6 +16984,7 @@
       case 'categories':    html += renderCategorySettings(); break;
       case 'ai':            html += renderAISettings(); break;
       case 'brand_design':  html += renderBrandDesignSettings(); break;
+      case 'meta_v2':       html += renderMetaV2Settings(); break;
       case 'import_export': html += renderImportExportSettings(); break;
     }
     html += '</div></div>';
@@ -12737,6 +17156,89 @@
   }
 
 
+/* ===== src/30-part2b/21a-view-settings-meta-v2.js ===== */
+  // ============================================================
+  // SECTION 21A: SETTINGS — META v2 TAB
+  // ============================================================
+  //
+  // Workspace-level Meta defaults + migration controls.
+
+  function renderMetaV2Settings() {
+    var setup = (S.meta && S.meta.setup) || {};
+    var defaults = (S.meta && S.meta.meta_defaults) || {};
+    var hasLegacy = !!(S.meta && S.meta.legacy_backup);
+    var legacyCount = hasLegacy ? ((S.meta.legacy_backup.campaigns || []).length + ' campaigns + ' + (S.meta.legacy_backup.recipes || []).length + ' recipes') : '';
+    var oldCamps = (S.data.campaigns || []).length;
+    var oldRecipes = (S.data.recipes || []).length;
+    var canMigrate = (oldCamps + oldRecipes) > 0;
+
+    var html = '<div class="cp-settings-panel">';
+
+    // --- Feature flag toggle ---
+    html += '<div class="cp-settings-section">';
+    html += '<h3>' + icon('flask') + ' Meta v2 mode</h3>';
+    html += '<p class="cp-text-muted">The Meta v2 hierarchy (Campaign → Ad Set → Ad) is the new working surface for this app. When enabled, the legacy Recipes and Campaigns (v1) sidebar entries are hidden and the new Campaigns workspace takes over.</p>';
+    html += '<label class="cp-form-toggle">';
+    html += '<input type="checkbox" class="cp-v2-toggle-flag"' + (setup.meta_v2 ? ' checked' : '') + '>';
+    html += '<span>Enable Meta v2 mode</span></label>';
+    html += '</div>';
+
+    // --- Migration wizard CTA ---
+    html += '<div class="cp-settings-section">';
+    html += '<h3>' + icon('wand-magic') + ' Migrate legacy data</h3>';
+    if (setup.migrated_to_v2) {
+      html += '<p class="cp-text-muted">This workspace has been migrated.</p>';
+      if (hasLegacy) {
+        html += '<p class="cp-text-muted">Legacy backup: ' + esc(legacyCount) + ' (created ' + formatRelativeTime(S.meta.legacy_backup.timestamp) + ').</p>';
+        html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-discard-legacy">' + icon('trash') + ' Discard legacy backup</button>';
+      }
+      html += '<button class="cp-btn cp-btn-outline" data-action="v2-open-migration" style="margin-left:8px">' + icon('refresh') + ' Run migration again</button>';
+    } else if (canMigrate) {
+      html += '<p>You have ' + oldCamps + ' legacy campaign' + (oldCamps !== 1 ? 's' : '') + ' and ' + oldRecipes + ' recipe' + (oldRecipes !== 1 ? 's' : '') + ' to migrate.</p>';
+      html += '<button class="cp-btn cp-btn-ai" data-action="v2-open-migration">' + icon('wand-magic') + ' Start migration wizard</button>';
+    } else {
+      html += '<p class="cp-text-muted">No legacy data to migrate. You can enable Meta v2 directly above.</p>';
+    }
+    html += '</div>';
+
+    // --- Meta defaults ---
+    html += '<div class="cp-settings-section">';
+    html += '<h3>' + icon('gear') + ' Workspace Meta defaults</h3>';
+    html += '<p class="cp-text-muted">Used as defaults for new Campaigns / Ad Sets / Ads and on export.</p>';
+    html += '<div class="cp-form-row"><div class="cp-form-half"><label>Facebook Page ID</label>';
+    html += '<input type="text" class="cp-input cp-v2-defaults-field" data-key="page_id" value="' + esc(defaults.page_id || '') + '" placeholder="123456789012345">';
+    html += '</div><div class="cp-form-half"><label>Instagram Actor ID</label>';
+    html += '<input type="text" class="cp-input cp-v2-defaults-field" data-key="instagram_actor_id" value="' + esc(defaults.instagram_actor_id || '') + '" placeholder="17841...">';
+    html += '</div></div>';
+    html += '<div class="cp-form-row"><div class="cp-form-half"><label>Pixel ID</label>';
+    html += '<input type="text" class="cp-input cp-v2-defaults-field" data-key="pixel_id" value="' + esc(defaults.pixel_id || '') + '" placeholder="123456789">';
+    html += '</div><div class="cp-form-half"><label>Business Manager ID</label>';
+    html += '<input type="text" class="cp-input cp-v2-defaults-field" data-key="business_manager_id" value="' + esc(defaults.business_manager_id || '') + '" placeholder="987654321">';
+    html += '</div></div>';
+    html += '<div class="cp-form-row"><div class="cp-form-half"><label>Attribution window</label>';
+    html += '<select class="cp-select cp-v2-defaults-field" data-key="attribution_window">';
+    for (var ak in Constants.META_ATTRIBUTION_SETTINGS) {
+      html += '<option value="' + ak + '"' + (defaults.attribution_window === ak ? ' selected' : '') + '>' + esc(Constants.META_ATTRIBUTION_SETTINGS[ak].label) + '</option>';
+    }
+    html += '</select></div><div class="cp-form-half"><label>Currency</label>';
+    html += '<select class="cp-select cp-v2-defaults-field" data-key="currency">';
+    ['USD','EUR','GBP','INR','AUD','CAD','SGD','AED','JPY'].forEach(function(cc) {
+      html += '<option value="' + cc + '"' + (defaults.currency === cc ? ' selected' : '') + '>' + cc + '</option>';
+    });
+    html += '</select></div></div>';
+
+    html += '<div class="cp-form-row" style="margin-top:8px"><div class="cp-form-grow"><label>Time zone</label>';
+    html += '<select class="cp-select cp-v2-defaults-field" data-key="time_zone">';
+    ['UTC','America/New_York','America/Chicago','America/Los_Angeles','Europe/London','Europe/Paris','Asia/Tokyo','Asia/Kolkata','Asia/Dubai','Asia/Singapore'].forEach(function(tz) {
+      html += '<option value="' + tz + '"' + (defaults.time_zone === tz ? ' selected' : '') + '>' + tz + '</option>';
+    });
+    html += '</select></div></div>';
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
 /* ===== src/30-part2b/22-config-crud.js ===== */
   // ============================================================
   // SECTION 18: CONFIG CRUD & SETTINGS SAVE
@@ -12806,6 +17308,489 @@
     });
   }
 
+
+/* ===== src/30-part2b/22a-migration-importer.js ===== */
+  // ============================================================
+  // SECTION 22A: META v2 MIGRATION IMPORTER (Stage 6)
+  // ============================================================
+  //
+  // Wizard that converts legacy data (campaigns[] + recipes[]) into the
+  // Meta v2 hierarchy (campaigns_v2[] + ad_sets[] + ads[]). Run once per
+  // workspace from Settings → "Migrate legacy data". Preserves all old
+  // data in S.meta.legacy_backup until the user explicitly discards.
+
+  var v2MigrationState = { step: 1, mappings: {}, summary: null };
+
+  // --- Mapping tables (legacy → Meta enum) ---
+
+  var V2_OBJ_MAP = {
+    'obj_leads':       'OUTCOME_LEADS',
+    'obj_awareness':   'OUTCOME_AWARENESS',
+    'obj_conversions': 'OUTCOME_SALES',
+    'obj_traffic':     'OUTCOME_TRAFFIC',
+    'obj_engagement':  'OUTCOME_ENGAGEMENT'
+  };
+  var V2_CAMP_STATUS_MAP = {
+    'planning':  'DRAFT',
+    'active':    'ACTIVE',
+    'paused':    'PAUSED',
+    'completed': 'ARCHIVED',
+    'archived':  'ARCHIVED'
+  };
+  var V2_AD_STATUS_MAP = {
+    'draft':         'hook_ready',
+    'hook_ready':    'hook_ready',
+    'content_ready': 'copy_ready',
+    'media_ready':   'media_ready',
+    'in_review':     'in_review',
+    'approved':      'approved',
+    'live':          'live',
+    'paused':        'paused',
+    'archived':      'archived'
+  };
+  var V2_CREATIVE_TYPE_MAP = {
+    'image':    'single_image',
+    'carousel': 'carousel',
+    'video':    'single_video'
+  };
+
+  // --- Entry point ---
+
+  function openMigrationWizard() {
+    var oldCamps = (S.data.campaigns || []).length;
+    var oldRecipes = (S.data.recipes || []).length;
+    if (oldCamps === 0 && oldRecipes === 0) {
+      toast('No legacy data to migrate. You can enable Meta v2 directly from Settings.', 'info');
+      return;
+    }
+    if (S.meta.setup && S.meta.setup.migrated_to_v2) {
+      openConfirmDialog({
+        title: 'Already migrated',
+        message: 'This workspace has already been migrated to Meta v2. Run again anyway? (Existing v2 entities will be preserved; legacy data will be re-imported alongside.)',
+        confirmLabel: 'Run again',
+        onConfirm: function() { closeConfirmDialog(); v2MigrationState = { step: 1, mappings: {}, summary: null }; renderMigrationWizardStep(); }
+      });
+      return;
+    }
+    v2MigrationState = { step: 1, mappings: {}, summary: null };
+    renderMigrationWizardStep();
+  }
+
+  function renderMigrationWizardStep() {
+    var step = v2MigrationState.step;
+    var html = '<div class="cp-v2-migration-wizard">';
+    html += renderMigrationStepIndicator(step);
+    html += '<div class="cp-v2-migration-body">';
+    if (step === 1)      html += renderMigrationStep1Backup();
+    else if (step === 2) html += renderMigrationStep2Objectives();
+    else if (step === 3) html += renderMigrationStep3AdSets();
+    else if (step === 4) html += renderMigrationStep4Preview();
+    else if (step === 5) html += renderMigrationStep5Summary();
+    html += '</div>';
+    html += '<div class="cp-v2-migration-footer">';
+    if (step > 1 && step < 5) html += '<button class="cp-btn cp-btn-outline" data-action="v2-mig-back">' + icon('arrow-left') + ' Back</button>';
+    else html += '<span></span>';
+    if (step < 4)      html += '<button class="cp-btn cp-btn-primary" data-action="v2-mig-next">Next ' + icon('arrow-right') + '</button>';
+    else if (step === 4) html += '<button class="cp-btn cp-btn-ai" data-action="v2-mig-run">' + icon('bolt') + ' Run migration</button>';
+    else if (step === 5) html += '<button class="cp-btn cp-btn-primary" data-action="close-modal">Done</button>';
+    html += '</div></div>';
+
+    openModal('Migrate to Meta v2 — Step ' + step + ' of 5', html, {
+      titleIcon: 'wand-magic', size: 'xl', footer: false
+    });
+
+    // Step navigation
+    $(document).off('click.cpv2-mig-next').on('click.cpv2-mig-next', '[data-action="v2-mig-next"]', function(e) {
+      e.preventDefault();
+      v2MigrationState.step++;
+      renderMigrationWizardStep();
+    });
+    $(document).off('click.cpv2-mig-back').on('click.cpv2-mig-back', '[data-action="v2-mig-back"]', function(e) {
+      e.preventDefault();
+      v2MigrationState.step--;
+      renderMigrationWizardStep();
+    });
+    $(document).off('click.cpv2-mig-run').on('click.cpv2-mig-run', '[data-action="v2-mig-run"]', function(e) {
+      e.preventDefault();
+      runMigration();
+    });
+  }
+
+  function renderMigrationStepIndicator(currentStep) {
+    var steps = ['Backup', 'Objectives', 'Ad Sets', 'Preview', 'Done'];
+    var html = '<div class="cp-v2-migration-steps">';
+    for (var i = 0; i < steps.length; i++) {
+      var s = i + 1;
+      var cls = s === currentStep ? ' cp-v2-mig-step-active' : (s < currentStep ? ' cp-v2-mig-step-done' : '');
+      html += '<div class="cp-v2-mig-step' + cls + '">';
+      html += '<span class="cp-v2-mig-step-num">' + (s < currentStep ? icon('circle-check') : s) + '</span>';
+      html += '<span class="cp-v2-mig-step-label">' + esc(steps[i]) + '</span>';
+      html += '</div>';
+      if (i < steps.length - 1) html += '<div class="cp-v2-mig-step-connector"></div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  // --- Step 1: Backup confirmation ---
+
+  function renderMigrationStep1Backup() {
+    var oldCamps = (S.data.campaigns || []).length;
+    var oldRecipes = (S.data.recipes || []).length;
+    var oldPersonas = (S.data.personas || []).length;
+    var oldMessages = (S.data.messages || []).length;
+
+    var html = '<h3>' + icon('shield') + ' Backup before we begin</h3>';
+    html += '<p>Your existing workspace contains:</p>';
+    html += '<div class="cp-v2-mig-stats">';
+    html += '<div class="cp-v2-mig-stat"><div class="cp-v2-mig-stat-val">' + oldCamps + '</div><div class="cp-v2-mig-stat-lbl">Campaigns</div></div>';
+    html += '<div class="cp-v2-mig-stat"><div class="cp-v2-mig-stat-val">' + oldRecipes + '</div><div class="cp-v2-mig-stat-lbl">Recipes</div></div>';
+    html += '<div class="cp-v2-mig-stat"><div class="cp-v2-mig-stat-val">' + oldPersonas + '</div><div class="cp-v2-mig-stat-lbl">Personas (kept)</div></div>';
+    html += '<div class="cp-v2-mig-stat"><div class="cp-v2-mig-stat-val">' + oldMessages + '</div><div class="cp-v2-mig-stat-lbl">Messages (kept)</div></div>';
+    html += '</div>';
+
+    html += '<div class="cp-card cp-v2-mig-info-box">';
+    html += '<h4>' + icon('info') + ' What this wizard does</h4>';
+    html += '<ul>';
+    html += '<li>Each legacy <strong>Campaign</strong> becomes a new Meta-shaped <strong>Campaign</strong> with sensible defaults (objective mapped, status mapped, brief preserved).</li>';
+    html += '<li>For each legacy campaign, recipes are grouped by their <code>persona_id</code> and become one <strong>Ad Set</strong> per persona.</li>';
+    html += '<li>Each <strong>recipe</strong> becomes an <strong>Ad</strong> under its persona\'s Ad Set, preserving hook, copy, media briefs, status, assignee, and dates.</li>';
+    html += '<li>The Library (personas, messages, styles, formats, pain points) stays exactly as it is — those are reusable resources.</li>';
+    html += '<li>All legacy data is backed up to <code>S.meta.legacy_backup</code> so you can recover anything. Old views disappear from the sidebar after migration.</li>';
+    html += '</ul>';
+    html += '</div>';
+    return html;
+  }
+
+  // --- Step 2: Objective mapping ---
+
+  function renderMigrationStep2Objectives() {
+    var camps = S.data.campaigns || [];
+    var html = '<h3>' + icon('bullseye-arrow') + ' Map legacy objectives to Meta objectives</h3>';
+    html += '<p class="cp-text-muted">We\'ve pre-filled likely matches. Adjust any that look wrong.</p>';
+
+    if (!v2MigrationState.mappings.objectives) v2MigrationState.mappings.objectives = {};
+    var objMap = v2MigrationState.mappings.objectives;
+
+    html += '<table class="cp-v2-mig-mapping-table"><thead><tr><th>Campaign</th><th>Legacy objective</th><th>Meta objective</th></tr></thead><tbody>';
+    for (var i = 0; i < camps.length; i++) {
+      var c = camps[i];
+      var legacyObj = (Constants.CAMPAIGN_OBJECTIVES || []).find(function(o) { return o.id === c.objective; });
+      var legacyLabel = legacyObj ? legacyObj.name : (c.objective || '(none)');
+      var defaultMeta = V2_OBJ_MAP[c.objective] || 'OUTCOME_LEADS';
+      if (!objMap[c.id]) objMap[c.id] = defaultMeta;
+      html += '<tr><td><strong>' + esc(c.name) + '</strong></td>';
+      html += '<td>' + esc(legacyLabel) + '</td>';
+      html += '<td><select class="cp-select cp-v2-mig-obj-select" data-camp-id="' + esc(c.id) + '">';
+      for (var ok in Constants.META_OBJECTIVES) {
+        var oSel = (objMap[c.id] === ok) ? ' selected' : '';
+        html += '<option value="' + ok + '"' + oSel + '>' + esc(Constants.META_OBJECTIVES[ok].label) + '</option>';
+      }
+      html += '</select></td></tr>';
+    }
+    html += '</tbody></table>';
+
+    $(document).off('change.cpv2-mig-obj').on('change.cpv2-mig-obj', '.cp-v2-mig-obj-select', function() {
+      objMap[$(this).data('camp-id')] = $(this).val();
+    });
+    return html;
+  }
+
+  // --- Step 3: Ad Set grouping preview ---
+
+  function renderMigrationStep3AdSets() {
+    var camps = S.data.campaigns || [];
+    var recipes = S.data.recipes || [];
+
+    var html = '<h3>' + icon('crosshairs') + ' Ad Set grouping preview</h3>';
+    html += '<p class="cp-text-muted">Each legacy campaign\'s recipes are grouped by persona. Each group becomes one Ad Set.</p>';
+
+    for (var i = 0; i < camps.length; i++) {
+      var c = camps[i];
+      var campRecipes = recipes.filter(function(r) { return r.campaign_id === c.id; });
+      // Group by persona_id
+      var groups = {};
+      campRecipes.forEach(function(r) {
+        var key = r.persona_id || '__unassigned__';
+        groups[key] = groups[key] || [];
+        groups[key].push(r);
+      });
+      var groupKeys = Object.keys(groups);
+
+      html += '<div class="cp-card cp-v2-mig-camp-card">';
+      html += '<div class="cp-v2-mig-camp-name">' + icon('bullhorn') + ' ' + esc(c.name) + ' — ' + groupKeys.length + ' Ad Set' + (groupKeys.length !== 1 ? 's' : '') + ', ' + campRecipes.length + ' Ad' + (campRecipes.length !== 1 ? 's' : '') + '</div>';
+      if (groupKeys.length === 0) {
+        html += '<div class="cp-text-muted">No recipes in this campaign. The Campaign will be created without Ad Sets.</div>';
+      } else {
+        html += '<div class="cp-v2-mig-group-list">';
+        for (var gi = 0; gi < groupKeys.length; gi++) {
+          var pid = groupKeys[gi];
+          var persona = (pid === '__unassigned__') ? null : S.personaMap[pid];
+          var personaName = persona ? persona.name : '(no persona)';
+          var groupRecipes = groups[pid];
+          html += '<div class="cp-v2-mig-group">';
+          html += '<span class="cp-v2-mig-group-persona">' + icon('user') + ' ' + esc(personaName) + '</span>';
+          html += '<span class="cp-v2-mig-group-count">' + groupRecipes.length + ' Ad' + (groupRecipes.length !== 1 ? 's' : '') + '</span>';
+          html += '</div>';
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    return html;
+  }
+
+  // --- Step 4: Field mapping preview ---
+
+  function renderMigrationStep4Preview() {
+    var sample = (S.data.recipes || []).slice(0, 3);
+    var html = '<h3>' + icon('file-lines') + ' Field mapping preview</h3>';
+    html += '<p class="cp-text-muted">Here\'s how the first few recipes will become Ads. Click "Run migration" when you\'re ready.</p>';
+
+    if (sample.length === 0) {
+      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No recipes to migrate.</p></div>';
+      return html;
+    }
+
+    for (var i = 0; i < sample.length; i++) {
+      var r = sample[i];
+      var newAd = mapRecipeToAd(r);
+      html += '<div class="cp-card cp-v2-mig-preview-card">';
+      html += '<div class="cp-v2-mig-preview-header">';
+      html += '<div><strong>' + icon('shuffle') + ' Recipe:</strong> ' + esc(r.title || 'Untitled') + '</div>';
+      html += '<div class="cp-text-muted" style="font-size:11px;margin-top:2px">→ Will become Ad: <strong>' + esc(newAd.name) + '</strong></div>';
+      html += '</div>';
+      html += '<div class="cp-v2-mig-preview-fields">';
+      html += '<div><span class="cp-v2-mig-field-key">Creative type</span><span class="cp-v2-mig-field-val">' + esc(newAd.creative_type) + '</span></div>';
+      html += '<div><span class="cp-v2-mig-field-key">Status</span><span class="cp-v2-mig-field-val">' + esc(newAd.pipeline_status) + '</span></div>';
+      if (newAd.hook.text) html += '<div><span class="cp-v2-mig-field-key">Hook</span><span class="cp-v2-mig-field-val">' + esc(truncate(newAd.hook.text, 80)) + '</span></div>';
+      if (newAd.creative.primary_text) html += '<div><span class="cp-v2-mig-field-key">Primary text</span><span class="cp-v2-mig-field-val">' + esc(truncate(newAd.creative.primary_text, 80)) + '</span></div>';
+      if (newAd.creative.headline) html += '<div><span class="cp-v2-mig-field-key">Headline</span><span class="cp-v2-mig-field-val">' + esc(newAd.creative.headline) + '</span></div>';
+      if (newAd.creative.cta_type) html += '<div><span class="cp-v2-mig-field-key">CTA</span><span class="cp-v2-mig-field-val">' + esc(newAd.creative.cta_type) + '</span></div>';
+      html += '</div>';
+      html += '</div>';
+    }
+
+    if ((S.data.recipes || []).length > 3) {
+      html += '<div class="cp-text-muted">+ ' + ((S.data.recipes || []).length - 3) + ' more recipes will be migrated the same way.</div>';
+    }
+    return html;
+  }
+
+  // --- Step 5: Summary ---
+
+  function renderMigrationStep5Summary() {
+    var sum = v2MigrationState.summary || {};
+    var html = '<h3>' + icon('circle-check') + ' Migration complete</h3>';
+    html += '<p>Your workspace has been migrated to Meta v2.</p>';
+    html += '<div class="cp-v2-mig-stats">';
+    html += '<div class="cp-v2-mig-stat"><div class="cp-v2-mig-stat-val">' + (sum.campaigns || 0) + '</div><div class="cp-v2-mig-stat-lbl">Campaigns</div></div>';
+    html += '<div class="cp-v2-mig-stat"><div class="cp-v2-mig-stat-val">' + (sum.ad_sets || 0) + '</div><div class="cp-v2-mig-stat-lbl">Ad Sets</div></div>';
+    html += '<div class="cp-v2-mig-stat"><div class="cp-v2-mig-stat-val">' + (sum.ads || 0) + '</div><div class="cp-v2-mig-stat-lbl">Ads</div></div>';
+    html += '<div class="cp-v2-mig-stat"><div class="cp-v2-mig-stat-val">' + (sum.errors || 0) + '</div><div class="cp-v2-mig-stat-lbl">Errors</div></div>';
+    html += '</div>';
+    html += '<div class="cp-card cp-v2-mig-info-box">';
+    html += '<h4>' + icon('shield') + ' Your legacy data is safe</h4>';
+    html += '<p>Old campaigns + recipes are preserved in <code>S.meta.legacy_backup</code>. You can recover or re-import anytime from Settings.</p>';
+    html += '</div>';
+    return html;
+  }
+
+  // --- Recipe → Ad field mapping ---
+
+  function mapRecipeToAd(r) {
+    var hook = r.hook || {};
+    var content = r.content || {};
+    var imgBrief = r.image_brief || {};
+    var vid = r.video || {};
+    return {
+      name: r.title || 'Migrated Ad',
+      creative_type: V2_CREATIVE_TYPE_MAP[r.media_type] || 'single_image',
+      pipeline_status: V2_AD_STATUS_MAP[r.status] || 'hook_ready',
+      hook: {
+        text: hook.custom_hook || '',
+        type: hook.hook_type || 'direct',
+        source_message_id: r.message_id || '',
+        selected_hook_id: hook.selected_hook_id || ''
+      },
+      creative: {
+        primary_text: stripHtml(content.ad_copy || ''),
+        headline: content.headline || '',
+        description: content.description || '',
+        cta_type: 'LEARN_MORE',  // Legacy stored as free text; default to LEARN_MORE
+        cta_link: '',
+        display_link: '',
+        tracking_params: ''
+      },
+      media: {
+        image: {
+          asset_id: '',
+          ai_prompt: imgBrief.ai_prompt || '',
+          brief: imgBrief.creative_brief || '',
+          aspect_ratio: (imgBrief.prompt_params && imgBrief.prompt_params.aspect_ratio) || '1:1',
+          negative_prompt: (imgBrief.prompt_params && imgBrief.prompt_params.negative_prompt) || '',
+          reference_image_ids: (imgBrief.reference_image_ids || []).slice()
+        },
+        video: {
+          asset_id: '',
+          duration_seconds: vid.duration_seconds || 30,
+          aspect_ratio: vid.aspect_ratio || '9:16',
+          concept: vid.concept || '',
+          blueprint: vid.blueprint || { scenes: [] },
+          script: vid.script || { rows: [] }
+        },
+        carousel_cards: []
+      },
+      assigned_to: r.assigned_to || '',
+      due_date: r.due_date || '',
+      production_notes: r.production_notes || '',
+      review_notes: r.review_notes || '',
+      tags: (r.tags || []).slice(),
+      created: r.created || new Date().toISOString(),
+      updated: r.updated || r.created || new Date().toISOString()
+    };
+  }
+
+  // --- The actual migration runner ---
+
+  function runMigration() {
+    snapshot('Legacy migration');
+    var summary = { campaigns: 0, ad_sets: 0, ads: 0, errors: 0 };
+    var objMap = (v2MigrationState.mappings && v2MigrationState.mappings.objectives) || {};
+
+    // Backup legacy data
+    S.meta.legacy_backup = {
+      timestamp: new Date().toISOString(),
+      campaigns: deepClone(S.data.campaigns || []),
+      recipes: deepClone(S.data.recipes || [])
+    };
+
+    var legacyCamps = S.data.campaigns || [];
+    var legacyRecipes = S.data.recipes || [];
+
+    legacyCamps.forEach(function(c) {
+      try {
+        // Create the v2 Campaign
+        var newCamp = createEntity('campaign_v2', {
+          name: c.name || 'Migrated Campaign',
+          description: c.description || '',
+          objective: objMap[c.id] || V2_OBJ_MAP[c.objective] || 'OUTCOME_LEADS',
+          status: V2_CAMP_STATUS_MAP[c.status] || 'DRAFT',
+          buying_type: 'AUCTION',
+          budget_mode: 'CBO',
+          bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
+          start_time: c.date_start ? (new Date(c.date_start)).toISOString() : '',
+          stop_time: c.date_end ? (new Date(c.date_end)).toISOString() : '',
+          brief: c.brief || '',
+          ai_instructions: c.ai_instructions || '',
+          notes: c.budget_notes || c.target_audience_notes ? [c.budget_notes, c.target_audience_notes].filter(Boolean).join('\n\n') : (c.notes || ''),
+          tags: (c.tags || []).slice(),
+          created: c.created || new Date().toISOString(),
+          updated: c.updated || c.created || new Date().toISOString()
+        });
+        if (!newCamp) { summary.errors++; return; }
+        summary.campaigns++;
+
+        // Group recipes by persona
+        var campRecipes = legacyRecipes.filter(function(r) { return r.campaign_id === c.id; });
+        var groups = {};
+        campRecipes.forEach(function(r) {
+          var key = r.persona_id || '__unassigned__';
+          groups[key] = groups[key] || [];
+          groups[key].push(r);
+        });
+
+        Object.keys(groups).forEach(function(personaKey) {
+          var personaId = personaKey === '__unassigned__' ? '' : personaKey;
+          var persona = personaId ? getPersona(personaId) : null;
+          var grp = groups[personaKey];
+
+          // Pull message_ids/style_ids/format_ids from the legacy campaign + recipe set
+          var briefMessageIds = (c.message_ids || []).slice();
+          var briefStyleIds = (c.style_ids || []).slice();
+          var briefFormatIds = (c.format_ids || []).slice();
+
+          var newSet = createEntity('ad_set', {
+            campaign_id: newCamp.id,
+            name: persona ? (newCamp.name + ' — ' + persona.name) : (newCamp.name + ' — Untargeted'),
+            persona_id: persona ? persona.id : '',
+            persona_snapshot: persona ? buildPersonaSnapshot(persona) : null,
+            optimization_goal: Constants.META_AD_SET_DEFAULTS.optimization_goal,
+            billing_event: 'IMPRESSIONS',
+            attribution_setting: '7d_click',
+            brief: {
+              creative_direction: c.brief || '',
+              message_ids: briefMessageIds,
+              style_ids: briefStyleIds,
+              format_ids: briefFormatIds,
+              hook_angles: [],
+              ai_notes: c.ai_instructions || ''
+            },
+            status: V2_CAMP_STATUS_MAP[c.status] === 'ACTIVE' ? 'ACTIVE' : 'DRAFT',
+            created: c.created || new Date().toISOString()
+          });
+          if (!newSet) { summary.errors++; return; }
+          summary.ad_sets++;
+
+          // Create Ads for each recipe
+          grp.forEach(function(r) {
+            try {
+              var adPayload = mapRecipeToAd(r);
+              adPayload.ad_set_id = newSet.id;
+              var newAd = createEntity('ad', adPayload);
+              if (newAd) summary.ads++;
+              else summary.errors++;
+            } catch (e) {
+              console.error('[CP v2 migration] Ad mapping failed:', r.id, e);
+              summary.errors++;
+            }
+          });
+        });
+      } catch (e) {
+        console.error('[CP v2 migration] Campaign mapping failed:', c.id, e);
+        summary.errors++;
+      }
+    });
+
+    // Clear legacy arrays now that they're safely in backup
+    S.data.campaigns = [];
+    S.data.recipes = [];
+
+    // Flip flags
+    S.meta.setup = S.meta.setup || {};
+    S.meta.setup.meta_v2 = true;
+    S.meta.setup.migrated_to_v2 = true;
+
+    buildMaps(); syncToTextarea();
+    logActivity('legacy_migrated', 'workspace', '', '', 'Migrated: ' + summary.campaigns + ' campaigns, ' + summary.ad_sets + ' ad sets, ' + summary.ads + ' ads');
+
+    v2MigrationState.summary = summary;
+    v2MigrationState.step = 5;
+    renderMigrationWizardStep();
+    // Force a re-render of the app shell so the sidebar regroups
+    if (window._cpRenderAppShell) {
+      $('#cpApp').html(window._cpRenderAppShell());
+      render();
+    }
+  }
+
+  // --- Discard legacy backup (Settings action) ---
+
+  function discardLegacyBackup() {
+    openConfirmDialog({
+      title: 'Discard legacy backup?',
+      message: 'This permanently deletes your pre-v2 campaigns and recipes. Your migrated v2 data will be unaffected.',
+      confirmLabel: 'Discard backup',
+      danger: true,
+      onConfirm: function() {
+        snapshot('Discard legacy backup');
+        S.meta.legacy_backup = null;
+        syncToTextarea();
+        toast('Legacy backup discarded', 'success');
+        render();
+      }
+    });
+  }
 
 /* ===== src/30-part2b/23-import-export.js ===== */
   // ============================================================
@@ -12900,6 +17885,346 @@
     $input.click();
   }
 
+
+/* ===== src/30-part2b/23a-meta-v2-export.js ===== */
+  // ============================================================
+  // SECTION 23A: META v2 EXPORT (Stage 7)
+  // ============================================================
+  //
+  // Two export formats:
+  //   1. JSON — full Campaign tree (Campaign + Ad Sets + Ads embedded)
+  //   2. Meta bulk-upload CSV — 3 CSV files (campaigns / ad sets / ads)
+  //      matching Meta Ads Manager's bulk import column layout.
+  //
+  // Pre-flight validation runs before either export and flags missing /
+  // invalid fields that would cause Meta to reject the upload.
+
+  // --- Entry: Export modal launched from Campaign workspace or list ---
+
+  function openExportModal(campaignId) {
+    var camp = campaignId ? getCampaignV2(campaignId) : null;
+    var camps = camp ? [camp] : getAllCampaignsV2();
+    if (camps.length === 0) { toast('No campaigns to export', 'info'); return; }
+
+    var validation = validateForExport(camps);
+
+    var html = '<div class="cp-editor-form">';
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('download') + ' Export ' + esc(camp ? '"' + camp.name + '"' : 'all campaigns') + '</div>';
+    html += '<p>' + camps.length + ' Campaign' + (camps.length !== 1 ? 's' : '') + ', ' +
+            countAdSets(camps) + ' Ad Set' + (countAdSets(camps) !== 1 ? 's' : '') + ', ' +
+            countAds(camps) + ' Ad' + (countAds(camps) !== 1 ? 's' : '') + '.</p>';
+    html += '</div>';
+
+    // Validation report
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('shield') + ' Pre-flight check</div>';
+    if (validation.errors.length === 0 && validation.warnings.length === 0) {
+      html += '<div class="cp-v2-export-validation-ok">' + icon('circle-check') + ' Ready to export — no issues found.</div>';
+    } else {
+      if (validation.errors.length) {
+        html += '<div class="cp-v2-export-validation-errors">';
+        html += '<div class="cp-v2-export-validation-title">' + icon('warning') + ' ' + validation.errors.length + ' error(s) — fix before exporting</div>';
+        html += '<ul>';
+        validation.errors.slice(0, 12).forEach(function(e) { html += '<li>' + esc(e) + '</li>'; });
+        if (validation.errors.length > 12) html += '<li class="cp-text-muted">+ ' + (validation.errors.length - 12) + ' more</li>';
+        html += '</ul></div>';
+      }
+      if (validation.warnings.length) {
+        html += '<div class="cp-v2-export-validation-warnings">';
+        html += '<div class="cp-v2-export-validation-title">' + icon('info') + ' ' + validation.warnings.length + ' warning(s) — review</div>';
+        html += '<ul>';
+        validation.warnings.slice(0, 12).forEach(function(w) { html += '<li>' + esc(w) + '</li>'; });
+        if (validation.warnings.length > 12) html += '<li class="cp-text-muted">+ ' + (validation.warnings.length - 12) + ' more</li>';
+        html += '</ul></div>';
+      }
+    }
+    html += '</div>';
+
+    // Choices
+    html += '<div class="cp-form-section"><div class="cp-form-section-title">' + icon('file-lines') + ' Format</div>';
+    html += '<div class="cp-v2-export-choices">';
+    html += '<button class="cp-btn cp-btn-primary" data-action="v2-export-json" data-campaign-id="' + esc(camp ? camp.id : '') + '">' + icon('file-text') + ' Download JSON tree</button>';
+    var blocked = validation.errors.length > 0;
+    html += '<button class="cp-btn ' + (blocked ? 'cp-btn-outline' : 'cp-btn-primary') + '" data-action="v2-export-csv" data-campaign-id="' + esc(camp ? camp.id : '') + '"' + (blocked ? ' disabled' : '') + '>' + icon('rectangle-list') + ' Download Meta CSVs</button>';
+    html += '</div>';
+    html += '<div class="cp-form-help">JSON exports always. CSV is blocked until errors are fixed (Meta will reject otherwise).</div>';
+    html += '</div>';
+
+    html += '</div>';
+
+    openModal('Export to Meta', html, {
+      titleIcon: 'download', size: 'lg', footer: false
+    });
+  }
+
+  function countAdSets(camps) { var n = 0; camps.forEach(function(c) { n += getAdSetsByCampaign(c.id).length; }); return n; }
+  function countAds(camps)    { var n = 0; camps.forEach(function(c) { n += getAdsByCampaign(c.id).length; }); return n; }
+
+  // --- Validation ---
+
+  function validateForExport(camps) {
+    var errors = [];
+    var warnings = [];
+
+    camps.forEach(function(c) {
+      // Campaign-level
+      if (!c.name) errors.push('Campaign has no name (id ' + c.id + ')');
+      if (!c.objective) errors.push('Campaign "' + (c.name || '?') + '" has no objective');
+      if (c.budget_mode === 'CBO' && !c.daily_budget && !c.lifetime_budget) {
+        warnings.push('Campaign "' + c.name + '" is CBO but has no daily/lifetime budget');
+      }
+
+      var sets = getAdSetsByCampaign(c.id);
+      if (sets.length === 0) warnings.push('Campaign "' + c.name + '" has no Ad Sets');
+
+      sets.forEach(function(s) {
+        if (!s.name) errors.push('Ad Set in "' + c.name + '" has no name');
+        if (!s.persona_id) warnings.push('Ad Set "' + s.name + '" has no persona linked');
+        if (!s.optimization_goal) errors.push('Ad Set "' + s.name + '" has no optimization goal');
+        if (!s.billing_event) errors.push('Ad Set "' + s.name + '" has no billing event');
+        if (c.budget_mode === 'ABO' && !s.daily_budget && !s.lifetime_budget) {
+          errors.push('Ad Set "' + s.name + '" is ABO but has no budget');
+        }
+        if (c.budget_mode === 'CBO' && (s.daily_budget || s.lifetime_budget)) {
+          warnings.push('Ad Set "' + s.name + '" has a budget but Campaign is CBO — budget will be ignored');
+        }
+
+        var ads = getAdsByAdSet(s.id);
+        if (ads.length === 0) warnings.push('Ad Set "' + s.name + '" has no Ads');
+
+        ads.forEach(function(a) {
+          if (!a.name) errors.push('Ad in "' + s.name + '" has no name');
+          var cr = a.creative || {};
+          if (!cr.primary_text) warnings.push('Ad "' + a.name + '" has no primary text');
+          if (!cr.cta_link) warnings.push('Ad "' + a.name + '" has no destination URL');
+          else if (!/^https?:\/\//i.test(cr.cta_link)) errors.push('Ad "' + a.name + '" cta_link is not a valid URL');
+          if (a.creative_type === 'single_image') {
+            var img = (a.media && a.media.image) || {};
+            if (!img.asset_id && !img.ai_prompt && !img.brief) warnings.push('Ad "' + a.name + '" (single_image) has no image asset or brief');
+          }
+          if (a.creative_type === 'carousel') {
+            var cards = (a.media && a.media.carousel_cards) || [];
+            if (cards.length < 2) errors.push('Ad "' + a.name + '" (carousel) needs at least 2 cards');
+          }
+        });
+      });
+    });
+
+    return { errors: errors, warnings: warnings };
+  }
+
+  // --- JSON export ---
+
+  function exportV2JSON(campaignId) {
+    var camps = campaignId ? [getCampaignV2(campaignId)].filter(Boolean) : getAllCampaignsV2();
+    if (camps.length === 0) { toast('Nothing to export', 'warning'); return; }
+
+    var tree = camps.map(function(c) {
+      return $.extend({}, c, {
+        ad_sets: getAdSetsByCampaign(c.id).map(function(s) {
+          return $.extend({}, s, { ads: getAdsByAdSet(s.id) });
+        })
+      });
+    });
+
+    var payload = {
+      exported_at: new Date().toISOString(),
+      app: 'meta-campaign-planner',
+      version: 'v2',
+      workspace: ((S.meta && S.meta.workspace && S.meta.workspace.name) || ''),
+      campaigns: tree
+    };
+
+    var filename = 'meta-campaign-tree' + (campaignId ? '-' + (camps[0].name || 'export').replace(/[^a-z0-9-]+/gi, '-').toLowerCase() : '-all') + '-' + new Date().toISOString().split('T')[0] + '.json';
+    downloadBlob(JSON.stringify(payload, null, 2), filename, 'application/json');
+    logActivity('data_exported', 'workspace', '', filename, 'Exported v2 JSON');
+    toast('JSON tree downloaded', 'success');
+    closeModal();
+  }
+
+  // --- CSV export (3 files: campaigns, ad sets, ads) ---
+
+  function exportV2CSV(campaignId) {
+    var camps = campaignId ? [getCampaignV2(campaignId)].filter(Boolean) : getAllCampaignsV2();
+    if (camps.length === 0) { toast('Nothing to export', 'warning'); return; }
+
+    var validation = validateForExport(camps);
+    if (validation.errors.length > 0) {
+      toast('Fix ' + validation.errors.length + ' validation error(s) first', 'error'); return;
+    }
+
+    var dateStr = new Date().toISOString().split('T')[0];
+
+    // Campaigns sheet
+    var campRows = camps.map(function(c) {
+      return {
+        'Campaign Name': c.name || '',
+        'Campaign ID (planner)': c.id,
+        'Campaign Objective': c.objective || '',
+        'Campaign Status': c.status || 'DRAFT',
+        'Buying Type': c.buying_type || 'AUCTION',
+        'Budget Mode': c.budget_mode || 'CBO',
+        'Daily Budget': c.daily_budget != null ? c.daily_budget : '',
+        'Lifetime Budget': c.lifetime_budget != null ? c.lifetime_budget : '',
+        'Spend Cap': c.spend_cap != null ? c.spend_cap : '',
+        'Bid Strategy': c.bid_strategy || '',
+        'Start Time': c.start_time || '',
+        'Stop Time': c.stop_time || '',
+        'Special Ad Categories': (c.special_ad_categories || []).join(';'),
+        'A/B Test Enabled': (c.ab_test && c.ab_test.enabled) ? 'TRUE' : 'FALSE',
+        'A/B Primary Metric': (c.ab_test && c.ab_test.primary_metric) || '',
+        'Description': c.description || ''
+      };
+    });
+
+    // Ad Sets sheet
+    var adSetRows = [];
+    camps.forEach(function(c) {
+      getAdSetsByCampaign(c.id).forEach(function(s) {
+        var placements = s.placements || {};
+        var placementValues = placements.advantage_enabled ? 'ADVANTAGE_PLACEMENTS' : (placements.custom_placements || []).join(';');
+        var brief = s.brief || {};
+        var persona = S.personaMap[s.persona_id];
+        adSetRows.push({
+          'Campaign Name': c.name || '',
+          'Ad Set Name': s.name || '',
+          'Ad Set ID (planner)': s.id,
+          'Ad Set Status': s.status || 'DRAFT',
+          'Optimization Goal': s.optimization_goal || '',
+          'Billing Event': s.billing_event || '',
+          'Attribution Setting': s.attribution_setting || '',
+          'Bid Amount': s.bid_amount != null ? s.bid_amount : '',
+          'Daily Budget': s.daily_budget != null ? s.daily_budget : '',
+          'Lifetime Budget': s.lifetime_budget != null ? s.lifetime_budget : '',
+          'Start Time': s.start_time || '',
+          'Stop Time': s.stop_time || '',
+          'Placements': placementValues,
+          'Persona Name (planner)': persona ? persona.name : '',
+          'Audience Notes': s.audience_overrides || '',
+          'AB Role': s.ab_role || '',
+          'Creative Direction (brief)': brief.creative_direction || '',
+          'Hook Angles': (brief.hook_angles || []).join(' | ')
+        });
+      });
+    });
+
+    // Ads sheet
+    var adRows = [];
+    camps.forEach(function(c) {
+      getAdsByCampaign(c.id).forEach(function(a) {
+        var s = getAdSet(a.ad_set_id);
+        var cr = a.creative || {};
+        var m = a.media || {};
+        adRows.push({
+          'Campaign Name': c.name || '',
+          'Ad Set Name': s ? s.name : '',
+          'Ad Name': a.name || '',
+          'Ad ID (planner)': a.id,
+          'Ad Status (planner)': a.pipeline_status || '',
+          'Creative Type': a.creative_type || 'single_image',
+          'Primary Text': cr.primary_text || '',
+          'Headline': cr.headline || '',
+          'Description': cr.description || '',
+          'Call To Action': cr.cta_type || '',
+          'Destination URL': cr.cta_link || '',
+          'Display Link': cr.display_link || '',
+          'URL Parameters': cr.tracking_params || '',
+          'Hook Text': (a.hook && a.hook.text) || '',
+          'Hook Type': (a.hook && a.hook.type) || '',
+          'Image Asset ID': (m.image && m.image.asset_id) || '',
+          'Image Aspect Ratio': (m.image && m.image.aspect_ratio) || '',
+          'Image Brief': (m.image && m.image.brief) || '',
+          'AI Image Prompt': (m.image && m.image.ai_prompt) || '',
+          'Video Asset ID': (m.video && m.video.asset_id) || '',
+          'Video Duration (s)': (m.video && m.video.duration_seconds) || '',
+          'Video Aspect Ratio': (m.video && m.video.aspect_ratio) || '',
+          'Video Concept': (m.video && m.video.concept) || '',
+          'Carousel Card Count': ((m.carousel_cards || []).length) || '',
+          'Assigned To': a.assigned_to || '',
+          'Due Date': a.due_date || ''
+        });
+      });
+    });
+
+    var slug = campaignId ? '-' + (camps[0].name || 'export').replace(/[^a-z0-9-]+/gi, '-').toLowerCase() : '-all';
+    downloadBlob(toCSV(campRows), 'meta-campaigns' + slug + '-' + dateStr + '.csv', 'text/csv');
+    setTimeout(function() {
+      downloadBlob(toCSV(adSetRows), 'meta-ad-sets' + slug + '-' + dateStr + '.csv', 'text/csv');
+    }, 350);
+    setTimeout(function() {
+      downloadBlob(toCSV(adRows), 'meta-ads' + slug + '-' + dateStr + '.csv', 'text/csv');
+    }, 700);
+
+    logActivity('meta_csv_exported', 'workspace', '', '', campRows.length + ' campaigns / ' + adSetRows.length + ' ad sets / ' + adRows.length + ' ads');
+    toast('3 CSV files downloaded', 'success');
+    closeModal();
+  }
+
+  // --- CSV serialization (RFC 4180) ---
+
+  function toCSV(rows) {
+    if (!rows || !rows.length) return '';
+    var headers = Object.keys(rows[0]);
+    var escCell = function(v) {
+      if (v == null) return '';
+      var s = String(v);
+      if (/[",\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    };
+    var lines = [headers.map(escCell).join(',')];
+    rows.forEach(function(r) {
+      lines.push(headers.map(function(h) { return escCell(r[h]); }).join(','));
+    });
+    return lines.join('\r\n');
+  }
+
+  // --- Download trigger ---
+
+  function downloadBlob(content, filename, mime) {
+    var blob = new Blob([content], { type: mime + ';charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var $a = $('<a></a>').attr({ href: url, download: filename }).css('display', 'none');
+    $('body').append($a);
+    $a[0].click();
+    setTimeout(function() { $a.remove(); URL.revokeObjectURL(url); }, 500);
+  }
+
+  // --- Field-level copy helpers ---
+
+  function copyAdField(adId, field) {
+    var ad = getAd(adId); if (!ad) return;
+    var value = '';
+    switch (field) {
+      case 'primary_text': value = (ad.creative || {}).primary_text || ''; break;
+      case 'headline':     value = (ad.creative || {}).headline || ''; break;
+      case 'description':  value = (ad.creative || {}).description || ''; break;
+      case 'cta_link':     value = (ad.creative || {}).cta_link || ''; break;
+      case 'cta_type':     value = (ad.creative || {}).cta_type || ''; break;
+      case 'hook':         value = (ad.hook || {}).text || ''; break;
+      case 'image_prompt': value = ((ad.media || {}).image || {}).ai_prompt || ''; break;
+      case 'all':
+        var c = ad.creative || {};
+        value = 'Primary text:\n' + (c.primary_text || '') + '\n\nHeadline:\n' + (c.headline || '') + '\n\nDescription:\n' + (c.description || '') + '\n\nCTA: ' + (c.cta_type || '') + '\nLink: ' + (c.cta_link || '');
+        break;
+    }
+    if (!value) { toast('Nothing to copy', 'info'); return; }
+    copyToClipboard(value);
+    toast('Copied ' + field.replace(/_/g, ' '), 'success');
+  }
+
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).catch(function() { fallbackCopy(text); });
+    } else {
+      fallbackCopy(text);
+    }
+  }
+  function fallbackCopy(text) {
+    var $ta = $('<textarea></textarea>').val(text).css({ position: 'fixed', left: '-9999px' });
+    $('body').append($ta);
+    $ta[0].select();
+    try { document.execCommand('copy'); } catch (_) {}
+    $ta.remove();
+  }
 
 /* ===== src/30-part2b/24-view-images.js ===== */
   // ============================================================
@@ -13500,6 +18825,80 @@
       toast('Reference image removed', 'success');
     });
 
+    // --- Stage 4: Meta v2 AI buttons (replace Stage 1/2 stubs) ---
+    $(document).off('click.cp2b-ai-tree').on('click.cp2b-ai-tree', '[data-action="ai-generate-campaign-tree"]', function(e) {
+      e.preventDefault(); aiGenerateCampaignTree();
+    });
+    $(document).off('click.cp2b-ai-sug-sets').on('click.cp2b-ai-sug-sets', '[data-action="ai-suggest-ad-sets"]', function(e) {
+      e.preventDefault(); aiSuggestAdSets($(this).data('campaign-id'));
+    });
+    $(document).off('click.cp2b-ai-sug-ads').on('click.cp2b-ai-sug-ads', '[data-action="ai-suggest-ads"]', function(e) {
+      e.preventDefault(); aiSuggestAds($(this).data('ad-set-id'));
+    });
+    $(document).off('click.cp2b-ai-set-brief').on('click.cp2b-ai-set-brief', '[data-action="ai-generate-ad-set-brief"]', function(e) {
+      e.preventDefault(); aiGenerateAdSetBrief($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-hooks').on('click.cp2b-ai-hooks', '[data-action="ai-generate-ad-hooks"]', function(e) {
+      e.preventDefault(); aiGenerateAdHooks($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-copy').on('click.cp2b-ai-copy', '[data-action="ai-write-ad-copy"]', function(e) {
+      e.preventDefault(); aiWriteAdCopy($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-improve').on('click.cp2b-ai-improve', '[data-action="ai-improve-ad-copy"]', function(e) {
+      e.preventDefault(); aiImproveAdCopy($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-img-prompt').on('click.cp2b-ai-img-prompt', '[data-action="ai-generate-ad-image-prompt"]', function(e) {
+      e.preventDefault(); aiGenerateAdImagePrompt($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-video-bp').on('click.cp2b-ai-video-bp', '[data-action="ai-generate-video-blueprint"]', function(e) {
+      e.preventDefault(); aiGenerateVideoBlueprint($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-video-scr').on('click.cp2b-ai-video-scr', '[data-action="ai-generate-video-script"]', function(e) {
+      e.preventDefault(); aiGenerateVideoScript($(this).data('id'));
+    });
+
+    // --- Stage 6: migration wizard + feature flag toggle ---
+    $(document).off('click.cp2b-v2-mig').on('click.cp2b-v2-mig', '[data-action="v2-open-migration"]', function(e) {
+      e.preventDefault(); openMigrationWizard();
+    });
+    $(document).off('click.cp2b-v2-discard').on('click.cp2b-v2-discard', '[data-action="v2-discard-legacy"]', function(e) {
+      e.preventDefault(); discardLegacyBackup();
+    });
+    $(document).off('change.cp2b-v2-flag').on('change.cp2b-v2-flag', '.cp-v2-toggle-flag', function() {
+      snapshot('Toggle Meta v2');
+      S.meta.setup = S.meta.setup || {};
+      S.meta.setup.meta_v2 = !!this.checked;
+      syncToTextarea();
+      // Re-render the whole shell so sidebar regroups
+      if (window._cpRenderAppShell) {
+        $('#cpApp').html(window._cpRenderAppShell());
+        render();
+      }
+      toast(this.checked ? 'Meta v2 enabled' : 'Meta v2 disabled', 'success');
+    });
+    $(document).off('change.cp2b-v2-def').on('change.cp2b-v2-def', '.cp-v2-defaults-field', function() {
+      var key = $(this).data('key');
+      var val = $(this).val();
+      S.meta.meta_defaults = S.meta.meta_defaults || {};
+      S.meta.meta_defaults[key] = val;
+      syncToTextarea();
+    });
+
+    // --- Stage 7: Export + per-field copy ---
+    $(document).off('click.cp2b-v2-exp-open').on('click.cp2b-v2-exp-open', '[data-action="v2-export-open"]', function(e) {
+      e.preventDefault(); openExportModal($(this).data('campaign-id') || null);
+    });
+    $(document).off('click.cp2b-v2-exp-json').on('click.cp2b-v2-exp-json', '[data-action="v2-export-json"]', function(e) {
+      e.preventDefault(); exportV2JSON($(this).data('campaign-id') || null);
+    });
+    $(document).off('click.cp2b-v2-exp-csv').on('click.cp2b-v2-exp-csv', '[data-action="v2-export-csv"]', function(e) {
+      e.preventDefault(); exportV2CSV($(this).data('campaign-id') || null);
+    });
+    $(document).off('click.cp2b-v2-copy').on('click.cp2b-v2-copy', '[data-action="v2-copy-ad-field"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      copyAdField($(this).data('id'), $(this).data('field'));
+    });
+
     console.log('[CP] Part 2B event handlers ready');
   }
 
@@ -13570,6 +18969,26 @@
     aiAnalyzeCampaignGaps: aiAnalyzeCampaignGaps,
     aiImproveContent: aiImproveContent,
     showAIPreview: showAIPreview,
+
+    // Meta v2 — migration (Stage 6)
+    openMigrationWizard: openMigrationWizard,
+    discardLegacyBackup: discardLegacyBackup,
+
+    // Meta v2 — export (Stage 7)
+    openExportModal: openExportModal,
+    exportV2JSON: exportV2JSON, exportV2CSV: exportV2CSV,
+    validateForExport: validateForExport,
+    copyAdField: copyAdField,
+
+    // Meta v2 AI (Stage 4)
+    aiGenerateCampaignTree: aiGenerateCampaignTree,
+    aiSuggestAdSets: aiSuggestAdSets, aiSuggestAds: aiSuggestAds,
+    aiGenerateAdSetBrief: aiGenerateAdSetBrief,
+    aiGenerateAdHooks: aiGenerateAdHooks,
+    aiWriteAdCopy: aiWriteAdCopy, aiImproveAdCopy: aiImproveAdCopy,
+    aiGenerateAdImagePrompt: aiGenerateAdImagePrompt,
+    aiGenerateVideoBlueprint: aiGenerateVideoBlueprint,
+    aiGenerateVideoScript: aiGenerateVideoScript,
 
     // Setup Wizard AI generators + finalize
     swAIGeneratePersonas: swAIGeneratePersonas, swAIGeneratePainPoints: swAIGeneratePainPoints,

@@ -142,5 +142,55 @@
     S.imageCategoryMap = {};
     var imgCats = (S.meta && S.meta.image_categories) || [];
     for (i = 0; i < imgCats.length; i++) S.imageCategoryMap[imgCats[i].id] = imgCats[i];
+
+    // --- Meta v2 hierarchy maps ---
+
+    S.campaignV2Map = {};
+    S.campaignV2StatusCounts = {};
+    S.totalCampaignsV2 = 0; S.activeCampaignsV2 = 0;
+    for (var cv2k in META_CAMPAIGN_STATUSES) S.campaignV2StatusCounts[cv2k] = 0;
+    var campsV2 = S.data.campaigns_v2 || [];
+    for (i = 0; i < campsV2.length; i++) {
+      item = campsV2[i];
+      S.campaignV2Map[item.id] = item;
+      S.campaignV2StatusCounts[item.status] = (S.campaignV2StatusCounts[item.status] || 0) + 1;
+      S.totalCampaignsV2++;
+      if (item.status === 'ACTIVE' || item.status === 'DRAFT') S.activeCampaignsV2++;
+    }
+
+    S.adSetMap = {};
+    S.adSetsByCampaign = {};
+    S.adSetStatusCounts = {};
+    S.totalAdSets = 0;
+    for (var asKey in META_AD_SET_STATUSES) S.adSetStatusCounts[asKey] = 0;
+    var adSets = S.data.ad_sets || [];
+    for (i = 0; i < adSets.length; i++) {
+      item = adSets[i];
+      S.adSetMap[item.id] = item;
+      S.totalAdSets++;
+      S.adSetStatusCounts[item.status] = (S.adSetStatusCounts[item.status] || 0) + 1;
+      if (item.campaign_id) {
+        S.adSetsByCampaign[item.campaign_id] = S.adSetsByCampaign[item.campaign_id] || [];
+        S.adSetsByCampaign[item.campaign_id].push(item);
+      }
+    }
+
+    S.adMap = {};
+    S.adsByAdSet = {};
+    S.adStatusCounts = {};
+    S.totalAds = 0; S.activeAds = 0;
+    for (var aKey in META_AD_STATUSES) S.adStatusCounts[aKey] = 0;
+    var ads = S.data.ads || [];
+    for (i = 0; i < ads.length; i++) {
+      item = ads[i];
+      S.adMap[item.id] = item;
+      S.totalAds++;
+      S.adStatusCounts[item.pipeline_status] = (S.adStatusCounts[item.pipeline_status] || 0) + 1;
+      if (META_AD_ACTIVE_STATUSES.indexOf(item.pipeline_status) > -1) S.activeAds++;
+      if (item.ad_set_id) {
+        S.adsByAdSet[item.ad_set_id] = S.adsByAdSet[item.ad_set_id] || [];
+        S.adsByAdSet[item.ad_set_id].push(item);
+      }
+    }
   }
 

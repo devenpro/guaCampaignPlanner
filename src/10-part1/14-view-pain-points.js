@@ -210,6 +210,9 @@
     }
     html += '</div>';
 
+    // Workspace usage (meta_v2)
+    html += renderLibraryWorkspaceUsage('pain_point', pp.id);
+
     html += '<div class="cp-detail-footer"><span class="cp-text-muted">Created ' + formatDate(pp.created) + (pp.updated ? ' · Updated ' + formatRelativeTime(pp.updated) : '') + '</span></div>';
     return html;
   }
