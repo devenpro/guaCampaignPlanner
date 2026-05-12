@@ -180,5 +180,14 @@
   window._cpEvaluateAdAutoStatus = evaluateAdAutoStatus;
   window._cpMaybeAdvanceAdStatus = maybeAdvanceAdStatus;
 
+  // Library ↔ Workspace integration (Stage 3)
+  window._cpFindAdSetsUsingPersona = findAdSetsUsingPersona;
+  window._cpFindAdSetsUsingMessage = findAdSetsUsingMessage;
+  window._cpFindAdSetsUsingStyle = findAdSetsUsingStyle;
+  window._cpFindAdSetsUsingFormat = findAdSetsUsingFormat;
+  window._cpFindAdsUsingMessage = findAdsUsingMessage;
+  window._cpFindAdSetsUsingPainPoint = findAdSetsUsingPainPoint;
+  window._cpRenderLibraryWorkspaceUsage = renderLibraryWorkspaceUsage;
+
   console.log('[CP] Part 1 loaded');
 })(jQuery, Drupal);

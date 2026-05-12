@@ -1,4 +1,4 @@
-/* Campaign Planner — built from 44 source files (see src/) */
+/* Campaign Planner — built from 45 source files (see src/) */
 
 /* ===== src/styles/10-part1/00-header.css ===== */
 /**
@@ -1830,6 +1830,108 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 .cp-segmented-active:hover {
   background: var(--cp-primary);
   color: var(--cp-white);
+}
+
+/* ===== src/styles/20-part2/09b-library-integration.css ===== */
+/* ==========================================================
+   Meta v2 — Library ↔ Workspace integration widgets + pickers
+   ========================================================== */
+
+/* ----- "Used in workspace" block (in library detail pane) ----- */
+.cp-library-workspace-usage {
+  margin-top: var(--cp-space-4);
+  border: 1px solid #1a73e833;
+  background: #1a73e805;
+}
+.cp-library-usage-subhead {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  color: var(--cp-text-muted);
+  margin-top: var(--cp-space-2);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.cp-library-usage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cp-library-usage-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--cp-white);
+  border: 1px solid var(--cp-border-light);
+  border-radius: var(--cp-radius-sm);
+  font-size: 13px;
+  color: var(--cp-text-primary);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 120ms;
+}
+.cp-library-usage-item:hover {
+  border-color: var(--cp-primary);
+  background: var(--cp-gray-50);
+  text-decoration: none;
+}
+.cp-library-usage-icon {
+  color: var(--cp-text-muted);
+  font-size: 12px;
+}
+.cp-library-usage-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cp-library-usage-arrow {
+  color: var(--cp-text-muted);
+  font-size: 11px;
+}
+
+/* ----- Picker modal (Campaign chooser, Ad Set brief attach) ----- */
+.cp-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cp-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--cp-white);
+  border: 1.5px solid var(--cp-border-light);
+  border-radius: var(--cp-radius-sm);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--cp-text-primary);
+  transition: all 120ms;
+}
+.cp-picker-item:hover {
+  border-color: var(--cp-primary);
+  background: var(--cp-gray-50);
+}
+.cp-picker-item-active {
+  border-color: var(--cp-primary);
+  background: #1a73e808;
+}
+.cp-picker-item-title {
+  font-weight: 600;
+  color: var(--cp-text-primary);
+}
+.cp-picker-item-meta {
+  font-size: 11px;
+  color: var(--cp-text-muted);
+  margin-top: 2px;
 }
 
 /* ===== src/styles/20-part2/10-ai-research-panel.css ===== */

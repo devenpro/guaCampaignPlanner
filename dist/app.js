@@ -1,4 +1,4 @@
-/* Campaign Planner — built from 89 source files (see src/) */
+/* Campaign Planner — built from 91 source files (see src/) */
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -2884,6 +2884,9 @@
       html += '<p>' + esc(p.notes) + '</p></div>';
     }
 
+    // Workspace usage (only when meta_v2 is on)
+    html += renderLibraryWorkspaceUsage('persona', p.id);
+
     html += '</div>';
     return html;
   }
@@ -3387,6 +3390,9 @@
       }
     }
     html += '</div>';
+
+    // Workspace usage (meta_v2)
+    html += renderLibraryWorkspaceUsage('pain_point', pp.id);
 
     html += '<div class="cp-detail-footer"><span class="cp-text-muted">Created ' + formatDate(pp.created) + (pp.updated ? ' · Updated ' + formatRelativeTime(pp.updated) : '') + '</span></div>';
     return html;
@@ -7274,8 +7280,141 @@
   window._cpEvaluateAdAutoStatus = evaluateAdAutoStatus;
   window._cpMaybeAdvanceAdStatus = maybeAdvanceAdStatus;
 
+  // Library ↔ Workspace integration (Stage 3)
+  window._cpFindAdSetsUsingPersona = findAdSetsUsingPersona;
+  window._cpFindAdSetsUsingMessage = findAdSetsUsingMessage;
+  window._cpFindAdSetsUsingStyle = findAdSetsUsingStyle;
+  window._cpFindAdSetsUsingFormat = findAdSetsUsingFormat;
+  window._cpFindAdsUsingMessage = findAdsUsingMessage;
+  window._cpFindAdSetsUsingPainPoint = findAdSetsUsingPainPoint;
+  window._cpRenderLibraryWorkspaceUsage = renderLibraryWorkspaceUsage;
+
   console.log('[CP] Part 1 loaded');
 })(jQuery, Drupal);
+
+/* ===== src/10-part1/24a-library-workspace-integration.js ===== */
+  // ============================================================
+  // SECTION 23: LIBRARY ↔ WORKSPACE INTEGRATION (v2)
+  // ============================================================
+  //
+  // Reverse-lookup helpers + "Used in workspace" widget injected into
+  // library entity detail panes. Only renders when meta_v2 is enabled.
+
+  // --- Reverse-lookup helpers ---
+
+  function findAdSetsUsingPersona(personaId) {
+    if (!personaId) return [];
+    return (S.data.ad_sets || []).filter(function(s) { return s.persona_id === personaId; });
+  }
+  function findAdSetsUsingMessage(messageId) {
+    if (!messageId) return [];
+    return (S.data.ad_sets || []).filter(function(s) {
+      return s.brief && (s.brief.message_ids || []).indexOf(messageId) > -1;
+    });
+  }
+  function findAdSetsUsingStyle(styleId) {
+    if (!styleId) return [];
+    return (S.data.ad_sets || []).filter(function(s) {
+      return s.brief && (s.brief.style_ids || []).indexOf(styleId) > -1;
+    });
+  }
+  function findAdSetsUsingFormat(formatId) {
+    if (!formatId) return [];
+    return (S.data.ad_sets || []).filter(function(s) {
+      return s.brief && (s.brief.format_ids || []).indexOf(formatId) > -1;
+    });
+  }
+  function findAdsUsingMessage(messageId) {
+    if (!messageId) return [];
+    return (S.data.ads || []).filter(function(a) {
+      return (a.hook && a.hook.source_message_id === messageId) ||
+             (a.message_snapshot && a.message_snapshot.source_id === messageId);
+    });
+  }
+  function findAdSetsUsingPainPoint(painPointId) {
+    if (!painPointId) return [];
+    // Pain points are attached to personas via persona.pain_point_ids.
+    // Forward to the persona-level lookup for each persona that has this pain.
+    var personasUsingPain = (S.data.personas || []).filter(function(p) {
+      return (p.pain_point_ids || []).indexOf(painPointId) > -1;
+    });
+    var sets = [];
+    personasUsingPain.forEach(function(p) {
+      findAdSetsUsingPersona(p.id).forEach(function(s) {
+        if (sets.indexOf(s) === -1) sets.push(s);
+      });
+    });
+    return sets;
+  }
+
+  // --- "Used in workspace" widget ---
+  //
+  // Returns an HTML block to inject at the bottom of a library entity
+  // detail pane. Empty string if meta_v2 is off (no clutter for legacy
+  // users). Shows: count of Ad Sets / Ads using this entity, list with
+  // links into the workspace, and a "Use in new Ad Set" / "Pull into
+  // an Ad" action depending on entity type.
+  function renderLibraryWorkspaceUsage(type, entityId) {
+    if (!isMetaV2Enabled()) return '';
+    if (!entityId) return '';
+
+    var html = '<div class="cp-card cp-library-workspace-usage">';
+    html += '<div class="cp-section-header"><h3>' + icon('sitemap') + ' Used in workspace</h3>';
+
+    // Type-specific CTA in the header
+    if (type === 'persona') {
+      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="lib-create-ad-set-from-persona" data-id="' + esc(entityId) + '">' + icon('plus') + ' Create Ad Set</button>';
+    } else if (type === 'message' || type === 'style' || type === 'visual_format') {
+      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="lib-attach-to-ad-set-brief" data-type="' + type + '" data-id="' + esc(entityId) + '">' + icon('plus') + ' Attach to Ad Set brief</button>';
+    }
+    html += '</div>';
+
+    var sets = [];
+    var ads = [];
+    switch (type) {
+      case 'persona':       sets = findAdSetsUsingPersona(entityId); break;
+      case 'message':       sets = findAdSetsUsingMessage(entityId); ads = findAdsUsingMessage(entityId); break;
+      case 'style':         sets = findAdSetsUsingStyle(entityId); break;
+      case 'visual_format': sets = findAdSetsUsingFormat(entityId); break;
+      case 'pain_point':    sets = findAdSetsUsingPainPoint(entityId); break;
+    }
+
+    if (sets.length === 0 && ads.length === 0) {
+      html += '<p class="cp-text-muted">Not used in any Ad Set or Ad yet.</p>';
+    } else {
+      if (sets.length > 0) {
+        html += '<div class="cp-library-usage-subhead">' + icon('crosshairs') + ' ' + sets.length + ' Ad Set' + (sets.length !== 1 ? 's' : '') + '</div>';
+        html += '<div class="cp-library-usage-list">';
+        for (var i = 0; i < sets.length; i++) {
+          var s = sets[i];
+          var camp = S.campaignV2Map[s.campaign_id];
+          html += '<a class="cp-library-usage-item" data-action="lib-open-ad-set" data-id="' + esc(s.id) + '" data-campaign-id="' + esc(s.campaign_id) + '">';
+          html += '<span class="cp-library-usage-icon">' + icon('crosshairs') + '</span>';
+          html += '<span class="cp-library-usage-text">' + esc(s.name) + (camp ? '<span class="cp-text-muted"> · ' + esc(camp.name) + '</span>' : '') + '</span>';
+          html += '<span class="cp-library-usage-arrow">' + icon('arrow-right') + '</span>';
+          html += '</a>';
+        }
+        html += '</div>';
+      }
+      if (ads.length > 0) {
+        html += '<div class="cp-library-usage-subhead">' + icon('rectangle-ad') + ' ' + ads.length + ' Ad' + (ads.length !== 1 ? 's' : '') + '</div>';
+        html += '<div class="cp-library-usage-list">';
+        for (var j = 0; j < ads.length; j++) {
+          var a = ads[j];
+          var adSet = S.adSetMap[a.ad_set_id];
+          html += '<a class="cp-library-usage-item" data-action="lib-open-ad" data-id="' + esc(a.id) + '">';
+          html += '<span class="cp-library-usage-icon">' + icon('rectangle-ad') + '</span>';
+          html += '<span class="cp-library-usage-text">' + esc(a.name) + (adSet ? '<span class="cp-text-muted"> · ' + esc(adSet.name) + '</span>' : '') + '</span>';
+          html += '<span class="cp-library-usage-arrow">' + icon('arrow-right') + '</span>';
+          html += '</a>';
+        }
+        html += '</div>';
+      }
+    }
+
+    html += '</div>';
+    return html;
+  }
 
 /* ===== src/20-part2a/00-header.js ===== */
 /**
@@ -8988,6 +9127,122 @@
         if (S.currentView === 'campaign_workspace' && adSet) {
           navigate('campaign_workspace', { hash: 'campaign/' + adSet.campaign_id + '/ad_set/' + setId });
         }
+      }
+    });
+  }
+
+/* ===== src/20-part2a/09d-library-integration-pickers.js ===== */
+  // ============================================================
+  // SECTION 9D: LIBRARY ↔ WORKSPACE PICKERS (v2 Stage 3)
+  // ============================================================
+  //
+  // Two small picker modals that bridge from a library entity detail
+  // pane into the Meta v2 workspace:
+  //   - Pick which Campaign to create an Ad Set under (when a Persona
+  //     "Create Ad Set" action fires and >1 campaigns exist)
+  //   - Pick which Ad Set's brief to attach a Message/Style/Format to
+
+  function openMetaAdSetModalWithPersona(campaignId, personaId) {
+    // Open the Ad Set modal pre-populated with a persona link. We do this
+    // by stashing the desired persona on a global and intercepting in the
+    // modal — simpler than threading another argument through.
+    window._cpV2PendingPersonaId = personaId;
+    openMetaAdSetModal(campaignId, { create: true });
+    // The modal reads from `s.persona_id` which is empty for new sets.
+    // Pre-select after a tick.
+    setTimeout(function() {
+      var $sel = $('.cp-modal-body select[data-field="persona_id"]');
+      if ($sel.length && personaId) {
+        $sel.val(personaId).trigger('change');
+      }
+      window._cpV2PendingPersonaId = null;
+    }, 50);
+  }
+
+  function openCampaignPickerForAdSet(personaId) {
+    var camps = getAllCampaignsV2();
+    var persona = getPersona(personaId);
+
+    var html = '<div class="cp-editor-form">';
+    html += '<p>Pick a campaign to add an Ad Set targeting <strong>' + esc(persona ? persona.name : 'this persona') + '</strong> to:</p>';
+    html += '<div class="cp-picker-list">';
+    for (var i = 0; i < camps.length; i++) {
+      var c = camps[i];
+      var sets = getAdSetsByCampaign(c.id).length;
+      var obj = metaObjective(c.objective);
+      html += '<button class="cp-picker-item" data-pick-id="' + esc(c.id) + '">';
+      html += '<div class="cp-picker-item-title">' + icon('bullhorn') + ' ' + esc(c.name || 'Untitled') + '</div>';
+      html += '<div class="cp-picker-item-meta">' + (obj ? esc(obj.label) + ' · ' : '') + sets + ' Ad Set' + (sets !== 1 ? 's' : '') + '</div>';
+      html += '</button>';
+    }
+    html += '</div></div>';
+
+    openModal('Create Ad Set under...', html, {
+      titleIcon: 'crosshairs', size: 'md', footer: false
+    });
+
+    $(document).off('click.cpv2-picker').on('click.cpv2-picker', '.cp-picker-item', function() {
+      var campaignId = $(this).data('pick-id');
+      if (!campaignId) return;
+      closeModal();
+      openMetaAdSetModalWithPersona(campaignId, personaId);
+    });
+  }
+
+  function openAdSetBriefAttachPicker(type, libraryEntityId) {
+    var allSets = getAllAdSets();
+    var typeLabel = type === 'visual_format' ? 'Format' : (type.charAt(0).toUpperCase() + type.slice(1));
+    var fieldKey = type === 'visual_format' ? 'format_ids' : (type + '_ids');
+
+    if (allSets.length === 0) {
+      toast('No Ad Sets to attach to. Create a Campaign + Ad Set first.', 'info');
+      navigate('meta_campaigns');
+      return;
+    }
+
+    // Get the library entity for the title
+    var libEntity = null;
+    if (type === 'message') libEntity = getMessage(libraryEntityId);
+    else if (type === 'style') libEntity = getStyle(libraryEntityId);
+    else if (type === 'visual_format') libEntity = getFormat(libraryEntityId);
+    var libName = libEntity ? (libEntity.title || libEntity.name) : 'this item';
+
+    var html = '<div class="cp-editor-form">';
+    html += '<p>Attach ' + esc(typeLabel) + ' "<strong>' + esc(libName) + '</strong>" to one or more Ad Set briefs:</p>';
+    html += '<div class="cp-picker-list" style="max-height:60vh;overflow-y:auto">';
+    for (var i = 0; i < allSets.length; i++) {
+      var s = allSets[i];
+      var c = S.campaignV2Map[s.campaign_id];
+      var already = (s.brief && (s.brief[fieldKey] || []).indexOf(libraryEntityId) > -1);
+      html += '<label class="cp-picker-item' + (already ? ' cp-picker-item-active' : '') + '">';
+      html += '<input type="checkbox" class="cp-v2-attach-target" data-set-id="' + esc(s.id) + '"' + (already ? ' checked' : '') + ' style="margin-right:8px">';
+      html += '<div style="flex:1">';
+      html += '<div class="cp-picker-item-title">' + icon('crosshairs') + ' ' + esc(s.name) + '</div>';
+      html += '<div class="cp-picker-item-meta">' + (c ? esc(c.name) : 'No campaign') + '</div>';
+      html += '</div></label>';
+    }
+    html += '</div></div>';
+
+    openModal('Attach to Ad Set brief', html, {
+      titleIcon: 'plus', size: 'md',
+      saveLabel: 'Apply',
+      onSave: function() {
+        var targetIds = [];
+        $('.cp-v2-attach-target:checked').each(function() { targetIds.push($(this).data('set-id')); });
+        snapshot('Attach ' + typeLabel + ' to Ad Set briefs');
+        var added = 0, removed = 0;
+        // Apply: for each Ad Set, ensure libraryEntityId is in field iff selected
+        allSets.forEach(function(s) {
+          var isSelected = targetIds.indexOf(s.id) > -1;
+          s.brief = s.brief || {};
+          var arr = s.brief[fieldKey] || [];
+          var hasIt = arr.indexOf(libraryEntityId) > -1;
+          if (isSelected && !hasIt)  { arr.push(libraryEntityId); s.brief[fieldKey] = arr; s.updated = new Date().toISOString(); added++; }
+          if (!isSelected && hasIt)  { arr = arr.filter(function(id) { return id !== libraryEntityId; }); s.brief[fieldKey] = arr; s.updated = new Date().toISOString(); removed++; }
+        });
+        buildMaps(); syncToTextarea(); render();
+        if (added || removed) toast('Updated ' + (added + removed) + ' Ad Set' + ((added + removed) !== 1 ? 's' : ''), 'success');
+        closeModal();
       }
     });
   }
@@ -13402,6 +13657,57 @@
       if (arr[idx][key] === $f.val()) return;
       arr[idx][key] = $f.val();
       saveEntityField('ad', id, 'media.video.script.rows', arr);
+    });
+
+    // --- Stage 3: Library ↔ Workspace integration ---
+
+    // Open an Ad Set in the workspace (from a library usage row)
+    $(document).off('click.cpv2-lib-open-set').on('click.cpv2-lib-open-set', '[data-action="lib-open-ad-set"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var campaignId = $(this).data('campaign-id');
+      if (!id || !campaignId) return;
+      window._cpNavigateToCampaignV2(campaignId, id);
+    });
+    // Open an Ad in the workspace
+    $(document).off('click.cpv2-lib-open-ad').on('click.cpv2-lib-open-ad', '[data-action="lib-open-ad"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = id ? getAd(id) : null;
+      if (!ad) return;
+      var set = getAdSet(ad.ad_set_id);
+      if (!set) return;
+      window._cpNavigateToCampaignV2(set.campaign_id, set.id, ad.id);
+    });
+
+    // Create Ad Set from a library Persona. Opens a chooser if multiple
+    // campaigns exist; otherwise opens the modal pre-populated.
+    $(document).off('click.cpv2-lib-create-set').on('click.cpv2-lib-create-set', '[data-action="lib-create-ad-set-from-persona"]', function(e) {
+      e.preventDefault();
+      var personaId = $(this).data('id');
+      var camps = getAllCampaignsV2();
+      if (camps.length === 0) {
+        // No campaigns yet — prompt to create one first
+        toast('Create a Campaign first, then add Ad Sets to it', 'info');
+        navigate('meta_campaigns');
+        return;
+      }
+      if (camps.length === 1) {
+        // Single campaign: open Ad Set modal under it, pre-pop persona
+        openMetaAdSetModalWithPersona(camps[0].id, personaId);
+        return;
+      }
+      // Multiple campaigns: show a quick picker
+      openCampaignPickerForAdSet(personaId);
+    });
+
+    // Attach a library Message / Style / Format to an Ad Set's brief.
+    // Opens a picker showing all Ad Sets across all campaigns.
+    $(document).off('click.cpv2-lib-attach').on('click.cpv2-lib-attach', '[data-action="lib-attach-to-ad-set-brief"]', function(e) {
+      e.preventDefault();
+      var type = $(this).data('type');  // 'message' | 'style' | 'visual_format'
+      var id = $(this).data('id');
+      openAdSetBriefAttachPicker(type, id);
     });
 
     // Carousel cards

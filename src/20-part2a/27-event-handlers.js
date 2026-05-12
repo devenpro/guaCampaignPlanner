@@ -1257,6 +1257,57 @@
       saveEntityField('ad', id, 'media.video.script.rows', arr);
     });
 
+    // --- Stage 3: Library ↔ Workspace integration ---
+
+    // Open an Ad Set in the workspace (from a library usage row)
+    $(document).off('click.cpv2-lib-open-set').on('click.cpv2-lib-open-set', '[data-action="lib-open-ad-set"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var campaignId = $(this).data('campaign-id');
+      if (!id || !campaignId) return;
+      window._cpNavigateToCampaignV2(campaignId, id);
+    });
+    // Open an Ad in the workspace
+    $(document).off('click.cpv2-lib-open-ad').on('click.cpv2-lib-open-ad', '[data-action="lib-open-ad"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = id ? getAd(id) : null;
+      if (!ad) return;
+      var set = getAdSet(ad.ad_set_id);
+      if (!set) return;
+      window._cpNavigateToCampaignV2(set.campaign_id, set.id, ad.id);
+    });
+
+    // Create Ad Set from a library Persona. Opens a chooser if multiple
+    // campaigns exist; otherwise opens the modal pre-populated.
+    $(document).off('click.cpv2-lib-create-set').on('click.cpv2-lib-create-set', '[data-action="lib-create-ad-set-from-persona"]', function(e) {
+      e.preventDefault();
+      var personaId = $(this).data('id');
+      var camps = getAllCampaignsV2();
+      if (camps.length === 0) {
+        // No campaigns yet — prompt to create one first
+        toast('Create a Campaign first, then add Ad Sets to it', 'info');
+        navigate('meta_campaigns');
+        return;
+      }
+      if (camps.length === 1) {
+        // Single campaign: open Ad Set modal under it, pre-pop persona
+        openMetaAdSetModalWithPersona(camps[0].id, personaId);
+        return;
+      }
+      // Multiple campaigns: show a quick picker
+      openCampaignPickerForAdSet(personaId);
+    });
+
+    // Attach a library Message / Style / Format to an Ad Set's brief.
+    // Opens a picker showing all Ad Sets across all campaigns.
+    $(document).off('click.cpv2-lib-attach').on('click.cpv2-lib-attach', '[data-action="lib-attach-to-ad-set-brief"]', function(e) {
+      e.preventDefault();
+      var type = $(this).data('type');  // 'message' | 'style' | 'visual_format'
+      var id = $(this).data('id');
+      openAdSetBriefAttachPicker(type, id);
+    });
+
     // Carousel cards
     $(document).off('click.cpv2-add-card').on('click.cpv2-add-card', '[data-action="ws-ad-add-card"]', function(e) {
       e.preventDefault();
