@@ -1,0 +1,194 @@
+/* ==========================================================
+   Meta v2 migration wizard (Stage 6)
+   ========================================================== */
+
+.cp-v2-migration-wizard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cp-space-3);
+}
+.cp-v2-migration-steps {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--cp-space-2);
+  background: var(--cp-gray-50);
+  border-radius: var(--cp-radius-md);
+}
+.cp-v2-mig-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+  font-size: 11px;
+  color: var(--cp-text-muted);
+  opacity: 0.7;
+}
+.cp-v2-mig-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--cp-white);
+  border: 2px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+}
+.cp-v2-mig-step-label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.cp-v2-mig-step-active {
+  opacity: 1;
+  color: var(--cp-primary);
+}
+.cp-v2-mig-step-done {
+  opacity: 1;
+  color: var(--cp-success);
+}
+.cp-v2-mig-step-connector {
+  flex: 0 0 24px;
+  height: 2px;
+  background: var(--cp-border-light);
+  margin-bottom: 18px;
+}
+
+.cp-v2-migration-body {
+  padding: var(--cp-space-2);
+  min-height: 360px;
+}
+.cp-v2-migration-body h3 {
+  margin-top: 0;
+  margin-bottom: var(--cp-space-3);
+}
+.cp-v2-migration-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--cp-space-2);
+  border-top: 1px solid var(--cp-border-light);
+}
+
+.cp-v2-mig-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--cp-space-3);
+  padding: var(--cp-space-3);
+  background: var(--cp-gray-50);
+  border-radius: var(--cp-radius-md);
+}
+.cp-v2-mig-stat {
+  text-align: center;
+}
+.cp-v2-mig-stat-val {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--cp-primary);
+  line-height: 1;
+}
+.cp-v2-mig-stat-lbl {
+  font-size: 11px;
+  color: var(--cp-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+}
+
+.cp-v2-mig-info-box {
+  margin-top: var(--cp-space-3);
+  background: #1a73e808;
+  border-color: #1a73e833;
+}
+.cp-v2-mig-info-box h4 {
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: var(--cp-primary);
+}
+.cp-v2-mig-info-box ul { margin: 0; padding-left: 20px; }
+.cp-v2-mig-info-box li { margin-bottom: 4px; }
+
+.cp-v2-mig-mapping-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.cp-v2-mig-mapping-table th {
+  text-align: left;
+  padding: 8px;
+  background: var(--cp-gray-50);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cp-text-muted);
+  font-weight: 600;
+}
+.cp-v2-mig-mapping-table td {
+  padding: 8px;
+  border-bottom: 1px solid var(--cp-border-light);
+  vertical-align: middle;
+}
+
+.cp-v2-mig-camp-card {
+  margin-bottom: var(--cp-space-2);
+  padding: var(--cp-space-3);
+}
+.cp-v2-mig-camp-name {
+  font-weight: 600;
+  margin-bottom: var(--cp-space-2);
+  color: var(--cp-primary);
+}
+.cp-v2-mig-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-left: var(--cp-space-3);
+}
+.cp-v2-mig-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: var(--cp-gray-50);
+  border-radius: var(--cp-radius-sm);
+  font-size: 12px;
+}
+.cp-v2-mig-group-persona { flex: 1; }
+.cp-v2-mig-group-count {
+  font-size: 11px;
+  color: var(--cp-text-muted);
+}
+
+.cp-v2-mig-preview-card {
+  margin-bottom: var(--cp-space-2);
+  padding: var(--cp-space-3);
+}
+.cp-v2-mig-preview-header {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--cp-border-light);
+  margin-bottom: 8px;
+}
+.cp-v2-mig-preview-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 6px;
+  font-size: 12px;
+}
+.cp-v2-mig-preview-fields > div {
+  display: flex;
+  gap: 6px;
+}
+.cp-v2-mig-field-key {
+  color: var(--cp-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  min-width: 90px;
+}
+.cp-v2-mig-field-val {
+  flex: 1;
+  word-break: break-word;
+}

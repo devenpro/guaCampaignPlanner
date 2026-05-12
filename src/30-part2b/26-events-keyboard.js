@@ -377,6 +377,33 @@
       e.preventDefault(); aiGenerateVideoScript($(this).data('id'));
     });
 
+    // --- Stage 6: migration wizard + feature flag toggle ---
+    $(document).off('click.cp2b-v2-mig').on('click.cp2b-v2-mig', '[data-action="v2-open-migration"]', function(e) {
+      e.preventDefault(); openMigrationWizard();
+    });
+    $(document).off('click.cp2b-v2-discard').on('click.cp2b-v2-discard', '[data-action="v2-discard-legacy"]', function(e) {
+      e.preventDefault(); discardLegacyBackup();
+    });
+    $(document).off('change.cp2b-v2-flag').on('change.cp2b-v2-flag', '.cp-v2-toggle-flag', function() {
+      snapshot('Toggle Meta v2');
+      S.meta.setup = S.meta.setup || {};
+      S.meta.setup.meta_v2 = !!this.checked;
+      syncToTextarea();
+      // Re-render the whole shell so sidebar regroups
+      if (window._cpRenderAppShell) {
+        $('#cpApp').html(window._cpRenderAppShell());
+        render();
+      }
+      toast(this.checked ? 'Meta v2 enabled' : 'Meta v2 disabled', 'success');
+    });
+    $(document).off('change.cp2b-v2-def').on('change.cp2b-v2-def', '.cp-v2-defaults-field', function() {
+      var key = $(this).data('key');
+      var val = $(this).val();
+      S.meta.meta_defaults = S.meta.meta_defaults || {};
+      S.meta.meta_defaults[key] = val;
+      syncToTextarea();
+    });
+
     console.log('[CP] Part 2B event handlers ready');
   }
 

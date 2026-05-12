@@ -29,6 +29,10 @@
     aiImproveContent: aiImproveContent,
     showAIPreview: showAIPreview,
 
+    // Meta v2 — migration (Stage 6)
+    openMigrationWizard: openMigrationWizard,
+    discardLegacyBackup: discardLegacyBackup,
+
     // Meta v2 AI (Stage 4)
     aiGenerateCampaignTree: aiGenerateCampaignTree,
     aiSuggestAdSets: aiSuggestAdSets, aiSuggestAds: aiSuggestAds,
