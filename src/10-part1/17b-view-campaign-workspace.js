@@ -234,6 +234,7 @@
     html += '<button class="cp-btn cp-btn-primary" data-action="ws-add-ad-set" data-campaign-id="' + esc(camp.id) + '">' + icon('plus') + ' Add Ad Set</button>';
     html += '<button class="cp-btn cp-btn-ai" data-action="ai-suggest-ad-sets" data-campaign-id="' + esc(camp.id) + '">' + icon('sparkles') + ' Suggest Ad Sets</button>';
     html += '<button class="cp-btn cp-btn-outline" data-action="ws-ab-config" data-id="' + esc(camp.id) + '">' + icon('flask') + ' A/B test setup</button>';
+    html += '<button class="cp-btn cp-btn-outline" data-action="v2-export-open" data-campaign-id="' + esc(camp.id) + '">' + icon('download') + ' Export</button>';
     html += '</div>';
 
     return html;
@@ -387,6 +388,7 @@
     html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap;margin-top:6px">';
     html += '<span class="cp-badge" style="background:' + status.color + '15;color:' + status.color + '">' + icon(status.icon) + ' ' + esc(status.label) + '</span>';
     html += '</div></div><div class="cp-inspector-header-actions">';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-copy-ad-field" data-id="' + esc(ad.id) + '" data-field="all" title="Copy all ad fields">' + icon('copy') + '</button>';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="edit-ad" data-id="' + esc(ad.id) + '">' + icon('edit') + ' Edit</button>';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-ad" data-id="' + esc(ad.id) + '">' + icon('trash') + '</button>';
     html += '</div></div>';
@@ -400,17 +402,17 @@
       html += '</div>';
     }
 
-    // Creative — primary text / headline / description / CTA / link
+    // Creative — primary text / headline / description / CTA / link (with per-field copy buttons)
     var creative = ad.creative || {};
     html += '<div class="cp-inspector-section">';
     html += '<div class="cp-inspector-section-title">' + icon('pen-fancy') + ' Creative</div>';
     html += '<div class="cp-inspector-grid cp-inspector-grid-1">';
-    html += inspectorField('Primary text', creative.primary_text || '—', true);
-    html += inspectorField('Headline',     creative.headline     || '—');
-    html += inspectorField('Description',  creative.description  || '—');
-    html += inspectorField('CTA',          cta ? cta.label : (creative.cta_type || '—'));
-    html += inspectorField('Link',         creative.cta_link     || '—');
-    html += inspectorField('Display link', creative.display_link || '—');
+    html += inspectorFieldCopy('Primary text', creative.primary_text || '—', ad.id, 'primary_text', true);
+    html += inspectorFieldCopy('Headline',     creative.headline     || '—', ad.id, 'headline');
+    html += inspectorFieldCopy('Description',  creative.description  || '—', ad.id, 'description');
+    html += inspectorFieldCopy('CTA',          cta ? cta.label : (creative.cta_type || '—'), ad.id, 'cta_type');
+    html += inspectorFieldCopy('Link',         creative.cta_link     || '—', ad.id, 'cta_link');
+    html += inspectorField('Display link',     creative.display_link || '—');
     html += '</div></div>';
 
     // Media (preview only — full editor in Stage 2)
@@ -457,6 +459,14 @@
   function inspectorField(label, value, wide) {
     var cls = wide ? ' cp-inspector-field-wide' : '';
     return '<div class="cp-inspector-field' + cls + '"><div class="cp-inspector-field-label">' + esc(label) + '</div><div class="cp-inspector-field-value">' + (typeof value === 'string' ? esc(value) : (value || '')) + '</div></div>';
+  }
+
+  // Same as inspectorField but with a small copy-to-clipboard button.
+  function inspectorFieldCopy(label, value, adId, field, wide) {
+    var cls = wide ? ' cp-inspector-field-wide' : '';
+    var hasValue = value && value !== '—';
+    var copyBtn = hasValue ? '<button class="cp-btn-icon cp-btn-icon-sm cp-inspector-field-copy" data-action="v2-copy-ad-field" data-id="' + esc(adId) + '" data-field="' + esc(field) + '" title="Copy ' + esc(label) + '">' + icon('copy') + '</button>' : '';
+    return '<div class="cp-inspector-field cp-inspector-field-with-copy' + cls + '"><div class="cp-inspector-field-label">' + esc(label) + copyBtn + '</div><div class="cp-inspector-field-value">' + (typeof value === 'string' ? esc(value) : (value || '')) + '</div></div>';
   }
 
   function renderScheduleSummary(start, end) {

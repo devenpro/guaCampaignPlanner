@@ -404,6 +404,21 @@
       syncToTextarea();
     });
 
+    // --- Stage 7: Export + per-field copy ---
+    $(document).off('click.cp2b-v2-exp-open').on('click.cp2b-v2-exp-open', '[data-action="v2-export-open"]', function(e) {
+      e.preventDefault(); openExportModal($(this).data('campaign-id') || null);
+    });
+    $(document).off('click.cp2b-v2-exp-json').on('click.cp2b-v2-exp-json', '[data-action="v2-export-json"]', function(e) {
+      e.preventDefault(); exportV2JSON($(this).data('campaign-id') || null);
+    });
+    $(document).off('click.cp2b-v2-exp-csv').on('click.cp2b-v2-exp-csv', '[data-action="v2-export-csv"]', function(e) {
+      e.preventDefault(); exportV2CSV($(this).data('campaign-id') || null);
+    });
+    $(document).off('click.cp2b-v2-copy').on('click.cp2b-v2-copy', '[data-action="v2-copy-ad-field"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      copyAdField($(this).data('id'), $(this).data('field'));
+    });
+
     console.log('[CP] Part 2B event handlers ready');
   }
 

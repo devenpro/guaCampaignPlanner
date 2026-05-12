@@ -33,6 +33,12 @@
     openMigrationWizard: openMigrationWizard,
     discardLegacyBackup: discardLegacyBackup,
 
+    // Meta v2 — export (Stage 7)
+    openExportModal: openExportModal,
+    exportV2JSON: exportV2JSON, exportV2CSV: exportV2CSV,
+    validateForExport: validateForExport,
+    copyAdField: copyAdField,
+
     // Meta v2 AI (Stage 4)
     aiGenerateCampaignTree: aiGenerateCampaignTree,
     aiSuggestAdSets: aiSuggestAdSets, aiSuggestAds: aiSuggestAds,
