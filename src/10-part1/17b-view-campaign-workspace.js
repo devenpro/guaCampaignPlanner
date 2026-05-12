@@ -226,12 +226,36 @@
       html += '</div>';
     }
 
+    // A/B test summary section
+    html += renderCampaignABSection(camp);
+
     // Quick actions
     html += '<div class="cp-inspector-actions">';
     html += '<button class="cp-btn cp-btn-primary" data-action="ws-add-ad-set" data-campaign-id="' + esc(camp.id) + '">' + icon('plus') + ' Add Ad Set</button>';
     html += '<button class="cp-btn cp-btn-ai" data-action="ai-suggest-ad-sets" data-campaign-id="' + esc(camp.id) + '">' + icon('sparkles') + ' Suggest Ad Sets</button>';
+    html += '<button class="cp-btn cp-btn-outline" data-action="ws-ab-config" data-id="' + esc(camp.id) + '">' + icon('flask') + ' A/B test setup</button>';
     html += '</div>';
 
+    return html;
+  }
+
+  function renderCampaignABSection(camp) {
+    var ab = camp.ab_test || {};
+    if (!ab.enabled || !(ab.variants || []).length) return '';
+    var metric = (Constants.META_AB_METRICS[ab.primary_metric] || {}).label || '—';
+    var winner = (ab.variants || []).find(function(v) { return v.winner; });
+    var winnerSet = winner ? S.adSetMap[winner.ad_set_id] : null;
+
+    var html = '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('flask') + ' A/B test';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ab-compare" data-id="' + esc(camp.id) + '" style="margin-left:auto">' + icon('arrows-up-down-left-right') + ' Compare variants</button>';
+    html += '</div>';
+    html += '<div class="cp-inspector-grid">';
+    html += inspectorField('Primary metric', metric);
+    html += inspectorField('Variants', String((ab.variants || []).length));
+    if (winnerSet) html += inspectorField('Winner', winnerSet.name);
+    html += '</div>';
+    html += '</div>';
     return html;
   }
 

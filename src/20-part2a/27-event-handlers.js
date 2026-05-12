@@ -1045,6 +1045,20 @@
 
     // (Stage 4: AI buttons are now handled in Part 2B — no Part 2A stubs needed.)
 
+    // --- Stage 5: A/B testing ---
+    $(document).off('click.cpv2-ab-config').on('click.cpv2-ab-config', '[data-action="ws-ab-config"]', function(e) {
+      e.preventDefault(); openABTestConfigModal($(this).data('id'));
+    });
+    $(document).off('click.cpv2-ab-compare').on('click.cpv2-ab-compare', '[data-action="ws-ab-compare"]', function(e) {
+      e.preventDefault(); openCompareVariantsModal($(this).data('id'));
+    });
+    $(document).off('click.cpv2-ab-mark').on('click.cpv2-ab-mark', '[data-action="ws-mark-ab-winner"]', function(e) {
+      e.preventDefault(); setABWinner($(this).data('campaign-id'), $(this).data('set-id'), true);
+    });
+    $(document).off('click.cpv2-ab-clear').on('click.cpv2-ab-clear', '[data-action="ws-clear-ab-winner"]', function(e) {
+      e.preventDefault(); setABWinner($(this).data('campaign-id'), $(this).data('set-id'), false);
+    });
+
     // Stage 2: inspector tab switching
     $(document).off('click.cpv2-set-tab').on('click.cpv2-set-tab', '[data-action="set-inspector-tab"]', function(e) {
       e.preventDefault();

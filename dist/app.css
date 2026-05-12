@@ -1,4 +1,4 @@
-/* Campaign Planner — built from 46 source files (see src/) */
+/* Campaign Planner — built from 47 source files (see src/) */
 
 /* ===== src/styles/10-part1/00-header.css ===== */
 /**
@@ -1998,6 +1998,162 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
   color: var(--cp-primary);
   font-size: 12px;
   margin-top: 4px;
+}
+
+/* ===== src/styles/20-part2/09d-ab-testing.css ===== */
+/* ==========================================================
+   Meta v2 A/B testing (Stage 5)
+   ========================================================== */
+
+/* ----- A/B config modal — role picker ----- */
+.cp-v2-ab-row {
+  display: flex;
+  align-items: center;
+  gap: var(--cp-space-3);
+  padding: 8px 10px;
+  background: var(--cp-gray-50);
+  border-radius: var(--cp-radius-sm);
+  margin-bottom: 6px;
+}
+.cp-v2-ab-row-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 13px;
+}
+.cp-v2-ab-row-roles {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.cp-v2-ab-role {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border: 1.5px solid var(--cp-border-default);
+  border-radius: var(--cp-radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--cp-text-secondary);
+  background: var(--cp-white);
+  transition: all var(--cp-transition-fast);
+}
+.cp-v2-ab-role:hover {
+  border-color: var(--ab-color, var(--cp-primary));
+  color: var(--ab-color, var(--cp-primary));
+}
+.cp-v2-ab-role-selected {
+  background: var(--ab-color, var(--cp-primary));
+  border-color: var(--ab-color, var(--cp-primary));
+  color: var(--cp-white) !important;
+}
+
+/* ----- Compare variants modal ----- */
+.cp-v2-ab-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--cp-space-3);
+}
+.cp-v2-ab-variant-card {
+  border: 2px solid var(--variant-color, var(--cp-border-default));
+  border-radius: var(--cp-radius-md);
+  padding: var(--cp-space-3);
+  background: var(--cp-white);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cp-space-2);
+}
+.cp-v2-ab-variant-winner {
+  background: linear-gradient(135deg, #0d904f08, var(--cp-white));
+  border-color: var(--cp-success);
+}
+.cp-v2-ab-variant-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.cp-v2-ab-variant-role {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--variant-color, var(--cp-text-muted));
+  color: var(--cp-white);
+  border-radius: var(--cp-radius-full);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.cp-v2-ab-variant-winner-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--cp-success);
+  color: var(--cp-white);
+  border-radius: var(--cp-radius-full);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.cp-v2-ab-variant-card h3 {
+  margin: 0;
+  font-size: 14px;
+}
+.cp-v2-ab-variant-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--cp-text-muted);
+}
+.cp-v2-ab-variant-section {
+  margin-top: 4px;
+}
+.cp-v2-ab-variant-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--cp-text-muted);
+  margin-bottom: 4px;
+}
+.cp-v2-ab-variant-section p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--cp-text-secondary);
+  line-height: 1.4;
+}
+.cp-v2-ab-variant-section ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--cp-text-secondary);
+}
+.cp-v2-ab-variant-ad {
+  padding: 6px 8px;
+  background: var(--cp-gray-50);
+  border-radius: var(--cp-radius-sm);
+  margin-bottom: 4px;
+}
+.cp-v2-ab-variant-ad-name {
+  font-size: 12px;
+  font-weight: 600;
+}
+.cp-v2-ab-variant-ad-hook {
+  font-style: italic;
+  font-size: 11px;
+  color: var(--cp-primary);
+  margin-top: 2px;
+}
+.cp-v2-ab-variant-footer {
+  display: flex;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: var(--cp-space-2);
+  border-top: 1px solid var(--cp-border-light);
 }
 
 /* ===== src/styles/20-part2/10-ai-research-panel.css ===== */
