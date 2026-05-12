@@ -188,7 +188,22 @@
     'settings_changed':          { icon: 'gear',           color: '#80868b' },
     'data_imported':             { icon: 'upload',         color: '#1a73e8' },
     'data_exported':             { icon: 'download',       color: '#1a73e8' },
-    'setup_completed':           { icon: 'circle-check',   color: '#0d904f' }
+    'setup_completed':           { icon: 'circle-check',   color: '#0d904f' },
+    // --- Meta v2 hierarchy (Campaign → Ad Set → Ad) ---
+    'campaign_v2_created':       { icon: 'bullhorn',       color: '#0891b2' },
+    'campaign_v2_updated':       { icon: 'bullhorn',       color: '#0891b2' },
+    'campaign_v2_deleted':       { icon: 'trash',          color: '#d93025' },
+    'ad_set_created':            { icon: 'crosshairs',     color: '#9334e9' },
+    'ad_set_updated':            { icon: 'crosshairs',     color: '#9334e9' },
+    'ad_set_deleted':            { icon: 'trash',          color: '#d93025' },
+    'ad_created':                { icon: 'rectangle-ad',   color: '#1a73e8' },
+    'ad_updated':                { icon: 'rectangle-ad',   color: '#1a73e8' },
+    'ad_deleted':                { icon: 'trash',          color: '#d93025' },
+    'ad_status_changed':         { icon: 'refresh',        color: '#1a73e8' },
+    'snapshot_resynced':         { icon: 'refresh',        color: '#0d904f' },
+    'campaign_tree_generated':   { icon: 'sparkles',       color: '#7c3aed' },
+    'legacy_migrated':           { icon: 'circle-check',   color: '#0d904f' },
+    'meta_csv_exported':         { icon: 'download',       color: '#1a73e8' }
   };
 
   var CARD_DENSITIES = {

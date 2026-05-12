@@ -1,4 +1,4 @@
-/* Campaign Planner — built from 82 source files (see src/) */
+/* Campaign Planner — built from 83 source files (see src/) */
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -231,7 +231,22 @@
     'settings_changed':          { icon: 'gear',           color: '#80868b' },
     'data_imported':             { icon: 'upload',         color: '#1a73e8' },
     'data_exported':             { icon: 'download',       color: '#1a73e8' },
-    'setup_completed':           { icon: 'circle-check',   color: '#0d904f' }
+    'setup_completed':           { icon: 'circle-check',   color: '#0d904f' },
+    // --- Meta v2 hierarchy (Campaign → Ad Set → Ad) ---
+    'campaign_v2_created':       { icon: 'bullhorn',       color: '#0891b2' },
+    'campaign_v2_updated':       { icon: 'bullhorn',       color: '#0891b2' },
+    'campaign_v2_deleted':       { icon: 'trash',          color: '#d93025' },
+    'ad_set_created':            { icon: 'crosshairs',     color: '#9334e9' },
+    'ad_set_updated':            { icon: 'crosshairs',     color: '#9334e9' },
+    'ad_set_deleted':            { icon: 'trash',          color: '#d93025' },
+    'ad_created':                { icon: 'rectangle-ad',   color: '#1a73e8' },
+    'ad_updated':                { icon: 'rectangle-ad',   color: '#1a73e8' },
+    'ad_deleted':                { icon: 'trash',          color: '#d93025' },
+    'ad_status_changed':         { icon: 'refresh',        color: '#1a73e8' },
+    'snapshot_resynced':         { icon: 'refresh',        color: '#0d904f' },
+    'campaign_tree_generated':   { icon: 'sparkles',       color: '#7c3aed' },
+    'legacy_migrated':           { icon: 'circle-check',   color: '#0d904f' },
+    'meta_csv_exported':         { icon: 'download',       color: '#1a73e8' }
   };
 
   var CARD_DENSITIES = {
@@ -250,6 +265,262 @@
   ];
 
 
+/* ===== src/10-part1/01b-meta-constants.js ===== */
+  // ============================================================
+  // SECTION 1B: META CONSTANTS (Campaign → Ad Set → Ad)
+  // ============================================================
+  //
+  // Storage uses Meta API enum values (e.g. OUTCOME_LEADS). UI surfaces
+  // friendly labels via the `label` property. Keep values stable: they are
+  // the same strings Meta's Marketing API and bulk-upload CSV expect.
+
+  // --- Campaign-level constants ---
+
+  var META_OBJECTIVES = {
+    'OUTCOME_AWARENESS':     { key: 'OUTCOME_AWARENESS',     label: 'Awareness',     icon: 'eye',           color: '#9334e9', description: 'Show ads to people most likely to remember them' },
+    'OUTCOME_TRAFFIC':       { key: 'OUTCOME_TRAFFIC',       label: 'Traffic',       icon: 'arrow-pointer', color: '#1a73e8', description: 'Send people to a destination (website, app, Messenger, WhatsApp)' },
+    'OUTCOME_ENGAGEMENT':    { key: 'OUTCOME_ENGAGEMENT',    label: 'Engagement',    icon: 'heart',         color: '#e37400', description: 'Get more messages, video views, post engagement, page likes, or event responses' },
+    'OUTCOME_LEADS':         { key: 'OUTCOME_LEADS',         label: 'Leads',         icon: 'user-plus',     color: '#0d904f', description: 'Collect leads for your business via forms, calls, sign-ups, or messages' },
+    'OUTCOME_APP_PROMOTION': { key: 'OUTCOME_APP_PROMOTION', label: 'App promotion', icon: 'mobile',        color: '#0891b2', description: 'Find new users for your app, or get existing users to take actions' },
+    'OUTCOME_SALES':         { key: 'OUTCOME_SALES',         label: 'Sales',         icon: 'cart-shopping', color: '#be123c', description: 'Find people likely to purchase your product or service' }
+  };
+
+  var META_BUYING_TYPES = {
+    'AUCTION':  { key: 'AUCTION',  label: 'Auction',                description: 'Standard ad auction. Best for most advertisers.' },
+    'RESERVED': { key: 'RESERVED', label: 'Reach and Frequency',    description: 'Predictable reach and frequency at a fixed CPM. Requires Meta approval.' }
+  };
+
+  var META_BUDGET_MODES = {
+    'CBO': { key: 'CBO', label: 'Advantage Campaign Budget',  short: 'CBO', description: 'Meta distributes your budget across Ad Sets to get the best results' },
+    'ABO': { key: 'ABO', label: 'Ad Set Budget',              short: 'ABO', description: 'Set a separate budget for each Ad Set' }
+  };
+
+  var META_BID_STRATEGIES = {
+    'LOWEST_COST_WITHOUT_CAP':   { key: 'LOWEST_COST_WITHOUT_CAP',   label: 'Highest volume',   description: 'Get the most results for your budget (default)' },
+    'LOWEST_COST_WITH_BID_CAP':  { key: 'LOWEST_COST_WITH_BID_CAP',  label: 'Bid cap',          description: 'Cap the maximum bid per auction' },
+    'COST_CAP':                  { key: 'COST_CAP',                  label: 'Cost per result',  description: 'Average cost per result close to your target' },
+    'LOWEST_COST_WITH_MIN_ROAS': { key: 'LOWEST_COST_WITH_MIN_ROAS', label: 'ROAS goal',        description: 'Maintain a minimum return on ad spend' }
+  };
+
+  var META_SPECIAL_AD_CATEGORIES = {
+    'NONE':                      { key: 'NONE',                      label: 'None',                          description: 'No special category applies' },
+    'CREDIT':                    { key: 'CREDIT',                    label: 'Credit',                        description: 'Credit cards, loans, long-term financing' },
+    'EMPLOYMENT':                { key: 'EMPLOYMENT',                label: 'Employment',                    description: 'Job listings, internships, work programs' },
+    'HOUSING':                   { key: 'HOUSING',                   label: 'Housing',                       description: 'Sales/rentals of homes, mortgages, insurance' },
+    'ISSUES_ELECTIONS_POLITICS': { key: 'ISSUES_ELECTIONS_POLITICS', label: 'Social, elections or politics', description: 'Political ads or ads about social issues' }
+  };
+
+  // Meta-shaped campaign statuses (replaces v1's planning/active/paused/completed/archived)
+  var META_CAMPAIGN_STATUSES = {
+    'DRAFT':    { key: 'DRAFT',    label: 'Draft',    icon: 'pencil',         color: '#80868b', order: 0 },
+    'ACTIVE':   { key: 'ACTIVE',   label: 'Active',   icon: 'bolt',           color: '#0d904f', order: 1 },
+    'PAUSED':   { key: 'PAUSED',   label: 'Paused',   icon: 'pause',          color: '#be123c', order: 2 },
+    'ARCHIVED': { key: 'ARCHIVED', label: 'Archived', icon: 'box-archive',    color: '#80868b', order: 3 },
+    'DELETED':  { key: 'DELETED',  label: 'Deleted',  icon: 'trash',          color: '#d93025', order: 4 }
+  };
+
+  // --- Ad Set-level constants ---
+
+  // Optimization goals — superset across all objectives. The UI filters by
+  // parent objective via META_OBJECTIVE_OPTIMIZATION_GOALS below.
+  var META_OPTIMIZATION_GOALS = {
+    'REACH':              { key: 'REACH',              label: 'Reach',                  description: 'Show ads to the maximum number of people' },
+    'IMPRESSIONS':        { key: 'IMPRESSIONS',        label: 'Impressions',            description: 'Show ads as many times as possible' },
+    'AD_RECALL_LIFT':     { key: 'AD_RECALL_LIFT',     label: 'Ad recall lift',         description: 'Maximise people likely to remember your ad' },
+    'LINK_CLICKS':        { key: 'LINK_CLICKS',        label: 'Link clicks',            description: 'Drive clicks to your destination' },
+    'LANDING_PAGE_VIEWS': { key: 'LANDING_PAGE_VIEWS', label: 'Landing page views',     description: 'People who click and load your landing page' },
+    'POST_ENGAGEMENT':    { key: 'POST_ENGAGEMENT',    label: 'Post engagement',        description: 'Reactions, comments, shares, saves' },
+    'PAGE_LIKES':         { key: 'PAGE_LIKES',         label: 'Page likes',             description: 'Grow your Page audience' },
+    'EVENT_RESPONSES':    { key: 'EVENT_RESPONSES',    label: 'Event responses',        description: 'Maximise RSVPs to an event' },
+    'THRUPLAY':           { key: 'THRUPLAY',           label: 'ThruPlay',               description: 'Video views to completion (or 15s, whichever first)' },
+    'VIDEO_VIEWS':        { key: 'VIDEO_VIEWS',        label: 'Video views (2s)',       description: 'At least 2 seconds of continuous viewing' },
+    'LEAD_GENERATION':    { key: 'LEAD_GENERATION',    label: 'Leads',                  description: 'Submitted Meta lead forms' },
+    'QUALITY_LEAD':       { key: 'QUALITY_LEAD',       label: 'Conversion leads',       description: 'Optimise for leads that convert downstream (CRM integration required)' },
+    'QUALITY_CALL':       { key: 'QUALITY_CALL',       label: 'Quality calls',          description: 'Call-tracked leads that meet a quality threshold' },
+    'OFFSITE_CONVERSIONS':{ key: 'OFFSITE_CONVERSIONS',label: 'Conversions',            description: 'Pixel/CAPI events on your site or app' },
+    'CONVERSATIONS':      { key: 'CONVERSATIONS',      label: 'Conversations',          description: 'Messenger / WhatsApp / Instagram message threads' },
+    'MESSAGING_PURCHASE_CONVERSION': { key: 'MESSAGING_PURCHASE_CONVERSION', label: 'Purchases in messaging', description: 'Purchases that complete inside a message thread' },
+    'APP_INSTALLS':       { key: 'APP_INSTALLS',       label: 'App installs',           description: 'Drive new installs of your app' },
+    'APP_INSTALLS_AND_OFFSITE_CONVERSIONS': { key: 'APP_INSTALLS_AND_OFFSITE_CONVERSIONS', label: 'App installs + events', description: 'Optimise for installs + a chosen in-app event' },
+    'VALUE':              { key: 'VALUE',              label: 'Value',                  description: 'Maximise total purchase value (requires value optimisation setup)' }
+  };
+
+  // Which optimization goals are allowed under each objective (UI guidance)
+  var META_OBJECTIVE_OPTIMIZATION_GOALS = {
+    'OUTCOME_AWARENESS':     ['REACH', 'IMPRESSIONS', 'AD_RECALL_LIFT', 'THRUPLAY', 'VIDEO_VIEWS'],
+    'OUTCOME_TRAFFIC':       ['LINK_CLICKS', 'LANDING_PAGE_VIEWS', 'REACH', 'IMPRESSIONS', 'CONVERSATIONS'],
+    'OUTCOME_ENGAGEMENT':    ['POST_ENGAGEMENT', 'PAGE_LIKES', 'EVENT_RESPONSES', 'THRUPLAY', 'VIDEO_VIEWS', 'CONVERSATIONS', 'REACH', 'IMPRESSIONS'],
+    'OUTCOME_LEADS':         ['LEAD_GENERATION', 'QUALITY_LEAD', 'OFFSITE_CONVERSIONS', 'CONVERSATIONS', 'QUALITY_CALL'],
+    'OUTCOME_APP_PROMOTION': ['APP_INSTALLS', 'APP_INSTALLS_AND_OFFSITE_CONVERSIONS', 'OFFSITE_CONVERSIONS'],
+    'OUTCOME_SALES':         ['OFFSITE_CONVERSIONS', 'VALUE', 'CONVERSATIONS', 'LANDING_PAGE_VIEWS', 'LINK_CLICKS']
+  };
+
+  var META_BILLING_EVENTS = {
+    'IMPRESSIONS':  { key: 'IMPRESSIONS',  label: 'Impressions',   description: 'Billed when your ad is shown' },
+    'LINK_CLICKS':  { key: 'LINK_CLICKS',  label: 'Link clicks',   description: 'Billed for clicks on your destination link' },
+    'THRUPLAY':     { key: 'THRUPLAY',     label: 'ThruPlay',      description: 'Billed for video completes (or 15s)' },
+    'APP_INSTALLS': { key: 'APP_INSTALLS', label: 'App installs',  description: 'Billed for tracked app installs' }
+  };
+
+  var META_ATTRIBUTION_SETTINGS = {
+    '1d_view':         { key: '1d_view',         label: '1-day view',                  short: '1V' },
+    '1d_click':        { key: '1d_click',        label: '1-day click',                 short: '1C' },
+    '7d_click':        { key: '7d_click',        label: '7-day click',                 short: '7C' },
+    '1d_view_1d_click':{ key: '1d_view_1d_click',label: '1-day view + 1-day click',    short: '1V/1C' },
+    '1d_view_7d_click':{ key: '1d_view_7d_click',label: '1-day view + 7-day click',    short: '1V/7C' }
+  };
+
+  // Curated placement list. Each entry maps to Meta's `publisher_platform` +
+  // `facebook_positions` / `instagram_positions` / etc. on export.
+  var META_PLACEMENTS = {
+    'FACEBOOK_FEED':          { key: 'FACEBOOK_FEED',          label: 'Facebook Feed',           platform: 'facebook',  position: 'feed' },
+    'FACEBOOK_MARKETPLACE':   { key: 'FACEBOOK_MARKETPLACE',   label: 'Facebook Marketplace',    platform: 'facebook',  position: 'marketplace' },
+    'FACEBOOK_VIDEO_FEEDS':   { key: 'FACEBOOK_VIDEO_FEEDS',   label: 'Facebook Video Feeds',    platform: 'facebook',  position: 'video_feeds' },
+    'FACEBOOK_RIGHT_COLUMN':  { key: 'FACEBOOK_RIGHT_COLUMN',  label: 'Facebook Right Column',   platform: 'facebook',  position: 'right_hand_column' },
+    'FACEBOOK_STORIES':       { key: 'FACEBOOK_STORIES',       label: 'Facebook Stories',        platform: 'facebook',  position: 'story' },
+    'FACEBOOK_REELS':         { key: 'FACEBOOK_REELS',         label: 'Facebook Reels',          platform: 'facebook',  position: 'facebook_reels' },
+    'FACEBOOK_SEARCH':        { key: 'FACEBOOK_SEARCH',        label: 'Facebook Search',         platform: 'facebook',  position: 'search' },
+    'INSTAGRAM_FEED':         { key: 'INSTAGRAM_FEED',         label: 'Instagram Feed',          platform: 'instagram', position: 'stream' },
+    'INSTAGRAM_STORIES':      { key: 'INSTAGRAM_STORIES',      label: 'Instagram Stories',       platform: 'instagram', position: 'story' },
+    'INSTAGRAM_EXPLORE':      { key: 'INSTAGRAM_EXPLORE',      label: 'Instagram Explore',       platform: 'instagram', position: 'explore' },
+    'INSTAGRAM_REELS':        { key: 'INSTAGRAM_REELS',        label: 'Instagram Reels',         platform: 'instagram', position: 'reels' },
+    'INSTAGRAM_SEARCH':       { key: 'INSTAGRAM_SEARCH',       label: 'Instagram Search',        platform: 'instagram', position: 'ig_search' },
+    'INSTAGRAM_PROFILE_FEED': { key: 'INSTAGRAM_PROFILE_FEED', label: 'Instagram Profile Feed',  platform: 'instagram', position: 'profile_feed' },
+    'MESSENGER_INBOX':        { key: 'MESSENGER_INBOX',        label: 'Messenger Inbox',         platform: 'messenger', position: 'messenger_home' },
+    'MESSENGER_STORIES':      { key: 'MESSENGER_STORIES',      label: 'Messenger Stories',       platform: 'messenger', position: 'story' },
+    'AUDIENCE_NETWORK':       { key: 'AUDIENCE_NETWORK',       label: 'Audience Network',        platform: 'audience_network', position: 'classic' },
+    'AUDIENCE_NETWORK_REWARDED_VIDEO': { key: 'AUDIENCE_NETWORK_REWARDED_VIDEO', label: 'Audience Network Rewarded Video', platform: 'audience_network', position: 'rewarded_video' }
+  };
+
+  var META_AD_SET_STATUSES = {
+    'DRAFT':    { key: 'DRAFT',    label: 'Draft',    icon: 'pencil',      color: '#80868b', order: 0 },
+    'ACTIVE':   { key: 'ACTIVE',   label: 'Active',   icon: 'bolt',        color: '#0d904f', order: 1 },
+    'PAUSED':   { key: 'PAUSED',   label: 'Paused',   icon: 'pause',       color: '#be123c', order: 2 },
+    'ARCHIVED': { key: 'ARCHIVED', label: 'Archived', icon: 'box-archive', color: '#80868b', order: 3 },
+    'DELETED':  { key: 'DELETED',  label: 'Deleted',  icon: 'trash',       color: '#d93025', order: 4 }
+  };
+
+  // --- Ad-level constants ---
+
+  var META_AD_CREATIVE_TYPES = {
+    'single_image': { key: 'single_image', label: 'Single Image', icon: 'image',        color: '#1a73e8' },
+    'single_video': { key: 'single_video', label: 'Single Video', icon: 'video',        color: '#d93025' },
+    'carousel':     { key: 'carousel',     label: 'Carousel',     icon: 'images',       color: '#7c3aed' }
+  };
+
+  var META_CTA_TYPES = {
+    'NO_BUTTON':      { key: 'NO_BUTTON',      label: 'No button' },
+    'LEARN_MORE':     { key: 'LEARN_MORE',     label: 'Learn More' },
+    'SHOP_NOW':       { key: 'SHOP_NOW',       label: 'Shop Now' },
+    'SIGN_UP':        { key: 'SIGN_UP',        label: 'Sign Up' },
+    'SUBSCRIBE':      { key: 'SUBSCRIBE',      label: 'Subscribe' },
+    'GET_OFFER':      { key: 'GET_OFFER',      label: 'Get Offer' },
+    'DOWNLOAD':       { key: 'DOWNLOAD',       label: 'Download' },
+    'BOOK_TRAVEL':    { key: 'BOOK_TRAVEL',    label: 'Book Now' },
+    'CONTACT_US':     { key: 'CONTACT_US',     label: 'Contact Us' },
+    'APPLY_NOW':      { key: 'APPLY_NOW',      label: 'Apply Now' },
+    'GET_QUOTE':      { key: 'GET_QUOTE',      label: 'Get Quote' },
+    'MESSAGE_PAGE':   { key: 'MESSAGE_PAGE',   label: 'Send Message' },
+    'INSTALL_MOBILE_APP': { key: 'INSTALL_MOBILE_APP', label: 'Install Now' },
+    'USE_APP':        { key: 'USE_APP',        label: 'Use App' },
+    'WATCH_MORE':     { key: 'WATCH_MORE',     label: 'Watch More' },
+    'SEE_MENU':       { key: 'SEE_MENU',       label: 'See Menu' },
+    'DONATE_NOW':     { key: 'DONATE_NOW',     label: 'Donate' },
+    'GET_DIRECTIONS': { key: 'GET_DIRECTIONS', label: 'Get Directions' },
+    'CALL_NOW':       { key: 'CALL_NOW',       label: 'Call Now' },
+    'WHATSAPP_MESSAGE':{ key: 'WHATSAPP_MESSAGE', label: 'Send WhatsApp message' },
+    'PLAY_GAME':      { key: 'PLAY_GAME',      label: 'Play Game' }
+  };
+
+  // Ad-level creative pipeline (Hook → Copy → Media → Review). Composition is
+  // dropped here because it now lives at the Ad Set (brief tab).
+  var META_AD_PIPELINE_STEPS = [
+    { key: 'hook',   label: 'Hook',   icon: 'anchor',    order: 0 },
+    { key: 'copy',   label: 'Copy',   icon: 'pen-fancy', order: 1 },
+    { key: 'media',  label: 'Media',  icon: 'wand-magic',order: 2 },
+    { key: 'review', label: 'Review', icon: 'eye',       order: 3 }
+  ];
+
+  // Ad pipeline statuses — distinct from Meta's delivery statuses so the
+  // creative team can track production progress before the ad goes live.
+  var META_AD_STATUSES = {
+    'hook_ready':    { key: 'hook_ready',    label: 'Hook Ready',    icon: 'anchor',           color: '#9334e9', order: 0 },
+    'copy_ready':    { key: 'copy_ready',    label: 'Copy Ready',    icon: 'pen-fancy',        color: '#1a73e8', order: 1 },
+    'media_ready':   { key: 'media_ready',   label: 'Media Ready',   icon: 'wand-magic',       color: '#7c3aed', order: 2 },
+    'in_review':     { key: 'in_review',     label: 'In Review',     icon: 'magnifying-glass', color: '#e37400', order: 3 },
+    'approved':      { key: 'approved',      label: 'Approved',      icon: 'circle-check',     color: '#0d904f', order: 4 },
+    'live':          { key: 'live',          label: 'Live',          icon: 'signal',           color: '#0891b2', order: 5 },
+    'paused':        { key: 'paused',        label: 'Paused',        icon: 'pause',            color: '#be123c', order: 6 },
+    'archived':      { key: 'archived',      label: 'Archived',      icon: 'box-archive',      color: '#bdc1c6', order: 7 }
+  };
+
+  var META_AD_STATUS_ORDER = ['hook_ready', 'copy_ready', 'media_ready', 'in_review', 'approved', 'live', 'paused', 'archived'];
+  var META_AD_ACTIVE_STATUSES = ['hook_ready', 'copy_ready', 'media_ready', 'in_review', 'approved', 'live'];
+
+  // --- A/B test constants ---
+
+  var META_AB_ROLES = {
+    'CONTROL':   { key: 'CONTROL',   label: 'Control',   color: '#1a73e8' },
+    'VARIANT_A': { key: 'VARIANT_A', label: 'Variant A', color: '#e37400' },
+    'VARIANT_B': { key: 'VARIANT_B', label: 'Variant B', color: '#9334e9' }
+  };
+
+  var META_AB_METRICS = {
+    'COST_PER_RESULT':     { key: 'COST_PER_RESULT',     label: 'Cost per result' },
+    'COST_PER_LEAD':       { key: 'COST_PER_LEAD',       label: 'Cost per lead' },
+    'COST_PER_CONVERSION': { key: 'COST_PER_CONVERSION', label: 'Cost per conversion' },
+    'COST_PER_LINK_CLICK': { key: 'COST_PER_LINK_CLICK', label: 'Cost per link click' },
+    'CTR':                 { key: 'CTR',                 label: 'Click-through rate' },
+    'ROAS':                { key: 'ROAS',                label: 'Return on ad spend' },
+    'CPM':                 { key: 'CPM',                 label: 'Cost per 1,000 impressions' }
+  };
+
+  // --- Misc ---
+
+  // Default placement set: Advantage Placements (let Meta optimise across all)
+  var META_DEFAULT_PLACEMENT_MODE = 'advantage';
+
+  // Default new-Campaign skeleton — used by createEntity('campaign_v2')
+  var META_CAMPAIGN_DEFAULTS = {
+    objective: 'OUTCOME_LEADS',
+    buying_type: 'AUCTION',
+    budget_mode: 'CBO',
+    bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
+    special_ad_categories: ['NONE'],
+    status: 'DRAFT'
+  };
+
+  var META_AD_SET_DEFAULTS = {
+    optimization_goal: 'OFFSITE_CONVERSIONS',
+    billing_event: 'IMPRESSIONS',
+    attribution_setting: '7d_click',
+    placements: { advantage_enabled: true, custom_placements: [] },
+    status: 'DRAFT'
+  };
+
+  var META_AD_DEFAULTS = {
+    creative_type: 'single_image',
+    pipeline_status: 'hook_ready'
+  };
+
+  // --- Helper: lookup with fallback ---
+
+  function metaObjective(key)        { return META_OBJECTIVES[key] || null; }
+  function metaOptimizationGoal(key) { return META_OPTIMIZATION_GOALS[key] || null; }
+  function metaBillingEvent(key)     { return META_BILLING_EVENTS[key] || null; }
+  function metaPlacement(key)        { return META_PLACEMENTS[key] || null; }
+  function metaCTA(key)              { return META_CTA_TYPES[key] || null; }
+  function metaCampaignStatus(key)   { return META_CAMPAIGN_STATUSES[key] || { label: key, color: '#80868b', icon: 'circle' }; }
+  function metaAdSetStatus(key)      { return META_AD_SET_STATUSES[key] || { label: key, color: '#80868b', icon: 'circle' }; }
+  function metaAdStatus(key)         { return META_AD_STATUSES[key] || { label: key, color: '#80868b', icon: 'circle' }; }
+
+  // Get allowed optimization goals for a given objective
+  function metaOptimizationGoalsForObjective(objectiveKey) {
+    var allowed = META_OBJECTIVE_OPTIMIZATION_GOALS[objectiveKey] || [];
+    return allowed.map(function(k) { return META_OPTIMIZATION_GOALS[k]; }).filter(Boolean);
+  }
+
+
 /* ===== src/10-part1/02-state.js ===== */
   // ============================================================
   // SECTION 2: STATE OBJECT
@@ -257,8 +528,8 @@
 
   var S = {
     // Data (from JSON fields)
-    data: { persona_categories: [], personas: [], pain_points: [], messages: [], styles: [], visual_formats: [], recipes: [], campaigns: [], tags: [], research_sessions: [] },
-    meta: { workspace: {}, setup: {}, settings: {}, aiPreferences: {} },
+    data: { persona_categories: [], personas: [], pain_points: [], messages: [], styles: [], visual_formats: [], recipes: [], campaigns: [], tags: [], research_sessions: [], campaigns_v2: [], ad_sets: [], ads: [] },
+    meta: { workspace: {}, setup: {}, settings: {}, aiPreferences: {}, meta_defaults: {}, legacy_backup: null },
     activity: [],
     user: { id: '', name: '', email: '', fullName: '', timezone: '', roles: '' },
     brand: { configured: false, identity: {}, core: null, video: null, content: null, seo: null, social: null },
@@ -268,6 +539,13 @@
     messageMap: {}, styleMap: {}, formatMap: {},
     recipeMap: {}, campaignMap: {}, tagMap: {},
     funnelStageMap: {}, researchMap: {},
+
+    // Meta v2 hierarchy maps
+    campaignV2Map: {}, adSetMap: {}, adMap: {},
+    adSetsByCampaign: {}, adsByAdSet: {},
+    campaignV2StatusCounts: {}, adSetStatusCounts: {}, adStatusCounts: {},
+    totalCampaignsV2: 0, activeCampaignsV2: 0,
+    totalAdSets: 0, totalAds: 0, activeAds: 0,
 
     // Production node snapshot, keyed by `data-planner-id` (= recipe.id).
     // Rebuilt on every page load from the Drupal `view-media-productions`
@@ -310,6 +588,15 @@
     campaignFilter: { search: '', status: '' },
     selectedCampaignId: null,
     campaignDetailTab: 'overview',
+
+    // Meta v2 UI state (Campaign Workspace)
+    selectedCampaignV2Id: null,
+    selectedAdSetId: null,
+    selectedAdId: null,
+    campaignV2Filter: { search: '', status: '', objective: '' },
+    workspaceInspectorTab: 'overview',  // overview | brief | pipeline | settings
+    workspaceTreeCollapsed: {},          // { 'cmpv2_xxx': true, 'adset_xxx': false }
+    currentAdPipelineStep: 'hook',
     // Pain point filter + selection
     painPointFilter: { search: '', category: '' },
     selectedPainPointId: null,
@@ -646,14 +933,35 @@
       persona_categories: [], personas: [], pain_points: [],
       messages: [], styles: [], visual_formats: [],
       recipes: [], campaigns: [], tags: [],
-      research_sessions: []
+      research_sessions: [],
+      // Meta v2 hierarchy. Empty until the user creates them through the
+      // new Workspace, or until the migration importer runs.
+      campaigns_v2: [], ad_sets: [], ads: []
+    };
+  }
+
+  function getDefaultMetaDefaults() {
+    return {
+      page_id: '',
+      instagram_actor_id: '',
+      pixel_id: '',
+      attribution_window: '7d_click',
+      currency: 'USD',
+      time_zone: 'UTC',
+      business_manager_id: ''
     };
   }
 
   function getDefaultMeta() {
     return {
       workspace: { name: '', description: '', created: new Date().toISOString() },
-      setup: { product_name: '', objective: '', custom_instructions: '', setup_complete: false },
+      setup: {
+        product_name: '', objective: '', custom_instructions: '', setup_complete: false,
+        // Meta v2 gate: false = old recipe-centric UI; true = new Workspace.
+        // Flipped by the Stage 6 migration wizard.
+        meta_v2: false,
+        migrated_to_v2: false
+      },
       settings: {
         timezone: 'Asia/Kolkata',
         default_view: 'dashboard',
@@ -667,7 +975,12 @@
       },
       aiPreferences: { appDefault: { provider: '', model: '' }, perAction: {}, lastProvider: '', lastModel: '' },
       reference_images: {},
-      image_categories: getDefaultImageCategories()
+      image_categories: getDefaultImageCategories(),
+      // Meta v2 workspace-level defaults (Page, Pixel, attribution, currency etc.)
+      meta_defaults: getDefaultMetaDefaults(),
+      // Legacy backup populated by the migration importer (Stage 6) so users
+      // can recover their pre-v2 data until they explicitly discard it.
+      legacy_backup: null
     };
   }
 
@@ -705,6 +1018,15 @@
     d.campaigns = d.campaigns || [];
     d.tags = d.tags || [];
     d.research_sessions = d.research_sessions || [];
+    // Meta v2 hierarchy
+    d.campaigns_v2 = d.campaigns_v2 || [];
+    d.ad_sets = d.ad_sets || [];
+    d.ads = d.ads || [];
+
+    // Field-level fillers for Meta v2 entities (idempotent)
+    migrateCampaignsV2(d.campaigns_v2);
+    migrateAdSets(d.ad_sets);
+    migrateAds(d.ads);
 
     // Ensure each persona has all fields
     for (var pi = 0; pi < d.personas.length; pi++) {
@@ -854,10 +1176,130 @@
     }
   }
 
+  // ---- Meta v2 entity migrations (idempotent field fillers) ----
+
+  function migrateCampaignsV2(arr) {
+    for (var i = 0; i < arr.length; i++) {
+      var c = arr[i];
+      c.name = c.name || '';
+      c.description = c.description || '';
+      c.objective = c.objective || META_CAMPAIGN_DEFAULTS.objective;
+      c.buying_type = c.buying_type || META_CAMPAIGN_DEFAULTS.buying_type;
+      c.budget_mode = c.budget_mode || META_CAMPAIGN_DEFAULTS.budget_mode;
+      c.daily_budget = (c.daily_budget == null) ? null : c.daily_budget;
+      c.lifetime_budget = (c.lifetime_budget == null) ? null : c.lifetime_budget;
+      c.spend_cap = (c.spend_cap == null) ? null : c.spend_cap;
+      c.bid_strategy = c.bid_strategy || META_CAMPAIGN_DEFAULTS.bid_strategy;
+      c.special_ad_categories = c.special_ad_categories || META_CAMPAIGN_DEFAULTS.special_ad_categories.slice();
+      c.start_time = c.start_time || '';
+      c.stop_time = c.stop_time || '';
+      c.status = c.status || META_CAMPAIGN_DEFAULTS.status;
+      c.ab_test = c.ab_test || { enabled: false, primary_metric: '', variants: [] };
+      c.ab_test.variants = c.ab_test.variants || [];
+      c.ai_instructions = c.ai_instructions || '';
+      c.brief = c.brief || '';
+      c.tags = c.tags || [];
+      c.notes = c.notes || '';
+      c.created = c.created || new Date().toISOString();
+      c.updated = c.updated || c.created;
+      c.created_by = c.created_by || '';
+    }
+  }
+
+  function migrateAdSets(arr) {
+    for (var i = 0; i < arr.length; i++) {
+      var s = arr[i];
+      s.campaign_id = s.campaign_id || '';
+      s.name = s.name || '';
+      // Audience (v1: persona link + override notes)
+      s.persona_id = s.persona_id || '';
+      s.persona_snapshot = s.persona_snapshot || null;
+      s.audience_overrides = s.audience_overrides || '';
+      // Placements
+      s.placements = s.placements || { advantage_enabled: true, custom_placements: [] };
+      s.placements.advantage_enabled = (s.placements.advantage_enabled !== false);
+      s.placements.custom_placements = s.placements.custom_placements || [];
+      // Optimization
+      s.optimization_goal = s.optimization_goal || META_AD_SET_DEFAULTS.optimization_goal;
+      s.billing_event = s.billing_event || META_AD_SET_DEFAULTS.billing_event;
+      s.attribution_setting = s.attribution_setting || META_AD_SET_DEFAULTS.attribution_setting;
+      s.bid_amount = (s.bid_amount == null) ? null : s.bid_amount;
+      // Budget (ABO)
+      s.daily_budget = (s.daily_budget == null) ? null : s.daily_budget;
+      s.lifetime_budget = (s.lifetime_budget == null) ? null : s.lifetime_budget;
+      // Schedule
+      s.start_time = s.start_time || '';
+      s.stop_time = s.stop_time || '';
+      s.dayparting = s.dayparting || null;
+      // Strategic brief (Ad Set tier of the two-tier workflow)
+      s.brief = s.brief || { creative_direction: '', message_ids: [], style_ids: [], format_ids: [], hook_angles: [], ai_notes: '' };
+      s.brief.creative_direction = s.brief.creative_direction || '';
+      s.brief.message_ids = s.brief.message_ids || [];
+      s.brief.style_ids = s.brief.style_ids || [];
+      s.brief.format_ids = s.brief.format_ids || [];
+      s.brief.hook_angles = s.brief.hook_angles || [];
+      s.brief.ai_notes = s.brief.ai_notes || '';
+      // A/B
+      s.ab_role = s.ab_role || null;
+      // Status + misc
+      s.status = s.status || META_AD_SET_DEFAULTS.status;
+      s.notes = s.notes || '';
+      s.created = s.created || new Date().toISOString();
+      s.updated = s.updated || s.created;
+      s.created_by = s.created_by || '';
+    }
+  }
+
+  function migrateAds(arr) {
+    for (var i = 0; i < arr.length; i++) {
+      var a = arr[i];
+      a.ad_set_id = a.ad_set_id || '';
+      a.name = a.name || '';
+      a.creative_type = a.creative_type || META_AD_DEFAULTS.creative_type;
+      a.creative = a.creative || { primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' };
+      a.creative.primary_text = a.creative.primary_text || '';
+      a.creative.headline = a.creative.headline || '';
+      a.creative.description = a.creative.description || '';
+      a.creative.cta_type = a.creative.cta_type || 'LEARN_MORE';
+      a.creative.cta_link = a.creative.cta_link || '';
+      a.creative.display_link = a.creative.display_link || '';
+      a.creative.tracking_params = a.creative.tracking_params || '';
+      a.hook = a.hook || { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' };
+      a.hook.source_message_id = a.hook.source_message_id || '';
+      a.hook.selected_hook_id = a.hook.selected_hook_id || '';
+      a.hook.text = a.hook.text || '';
+      a.hook.type = a.hook.type || 'direct';
+      a.media = a.media || {};
+      a.media.image = a.media.image || { asset_id: '', ai_prompt: '', brief: '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] };
+      a.media.image.reference_image_ids = a.media.image.reference_image_ids || [];
+      a.media.video = a.media.video || { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', blueprint: { scenes: [] }, script: { rows: [] } };
+      a.media.video.blueprint = a.media.video.blueprint || { scenes: [] };
+      a.media.video.script = a.media.video.script || { rows: [] };
+      a.media.carousel_cards = a.media.carousel_cards || [];
+      // Snapshots
+      a.message_snapshot = a.message_snapshot || null;
+      a.style_snapshot = a.style_snapshot || null;
+      a.format_snapshot = a.format_snapshot || null;
+      // Pipeline
+      a.pipeline_status = a.pipeline_status || META_AD_DEFAULTS.pipeline_status;
+      a.review_notes = a.review_notes || '';
+      a.production_notes = a.production_notes || '';
+      a.assigned_to = a.assigned_to || '';
+      a.due_date = a.due_date || '';
+      a.tags = a.tags || [];
+      a.created = a.created || new Date().toISOString();
+      a.updated = a.updated || a.created;
+      a.created_by = a.created_by || '';
+    }
+  }
+
   function migrateMeta() {
     var m = S.meta;
     m.workspace = m.workspace || { name: '', description: '', created: new Date().toISOString() };
     m.setup = m.setup || { product_name: '', objective: '', custom_instructions: '', setup_complete: false };
+    // Meta v2 setup flags (idempotent — don't clobber existing values)
+    if (typeof m.setup.meta_v2 !== 'boolean') m.setup.meta_v2 = false;
+    if (typeof m.setup.migrated_to_v2 !== 'boolean') m.setup.migrated_to_v2 = false;
     m.settings = m.settings || {};
     m.settings.timezone = m.settings.timezone || 'Asia/Kolkata';
     m.settings.default_view = m.settings.default_view || 'dashboard';
@@ -876,6 +1318,15 @@
     m.reference_images = m.reference_images || {};
     m.image_categories = m.image_categories || getDefaultImageCategories();
     m.recipe_templates = m.recipe_templates || [];
+
+    // Meta v2: workspace-level Page / Pixel / attribution / currency defaults
+    m.meta_defaults = m.meta_defaults || {};
+    var defaults = getDefaultMetaDefaults();
+    for (var dk in defaults) {
+      if (m.meta_defaults[dk] === undefined) m.meta_defaults[dk] = defaults[dk];
+    }
+    // Legacy backup (populated by Stage 6 importer; null until then)
+    if (m.legacy_backup === undefined) m.legacy_backup = null;
 
     S.cardDensity = m.settings.card_density;
     S.currentView = readHash();
@@ -1027,6 +1478,56 @@
     S.imageCategoryMap = {};
     var imgCats = (S.meta && S.meta.image_categories) || [];
     for (i = 0; i < imgCats.length; i++) S.imageCategoryMap[imgCats[i].id] = imgCats[i];
+
+    // --- Meta v2 hierarchy maps ---
+
+    S.campaignV2Map = {};
+    S.campaignV2StatusCounts = {};
+    S.totalCampaignsV2 = 0; S.activeCampaignsV2 = 0;
+    for (var cv2k in META_CAMPAIGN_STATUSES) S.campaignV2StatusCounts[cv2k] = 0;
+    var campsV2 = S.data.campaigns_v2 || [];
+    for (i = 0; i < campsV2.length; i++) {
+      item = campsV2[i];
+      S.campaignV2Map[item.id] = item;
+      S.campaignV2StatusCounts[item.status] = (S.campaignV2StatusCounts[item.status] || 0) + 1;
+      S.totalCampaignsV2++;
+      if (item.status === 'ACTIVE' || item.status === 'DRAFT') S.activeCampaignsV2++;
+    }
+
+    S.adSetMap = {};
+    S.adSetsByCampaign = {};
+    S.adSetStatusCounts = {};
+    S.totalAdSets = 0;
+    for (var asKey in META_AD_SET_STATUSES) S.adSetStatusCounts[asKey] = 0;
+    var adSets = S.data.ad_sets || [];
+    for (i = 0; i < adSets.length; i++) {
+      item = adSets[i];
+      S.adSetMap[item.id] = item;
+      S.totalAdSets++;
+      S.adSetStatusCounts[item.status] = (S.adSetStatusCounts[item.status] || 0) + 1;
+      if (item.campaign_id) {
+        S.adSetsByCampaign[item.campaign_id] = S.adSetsByCampaign[item.campaign_id] || [];
+        S.adSetsByCampaign[item.campaign_id].push(item);
+      }
+    }
+
+    S.adMap = {};
+    S.adsByAdSet = {};
+    S.adStatusCounts = {};
+    S.totalAds = 0; S.activeAds = 0;
+    for (var aKey in META_AD_STATUSES) S.adStatusCounts[aKey] = 0;
+    var ads = S.data.ads || [];
+    for (i = 0; i < ads.length; i++) {
+      item = ads[i];
+      S.adMap[item.id] = item;
+      S.totalAds++;
+      S.adStatusCounts[item.pipeline_status] = (S.adStatusCounts[item.pipeline_status] || 0) + 1;
+      if (META_AD_ACTIVE_STATUSES.indexOf(item.pipeline_status) > -1) S.activeAds++;
+      if (item.ad_set_id) {
+        S.adsByAdSet[item.ad_set_id] = S.adsByAdSet[item.ad_set_id] || [];
+        S.adsByAdSet[item.ad_set_id].push(item);
+      }
+    }
   }
 
 
@@ -1270,6 +1771,12 @@
   function getResearchSession(id) { return S.researchMap[id] || null; }
   function getImageById(fid) { return S.imageMap[fid] || null; }
 
+  // --- Meta v2 entity getters ---
+  function getCampaignV2(id) { return S.campaignV2Map[id] || null; }
+  function getAdSet(id)      { return S.adSetMap[id] || null; }
+  function getAd(id)         { return S.adMap[id] || null; }
+  function isMetaV2Enabled() { return !!(S.meta && S.meta.setup && S.meta.setup.meta_v2); }
+
   // Returns the production node info for a recipe, preferring the live
   // snapshot from S.productionMap (rebuilt on each page load from the view
   // block) and falling back to the persistent recipe.production cache.
@@ -1301,6 +1808,22 @@
   function getAllCampaigns() { return (S.data.campaigns || []).slice(); }
   function getAllPainPoints() { return (S.data.pain_points || []).slice(); }
   function getAllCategories() { return (S.data.persona_categories || []).slice().sort(function(a, b) { return (a.order || 0) - (b.order || 0); }); }
+
+  // --- Meta v2 collection getters ---
+  function getAllCampaignsV2() { return (S.data.campaigns_v2 || []).slice(); }
+  function getAllAdSets()      { return (S.data.ad_sets || []).slice(); }
+  function getAllAds()         { return (S.data.ads || []).slice(); }
+  function getAdSetsByCampaign(campaignId) { return (S.adSetsByCampaign[campaignId] || []).slice(); }
+  function getAdsByAdSet(adSetId)          { return (S.adsByAdSet[adSetId] || []).slice(); }
+  function getAdsByCampaign(campaignId) {
+    var sets = S.adSetsByCampaign[campaignId] || [];
+    var out = [];
+    for (var i = 0; i < sets.length; i++) {
+      var ads = S.adsByAdSet[sets[i].id] || [];
+      for (var j = 0; j < ads.length; j++) out.push(ads[j]);
+    }
+    return out;
+  }
 
   function getRecentActivity(n) { return (S.activity || []).slice(-(n || 15)).reverse(); }
 
@@ -1420,7 +1943,7 @@
     var setup = (S.meta && S.meta.setup) || {};
     var html = '<div class="cp-header"><div class="cp-header-left">';
     html += '<button class="cp-btn-icon cp-sidebar-toggle" id="cpSidebarToggle">' + icon('menu') + '</button>';
-    html += '<div class="cp-header-logo"><span class="cp-header-logo-accent">Campaign</span> Planner</div>';
+    html += '<div class="cp-header-logo"><span class="cp-header-logo-accent">Meta</span> Campaign Planner</div>';
     if (ws.name) html += '<div class="cp-header-workspace">' + esc(ws.name) + '</div>';
     // Brand identity pill
     if (S.brand && S.brand.configured && S.brand.identity.name) {
@@ -1478,8 +2001,8 @@
     var setup = (S.meta && S.meta.setup) || {};
     html += '<div class="cp-sidebar-footer">';
     html += '<div class="cp-sidebar-footer-label">Workspace</div>';
-    html += '<div class="cp-sidebar-footer-name">' + esc(ws.name || 'Campaign Planner') + '</div>';
-    html += '<div class="cp-sidebar-footer-meta">Meta Ads' + (setup.setup_complete ? ' · Setup ✓' : '') + '</div>';
+    html += '<div class="cp-sidebar-footer-name">' + esc(ws.name || 'Meta Campaign Planner') + '</div>';
+    html += '<div class="cp-sidebar-footer-meta">Meta Ads' + (setup.setup_complete ? ' · Setup ✓' : '') + (setup.meta_v2 ? ' · v2' : '') + '</div>';
     html += '</div>';
 
     html += '</div></div>';
@@ -4829,6 +5352,83 @@
         logActivity('tag_created', 'tag', entity.id, entity.name, 'Created tag');
         break;
 
+      // --- Meta v2 hierarchy ---
+
+      case 'campaign_v2':
+        entity = $.extend(true, {
+          id: generateId('cmpv2'),
+          name: '', description: '',
+          objective: META_CAMPAIGN_DEFAULTS.objective,
+          buying_type: META_CAMPAIGN_DEFAULTS.buying_type,
+          budget_mode: META_CAMPAIGN_DEFAULTS.budget_mode,
+          daily_budget: null, lifetime_budget: null, spend_cap: null,
+          bid_strategy: META_CAMPAIGN_DEFAULTS.bid_strategy,
+          special_ad_categories: META_CAMPAIGN_DEFAULTS.special_ad_categories.slice(),
+          start_time: '', stop_time: '',
+          status: META_CAMPAIGN_DEFAULTS.status,
+          ab_test: { enabled: false, primary_metric: '', variants: [] },
+          ai_instructions: '', brief: '',
+          tags: [], notes: '',
+          created: now, updated: now, created_by: S.user.id || ''
+        }, data);
+        S.data.campaigns_v2.push(entity);
+        logActivity('campaign_v2_created', 'campaign_v2', entity.id, entity.name, 'Created campaign');
+        break;
+
+      case 'ad_set':
+        entity = $.extend(true, {
+          id: generateId('adset'),
+          campaign_id: '', name: '',
+          persona_id: '', persona_snapshot: null, audience_overrides: '',
+          placements: { advantage_enabled: true, custom_placements: [] },
+          optimization_goal: META_AD_SET_DEFAULTS.optimization_goal,
+          billing_event: META_AD_SET_DEFAULTS.billing_event,
+          attribution_setting: META_AD_SET_DEFAULTS.attribution_setting,
+          bid_amount: null,
+          daily_budget: null, lifetime_budget: null,
+          start_time: '', stop_time: '', dayparting: null,
+          brief: { creative_direction: '', message_ids: [], style_ids: [], format_ids: [], hook_angles: [], ai_notes: '' },
+          ab_role: null,
+          status: META_AD_SET_DEFAULTS.status,
+          notes: '',
+          created: now, updated: now, created_by: S.user.id || ''
+        }, data);
+        if (!entity.name) {
+          var camp = S.campaignV2Map[entity.campaign_id];
+          var persona = S.personaMap[entity.persona_id];
+          entity.name = (camp ? camp.name + ' — ' : '') + (persona ? persona.name : 'New Ad Set');
+        }
+        S.data.ad_sets.push(entity);
+        logActivity('ad_set_created', 'ad_set', entity.id, entity.name, 'Created ad set');
+        break;
+
+      case 'ad':
+        entity = $.extend(true, {
+          id: generateId('ad'),
+          ad_set_id: '', name: '',
+          creative_type: META_AD_DEFAULTS.creative_type,
+          creative: { primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' },
+          hook: { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' },
+          media: {
+            image: { asset_id: '', ai_prompt: '', brief: '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] },
+            video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', blueprint: { scenes: [] }, script: { rows: [] } },
+            carousel_cards: []
+          },
+          message_snapshot: null, style_snapshot: null, format_snapshot: null,
+          pipeline_status: META_AD_DEFAULTS.pipeline_status,
+          review_notes: '', production_notes: '', assigned_to: '', due_date: '',
+          tags: [],
+          created: now, updated: now, created_by: S.user.id || ''
+        }, data);
+        if (!entity.name) {
+          var adSet = S.adSetMap[entity.ad_set_id];
+          var existing = (S.adsByAdSet[entity.ad_set_id] || []).length;
+          entity.name = (adSet ? adSet.name + ' — Ad ' : 'Ad ') + (existing + 1);
+        }
+        S.data.ads.push(entity);
+        logActivity('ad_created', 'ad', entity.id, entity.name, 'Created ad');
+        break;
+
       default:
         console.warn('[CP] Unknown entity type:', type);
         return null;
@@ -4929,7 +5529,7 @@
         entityTitle = entity.name;
         idx = S.data.tags.findIndex(function(t) { return t.id === id; });
         if (idx > -1) S.data.tags.splice(idx, 1);
-        var allArrays = [S.data.personas, S.data.messages, S.data.styles, S.data.visual_formats, S.data.recipes, S.data.campaigns];
+        var allArrays = [S.data.personas, S.data.messages, S.data.styles, S.data.visual_formats, S.data.recipes, S.data.campaigns, S.data.campaigns_v2, S.data.ads];
         allArrays.forEach(function(arr) {
           (arr || []).forEach(function(item) {
             if (item.tags) item.tags = item.tags.filter(function(tid) { return tid !== id; });
@@ -4937,6 +5537,47 @@
         });
         if (S.selectedTagId === id) S.selectedTagId = null;
         logActivity('tag_deleted', 'tag', id, entityTitle, 'Deleted tag');
+        break;
+
+      case 'campaign_v2':
+        entity = S.campaignV2Map[id]; if (!entity) return false;
+        entityTitle = entity.name;
+        idx = S.data.campaigns_v2.findIndex(function(c) { return c.id === id; });
+        if (idx > -1) S.data.campaigns_v2.splice(idx, 1);
+        // Cascade: delete all Ad Sets + Ads under this campaign
+        var orphanSets = (S.data.ad_sets || []).filter(function(s) { return s.campaign_id === id; });
+        var orphanSetIds = orphanSets.map(function(s) { return s.id; });
+        S.data.ad_sets = (S.data.ad_sets || []).filter(function(s) { return s.campaign_id !== id; });
+        S.data.ads = (S.data.ads || []).filter(function(a) { return orphanSetIds.indexOf(a.ad_set_id) === -1; });
+        if (S.selectedCampaignV2Id === id) { S.selectedCampaignV2Id = null; S.selectedAdSetId = null; S.selectedAdId = null; }
+        logActivity('campaign_v2_deleted', 'campaign_v2', id, entityTitle, 'Deleted campaign and ' + orphanSets.length + ' ad set(s)');
+        break;
+
+      case 'ad_set':
+        entity = S.adSetMap[id]; if (!entity) return false;
+        entityTitle = entity.name;
+        idx = S.data.ad_sets.findIndex(function(s) { return s.id === id; });
+        if (idx > -1) S.data.ad_sets.splice(idx, 1);
+        // Cascade: delete all Ads under this Ad Set
+        var orphanAds = (S.data.ads || []).filter(function(a) { return a.ad_set_id === id; });
+        S.data.ads = (S.data.ads || []).filter(function(a) { return a.ad_set_id !== id; });
+        // Remove from parent campaign's A/B variants list if present
+        (S.data.campaigns_v2 || []).forEach(function(c) {
+          if (c.ab_test && Array.isArray(c.ab_test.variants)) {
+            c.ab_test.variants = c.ab_test.variants.filter(function(v) { return v.ad_set_id !== id; });
+          }
+        });
+        if (S.selectedAdSetId === id) { S.selectedAdSetId = null; S.selectedAdId = null; }
+        logActivity('ad_set_deleted', 'ad_set', id, entityTitle, 'Deleted ad set and ' + orphanAds.length + ' ad(s)');
+        break;
+
+      case 'ad':
+        entity = S.adMap[id]; if (!entity) return false;
+        entityTitle = entity.name;
+        idx = S.data.ads.findIndex(function(a) { return a.id === id; });
+        if (idx > -1) S.data.ads.splice(idx, 1);
+        if (S.selectedAdId === id) S.selectedAdId = null;
+        logActivity('ad_deleted', 'ad', id, entityTitle, 'Deleted ad');
         break;
 
       default:
@@ -4955,7 +5596,8 @@
     var collections = {
       persona: S.data.personas, message: S.data.messages, style: S.data.styles,
       visual_format: S.data.visual_formats, recipe: S.data.recipes, campaign: S.data.campaigns,
-      pain_point: S.data.pain_points, persona_category: S.data.persona_categories, tag: S.data.tags
+      pain_point: S.data.pain_points, persona_category: S.data.persona_categories, tag: S.data.tags,
+      campaign_v2: S.data.campaigns_v2, ad_set: S.data.ad_sets, ad: S.data.ads
     };
     var coll = collections[type];
     if (!coll) { console.warn('[CP] Unknown entity type for save:', type); return; }
@@ -4986,6 +5628,21 @@
       var newLabel = (RECIPE_STATUSES[value] || {}).label || value;
       logActivity('recipe_status_changed', 'recipe', id, entity.title, 'Status changed to ' + newLabel);
     }
+    // Ad pipeline status change logging
+    if (type === 'ad' && field === 'pipeline_status') {
+      var adLabel = (META_AD_STATUSES[value] || {}).label || value;
+      logActivity('ad_status_changed', 'ad', id, entity.name, 'Pipeline status → ' + adLabel);
+    }
+    // Touch parent updated timestamps for Meta v2 entities so the workspace
+    // reflects recent activity at any level
+    if (type === 'ad' && entity.ad_set_id) {
+      var pSet = S.adSetMap[entity.ad_set_id];
+      if (pSet) pSet.updated = new Date().toISOString();
+    }
+    if (type === 'ad_set' && entity.campaign_id) {
+      var pCamp = S.campaignV2Map[entity.campaign_id];
+      if (pCamp) pCamp.updated = new Date().toISOString();
+    }
 
     buildMaps();
     syncToTextarea();
@@ -4995,7 +5652,8 @@
   function duplicateEntity(type, id) {
     var collections = {
       persona: S.data.personas, message: S.data.messages, style: S.data.styles,
-      visual_format: S.data.visual_formats, recipe: S.data.recipes, campaign: S.data.campaigns
+      visual_format: S.data.visual_formats, recipe: S.data.recipes, campaign: S.data.campaigns,
+      campaign_v2: S.data.campaigns_v2, ad_set: S.data.ad_sets, ad: S.data.ads
     };
     var coll = collections[type];
     if (!coll) return null;
@@ -5003,14 +5661,18 @@
     var source = coll.find(function(e) { return e.id === id; });
     if (!source) return null;
 
+    var idPrefixes = { campaign_v2: 'cmpv2', ad_set: 'adset', ad: 'ad' };
     var clone = deepClone(source);
-    clone.id = generateId(type.substring(0, 3));
+    clone.id = generateId(idPrefixes[type] || type.substring(0, 3));
     clone.created = new Date().toISOString();
     clone.updated = clone.created;
     clone.created_by = S.user.id || '';
     if (clone.title) clone.title += ' (copy)';
     if (clone.name) clone.name += ' (copy)';
     if (type === 'recipe') { clone.status = 'draft'; clone.batch_id = ''; clone.review_notes = ''; clone.assigned_to = ''; }
+    if (type === 'campaign_v2') { clone.status = 'DRAFT'; clone.ab_test = { enabled: false, primary_metric: '', variants: [] }; }
+    if (type === 'ad_set')      { clone.status = 'DRAFT'; clone.ab_role = null; }
+    if (type === 'ad')          { clone.pipeline_status = 'hook_ready'; clone.review_notes = ''; clone.assigned_to = ''; }
 
     coll.push(clone);
     logActivity(type + '_created', type, clone.id, clone.title || clone.name, 'Duplicated');
@@ -5203,6 +5865,12 @@
   window._cpGetProductionStatusStyle = getProductionStatusStyle;
   window._cpParseProductionData = parseProductionData;
 
+  // Meta v2 entity getters
+  window._cpGetCampaignV2 = getCampaignV2;
+  window._cpGetAdSet = getAdSet;
+  window._cpGetAd = getAd;
+  window._cpIsMetaV2Enabled = isMetaV2Enabled;
+
   // Collection getters
   window._cpGetAllTags = getAllTags;
   window._cpGetAllPersonas = getAllPersonas;
@@ -5213,6 +5881,14 @@
   window._cpGetAllCampaigns = getAllCampaigns;
   window._cpGetAllPainPoints = getAllPainPoints;
   window._cpGetAllCategories = getAllCategories;
+
+  // Meta v2 collection getters
+  window._cpGetAllCampaignsV2 = getAllCampaignsV2;
+  window._cpGetAllAdSets = getAllAdSets;
+  window._cpGetAllAds = getAllAds;
+  window._cpGetAdSetsByCampaign = getAdSetsByCampaign;
+  window._cpGetAdsByAdSet = getAdsByAdSet;
+  window._cpGetAdsByCampaign = getAdsByCampaign;
   window._cpGetRecentActivity = getRecentActivity;
   window._cpGetPersonasByCategory = getPersonasByCategory;
   window._cpGetRecipesByCampaign = getRecipesByCampaign;
@@ -5234,8 +5910,44 @@
     FORMAT_CATEGORIES: FORMAT_CATEGORIES, PAIN_POINT_CATEGORIES: PAIN_POINT_CATEGORIES,
     ACTIVITY_TYPES: ACTIVITY_TYPES, CARD_DENSITIES: CARD_DENSITIES, GROUPING_OPTIONS: GROUPING_OPTIONS,
     PRODUCTION_STATUSES: PRODUCTION_STATUSES, PRODUCTION_STATUS_DEFAULT: PRODUCTION_STATUS_DEFAULT,
-    PRODUCTION_TYPE_TO_MEDIA: PRODUCTION_TYPE_TO_MEDIA
+    PRODUCTION_TYPE_TO_MEDIA: PRODUCTION_TYPE_TO_MEDIA,
+    // Meta v2 constants
+    META_OBJECTIVES: META_OBJECTIVES,
+    META_BUYING_TYPES: META_BUYING_TYPES,
+    META_BUDGET_MODES: META_BUDGET_MODES,
+    META_BID_STRATEGIES: META_BID_STRATEGIES,
+    META_SPECIAL_AD_CATEGORIES: META_SPECIAL_AD_CATEGORIES,
+    META_CAMPAIGN_STATUSES: META_CAMPAIGN_STATUSES,
+    META_OPTIMIZATION_GOALS: META_OPTIMIZATION_GOALS,
+    META_OBJECTIVE_OPTIMIZATION_GOALS: META_OBJECTIVE_OPTIMIZATION_GOALS,
+    META_BILLING_EVENTS: META_BILLING_EVENTS,
+    META_ATTRIBUTION_SETTINGS: META_ATTRIBUTION_SETTINGS,
+    META_PLACEMENTS: META_PLACEMENTS,
+    META_AD_SET_STATUSES: META_AD_SET_STATUSES,
+    META_AD_CREATIVE_TYPES: META_AD_CREATIVE_TYPES,
+    META_CTA_TYPES: META_CTA_TYPES,
+    META_AD_PIPELINE_STEPS: META_AD_PIPELINE_STEPS,
+    META_AD_STATUSES: META_AD_STATUSES,
+    META_AD_STATUS_ORDER: META_AD_STATUS_ORDER,
+    META_AD_ACTIVE_STATUSES: META_AD_ACTIVE_STATUSES,
+    META_AB_ROLES: META_AB_ROLES,
+    META_AB_METRICS: META_AB_METRICS,
+    META_DEFAULT_PLACEMENT_MODE: META_DEFAULT_PLACEMENT_MODE,
+    META_CAMPAIGN_DEFAULTS: META_CAMPAIGN_DEFAULTS,
+    META_AD_SET_DEFAULTS: META_AD_SET_DEFAULTS,
+    META_AD_DEFAULTS: META_AD_DEFAULTS
   };
+
+  // Meta v2 lookup helpers
+  window._cpMetaObjective = metaObjective;
+  window._cpMetaOptimizationGoal = metaOptimizationGoal;
+  window._cpMetaBillingEvent = metaBillingEvent;
+  window._cpMetaPlacement = metaPlacement;
+  window._cpMetaCTA = metaCTA;
+  window._cpMetaCampaignStatus = metaCampaignStatus;
+  window._cpMetaAdSetStatus = metaAdSetStatus;
+  window._cpMetaAdStatus = metaAdStatus;
+  window._cpMetaOptimizationGoalsForObjective = metaOptimizationGoalsForObjective;
 
   // Setup
   window._cpCompleteSetup = completeSetup;

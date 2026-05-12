@@ -31,7 +31,7 @@
     var setup = (S.meta && S.meta.setup) || {};
     var html = '<div class="cp-header"><div class="cp-header-left">';
     html += '<button class="cp-btn-icon cp-sidebar-toggle" id="cpSidebarToggle">' + icon('menu') + '</button>';
-    html += '<div class="cp-header-logo"><span class="cp-header-logo-accent">Campaign</span> Planner</div>';
+    html += '<div class="cp-header-logo"><span class="cp-header-logo-accent">Meta</span> Campaign Planner</div>';
     if (ws.name) html += '<div class="cp-header-workspace">' + esc(ws.name) + '</div>';
     // Brand identity pill
     if (S.brand && S.brand.configured && S.brand.identity.name) {
@@ -89,8 +89,8 @@
     var setup = (S.meta && S.meta.setup) || {};
     html += '<div class="cp-sidebar-footer">';
     html += '<div class="cp-sidebar-footer-label">Workspace</div>';
-    html += '<div class="cp-sidebar-footer-name">' + esc(ws.name || 'Campaign Planner') + '</div>';
-    html += '<div class="cp-sidebar-footer-meta">Meta Ads' + (setup.setup_complete ? ' · Setup ✓' : '') + '</div>';
+    html += '<div class="cp-sidebar-footer-name">' + esc(ws.name || 'Meta Campaign Planner') + '</div>';
+    html += '<div class="cp-sidebar-footer-meta">Meta Ads' + (setup.setup_complete ? ' · Setup ✓' : '') + (setup.meta_v2 ? ' · v2' : '') + '</div>';
     html += '</div>';
 
     html += '</div></div>';

@@ -164,6 +164,12 @@
   function getResearchSession(id) { return S.researchMap[id] || null; }
   function getImageById(fid) { return S.imageMap[fid] || null; }
 
+  // --- Meta v2 entity getters ---
+  function getCampaignV2(id) { return S.campaignV2Map[id] || null; }
+  function getAdSet(id)      { return S.adSetMap[id] || null; }
+  function getAd(id)         { return S.adMap[id] || null; }
+  function isMetaV2Enabled() { return !!(S.meta && S.meta.setup && S.meta.setup.meta_v2); }
+
   // Returns the production node info for a recipe, preferring the live
   // snapshot from S.productionMap (rebuilt on each page load from the view
   // block) and falling back to the persistent recipe.production cache.
@@ -195,6 +201,22 @@
   function getAllCampaigns() { return (S.data.campaigns || []).slice(); }
   function getAllPainPoints() { return (S.data.pain_points || []).slice(); }
   function getAllCategories() { return (S.data.persona_categories || []).slice().sort(function(a, b) { return (a.order || 0) - (b.order || 0); }); }
+
+  // --- Meta v2 collection getters ---
+  function getAllCampaignsV2() { return (S.data.campaigns_v2 || []).slice(); }
+  function getAllAdSets()      { return (S.data.ad_sets || []).slice(); }
+  function getAllAds()         { return (S.data.ads || []).slice(); }
+  function getAdSetsByCampaign(campaignId) { return (S.adSetsByCampaign[campaignId] || []).slice(); }
+  function getAdsByAdSet(adSetId)          { return (S.adsByAdSet[adSetId] || []).slice(); }
+  function getAdsByCampaign(campaignId) {
+    var sets = S.adSetsByCampaign[campaignId] || [];
+    var out = [];
+    for (var i = 0; i < sets.length; i++) {
+      var ads = S.adsByAdSet[sets[i].id] || [];
+      for (var j = 0; j < ads.length; j++) out.push(ads[j]);
+    }
+    return out;
+  }
 
   function getRecentActivity(n) { return (S.activity || []).slice(-(n || 15)).reverse(); }
 

@@ -4,8 +4,8 @@
 
   var S = {
     // Data (from JSON fields)
-    data: { persona_categories: [], personas: [], pain_points: [], messages: [], styles: [], visual_formats: [], recipes: [], campaigns: [], tags: [], research_sessions: [] },
-    meta: { workspace: {}, setup: {}, settings: {}, aiPreferences: {} },
+    data: { persona_categories: [], personas: [], pain_points: [], messages: [], styles: [], visual_formats: [], recipes: [], campaigns: [], tags: [], research_sessions: [], campaigns_v2: [], ad_sets: [], ads: [] },
+    meta: { workspace: {}, setup: {}, settings: {}, aiPreferences: {}, meta_defaults: {}, legacy_backup: null },
     activity: [],
     user: { id: '', name: '', email: '', fullName: '', timezone: '', roles: '' },
     brand: { configured: false, identity: {}, core: null, video: null, content: null, seo: null, social: null },
@@ -15,6 +15,13 @@
     messageMap: {}, styleMap: {}, formatMap: {},
     recipeMap: {}, campaignMap: {}, tagMap: {},
     funnelStageMap: {}, researchMap: {},
+
+    // Meta v2 hierarchy maps
+    campaignV2Map: {}, adSetMap: {}, adMap: {},
+    adSetsByCampaign: {}, adsByAdSet: {},
+    campaignV2StatusCounts: {}, adSetStatusCounts: {}, adStatusCounts: {},
+    totalCampaignsV2: 0, activeCampaignsV2: 0,
+    totalAdSets: 0, totalAds: 0, activeAds: 0,
 
     // Production node snapshot, keyed by `data-planner-id` (= recipe.id).
     // Rebuilt on every page load from the Drupal `view-media-productions`
@@ -57,6 +64,15 @@
     campaignFilter: { search: '', status: '' },
     selectedCampaignId: null,
     campaignDetailTab: 'overview',
+
+    // Meta v2 UI state (Campaign Workspace)
+    selectedCampaignV2Id: null,
+    selectedAdSetId: null,
+    selectedAdId: null,
+    campaignV2Filter: { search: '', status: '', objective: '' },
+    workspaceInspectorTab: 'overview',  // overview | brief | pipeline | settings
+    workspaceTreeCollapsed: {},          // { 'cmpv2_xxx': true, 'adset_xxx': false }
+    currentAdPipelineStep: 'hook',
     // Pain point filter + selection
     painPointFilter: { search: '', category: '' },
     selectedPainPointId: null,
