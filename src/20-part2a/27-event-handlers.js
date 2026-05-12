@@ -1043,16 +1043,7 @@
       $('.cp-v2-custom-placements').toggle(!this.checked);
     });
 
-    // Stub stage-4 AI buttons — wire to a real handler later, just toast for now
-    $(document).off('click.cpv2-ai-tree').on('click.cpv2-ai-tree', '[data-action="ai-generate-campaign-tree"]', function(e) {
-      e.preventDefault(); toast('AI Campaign Tree generator arrives in Stage 4', 'info');
-    });
-    $(document).off('click.cpv2-ai-sug-sets').on('click.cpv2-ai-sug-sets', '[data-action="ai-suggest-ad-sets"]', function(e) {
-      e.preventDefault(); toast('AI Ad Set suggestions arrive in Stage 4', 'info');
-    });
-    $(document).off('click.cpv2-ai-sug-ads').on('click.cpv2-ai-sug-ads', '[data-action="ai-suggest-ads"]', function(e) {
-      e.preventDefault(); toast('AI Ad suggestions arrive in Stage 4', 'info');
-    });
+    // (Stage 4: AI buttons are now handled in Part 2B — no Part 2A stubs needed.)
 
     // Stage 2: inspector tab switching
     $(document).off('click.cpv2-set-tab').on('click.cpv2-set-tab', '[data-action="set-inspector-tab"]', function(e) {

@@ -29,6 +29,16 @@
     aiImproveContent: aiImproveContent,
     showAIPreview: showAIPreview,
 
+    // Meta v2 AI (Stage 4)
+    aiGenerateCampaignTree: aiGenerateCampaignTree,
+    aiSuggestAdSets: aiSuggestAdSets, aiSuggestAds: aiSuggestAds,
+    aiGenerateAdSetBrief: aiGenerateAdSetBrief,
+    aiGenerateAdHooks: aiGenerateAdHooks,
+    aiWriteAdCopy: aiWriteAdCopy, aiImproveAdCopy: aiImproveAdCopy,
+    aiGenerateAdImagePrompt: aiGenerateAdImagePrompt,
+    aiGenerateVideoBlueprint: aiGenerateVideoBlueprint,
+    aiGenerateVideoScript: aiGenerateVideoScript,
+
     // Setup Wizard AI generators + finalize
     swAIGeneratePersonas: swAIGeneratePersonas, swAIGeneratePainPoints: swAIGeneratePainPoints,
     swAIGenerateMessages: swAIGenerateMessages, swAIGenerateStylesFormats: swAIGenerateStylesFormats,

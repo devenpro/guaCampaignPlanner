@@ -345,6 +345,38 @@
       toast('Reference image removed', 'success');
     });
 
+    // --- Stage 4: Meta v2 AI buttons (replace Stage 1/2 stubs) ---
+    $(document).off('click.cp2b-ai-tree').on('click.cp2b-ai-tree', '[data-action="ai-generate-campaign-tree"]', function(e) {
+      e.preventDefault(); aiGenerateCampaignTree();
+    });
+    $(document).off('click.cp2b-ai-sug-sets').on('click.cp2b-ai-sug-sets', '[data-action="ai-suggest-ad-sets"]', function(e) {
+      e.preventDefault(); aiSuggestAdSets($(this).data('campaign-id'));
+    });
+    $(document).off('click.cp2b-ai-sug-ads').on('click.cp2b-ai-sug-ads', '[data-action="ai-suggest-ads"]', function(e) {
+      e.preventDefault(); aiSuggestAds($(this).data('ad-set-id'));
+    });
+    $(document).off('click.cp2b-ai-set-brief').on('click.cp2b-ai-set-brief', '[data-action="ai-generate-ad-set-brief"]', function(e) {
+      e.preventDefault(); aiGenerateAdSetBrief($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-hooks').on('click.cp2b-ai-hooks', '[data-action="ai-generate-ad-hooks"]', function(e) {
+      e.preventDefault(); aiGenerateAdHooks($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-copy').on('click.cp2b-ai-copy', '[data-action="ai-write-ad-copy"]', function(e) {
+      e.preventDefault(); aiWriteAdCopy($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-improve').on('click.cp2b-ai-improve', '[data-action="ai-improve-ad-copy"]', function(e) {
+      e.preventDefault(); aiImproveAdCopy($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-img-prompt').on('click.cp2b-ai-img-prompt', '[data-action="ai-generate-ad-image-prompt"]', function(e) {
+      e.preventDefault(); aiGenerateAdImagePrompt($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-video-bp').on('click.cp2b-ai-video-bp', '[data-action="ai-generate-video-blueprint"]', function(e) {
+      e.preventDefault(); aiGenerateVideoBlueprint($(this).data('id'));
+    });
+    $(document).off('click.cp2b-ai-video-scr').on('click.cp2b-ai-video-scr', '[data-action="ai-generate-video-script"]', function(e) {
+      e.preventDefault(); aiGenerateVideoScript($(this).data('id'));
+    });
+
     console.log('[CP] Part 2B event handlers ready');
   }
 

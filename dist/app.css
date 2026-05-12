@@ -1,4 +1,4 @@
-/* Campaign Planner — built from 45 source files (see src/) */
+/* Campaign Planner — built from 46 source files (see src/) */
 
 /* ===== src/styles/10-part1/00-header.css ===== */
 /**
@@ -1932,6 +1932,72 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
   font-size: 11px;
   color: var(--cp-text-muted);
   margin-top: 2px;
+}
+
+/* ===== src/styles/20-part2/09c-ai-tree-preview.css ===== */
+/* ==========================================================
+   Meta v2 AI tree preview modal (Stage 4)
+   ========================================================== */
+
+.cp-tree-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cp-tree-preview-campaign,
+.cp-tree-preview-ad-set {
+  border: 1px solid var(--cp-border-light);
+  border-radius: var(--cp-radius-sm);
+  padding: var(--cp-space-2);
+  background: var(--cp-white);
+}
+.cp-tree-preview-ad-set {
+  margin-left: var(--cp-space-4);
+  margin-top: 6px;
+}
+.cp-tree-preview-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px;
+  border-radius: var(--cp-radius-sm);
+  cursor: pointer;
+  transition: background 120ms;
+}
+.cp-tree-preview-row:hover {
+  background: var(--cp-gray-50);
+}
+.cp-tree-preview-row-ad {
+  margin-left: var(--cp-space-4);
+  border-left: 2px solid var(--cp-border-light);
+  padding-left: 12px;
+}
+.cp-tree-preview-row input[type="checkbox"] {
+  margin-top: 4px;
+  flex-shrink: 0;
+  accent-color: var(--cp-primary);
+}
+.cp-tree-preview-title {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--cp-text-primary);
+}
+.cp-tree-preview-meta {
+  font-size: 11px;
+  color: var(--cp-text-muted);
+  margin-top: 2px;
+}
+.cp-tree-preview-desc {
+  font-size: 12px;
+  color: var(--cp-text-secondary);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+.cp-tree-preview-hook {
+  font-style: italic;
+  color: var(--cp-primary);
+  font-size: 12px;
+  margin-top: 4px;
 }
 
 /* ===== src/styles/20-part2/10-ai-research-panel.css ===== */
