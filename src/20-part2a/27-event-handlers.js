@@ -811,17 +811,130 @@
       if (typeof R.swAIGenerateStylesFormats === 'function') R.swAIGenerateStylesFormats();
       else toast('AI not ready — please wait for the page to fully load.', 'warning');
     });
-    $(document).off('click.cp2a-sw-combo-toggle').on('click.cp2a-sw-combo-toggle', '[data-action="sw-combo-toggle"]', function(e) {
+    $(document).off('click.cp2a-sw-gen-tree').on('click.cp2a-sw-gen-tree', '[data-action="sw-ai-gen-campaign-tree"]', function(e) {
       e.preventDefault();
-      var idx = parseInt($(this).data('idx'), 10);
-      var combos = setupWizardState.combos;
-      if (!combos || isNaN(idx) || !combos[idx]) return;
-      combos[idx].selected = !combos[idx].selected;
+      if (setupWizardState.aiLoading) return;
+      setupWizardState._campaignTreeContext = $('#swCampaignTreeContext').val() || '';
+      // Capture any pending form values (campaign.name etc.) before re-rendering
+      swCollectFields();
+      setupWizardState.stepGenerated[7] = false;
+      var R = window._cpRenderers || {};
+      if (typeof R.swAIGenerateCampaignTree === 'function') R.swAIGenerateCampaignTree();
+      else toast('AI not ready — please wait for the page to fully load.', 'warning');
+    });
+    $(document).off('click.cp2a-sw-ai-cancel').on('click.cp2a-sw-ai-cancel', '[data-action="sw-ai-cancel"]', function(e) {
+      e.preventDefault();
+      swCancelAIGeneration();
+    });
+    $(document).off('click.cp2a-sw-ai-error-dismiss').on('click.cp2a-sw-ai-error-dismiss', '[data-action="sw-ai-error-dismiss"]', function(e) {
+      e.preventDefault();
+      setupWizardState.aiError = '';
       refreshSetupWizard();
     });
-    $(document).off('click.cp2a-sw-regen-combos').on('click.cp2a-sw-regen-combos', '[data-action="sw-regen-combos"]', function(e) {
+    $(document).off('click.cp2a-sw-ai-retry').on('click.cp2a-sw-ai-retry', '[data-action="sw-ai-retry-step"]', function(e) {
       e.preventDefault();
-      _swAutoGenerateCombos();
+      var n = parseInt($(this).data('step'), 10);
+      if (!isNaN(n)) swRetryStep(n);
+    });
+    $(document).off('click.cp2a-sw-step7-mode').on('click.cp2a-sw-step7-mode', '[data-action="sw-step7-mode"]', function(e) {
+      e.preventDefault();
+      var mode = $(this).data('mode');
+      if (mode === 'ai' || mode === 'manual') {
+        setupWizardState._step7Mode = mode;
+        refreshSetupWizard();
+      }
+    });
+    // --- Step 7 tree toggle handlers ---
+    $(document).off('click.cp2a-sw-tree-set').on('click.cp2a-sw-tree-set', '[data-action="sw-tree-ad-set-toggle"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var i = parseInt($(this).data('set-idx'), 10);
+      var sets = setupWizardState.ad_sets || [];
+      if (isNaN(i) || !sets[i]) return;
+      var newVal = !sets[i]._selected;
+      sets[i]._selected = newVal;
+      // Cascade to children
+      if (!newVal) {
+        (sets[i].ads || []).forEach(function(a) { a._selected = false; });
+      } else {
+        // Re-enable any unselected ads when set is re-enabled
+        (sets[i].ads || []).forEach(function(a) { if (a._selected === false) a._selected = true; });
+      }
+      refreshSetupWizard();
+    });
+    $(document).off('click.cp2a-sw-tree-ad').on('click.cp2a-sw-tree-ad', '[data-action="sw-tree-ad-toggle"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var i = parseInt($(this).data('set-idx'), 10);
+      var j = parseInt($(this).data('ad-idx'), 10);
+      var sets = setupWizardState.ad_sets || [];
+      if (isNaN(i) || isNaN(j) || !sets[i] || !sets[i].ads || !sets[i].ads[j]) return;
+      sets[i].ads[j]._selected = !sets[i].ads[j]._selected;
+      // Re-enable parent if a child was just enabled
+      if (sets[i].ads[j]._selected && !sets[i]._selected) sets[i]._selected = true;
+      refreshSetupWizard();
+    });
+    $(document).off('click.cp2a-sw-tree-expand').on('click.cp2a-sw-tree-expand', '[data-action="sw-tree-expand"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var key = $(this).data('key');
+      if (!key) return;
+      setupWizardState._expandedCards[key] = !setupWizardState._expandedCards[key];
+      refreshSetupWizard();
+    });
+    // Manual-mode ad-set field updates (write directly to state.ad_sets[i].field)
+    $(document).off('change.cp2a-sw-manual-set').on('change.cp2a-sw-manual-set', '[data-sw-set-field]', function() {
+      var i = parseInt($(this).data('set-idx'), 10);
+      var field = $(this).data('sw-set-field');
+      var sets = setupWizardState.ad_sets || [];
+      if (isNaN(i) || !sets[i] || !field) return;
+      var val = $(this).val();
+      if (field === 'persona_idx') val = parseInt(val, 10);
+      sets[i][field] = val;
+    });
+    $(document).off('click.cp2a-sw-manual-add-set').on('click.cp2a-sw-manual-add-set', '[data-action="sw-manual-add-ad-set"]', function(e) {
+      e.preventDefault();
+      var state = setupWizardState;
+      state.ad_sets = state.ad_sets || [];
+      var n = state.ad_sets.length + 1;
+      state.ad_sets.push({
+        name: 'Ad Set ' + n,
+        persona_idx: 0,
+        audience_overrides: '',
+        optimization_goal: 'OFFSITE_CONVERSIONS',
+        billing_event: 'IMPRESSIONS',
+        attribution_setting: '7d_click',
+        brief: { creative_direction: '', hook_angles: [], message_idx_list: [], style_idx_list: [], format_idx_list: [], ai_notes: '' },
+        ads: [{
+          name: 'Ad 1', creative_type: 'single_image',
+          hook: { text: '', type: 'direct' },
+          creative: { primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '' },
+          media: { image_brief: '', image_prompt: '', video_concept: '' },
+          _selected: true
+        }],
+        _selected: true
+      });
+      refreshSetupWizard();
+    });
+    $(document).off('click.cp2a-sw-manual-add-ad').on('click.cp2a-sw-manual-add-ad', '[data-action="sw-manual-add-ad"]', function(e) {
+      e.preventDefault();
+      var i = parseInt($(this).data('set-idx'), 10);
+      var sets = setupWizardState.ad_sets || [];
+      if (isNaN(i) || !sets[i]) return;
+      sets[i].ads = sets[i].ads || [];
+      sets[i].ads.push({
+        name: 'Ad ' + (sets[i].ads.length + 1), creative_type: 'single_image',
+        hook: { text: '', type: 'direct' },
+        creative: { primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '' },
+        media: { image_brief: '', image_prompt: '', video_concept: '' },
+        _selected: true
+      });
+      refreshSetupWizard();
+    });
+    $(document).off('click.cp2a-sw-manual-del-set').on('click.cp2a-sw-manual-del-set', '[data-action="sw-manual-delete-ad-set"]', function(e) {
+      e.preventDefault();
+      var i = parseInt($(this).data('set-idx'), 10);
+      var sets = setupWizardState.ad_sets || [];
+      if (isNaN(i) || !sets[i]) return;
+      sets.splice(i, 1);
+      refreshSetupWizard();
     });
     $(document).off('click.cp2a-sw-launch').on('click.cp2a-sw-launch', '[data-action="sw-launch"]', function(e) {
       e.preventDefault();
@@ -929,7 +1042,90 @@
   function setupMetaV2EventHandlers() {
     // List view + workspace navigation
     $(document).off('click.cpv2-new-campaign').on('click.cpv2-new-campaign', '[data-action="new-campaign-v2"]', function(e) {
-      e.preventDefault(); openMetaCampaignModal();
+      e.preventDefault();
+      // Open the multi-step New Campaign Wizard instead of the legacy modal
+      if (typeof openNewCampaignWizard === 'function') openNewCampaignWizard();
+      else openMetaCampaignModal();
+    });
+
+    // --- New Campaign Wizard event wiring ---
+    $(document).off('click.ncw-next').on('click.ncw-next', '[data-action="ncw-next"]', function(e) { e.preventDefault(); ncwGoNext(); });
+    $(document).off('click.ncw-back').on('click.ncw-back', '[data-action="ncw-back"]', function(e) { e.preventDefault(); ncwGoBack(); });
+    $(document).off('click.ncw-goto').on('click.ncw-goto', '[data-action="ncw-goto"]', function(e) {
+      e.preventDefault();
+      var n = parseInt($(this).data('step'), 10);
+      if (!isNaN(n)) ncwGotoStep(n);
+    });
+    $(document).off('click.ncw-close').on('click.ncw-close', '[data-action="ncw-close"]', function(e) { e.preventDefault(); ncwClose(); });
+    $(document).off('click.ncw-launch').on('click.ncw-launch', '[data-action="ncw-launch"]', function(e) { e.preventDefault(); ncwLaunch(); });
+    $(document).off('click.ncw-error-dismiss').on('click.ncw-error-dismiss', '[data-action="ncw-error-dismiss"]', function(e) {
+      e.preventDefault(); ncwState.aiError = ''; refreshNCW();
+    });
+    $(document).off('click.ncw-ai-cancel').on('click.ncw-ai-cancel', '[data-action="ncw-ai-cancel"]', function(e) {
+      e.preventDefault();
+      var p2b = window._cpPart2B;
+      if (p2b && p2b.LLMService && typeof p2b.LLMService.abortAction === 'function') p2b.LLMService.abortAction(ncwState.aiActionId || 'ncw-ai');
+      ncwState.aiLoading = false; ncwState.aiActionId = ''; ncwState.aiError = 'Generation cancelled.';
+      refreshNCW();
+    });
+    $(document).off('click.ncw-suggest-sets').on('click.ncw-suggest-sets', '[data-action="ncw-ai-suggest-sets"]', function(e) {
+      e.preventDefault();
+      var R = window._cpRenderers || {};
+      if (typeof R.ncwAISuggestAdSets === 'function') R.ncwAISuggestAdSets();
+    });
+    $(document).off('click.ncw-suggest-ads').on('click.ncw-suggest-ads', '[data-action="ncw-ai-suggest-ads"]', function(e) {
+      e.preventDefault();
+      var i = parseInt($(this).data('set-idx'), 10);
+      var R = window._cpRenderers || {};
+      if (typeof R.ncwAISuggestAds === 'function' && !isNaN(i)) R.ncwAISuggestAds(i);
+    });
+    $(document).off('click.ncw-add-set').on('click.ncw-add-set', '[data-action="ncw-add-ad-set"]', function(e) { e.preventDefault(); ncwAddAdSetManual(); });
+    $(document).off('click.ncw-add-ad').on('click.ncw-add-ad', '[data-action="ncw-add-ad"]', function(e) {
+      e.preventDefault();
+      var i = parseInt($(this).data('set-idx'), 10);
+      if (!isNaN(i)) ncwAddAdManual(i);
+    });
+    $(document).off('click.ncw-set-toggle').on('click.ncw-set-toggle', '[data-action="ncw-set-toggle"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var i = parseInt($(this).data('set-idx'), 10);
+      var s = (ncwState.ad_sets || [])[i]; if (!s) return;
+      s._selected = !s._selected;
+      refreshNCW();
+    });
+    $(document).off('click.ncw-set-delete').on('click.ncw-set-delete', '[data-action="ncw-set-delete"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var i = parseInt($(this).data('set-idx'), 10);
+      if (!isNaN(i) && ncwState.ad_sets) {
+        ncwState.ad_sets.splice(i, 1);
+        refreshNCW();
+      }
+    });
+    $(document).off('click.ncw-ad-toggle').on('click.ncw-ad-toggle', '[data-action="ncw-ad-toggle"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var i = parseInt($(this).data('set-idx'), 10);
+      var j = parseInt($(this).data('ad-idx'), 10);
+      var s = (ncwState.ad_sets || [])[i]; if (!s || !s.ads || !s.ads[j]) return;
+      s.ads[j]._selected = !s.ads[j]._selected;
+      refreshNCW();
+    });
+    $(document).off('click.ncw-ad-delete').on('click.ncw-ad-delete', '[data-action="ncw-ad-delete"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var i = parseInt($(this).data('set-idx'), 10);
+      var j = parseInt($(this).data('ad-idx'), 10);
+      var s = (ncwState.ad_sets || [])[i]; if (!s || !s.ads) return;
+      s.ads.splice(j, 1);
+      refreshNCW();
+    });
+    $(document).off('click.ncw-tab').on('click.ncw-tab', '[data-action="ncw-tab"]', function(e) {
+      e.preventDefault();
+      var t = parseInt($(this).data('tab'), 10);
+      if (!isNaN(t)) { ncwState._activeAdSetTab = t; refreshNCW(); }
+    });
+    $(document).off('change.ncw-set-field').on('change.ncw-set-field', '[data-ncw-set-field]', function() {
+      var i = parseInt($(this).data('set-idx'), 10);
+      var field = $(this).data('ncw-set-field');
+      var s = (ncwState.ad_sets || [])[i]; if (!s || !field) return;
+      s[field] = $(this).val();
     });
     $(document).off('click.cpv2-open-campaign').on('click.cpv2-open-campaign', '[data-action="open-campaign-v2"]', function(e) {
       e.preventDefault(); e.stopPropagation();

@@ -1,4 +1,4 @@
-/* Campaign Planner — built from 97 source files (see src/) */
+/* Campaign Planner — built from 99 source files (see src/) */
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -52,12 +52,11 @@
     'messages':          { order: 4,  label: 'Messages',          icon: 'comments',           group: 'library', description: 'Message library' },
     'styles':            { order: 5,  label: 'Styles',            icon: 'palette',            group: 'library', description: 'Creative styles' },
     'formats':           { order: 6,  label: 'Formats',           icon: 'clapperboard',       group: 'library', description: 'Visual formats' },
-    'recipes':           { order: 7,  label: 'Recipes',           icon: 'shuffle',            group: 'core',    description: 'Creative recipes (legacy)', legacy: true },
-    'campaigns':         { order: 8,  label: 'Campaigns (v1)',    icon: 'bullhorn',           group: 'core',    description: 'Legacy campaigns',          legacy: true },
-    // Meta v2 — the new working surface. Sidebar shows these when
-    // S.meta.setup.meta_v2 === true.
-    'meta_campaigns':    { order: 7,  label: 'Campaigns',         icon: 'bullhorn',           group: 'core',    description: 'Meta Campaigns',            metaV2: true },
-    'campaign_workspace':{ order: 8,  label: 'Campaign Workspace',icon: 'sitemap',            group: 'core',    description: 'Campaign → Ad Set → Ad',    metaV2: true, hidden: true },
+    'recipes':           { order: 99, label: 'Recipes',           icon: 'shuffle',            group: 'core',    description: 'Creative recipes (legacy)', legacy: true },
+    'campaigns':         { order: 99, label: 'Campaigns (v1)',    icon: 'bullhorn',           group: 'core',    description: 'Legacy campaigns',          legacy: true },
+    // Meta v2 — the only working surface. Always shown.
+    'meta_campaigns':    { order: 7,  label: 'Campaigns',         icon: 'bullhorn',           group: 'core',    description: 'Meta Campaigns' },
+    'campaign_workspace':{ order: 8,  label: 'Campaign Workspace',icon: 'sitemap',            group: 'core',    description: 'Campaign → Ad Set → Ad',    hidden: true },
     'calendar':          { order: 9,  label: 'Calendar',          icon: 'calendar',           group: 'core',    description: 'Timeline view' },
     'research':          { order: 10, label: 'Research Lab',      icon: 'flask',              group: 'tools',   description: 'AI research hub' },
     'images':            { order: 11, label: 'Images',            icon: 'images',             group: 'tools',   description: 'Reference images' },
@@ -961,9 +960,8 @@
       workspace: { name: '', description: '', created: new Date().toISOString() },
       setup: {
         product_name: '', objective: '', custom_instructions: '', setup_complete: false,
-        // Meta v2 gate: false = old recipe-centric UI; true = new Workspace.
-        // Flipped by the Stage 6 migration wizard.
-        meta_v2: false,
+        // Meta v2 is the only supported surface — always on for new workspaces.
+        meta_v2: true,
         migrated_to_v2: false
       },
       settings: {
@@ -1301,8 +1299,9 @@
     var m = S.meta;
     m.workspace = m.workspace || { name: '', description: '', created: new Date().toISOString() };
     m.setup = m.setup || { product_name: '', objective: '', custom_instructions: '', setup_complete: false };
-    // Meta v2 setup flags (idempotent — don't clobber existing values)
-    if (typeof m.setup.meta_v2 !== 'boolean') m.setup.meta_v2 = false;
+    // Meta v2 is the only supported surface. Default true for new and existing
+    // workspaces. Existing v1 data is preserved but no longer visible.
+    if (m.setup.meta_v2 !== true) m.setup.meta_v2 = true;
     if (typeof m.setup.migrated_to_v2 !== 'boolean') m.setup.migrated_to_v2 = false;
     m.settings = m.settings || {};
     m.settings.timezone = m.settings.timezone || 'Asia/Kolkata';
@@ -2024,13 +2023,11 @@
       html += '<div class="cp-nav-group">';
       html += '<div class="cp-nav-group-label">' + esc(grp.label) + '</div>';
 
-      var metaV2 = !!(S.meta && S.meta.setup && S.meta.setup.meta_v2);
       for (var key in APP_VIEWS) {
         var v = APP_VIEWS[key];
         if (v.group !== gk) continue;
         if (v.hidden) continue;                       // never in sidebar (e.g. campaign_workspace)
-        if (v.metaV2 && !metaV2) continue;            // gated to v2-enabled workspaces
-        if (v.legacy && metaV2) continue;             // hide legacy entries once v2 is on
+        if (v.legacy) continue;                       // legacy v1 surfaces are gone — always hide
         var active = S.currentView === key ? ' cp-nav-item-active' : '';
         var badgeHtml = renderSidebarBadge(key);
         html += '<a href="#' + key + '" class="cp-nav-item' + active + '" data-view="' + key + '">';
@@ -2150,8 +2147,9 @@
   function renderDashboardView() {
     var html = '<div class="cp-view cp-view-dashboard">';
 
-    // Check if library is empty → show onboarding
-    if (S.totalPersonas === 0 && S.totalMessages === 0 && S.totalRecipes === 0) {
+    var camps = getAllCampaignsV2 ? getAllCampaignsV2() : [];
+    var libraryEmpty = S.totalPersonas === 0 && S.totalMessages === 0;
+    if (libraryEmpty && camps.length === 0) {
       html += renderDashOnboarding();
     } else {
       html += renderDashPopulated();
@@ -2165,32 +2163,25 @@
     var html = '<div class="cp-dash-onboarding">';
     html += '<div class="cp-dash-onboarding-header">';
     html += '<div class="cp-dash-onboarding-icon">' + icon('bullseye') + '</div>';
-    html += '<h1>Start Building Your Creative Library</h1>';
-    html += '<p>Build the four dimensions of creative diversity, then mix them into unique ad recipes. Start with personas — or jump to any step.</p>';
+    html += '<h1>Build Your First Meta Campaign</h1>';
+    html += '<p>Run the Setup Wizard to scaffold your library and your first Campaign + Ad Sets + Ads in one guided flow. Or jump straight to creating a Campaign.</p>';
     html += '</div>';
 
-    // 4-step guide
+    // 3-step guide tuned for Meta v2
     html += '<div class="cp-dash-steps">';
     var steps = [
-      { num: '1', label: 'Create Personas', desc: 'Define who you speak to', dim: 'persona', view: 'personas' },
-      { num: '2', label: 'Add Messages', desc: 'Define what you say', dim: 'message', view: 'messages' },
-      { num: '3', label: 'Set Styles & Formats', desc: 'Define how it looks & feels', dim: 'style', view: 'styles' },
-      { num: '4', label: 'Generate Recipes', desc: 'Mix & match combinations', dim: 'format', view: 'recipes' }
+      { num: '1', label: 'Run Setup Wizard',  desc: 'Personas, messages, and a starter Campaign — all from AI', action: 'open-setup-wizard',     icon: 'wand-magic',  color: '#9334e9' },
+      { num: '2', label: 'New Campaign',      desc: 'Skip setup — go straight to the Campaign Wizard',           action: 'new-campaign-v2',     icon: 'bullhorn',    color: '#1a73e8' },
+      { num: '3', label: 'Open Research Lab', desc: 'Browse and refine library entities individually',           action: 'go-view',             view:  'research',   icon: 'flask',       color: '#0d904f' }
     ];
     for (var i = 0; i < steps.length; i++) {
       var st = steps[i];
-      var dim = DIMENSIONS[st.dim];
-      html += '<div class="cp-dash-step-card" data-action="go-view" data-view="' + st.view + '">';
-      html += '<div class="cp-dash-step-num" style="background:' + dim.color + '15;color:' + dim.color + '">' + st.num + '</div>';
+      html += '<div class="cp-dash-step-card" data-action="' + esc(st.action) + '"' + (st.view ? ' data-view="' + esc(st.view) + '"' : '') + '>';
+      html += '<div class="cp-dash-step-num" style="background:' + st.color + '15;color:' + st.color + '">' + icon(st.icon) + '</div>';
       html += '<div class="cp-dash-step-label">' + esc(st.label) + '</div>';
       html += '<div class="cp-dash-step-desc">' + esc(st.desc) + '</div>';
       html += '</div>';
     }
-    html += '</div>';
-
-    // Research Lab shortcut
-    html += '<div class="cp-dash-onboarding-actions">';
-    html += '<button class="cp-btn cp-btn-ai" data-action="go-view" data-view="research">' + icon('sparkles') + ' Or use AI Research Lab to build everything at once</button>';
     html += '</div>';
 
     html += '</div>';
@@ -2200,20 +2191,16 @@
   function renderDashPopulated() {
     var html = '';
 
-    // View header
-    var v2 = isMetaV2Enabled();
+    // View header — Meta v2 is the only mode
     html += '<div class="cp-view-header"><div class="cp-view-header-left"><h1>' + icon('chart-pie') + ' Dashboard</h1></div>';
     html += '<div class="cp-view-header-right">';
-    if (v2) {
-      html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-campaign-tree">' + icon('wand-magic') + ' Generate Campaign</button>';
-    } else {
-      html += '<button class="cp-btn cp-btn-ai" data-action="open-campaign-wizard">' + icon('wand-magic') + ' New Campaign</button>';
-    }
+    html += '<button class="cp-btn cp-btn-ai" data-action="new-campaign-v2">' + icon('wand-magic') + ' New Campaign</button>';
+    html += '<button class="cp-btn cp-btn-outline" data-action="ai-generate-campaign-tree">' + icon('sparkles') + ' Quick draft from brief</button>';
     html += '<button class="cp-btn cp-btn-outline" data-action="go-view" data-view="research">' + icon('flask') + ' Research Lab</button>';
     html += '</div></div>';
 
-    // Meta v2 widget (only when enabled)
-    if (v2) html += renderDashMetaV2Widget();
+    // Meta v2 widget (Campaigns / Ad Sets / Ads rollups)
+    html += renderDashMetaV2Widget();
 
     // Continue working card (last edited recipe)
     var lastRecipe = (S.data.recipes || []).slice().sort(function(a, b) { return (b.updated || '') > (a.updated || '') ? 1 : -1; })[0];
@@ -9695,54 +9682,47 @@
   // ============================================================
 
   // --- State ---
-  var setupWizardState = {
-    step: 1,
-    aiLoading: false,
-    stepGenerated: {},   // { 3: true } — AI has been triggered for this step
-    stepSkipped: {},     // { 4: true } — user explicitly skipped
-    _expandedCards: {},  // { 'persona_2': true } — expanded detail cards
-    _ppActiveTab: 0,     // active persona tab on Step 4
-
-    workspace: { name: '', description: '', product_name: '', objective: '',
-                 brand_voice: '', target_audience: '', custom_instructions: '' },
-    aiConfig: { provider: '', model: '', tested: false },
-
-    personas:    [],  // [{ name, description, demographics:{}, psychographics:{}, _selected }]
-    pain_points: [],  // [{ pain_point, solution, category, _persona_idx, _selected }]
-    messages:    [],  // [{ title, body, theme, funnel_stages:[], hooks:[], _selected }]
-    styles:      [],  // [{ name, description, _selected }]
-    formats:     [],  // [{ name, description, category, _selected }]
-
-    campaign: { name: '', objective: '', date_start: '', date_end: '',
-                budget_notes: '', ai_instructions: '', default_media_type: 'image', default_priority: 'normal' },
-    combos: [],         // [{ p_idx, m_idx, s_idx, f_idx, title, selected }]
-
-    created: { personaIds: [], painPointIds: [], messageIds: [],
-               styleIds: [], formatIds: [], campaignId: '', recipeIds: [] },
-    finalizing: false
-  };
+  // Singleton object. NEVER reassign — always mutate via _swReplaceState() so the
+  // exported reference in window._cpPart2A.setupWizardState stays in sync with
+  // Part 2B's AI generators (which read it as a snapshot).
+  var setupWizardState = {};
 
   var SW_STEPS = [
-    { num: 1, label: 'Workspace',       sublabel: 'Brand & product',      phase: 'a', icon: 'building' },
-    { num: 2, label: 'AI Setup',        sublabel: 'Configure provider',   phase: 'a', icon: 'robot' },
-    { num: 3, label: 'Personas',        sublabel: 'Target audiences',     phase: 'b', icon: 'users' },
-    { num: 4, label: 'Pain Points',     sublabel: 'Audience challenges',  phase: 'b', icon: 'bolt' },
-    { num: 5, label: 'Messages',        sublabel: 'Ad angles & hooks',    phase: 'b', icon: 'comment-dots' },
-    { num: 6, label: 'Styles & Formats', sublabel: 'Creative approach',   phase: 'b', icon: 'palette' },
-    { num: 7, label: 'First Campaign',  sublabel: 'Campaign + recipes',   phase: 'c', icon: 'bullseye' },
-    { num: 8, label: 'Review',          sublabel: 'Launch your planner',  phase: 'c', icon: 'rocket' }
+    { num: 1, label: 'Workspace',        sublabel: 'Brand & product',      phase: 'a', icon: 'building' },
+    { num: 2, label: 'AI Setup',         sublabel: 'Configure provider',   phase: 'a', icon: 'robot' },
+    { num: 3, label: 'Personas',         sublabel: 'Target audiences',     phase: 'b', icon: 'users' },
+    { num: 4, label: 'Pain Points',      sublabel: 'Audience challenges',  phase: 'b', icon: 'bolt' },
+    { num: 5, label: 'Messages',         sublabel: 'Ad angles & hooks',    phase: 'b', icon: 'comment-dots' },
+    { num: 6, label: 'Styles & Formats', sublabel: 'Creative approach',    phase: 'b', icon: 'palette' },
+    { num: 7, label: 'Campaign Tree',    sublabel: 'Campaign + ad sets',   phase: 'c', icon: 'sitemap' },
+    { num: 8, label: 'Review',           sublabel: 'Launch your workspace',phase: 'c', icon: 'rocket' }
   ];
 
   var SW_PHASE_LABELS = { a: 'Phase A — Foundation', b: 'Phase B — Library', c: 'Phase C — Campaign' };
 
+  // Volatile keys excluded from session persistence (re-derived each run)
+  var SW_VOLATILE_KEYS = ['aiLoading', 'aiActionId', 'aiStartedAt', 'aiError'];
+
   // --- State persistence (session storage) ---
   function swSaveSession() {
-    try { sessionStorage.setItem('cp_sw_state', JSON.stringify(setupWizardState)); } catch(e) {}
+    try {
+      var clone = $.extend(true, {}, setupWizardState);
+      for (var i = 0; i < SW_VOLATILE_KEYS.length; i++) delete clone[SW_VOLATILE_KEYS[i]];
+      sessionStorage.setItem('cp_sw_state', JSON.stringify(clone));
+    } catch(e) {}
   }
   function swLoadSession() {
     try {
       var saved = sessionStorage.getItem('cp_sw_state');
-      if (saved) { var parsed = JSON.parse(saved); if (parsed && parsed.step) return parsed; }
+      if (saved) {
+        var parsed = JSON.parse(saved);
+        if (parsed && parsed.step) {
+          // Merge over fresh defaults so older sessions get any new fields
+          var merged = $.extend(true, _swFreshState(), parsed);
+          merged.aiLoading = false; merged.aiActionId = ''; merged.aiStartedAt = 0;
+          return merged;
+        }
+      }
     } catch(e) {}
     return null;
   }
@@ -9781,6 +9761,54 @@
     }
   }
 
+  // Replace properties on the singleton `setupWizardState` object instead of
+  // reassigning the variable. The exported reference in window._cpPart2A.setupWizardState
+  // is captured at module load time, so reassigning the IIFE-local variable
+  // would silently desync Part 2B (AI generators) from Part 2A (renderers).
+  function _swReplaceState(newState) {
+    var keys = Object.keys(setupWizardState);
+    for (var i = 0; i < keys.length; i++) delete setupWizardState[keys[i]];
+    var nkeys = Object.keys(newState);
+    for (var j = 0; j < nkeys.length; j++) setupWizardState[nkeys[j]] = newState[nkeys[j]];
+  }
+
+  // Forward-declared call at end of file initializes the singleton shape.
+  function _swFreshState() {
+    return {
+      step: 1,
+      aiLoading: false, aiActionId: '', aiStartedAt: 0, aiError: '',
+      stepGenerated: {}, stepSkipped: {},
+      _expandedCards: {}, _ppActiveTab: 0, _step7Mode: 'ai',
+      workspace: { name: '', description: '', product_name: '', objective: '',
+                   brand_voice: '', target_audience: '', custom_instructions: '' },
+      aiConfig: { provider: '', model: '', tested: false },
+      // Library entities — selected during steps 3-6
+      personas:    [],  // [{ name, description, demographics:{}, psychographics:{}, _selected }]
+      pain_points: [],  // [{ pain_point, solution, category, _persona_idx, _selected }]
+      messages:    [],  // [{ name, description, theme, hook_type, funnel_stage, body, _selected }]
+      styles:      [],  // [{ name, description, _selected }]
+      formats:     [],  // [{ name, description, category, _selected }]
+      // Meta v2 Campaign tree — generated in Step 7
+      campaign: {
+        name: '', description: '',
+        objective: 'OUTCOME_LEADS',
+        budget_mode: 'CBO', bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
+        daily_budget: '', lifetime_budget: '',
+        start_time: '', stop_time: '',
+        brief: '', ai_instructions: ''
+      },
+      ad_sets: [],          // [{ name, persona_idx, audience_overrides, optimization_goal, billing_event, attribution_setting, brief:{creative_direction,hook_angles,message_idx_list,style_idx_list,format_idx_list,ai_notes}, ads:[{name,creative_type,hook:{text,type},creative:{primary_text,headline,description,cta_type,cta_link},media:{image_brief,image_prompt,video_concept},_selected}], _selected }]
+      _campaignTreeContext: '',
+      created: {
+        personaIds: [], painPointIds: [], messageIds: [],
+        styleIds: [], formatIds: [],
+        campaignV2Id: '', adSetIds: [], adIds: [],
+        lastGeneratedAt: {}
+      },
+      finalizing: false, finalizeMsg: ''
+    };
+  }
+
   // --- Open wizard (entry point) ---
   function openSetupWizard(forceReset) {
     // Try to resume session unless forced reset
@@ -9793,7 +9821,7 @@
           message: 'You have an incomplete setup from a previous session (Step ' + saved.step + ' of 8). Would you like to continue where you left off?',
           confirmLabel: 'Resume',
           cancelLabel: 'Start Over',
-          onConfirm: function() { setupWizardState = saved; _renderSetupWizardDOM(); },
+          onConfirm: function() { _swReplaceState(saved); _renderSetupWizardDOM(); },
           onCancel:  function() { swClearSession(); _initFreshWizard(); }
         });
         return;
@@ -9803,21 +9831,7 @@
   }
 
   function _initFreshWizard() {
-    setupWizardState = {
-      step: 1, aiLoading: false, stepGenerated: {}, stepSkipped: {},
-      _expandedCards: {}, _ppActiveTab: 0,
-      workspace: { name: '', description: '', product_name: '', objective: '',
-                   brand_voice: '', target_audience: '', custom_instructions: '' },
-      aiConfig: { provider: '', model: '', tested: false },
-      personas: [], pain_points: [], messages: [], styles: [], formats: [],
-      campaign: { name: '', objective: '', date_start: '', date_end: '',
-                  budget_notes: '', ai_instructions: '',
-                  default_media_type: 'image', default_priority: 'normal' },
-      combos: [],
-      created: { personaIds: [], painPointIds: [], messageIds: [],
-                 styleIds: [], formatIds: [], campaignId: '', recipeIds: [] },
-      finalizing: false
-    };
+    _swReplaceState(_swFreshState());
     _renderSetupWizardDOM();
   }
 
@@ -9891,13 +9905,15 @@
     var ws          = setupWizardState;
     var currentStep = ws.step;
     // Count map: how many items are selected per step (for done badge)
+    var selSets = (ws.ad_sets || []).filter(function(s) { return s._selected; });
+    var step7Count = selSets.length;
     var stepCounts = {
       3: (ws.personas    || []).filter(function(p) { return p._selected; }).length,
       4: (ws.pain_points || []).filter(function(p) { return p._selected; }).length,
       5: (ws.messages    || []).filter(function(m) { return m._selected; }).length,
       6: (ws.styles      || []).filter(function(s) { return s._selected; }).length +
          (ws.formats     || []).filter(function(f) { return f._selected; }).length,
-      7: (ws.combos      || []).filter(function(c) { return c.selected; }).length
+      7: step7Count
     };
     var html = '';
     var lastPhase = '';
@@ -10057,9 +10073,19 @@
       }
     }
     if (n === 7) {
-      if (!ws.campaign.name.trim()) return { valid: false, message: 'Please enter a campaign name.' };
-      if (ws.combos.filter(function(c) { return c.selected; }).length === 0) {
-        return { valid: false, message: 'Please select at least one recipe combination.' };
+      if (!ws.campaign.name || !ws.campaign.name.trim()) {
+        return { valid: false, message: 'Please enter a campaign name.' };
+      }
+      var sets = (ws.ad_sets || []).filter(function(s) { return s._selected; });
+      if (sets.length === 0) {
+        return { valid: false, message: 'Please select at least one Ad Set to continue.' };
+      }
+      var anyAd = false;
+      for (var i = 0; i < sets.length; i++) {
+        if ((sets[i].ads || []).some(function(a) { return a._selected; })) { anyAd = true; break; }
+      }
+      if (!anyAd) {
+        return { valid: false, message: 'Each selected Ad Set needs at least one selected Ad.' };
       }
     }
     return { valid: true };
@@ -10116,69 +10142,74 @@
 
   // --- Auto-trigger AI for steps that support it ---
   function _swAutoTriggerAI(n) {
-    var R   = window._cpRenderers || {};
-    var cfg = setupWizardState.aiConfig;
-    // Always persist the wizard AI picker selection first so Part 2B resolves it correctly
-    if (cfg.provider && cfg.model && window._cpPart2B && window._cpPart2B.LLMService) {
-      window._cpPart2B.LLMService.savePreference('sw-ai-config', cfg.provider, cfg.model);
-    }
-    // Step 7: auto-generate combos algorithmically (no AI — always refresh on entry)
-    if (n === 7) { _swAutoGenerateCombos(); return; }
-    // All other AI steps: only generate once per wizard session
-    if (setupWizardState.stepGenerated[n]) return;
-    if (n === 3 && typeof R.swAIGeneratePersonas === 'function')       R.swAIGeneratePersonas();
-    if (n === 4 && typeof R.swAIGeneratePainPoints === 'function')     R.swAIGeneratePainPoints();
-    if (n === 5 && typeof R.swAIGenerateMessages === 'function')       R.swAIGenerateMessages();
-    if (n === 6 && typeof R.swAIGenerateStylesFormats === 'function')  R.swAIGenerateStylesFormats();
-  }
+    var R    = window._cpRenderers || {};
+    var p2b  = window._cpPart2B;
+    var cfg  = setupWizardState.aiConfig;
+    var LLM  = p2b && p2b.LLMService;
 
-  // --- Algorithmically generate recipe combos for Step 7 (no AI) ---
-  function _swAutoGenerateCombos() {
-    var state = setupWizardState;
-    // Auto-fill campaign name from product name if still blank
-    if (!state.campaign.name && state.workspace.product_name) {
-      state.campaign.name = state.workspace.product_name + ' Campaign';
+    // Persist wizard picker selection so Part 2B's resolveSelection finds it
+    if (cfg.provider && cfg.model && LLM) {
+      LLM.savePreference('sw-ai-config', cfg.provider, cfg.model);
     }
-    var selPersonas = (state.personas   || []).filter(function(p) { return p._selected; });
-    var selMessages = (state.messages   || []).filter(function(m) { return m._selected; });
-    var selStyles   = (state.styles     || []).filter(function(s) { return s._selected; });
-    var selFormats  = (state.formats    || []).filter(function(f) { return f._selected; });
 
-    if (!selPersonas.length && !selMessages.length) {
-      state.combos = [];
+    // Show inline error if AI isn't configured and the step needs it
+    if (n >= 3 && n <= 7 && LLM && !LLM.isConfigured()) {
+      setupWizardState.aiError = 'AI not configured. Go back to Step 2 (AI Setup) or configure providers in Settings → AI.';
       refreshSetupWizard();
       return;
     }
 
-    var personasToUse = selPersonas.length ? selPersonas : [null];
-    var messagesToUse = selMessages.length ? selMessages : [null];
-    var stylesToUse   = selStyles.length   ? selStyles   : [null];
-    var formatsToUse  = selFormats.length  ? selFormats  : [null];
+    // Only generate once per wizard session per step (Regenerate flips the flag)
+    if (setupWizardState.stepGenerated[n]) return;
 
-    var combos    = [];
-    var styleIdx  = 0;
-    var formatIdx = 0;
-
-    outer:
-    for (var pi = 0; pi < personasToUse.length; pi++) {
-      var msgSlice = messagesToUse.slice(0, 2); // up to 2 messages per persona
-      for (var mi = 0; mi < msgSlice.length; mi++) {
-        combos.push({
-          persona:  personasToUse[pi],
-          message:  msgSlice[mi],
-          style:    stylesToUse[styleIdx  % stylesToUse.length],
-          format:   formatsToUse[formatIdx % formatsToUse.length],
-          selected: true
-        });
-        styleIdx++;
-        formatIdx++;
-        if (combos.length >= 8) break outer;
+    if (n === 3 && typeof R.swAIGeneratePersonas       === 'function') R.swAIGeneratePersonas();
+    if (n === 4 && typeof R.swAIGeneratePainPoints     === 'function') R.swAIGeneratePainPoints();
+    if (n === 5 && typeof R.swAIGenerateMessages       === 'function') R.swAIGenerateMessages();
+    if (n === 6 && typeof R.swAIGenerateStylesFormats  === 'function') R.swAIGenerateStylesFormats();
+    if (n === 7 && typeof R.swAIGenerateCampaignTree   === 'function' && setupWizardState._step7Mode !== 'manual') {
+      // Auto-fill campaign name from product name if blank
+      if (!setupWizardState.campaign.name && setupWizardState.workspace.product_name) {
+        setupWizardState.campaign.name = setupWizardState.workspace.product_name + ' Launch';
       }
+      R.swAIGenerateCampaignTree();
     }
+  }
 
-    state.combos = combos;
+  // --- Cancel any in-flight wizard AI generation ---
+  function swCancelAIGeneration() {
+    var state = setupWizardState;
+    var aid   = state.aiActionId || 'sw-ai-config';
+    if (window._cpPart2B && window._cpPart2B.LLMService && typeof window._cpPart2B.LLMService.abortAction === 'function') {
+      window._cpPart2B.LLMService.abortAction(aid);
+    }
+    state.aiLoading = false;
+    state.aiActionId = '';
+    state.aiError = 'Generation cancelled.';
     refreshSetupWizard();
   }
+
+  // --- Retry a step's AI generation ---
+  function swRetryStep(n) {
+    setupWizardState.stepGenerated[n] = false;
+    setupWizardState.aiError = '';
+    refreshSetupWizard();
+    _swAutoTriggerAI(n);
+  }
+
+  // --- Format relative time for "Last generated" badges ---
+  function _swRelTime(ts) {
+    if (!ts) return '';
+    var diff = Date.now() - ts;
+    if (diff < 5000)      return 'just now';
+    if (diff < 60000)     return Math.round(diff / 1000) + 's ago';
+    if (diff < 3600000)   return Math.round(diff / 60000) + 'm ago';
+    if (diff < 86400000)  return Math.round(diff / 3600000) + 'h ago';
+    return new Date(ts).toLocaleString();
+  }
+
+  // Initialize singleton with fresh state shape so anything reading it before
+  // openSetupWizard runs gets a sensible object (rather than `{}`).
+  _swReplaceState(_swFreshState());
 
 
 /* ===== src/20-part2a/12-setup-wizard-steps-1-2.js ===== */
@@ -10381,6 +10412,52 @@
       + '</div>';
   }
 
+  // --- Inline diagnostics helpers (shared across Steps 3-7) ---
+
+  function _swAIErrorBanner(stepNum) {
+    var err = setupWizardState.aiError;
+    if (!err) return '';
+    var html = '<div class="cp-sw-ai-error" role="alert">';
+    html += '<div class="cp-sw-ai-error-icon">' + icon('triangle-alert') + '</div>';
+    html += '<div class="cp-sw-ai-error-body">';
+    html += '<div class="cp-sw-ai-error-title">AI generation failed</div>';
+    html += '<div class="cp-sw-ai-error-msg">' + esc(String(err)) + '</div>';
+    html += '</div>';
+    html += '<div class="cp-sw-ai-error-actions">';
+    html += '<button class="cp-btn cp-btn-sm cp-btn-outline" data-action="sw-ai-retry-step" data-step="' + stepNum + '">' + icon('rotate') + ' Retry</button>';
+    html += '<button class="cp-btn cp-btn-sm cp-btn-ghost" data-action="sw-ai-error-dismiss">' + icon('x') + ' Dismiss</button>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function _swAIEmptyAfterGenBanner(label, contextStr) {
+    var html = '<div class="cp-sw-ai-empty" role="status">';
+    html += '<div class="cp-sw-ai-empty-icon">' + icon('search') + '</div>';
+    html += '<div class="cp-sw-ai-empty-title">AI returned no ' + esc(label) + '</div>';
+    html += '<div class="cp-sw-ai-empty-msg">';
+    if (contextStr) html += 'Context used: <em>' + esc(contextStr) + '</em>. ';
+    html += 'Try adjusting the instructions above and click Regenerate.';
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function _swLastGeneratedLabel(stepNum) {
+    var ts = setupWizardState.created && setupWizardState.created.lastGeneratedAt && setupWizardState.created.lastGeneratedAt[stepNum];
+    if (!ts) return '';
+    return '<div class="cp-sw-last-gen">' + icon('clock') + ' Last generated ' + esc(_swRelTime(ts)) + '</div>';
+  }
+
+  function _swGenButton(action, generated, aiLoading) {
+    if (aiLoading) {
+      return '<button class="cp-btn cp-btn-outline" data-action="sw-ai-cancel">' + icon('x') + ' Cancel</button>';
+    }
+    return '<button class="cp-btn cp-btn-ai" data-action="' + action + '">'
+      + icon('sparkles') + ' ' + (generated ? 'Regenerate' : 'Generate with AI')
+      + '</button>';
+  }
+
   // --- Step 3: Personas ---
 
   function renderSWStep3() {
@@ -10390,23 +10467,25 @@
 
     var html = _buildSWStepHeader(
       'Target Personas',
-      'Select the audience personas that best represent your ideal customers. AI will generate options based on your workspace setup.',
+      'Select the audience personas that best represent your ideal customers. AI generates options based on your workspace setup.',
       'b'
     );
+
+    html += _swAIErrorBanner(3);
 
     // Generation bar
     html += '<div class="cp-sw-gen-bar">';
     html += '<textarea class="cp-textarea" id="swPersonaContext" rows="2"';
-    html += ' placeholder="Optional: additional context for persona generation (e.g., focus on enterprise buyers, include a tech-savvy segment)...">';
+    html += ' placeholder="Optional: additional context (e.g., focus on enterprise buyers, include a tech-savvy segment)...">';
     html += esc(ws._personaContext || '');
     html += '</textarea>';
-    html += '<button class="cp-btn cp-btn-ai" data-action="sw-ai-gen-personas"' + (ws.aiLoading ? ' disabled' : '') + '>';
-    html += icon('sparkles') + ' ' + (generated ? 'Regenerate' : 'Generate with AI');
-    html += '</button>';
+    html += _swGenButton('sw-ai-gen-personas', generated, ws.aiLoading);
     html += '</div>';
 
     if (ws.aiLoading) {
       html += _buildSWSkeletonCards(4);
+    } else if (generated && !personas.length) {
+      html += _swAIEmptyAfterGenBanner('personas', ws._personaContext || '');
     } else if (!personas.length) {
       html += '<div class="cp-sw-empty-state">';
       html += '<div class="cp-sw-empty-icon">' + icon('users') + '</div>';
@@ -10418,6 +10497,7 @@
       html += '<span class="cp-sw-sel-count' + (selCount > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
       html += selCount + ' of ' + personas.length + ' persona' + (personas.length !== 1 ? 's' : '') + ' selected';
       html += '</span>';
+      html += _swLastGeneratedLabel(3);
       html += '</div>';
       html += '<div class="cp-sw-card-grid">';
       for (var i = 0; i < personas.length; i++) {
@@ -10437,6 +10517,7 @@
 
     var tags = [];
     if (demo.age_range)  tags.push(demo.age_range);
+    if (demo.gender && demo.gender !== 'All') tags.push(demo.gender);
     if (demo.location)   tags.push(demo.location);
     if (demo.occupation) tags.push(demo.occupation);
 
@@ -10444,7 +10525,7 @@
     html += '<div class="cp-sw-sel-card-check">' + (selected ? icon('check') : '') + '</div>';
     html += '<div class="cp-sw-sel-card-title">' + esc(p.name || ('Persona ' + (idx + 1))) + '</div>';
     if (p.description) {
-      html += '<div class="cp-sw-sel-card-body">' + esc(truncate(p.description, 110)) + '</div>';
+      html += '<div class="cp-sw-sel-card-body">' + esc(truncate(p.description, 130)) + '</div>';
     }
     if (tags.length) {
       html += '<div class="cp-sw-sel-card-tags">';
@@ -10453,19 +10534,33 @@
       }
       html += '</div>';
     }
+    // Always-visible desires / fears mini-row — the most strategic fields
+    if (psych.desires || psych.fears) {
+      html += '<div class="cp-sw-sel-card-psych">';
+      if (psych.desires) {
+        html += '<div class="cp-sw-sel-card-psych-row cp-sw-sel-card-psych-row--desire">';
+        html += '<span class="cp-sw-sel-card-psych-label">' + icon('heart') + ' Wants</span>';
+        html += '<span class="cp-sw-sel-card-psych-value">' + esc(truncate(psych.desires, 90)) + '</span>';
+        html += '</div>';
+      }
+      if (psych.fears) {
+        html += '<div class="cp-sw-sel-card-psych-row cp-sw-sel-card-psych-row--fear">';
+        html += '<span class="cp-sw-sel-card-psych-label">' + icon('shield') + ' Fears</span>';
+        html += '<span class="cp-sw-sel-card-psych-value">' + esc(truncate(psych.fears, 90)) + '</span>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
     html += '<button class="cp-sw-sel-card-expand" data-action="sw-card-expand" data-key="p_' + idx + '">';
-    html += icon(expanded ? 'chevron-up' : 'chevron-down') + ' ' + (expanded ? 'Less' : 'Details');
+    html += icon(expanded ? 'chevron-up' : 'chevron-down') + ' ' + (expanded ? 'Less' : 'More details');
     html += '</button>';
 
     if (expanded) {
       html += '<div class="cp-sw-sel-card-expanded-body">';
       html += '<div class="cp-sw-sel-card-detail-grid">';
-      if (demo.gender)       html += _swDetailCell('Gender',     demo.gender);
       if (demo.income_level) html += _swDetailCell('Income',     demo.income_level);
       if (demo.education)    html += _swDetailCell('Education',  demo.education);
       if (demo.industry)     html += _swDetailCell('Industry',   demo.industry);
-      if (psych.desires)     html += _swDetailCell('Desires',    psych.desires);
-      if (psych.fears)       html += _swDetailCell('Fears',      psych.fears);
       if (psych.motivations) html += _swDetailCell('Motivations',psych.motivations);
       if (psych.values)      html += _swDetailCell('Values',     psych.values);
       html += '</div>';
@@ -10497,19 +10592,21 @@
       return html;
     }
 
+    html += _swAIErrorBanner(4);
+
     // Generation bar
     html += '<div class="cp-sw-gen-bar">';
     html += '<textarea class="cp-textarea" id="swPainPointContext" rows="2"';
-    html += ' placeholder="Optional: focus on specific challenges or industries (e.g., focus on time management struggles)...">';
+    html += ' placeholder="Optional: focus on specific challenges or industries (e.g., focus on time-management struggles)...">';
     html += esc(ws._ppContext || '');
     html += '</textarea>';
-    html += '<button class="cp-btn cp-btn-ai" data-action="sw-ai-gen-painpoints"' + (ws.aiLoading ? ' disabled' : '') + '>';
-    html += icon('sparkles') + ' ' + (generated ? 'Regenerate' : 'Generate with AI');
-    html += '</button>';
+    html += _swGenButton('sw-ai-gen-painpoints', generated, ws.aiLoading);
     html += '</div>';
 
     if (ws.aiLoading) {
       html += _buildSWSkeletonCards(6);
+    } else if (generated && !pps.length) {
+      html += _swAIEmptyAfterGenBanner('pain points', ws._ppContext || '');
     } else if (!pps.length) {
       html += '<div class="cp-sw-empty-state">';
       html += '<div class="cp-sw-empty-icon">' + icon('crosshair') + '</div>';
@@ -10547,6 +10644,7 @@
       html += '<span class="cp-sw-sel-count' + (totalSel > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
       html += totalSel + ' of ' + pps.length + ' pain point' + (pps.length !== 1 ? 's' : '') + ' selected';
       html += '</span>';
+      html += _swLastGeneratedLabel(4);
       html += '</div>';
 
       html += '<div class="cp-sw-card-grid">';
@@ -10561,24 +10659,19 @@
 
   function _buildSWPainPointCard(pp, idx) {
     var selected = pp._selected;
-    var expanded = setupWizardState._expandedCards['pp_' + idx];
 
     var html = '<div class="cp-sw-sel-card' + (selected ? ' cp-sw-sel-card--selected' : '') + '" data-idx="' + idx + '" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '">';
     html += '<div class="cp-sw-sel-card-check">' + (selected ? icon('check') : '') + '</div>';
-    html += '<div class="cp-sw-sel-card-title">' + esc(truncate(pp.pain_point || 'Pain Point', 90)) + '</div>';
-    if (pp.category) {
-      html += '<div class="cp-sw-sel-card-tags"><span class="cp-sw-sel-card-tag">' + esc(pp.category) + '</span></div>';
-    }
+    html += '<div class="cp-sw-sel-card-title">' + esc(pp.pain_point || 'Pain Point') + '</div>';
     if (pp.solution) {
-      html += '<button class="cp-sw-sel-card-expand" data-action="sw-card-expand" data-key="pp_' + idx + '">';
-      html += icon(expanded ? 'chevron-up' : 'chevron-down') + ' ' + (expanded ? 'Hide solution' : 'View solution');
-      html += '</button>';
-      if (expanded) {
-        html += '<div class="cp-sw-sel-card-expanded-body">';
-        html += '<div class="cp-sw-sel-card-detail-label">Solution / Product angle</div>';
-        html += '<div class="cp-sw-sel-card-detail-value">' + esc(pp.solution) + '</div>';
-        html += '</div>';
-      }
+      html += '<div class="cp-sw-pp-solution">';
+      html += '<span class="cp-sw-pp-solution-label">' + icon('lightbulb') + ' Solution</span>';
+      html += '<span class="cp-sw-pp-solution-value">' + esc(truncate(pp.solution, 140)) + '</span>';
+      html += '</div>';
+    }
+    if (pp.category) {
+      var catSlug = String(pp.category).toLowerCase().replace(/[^a-z]+/g, '-').replace(/^-+|-+$/g, '');
+      html += '<div class="cp-sw-sel-card-tags"><span class="cp-sw-sel-card-tag cp-sw-sel-card-tag--cat cp-sw-sel-card-tag--cat-' + esc(catSlug) + '">' + esc(pp.category) + '</span></div>';
     }
     html += '</div>';
     return html;
@@ -10603,19 +10696,21 @@
       'b'
     );
 
+    html += _swAIErrorBanner(5);
+
     // Generation bar
     html += '<div class="cp-sw-gen-bar">';
     html += '<textarea class="cp-textarea" id="swMessageContext" rows="2"';
     html += ' placeholder="Optional: focus on specific angles (e.g., emphasise ROI, use testimonial hooks)...">';
     html += esc(ws._messageContext || '');
     html += '</textarea>';
-    html += '<button class="cp-btn cp-btn-ai" data-action="sw-ai-gen-messages"' + (ws.aiLoading ? ' disabled' : '') + '>';
-    html += icon('sparkles') + ' ' + (generated ? 'Regenerate' : 'Generate with AI');
-    html += '</button>';
+    html += _swGenButton('sw-ai-gen-messages', generated, ws.aiLoading);
     html += '</div>';
 
     if (ws.aiLoading) {
       html += _buildSWSkeletonCards(4);
+    } else if (generated && !messages.length) {
+      html += _swAIEmptyAfterGenBanner('messages', ws._messageContext || '');
     } else if (!messages.length) {
       html += '<div class="cp-sw-empty-state">';
       html += '<div class="cp-sw-empty-icon">' + icon('message-square') + '</div>';
@@ -10627,6 +10722,7 @@
       html += '<span class="cp-sw-sel-count' + (selCount > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
       html += selCount + ' of ' + messages.length + ' message' + (messages.length !== 1 ? 's' : '') + ' selected';
       html += '</span>';
+      html += _swLastGeneratedLabel(5);
       html += '</div>';
       html += '<div class="cp-sw-card-grid">';
       for (var i = 0; i < messages.length; i++) {
@@ -10643,6 +10739,7 @@
     var expanded = setupWizardState._expandedCards['m_' + idx];
 
     var stageLabel = { top: 'TOFU', mid: 'MOFU', bot: 'BOFU' }[msg.funnel_stage] || msg.funnel_stage || '';
+    var funnelSlug = msg.funnel_stage ? ('--funnel-' + esc(msg.funnel_stage)) : '';
 
     var html = '<div class="cp-sw-sel-card' + (selected ? ' cp-sw-sel-card--selected' : '') + '" data-idx="' + idx + '" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '">';
     html += '<div class="cp-sw-sel-card-check">' + (selected ? icon('check') : '') + '</div>';
@@ -10650,24 +10747,28 @@
     if (msg.description) {
       html += '<div class="cp-sw-sel-card-body">' + esc(truncate(msg.description, 100)) + '</div>';
     }
+    // Always-visible body as blockquote — the actual starter copy line
+    if (msg.body) {
+      html += '<blockquote class="cp-sw-msg-body">' + esc(truncate(msg.body, 160)) + '</blockquote>';
+    }
     var tags = [];
-    if (msg.theme)      tags.push(msg.theme);
-    if (msg.hook_type)  tags.push(msg.hook_type);
-    if (stageLabel)     tags.push(stageLabel);
+    if (msg.theme)      tags.push({ label: msg.theme,     cls: 'cp-sw-sel-card-tag--theme' });
+    if (msg.hook_type)  tags.push({ label: msg.hook_type, cls: 'cp-sw-sel-card-tag--hook' });
+    if (stageLabel)     tags.push({ label: stageLabel,    cls: 'cp-sw-sel-card-tag--funnel cp-sw-sel-card-tag' + funnelSlug });
     if (tags.length) {
       html += '<div class="cp-sw-sel-card-tags">';
       for (var t = 0; t < tags.length; t++) {
-        html += '<span class="cp-sw-sel-card-tag">' + esc(tags[t]) + '</span>';
+        html += '<span class="cp-sw-sel-card-tag ' + esc(tags[t].cls) + '">' + esc(tags[t].label) + '</span>';
       }
       html += '</div>';
     }
-    if (msg.body) {
+    if (msg.body && msg.body.length > 160) {
       html += '<button class="cp-sw-sel-card-expand" data-action="sw-card-expand" data-key="m_' + idx + '">';
-      html += icon(expanded ? 'chevron-up' : 'chevron-down') + ' ' + (expanded ? 'Hide copy' : 'View copy angle');
+      html += icon(expanded ? 'chevron-up' : 'chevron-down') + ' ' + (expanded ? 'Hide full copy' : 'Show full copy');
       html += '</button>';
       if (expanded) {
         html += '<div class="cp-sw-sel-card-expanded-body">';
-        html += '<div class="cp-sw-sel-card-detail-label">Copy angle</div>';
+        html += '<div class="cp-sw-sel-card-detail-label">Full copy angle</div>';
         html += '<div class="cp-sw-sel-card-detail-value" style="white-space:pre-line">' + esc(msg.body) + '</div>';
         html += '</div>';
       }
@@ -10691,15 +10792,15 @@
       'b'
     );
 
+    html += _swAIErrorBanner(6);
+
     // Single generation bar for both styles and formats
     html += '<div class="cp-sw-gen-bar">';
     html += '<textarea class="cp-textarea" id="swStyleFormatContext" rows="2"';
     html += ' placeholder="Optional: specify platforms, formats or style direction (e.g., focus on TikTok-native, minimalist aesthetic)...">';
     html += esc(ws._styleFormatContext || '');
     html += '</textarea>';
-    html += '<button class="cp-btn cp-btn-ai" data-action="sw-ai-gen-styles-formats"' + (ws.aiLoading ? ' disabled' : '') + '>';
-    html += icon('sparkles') + ' ' + (generated ? 'Regenerate All' : 'Generate with AI');
-    html += '</button>';
+    html += _swGenButton('sw-ai-gen-styles-formats', generated, ws.aiLoading);
     html += '</div>';
 
     if (ws.aiLoading) {
@@ -10708,6 +10809,8 @@
       html += _buildSWSkeletonCards(3);
       html += _buildSWSubSection('Formats', 0, 0);
       html += _buildSWSkeletonCards(4);
+    } else if (generated && bothEmpty) {
+      html += _swAIEmptyAfterGenBanner('styles or formats', ws._styleFormatContext || '');
     } else if (bothEmpty && !generated) {
       html += '<div class="cp-sw-empty-state">';
       html += '<div class="cp-sw-empty-icon">' + icon('palette') + '</div>';
@@ -10784,101 +10887,376 @@
   // ------------------------------------------------------------------
   // SECTION 9.4d: SETUP WIZARD — STEP RENDERERS (Phase 5: Steps 7 & 8)
   // ------------------------------------------------------------------
+  //
+  // Step 7 is the Meta v2 Campaign tree (Campaign → Ad Sets → Ads). It runs in
+  // two modes: 'ai' (auto-generate the tree from the wizard's selected library
+  // entities) and 'manual' (user adds Ad Sets / Ads by hand). Both produce the
+  // same state shape so the finalize step is identity-mode-agnostic.
 
-  // --- Step 7: Campaign Setup + Recipe Combos ---
+  // --- Step 7: Campaign Tree ---
 
   function renderSWStep7() {
-    var ws     = setupWizardState;
-    var cam    = ws.campaign || {};
-    var combos = ws.combos   || [];
+    var ws       = setupWizardState;
+    var generated = ws.stepGenerated[7];
+    var aiLoading = ws.aiLoading;
+    var mode     = ws._step7Mode || 'ai';
 
     var html = _buildSWStepHeader(
-      'Campaign Setup',
-      'Name your campaign, set dates, and choose which persona-message-style combinations to build as ad recipes.',
+      'Campaign Tree',
+      'Build the Meta-shape Campaign that ships when you launch — one Campaign, 2-3 Ad Sets, 2-3 Ads each. AI drafts a starting tree from your selected library.',
       'c'
     );
 
-    // --- Campaign form ---
-    html += '<div class="cp-sw-form">';
+    html += _swAIErrorBanner(7);
 
-    html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">Campaign Name <span class="cp-required">*</span></label>';
-    html += '<input type="text" class="cp-input" data-sw-field="campaign.name"';
-    html += ' placeholder="e.g., Q3 Growth Campaign" value="' + esc(cam.name || '') + '" autocomplete="off">';
+    // Mode toggle
+    html += '<div class="cp-sw-mode-toggle">';
+    html += '<button class="cp-sw-mode-btn' + (mode === 'ai' ? ' cp-sw-mode-btn--active' : '') + '" data-action="sw-step7-mode" data-mode="ai">';
+    html += icon('sparkles') + ' AI Generated';
+    html += '</button>';
+    html += '<button class="cp-sw-mode-btn' + (mode === 'manual' ? ' cp-sw-mode-btn--active' : '') + '" data-action="sw-step7-mode" data-mode="manual">';
+    html += icon('pen-fancy') + ' Manual';
+    html += '</button>';
     html += '</div>';
 
-    html += '<div class="cp-sw-field-row">';
-    html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">Start Date</label>';
-    html += '<input type="date" class="cp-input" data-sw-field="campaign.date_start"';
-    html += ' value="' + esc(cam.date_start || '') + '">';
-    html += '</div>';
-    html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">End Date</label>';
-    html += '<input type="date" class="cp-input" data-sw-field="campaign.date_end"';
-    html += ' value="' + esc(cam.date_end || '') + '">';
-    html += '</div>';
-    html += '</div>';
+    // Generation bar (AI mode only)
+    if (mode === 'ai') {
+      html += '<div class="cp-sw-gen-bar">';
+      html += '<textarea class="cp-textarea" id="swCampaignTreeContext" rows="2"';
+      html += ' placeholder="Optional: campaign direction (e.g., \'push the &quot;ship in days not weeks&quot; angle, target enterprise + startup segments\')...">';
+      html += esc(ws._campaignTreeContext || '');
+      html += '</textarea>';
+      html += _swGenButton('sw-ai-gen-campaign-tree', generated, aiLoading);
+      html += '</div>';
+    }
 
-    html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">Budget Notes</label>';
-    html += '<input type="text" class="cp-input" data-sw-field="campaign.budget_notes"';
-    html += ' placeholder="e.g., $5,000/month" value="' + esc(cam.budget_notes || '') + '">';
-    html += '</div>';
+    // Campaign basics form (always shown)
+    html += _buildSWStep7CampaignForm(ws);
 
-    html += '</div>'; // end .cp-sw-form
+    if (aiLoading) {
+      html += _buildSWTreeSkeleton();
+      return html;
+    }
 
-    // --- Recipe combos section ---
-    var selCount = combos.filter(function(c) { return c.selected; }).length;
+    // Ad-set tree
+    var sets = ws.ad_sets || [];
 
-    html += _buildSWSubSection('Ad Recipe Combinations', selCount, combos.length);
-
-    if (!combos.length) {
+    if (mode === 'manual') {
+      html += _buildSWStep7ManualTree(ws, sets);
+    } else if (generated && !sets.length) {
+      html += _swAIEmptyAfterGenBanner('ad sets', ws._campaignTreeContext || '');
+    } else if (!sets.length) {
       html += '<div class="cp-sw-empty-state">';
-      html += '<div class="cp-sw-empty-icon">' + icon('shuffle') + '</div>';
-      html += '<p>No combinations could be generated. Go back to earlier steps and select at least one persona and one message.</p>';
+      html += '<div class="cp-sw-empty-icon">' + icon('sitemap') + '</div>';
+      html += '<p>Click <strong>Generate with AI</strong> to draft your Campaign tree — 1 Campaign + 2-3 Ad Sets + 2-3 Ads each, based on your selected library.</p>';
       html += '</div>';
     } else {
-      html += '<div class="cp-sw-card-bottom">';
-      html += '<span class="cp-sw-sel-count' + (selCount > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
-      html += selCount + ' of ' + combos.length + ' combo' + (combos.length !== 1 ? 's' : '') + ' selected';
-      html += '</span>';
-      html += '<button class="cp-btn cp-btn-sm cp-btn-outline" data-action="sw-regen-combos">';
-      html += icon('refresh-cw') + ' Regenerate';
-      html += '</button>';
-      html += '</div>';
-
-      html += '<div class="cp-sw-card-grid">';
-      for (var i = 0; i < combos.length; i++) {
-        html += _buildSWComboCard(combos[i], i);
-      }
-      html += '</div>';
+      html += _buildSWStep7AITree(ws, sets);
     }
 
     return html;
   }
 
-  function _buildSWComboCard(combo, idx) {
-    var selected = combo.selected;
-    var html = '<div class="cp-sw-combo-card' + (selected ? ' cp-sw-combo-card--selected' : '') + '" data-action="sw-combo-toggle" data-idx="' + idx + '" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '">';
-    html += '<div class="cp-sw-combo-card-header">';
-    html += '<div class="cp-sw-combo-card-check">' + (selected ? icon('check') : '') + '</div>';
-    html += '<div class="cp-sw-combo-card-title">Recipe ' + (idx + 1) + '</div>';
+  // Campaign-level form (name, objective, budget, brief)
+  function _buildSWStep7CampaignForm(ws) {
+    var cam   = ws.campaign || {};
+    var C     = Constants;
+    var html  = '<div class="cp-sw-form cp-sw-step7-form">';
+
+    html += '<div class="cp-field">';
+    html += '<label class="cp-field-label">Campaign Name <span class="cp-required">*</span></label>';
+    html += '<input type="text" class="cp-input" data-sw-field="campaign.name"';
+    html += ' placeholder="e.g., Q3 Lead Gen" value="' + esc(cam.name || '') + '" autocomplete="off">';
     html += '</div>';
-    html += '<div class="cp-sw-combo-parts">';
-    if (combo.persona) html += _swComboPart('Persona', combo.persona.name  || 'Persona');
-    if (combo.message) html += _swComboPart('Message', combo.message.name  || 'Message');
-    if (combo.style)   html += _swComboPart('Style',   combo.style.name    || 'Style');
-    if (combo.format)  html += _swComboPart('Format',  combo.format.name   || 'Format');
+
+    html += '<div class="cp-sw-field-row">';
+    html += '<div class="cp-field">';
+    html += '<label class="cp-field-label">Objective</label>';
+    html += '<select class="cp-select" data-sw-field="campaign.objective">';
+    for (var ok in C.META_OBJECTIVES) {
+      var oSel = (cam.objective === ok) ? ' selected' : (!cam.objective && ok === 'OUTCOME_LEADS' ? ' selected' : '');
+      html += '<option value="' + esc(ok) + '"' + oSel + '>' + esc(C.META_OBJECTIVES[ok].label) + '</option>';
+    }
+    html += '</select>';
     html += '</div>';
+
+    html += '<div class="cp-field">';
+    html += '<label class="cp-field-label">Budget mode</label>';
+    html += '<select class="cp-select" data-sw-field="campaign.budget_mode">';
+    for (var bmk in C.META_BUDGET_MODES) {
+      var bmSel = (cam.budget_mode === bmk) ? ' selected' : (!cam.budget_mode && bmk === 'CBO' ? ' selected' : '');
+      html += '<option value="' + esc(bmk) + '"' + bmSel + '>' + esc(C.META_BUDGET_MODES[bmk].label) + ' (' + esc(C.META_BUDGET_MODES[bmk].short) + ')</option>';
+    }
+    html += '</select>';
+    html += '</div>';
+    html += '</div>';
+
+    html += '<div class="cp-sw-field-row">';
+    html += '<div class="cp-field">';
+    html += '<label class="cp-field-label">Daily budget</label>';
+    html += '<input type="number" class="cp-input" data-sw-field="campaign.daily_budget"';
+    html += ' min="0" step="1" placeholder="0" value="' + esc(cam.daily_budget != null ? cam.daily_budget : '') + '">';
+    html += '</div>';
+    html += '<div class="cp-field">';
+    html += '<label class="cp-field-label">Start date</label>';
+    html += '<input type="date" class="cp-input" data-sw-field="campaign.start_time" value="' + esc(cam.start_time || '') + '">';
+    html += '</div>';
+    html += '<div class="cp-field">';
+    html += '<label class="cp-field-label">End date</label>';
+    html += '<input type="date" class="cp-input" data-sw-field="campaign.stop_time" value="' + esc(cam.stop_time || '') + '">';
+    html += '</div>';
+    html += '</div>';
+
+    html += '<div class="cp-field">';
+    html += '<label class="cp-field-label">Brief</label>';
+    html += '<textarea class="cp-textarea" data-sw-field="campaign.brief" rows="2"';
+    html += ' placeholder="2-3 sentence campaign brief — context for the creative team and AI assists.">';
+    html += esc(cam.brief || '');
+    html += '</textarea>';
+    html += '</div>';
+
     html += '</div>';
     return html;
   }
 
-  function _swComboPart(label, value) {
-    var html = '<div class="cp-sw-combo-part">';
-    html += '<span class="cp-sw-combo-part-label">' + esc(label) + '</span>';
-    html += '<span class="cp-sw-combo-part-value">' + esc(truncate(value, 60)) + '</span>';
+  // AI-mode tree skeleton (1 campaign + 2 sets + ~4 ads)
+  function _buildSWTreeSkeleton() {
+    var html = '<div class="cp-sw-tree-skeleton">';
+    for (var s = 0; s < 2; s++) {
+      html += '<div class="cp-sw-tree-set cp-sw-skeleton-card">';
+      html += '<div class="cp-sw-skeleton-line cp-sw-skeleton-line--title"></div>';
+      html += '<div class="cp-sw-skeleton-line"></div>';
+      for (var a = 0; a < 2; a++) {
+        html += '<div class="cp-sw-tree-ad cp-sw-skeleton-card">';
+        html += '<div class="cp-sw-skeleton-line"></div>';
+        html += '<div class="cp-sw-skeleton-line cp-sw-skeleton-line--short"></div>';
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  // AI-mode rendered tree (read-only-ish cards with selection toggles)
+  function _buildSWStep7AITree(ws, sets) {
+    var selPersonas = (ws.personas || []).filter(function(p) { return p._selected; });
+    var selMessages = (ws.messages || []).filter(function(m) { return m._selected; });
+    var totalSets = sets.filter(function(s) { return s._selected; }).length;
+    var totalAds = 0;
+    sets.forEach(function(s) { if (s._selected) totalAds += (s.ads || []).filter(function(a) { return a._selected; }).length; });
+
+    var html = '<div class="cp-sw-card-bottom">';
+    html += '<span class="cp-sw-sel-count' + (totalSets > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
+    html += 'Will create 1 Campaign · ' + totalSets + ' Ad Set' + (totalSets !== 1 ? 's' : '') + ' · ' + totalAds + ' Ad' + (totalAds !== 1 ? 's' : '');
+    html += '</span>';
+    html += _swLastGeneratedLabel(7);
+    html += '</div>';
+
+    html += '<div class="cp-sw-tree">';
+    for (var i = 0; i < sets.length; i++) {
+      html += _buildSWAdSetCard(sets[i], i, selPersonas, selMessages);
+    }
+    html += '</div>';
+
+    return html;
+  }
+
+  function _buildSWAdSetCard(adSet, idx, selPersonas, selMessages) {
+    var selected = adSet._selected;
+    var setKey = 'set_' + idx;
+    var setExpanded = setupWizardState._expandedCards[setKey];
+    var persona = (selPersonas || [])[adSet.persona_idx] || null;
+    var goal = Constants.META_OPTIMIZATION_GOALS[adSet.optimization_goal];
+    var ads = adSet.ads || [];
+    var selAds = ads.filter(function(a) { return a._selected; }).length;
+    var brief = adSet.brief || {};
+
+    var html = '<div class="cp-sw-tree-set' + (selected ? ' cp-sw-tree-set--selected' : '') + '">';
+
+    // Header row
+    html += '<div class="cp-sw-tree-set-header">';
+    html += '<button class="cp-sw-tree-check' + (selected ? ' cp-sw-tree-check--on' : '') + '" data-action="sw-tree-ad-set-toggle" data-set-idx="' + idx + '" aria-label="Toggle Ad Set">';
+    html += selected ? icon('check') : '';
+    html += '</button>';
+    html += '<div class="cp-sw-tree-set-title">';
+    html += '<div class="cp-sw-tree-set-name">' + icon('crosshairs') + ' ' + esc(adSet.name || ('Ad Set ' + (idx + 1))) + '</div>';
+    html += '<div class="cp-sw-tree-set-meta">';
+    if (persona) html += '<span class="cp-sw-tree-set-tag">' + icon('user') + ' ' + esc(truncate(persona.name || '', 28)) + '</span>';
+    if (goal)    html += '<span class="cp-sw-tree-set-tag">' + icon('bullseye') + ' ' + esc(goal.label) + '</span>';
+    html += '<span class="cp-sw-tree-set-tag">' + selAds + '/' + ads.length + ' ads selected</span>';
+    html += '</div>';
+    html += '</div>';
+    html += '<button class="cp-sw-tree-expand" data-action="sw-tree-expand" data-key="' + setKey + '">';
+    html += icon(setExpanded ? 'chevron-up' : 'chevron-down') + ' ' + (setExpanded ? 'Hide brief' : 'Brief');
+    html += '</button>';
+    html += '</div>';
+
+    // Expanded brief
+    if (setExpanded) {
+      html += '<div class="cp-sw-tree-set-brief">';
+      if (brief.creative_direction) {
+        html += '<div class="cp-sw-tree-brief-row"><span class="cp-sw-tree-brief-label">Creative direction</span><p>' + esc(brief.creative_direction) + '</p></div>';
+      }
+      if (brief.hook_angles && brief.hook_angles.length) {
+        html += '<div class="cp-sw-tree-brief-row"><span class="cp-sw-tree-brief-label">Hook angles</span><ul>';
+        brief.hook_angles.forEach(function(h) { html += '<li>' + esc(h) + '</li>'; });
+        html += '</ul></div>';
+      }
+      if (brief.message_idx_list && brief.message_idx_list.length) {
+        html += '<div class="cp-sw-tree-brief-row"><span class="cp-sw-tree-brief-label">Messages</span><div>';
+        brief.message_idx_list.forEach(function(mi) {
+          var m = (selMessages || [])[mi];
+          if (m) html += '<span class="cp-badge cp-sw-tree-brief-badge">' + esc(m.name) + '</span>';
+        });
+        html += '</div></div>';
+      }
+      if (brief.ai_notes) {
+        html += '<div class="cp-sw-tree-brief-row"><span class="cp-sw-tree-brief-label">AI notes</span><p>' + esc(brief.ai_notes) + '</p></div>';
+      }
+      if (adSet.audience_overrides) {
+        html += '<div class="cp-sw-tree-brief-row"><span class="cp-sw-tree-brief-label">Audience overrides</span><p>' + esc(adSet.audience_overrides) + '</p></div>';
+      }
+      html += '</div>';
+    }
+
+    // Ads
+    html += '<div class="cp-sw-tree-ads">';
+    for (var j = 0; j < ads.length; j++) {
+      html += _buildSWAdCard(ads[j], idx, j);
+    }
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  function _buildSWAdCard(ad, setIdx, adIdx) {
+    var selected = ad._selected;
+    var adKey = 'ad_' + setIdx + '_' + adIdx;
+    var adExpanded = setupWizardState._expandedCards[adKey];
+    var creative = ad.creative || {};
+    var hook = ad.hook || {};
+    var ctype = Constants.META_AD_CREATIVE_TYPES[ad.creative_type] || { label: 'Ad', icon: 'rectangle-ad' };
+    var cta   = Constants.META_CTA_TYPES[creative.cta_type];
+
+    var html = '<div class="cp-sw-tree-ad' + (selected ? ' cp-sw-tree-ad--selected' : '') + '">';
+
+    html += '<div class="cp-sw-tree-ad-header">';
+    html += '<button class="cp-sw-tree-check cp-sw-tree-check--sm' + (selected ? ' cp-sw-tree-check--on' : '') + '" data-action="sw-tree-ad-toggle" data-set-idx="' + setIdx + '" data-ad-idx="' + adIdx + '" aria-label="Toggle Ad">';
+    html += selected ? icon('check') : '';
+    html += '</button>';
+    html += '<div class="cp-sw-tree-ad-body">';
+    html += '<div class="cp-sw-tree-ad-name">' + icon(ctype.icon) + ' ' + esc(ad.name || ('Ad ' + (adIdx + 1))) + '</div>';
+    if (hook.text) {
+      html += '<blockquote class="cp-sw-tree-ad-hook">' + esc(hook.text) + '</blockquote>';
+    }
+    if (creative.primary_text) {
+      html += '<div class="cp-sw-tree-ad-text">' + esc(truncate(creative.primary_text, 160)) + '</div>';
+    }
+    html += '<div class="cp-sw-tree-ad-meta">';
+    if (creative.headline)   html += '<span class="cp-sw-tree-ad-meta-item"><strong>H:</strong> ' + esc(creative.headline) + '</span>';
+    if (cta)                 html += '<span class="cp-sw-tree-ad-meta-item cp-sw-tree-ad-cta">' + esc(cta.label) + '</span>';
+    if (hook.type)           html += '<span class="cp-sw-tree-ad-meta-item">' + esc(hook.type) + '</span>';
+    html += '</div>';
+    html += '</div>';
+    html += '<button class="cp-sw-tree-expand cp-sw-tree-expand--sm" data-action="sw-tree-expand" data-key="' + adKey + '" aria-label="Toggle details">';
+    html += icon(adExpanded ? 'chevron-up' : 'chevron-down');
+    html += '</button>';
+    html += '</div>';
+
+    if (adExpanded) {
+      html += '<div class="cp-sw-tree-ad-detail">';
+      if (creative.description) html += '<p><strong>Description:</strong> ' + esc(creative.description) + '</p>';
+      var media = ad.media || {};
+      if (media.image_brief)   html += '<p><strong>Image brief:</strong> ' + esc(media.image_brief) + '</p>';
+      if (media.image_prompt)  html += '<p><strong>Image prompt:</strong> ' + esc(media.image_prompt) + '</p>';
+      if (media.video_concept) html += '<p><strong>Video concept:</strong> ' + esc(media.video_concept) + '</p>';
+      html += '</div>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  // Manual-mode tree — minimal form for each ad_set with persona dropdown + ads.
+  function _buildSWStep7ManualTree(ws, sets) {
+    var selPersonas = (ws.personas || []).filter(function(p) { return p._selected; });
+
+    var totalSets = sets.filter(function(s) { return s._selected; }).length;
+    var totalAds = 0;
+    sets.forEach(function(s) { if (s._selected) totalAds += (s.ads || []).filter(function(a) { return a._selected; }).length; });
+
+    var html = '<div class="cp-sw-card-bottom">';
+    html += '<span class="cp-sw-sel-count' + (totalSets > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
+    html += '1 Campaign · ' + totalSets + ' Ad Set' + (totalSets !== 1 ? 's' : '') + ' · ' + totalAds + ' Ad' + (totalAds !== 1 ? 's' : '');
+    html += '</span>';
+    html += '<button class="cp-btn cp-btn-sm cp-btn-primary" data-action="sw-manual-add-ad-set">' + icon('plus') + ' Add Ad Set</button>';
+    html += '</div>';
+
+    if (!sets.length) {
+      html += '<div class="cp-sw-empty-state">';
+      html += '<div class="cp-sw-empty-icon">' + icon('crosshairs') + '</div>';
+      html += '<p>Click <strong>Add Ad Set</strong> to start building your tree by hand. Each Ad Set needs at least one Ad.</p>';
+      html += '</div>';
+      return html;
+    }
+
+    html += '<div class="cp-sw-tree">';
+    for (var i = 0; i < sets.length; i++) {
+      html += _buildSWManualAdSetCard(sets[i], i, selPersonas);
+    }
+    html += '</div>';
+
+    return html;
+  }
+
+  function _buildSWManualAdSetCard(adSet, idx, selPersonas) {
+    var html = '<div class="cp-sw-tree-set cp-sw-tree-set--manual' + (adSet._selected ? ' cp-sw-tree-set--selected' : '') + '">';
+
+    // Header with toggle + delete
+    html += '<div class="cp-sw-tree-set-header">';
+    html += '<button class="cp-sw-tree-check' + (adSet._selected ? ' cp-sw-tree-check--on' : '') + '" data-action="sw-tree-ad-set-toggle" data-set-idx="' + idx + '" aria-label="Toggle Ad Set">';
+    html += adSet._selected ? icon('check') : '';
+    html += '</button>';
+    html += '<div class="cp-sw-tree-set-title" style="flex:1">';
+    html += '<input type="text" class="cp-input cp-input-sm" data-sw-set-field="name" data-set-idx="' + idx + '" value="' + esc(adSet.name || '') + '" placeholder="Ad Set name">';
+    html += '</div>';
+    html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="sw-manual-delete-ad-set" data-set-idx="' + idx + '" title="Delete Ad Set">' + icon('trash') + '</button>';
+    html += '</div>';
+
+    // Persona + optimization goal row
+    html += '<div class="cp-sw-tree-set-fields">';
+    html += '<div class="cp-field cp-field-inline">';
+    html += '<label class="cp-field-label">Persona</label>';
+    html += '<select class="cp-select cp-select-sm" data-sw-set-field="persona_idx" data-set-idx="' + idx + '">';
+    if (!selPersonas.length) {
+      html += '<option value="0">(no personas selected)</option>';
+    } else {
+      for (var p = 0; p < selPersonas.length; p++) {
+        html += '<option value="' + p + '"' + (adSet.persona_idx === p ? ' selected' : '') + '>' + esc(selPersonas[p].name || ('Persona ' + (p + 1))) + '</option>';
+      }
+    }
+    html += '</select></div>';
+
+    html += '<div class="cp-field cp-field-inline">';
+    html += '<label class="cp-field-label">Optimization goal</label>';
+    html += '<select class="cp-select cp-select-sm" data-sw-set-field="optimization_goal" data-set-idx="' + idx + '">';
+    for (var gk in Constants.META_OPTIMIZATION_GOALS) {
+      html += '<option value="' + esc(gk) + '"' + (adSet.optimization_goal === gk ? ' selected' : '') + '>' + esc(Constants.META_OPTIMIZATION_GOALS[gk].label) + '</option>';
+    }
+    html += '</select></div>';
+    html += '</div>';
+
+    // Ads
+    html += '<div class="cp-sw-tree-ads">';
+    var ads = adSet.ads || [];
+    for (var j = 0; j < ads.length; j++) {
+      html += _buildSWAdCard(ads[j], idx, j);
+    }
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm cp-sw-tree-add-ad" data-action="sw-manual-add-ad" data-set-idx="' + idx + '">' + icon('plus') + ' Add Ad</button>';
+    html += '</div>';
+
     html += '</div>';
     return html;
   }
@@ -10888,15 +11266,17 @@
   function renderSWStep8() {
     var ws         = setupWizardState;
     var selPersonas = (ws.personas    || []).filter(function(p) { return p._selected; });
-    var selPPs      = (ws.pain_points  || []).filter(function(p) { return p._selected; });
+    var selPPs      = (ws.pain_points || []).filter(function(p) { return p._selected; });
     var selMessages = (ws.messages    || []).filter(function(m) { return m._selected; });
     var selStyles   = (ws.styles      || []).filter(function(s) { return s._selected; });
     var selFormats  = (ws.formats     || []).filter(function(f) { return f._selected; });
-    var selCombos   = (ws.combos      || []).filter(function(c) { return c.selected; });
+    var selSets     = (ws.ad_sets     || []).filter(function(s) { return s._selected; });
+    var selAds      = [];
+    selSets.forEach(function(s) { selAds = selAds.concat((s.ads || []).filter(function(a) { return a._selected; })); });
 
     var html = _buildSWStepHeader(
       'Review &amp; Launch',
-      'Everything looks good! Review your selections below then launch to build your workspace.',
+      'Final check before we create your Campaign tree. Everything below will be created on Launch.',
       'c'
     );
 
@@ -10911,31 +11291,33 @@
 
     // Summary stats grid
     html += '<div class="cp-sw-review-grid">';
-    html += _buildSWReviewBox('users',         'Personas',    selPersonas.length,  selPersonas.map(function(p) { return p.name; }));
-    html += _buildSWReviewBox('crosshair',     'Pain Points', selPPs.length,       selPPs.map(function(p) { return p.pain_point; }));
-    html += _buildSWReviewBox('message-square','Messages',    selMessages.length,  selMessages.map(function(m) { return m.name; }));
-    html += _buildSWReviewBox('palette',       'Styles',      selStyles.length,    selStyles.map(function(s) { return s.name; }));
-    html += _buildSWReviewBox('clapperboard',  'Formats',     selFormats.length,   selFormats.map(function(f) { return f.name; }));
-    html += _buildSWReviewBox('shuffle',       'Recipes',     selCombos.length,    selCombos.map(function(c, i) { return 'Recipe ' + (i + 1); }));
+    html += _buildSWReviewBox('users',         'Personas',    selPersonas.length, selPersonas.map(function(p) { return p.name; }));
+    html += _buildSWReviewBox('crosshair',     'Pain Points', selPPs.length,      selPPs.map(function(p) { return p.pain_point; }));
+    html += _buildSWReviewBox('message-square','Messages',    selMessages.length, selMessages.map(function(m) { return m.name; }));
+    html += _buildSWReviewBox('palette',       'Styles',      selStyles.length,   selStyles.map(function(s) { return s.name; }));
+    html += _buildSWReviewBox('clapperboard',  'Formats',     selFormats.length,  selFormats.map(function(f) { return f.name; }));
+    html += _buildSWReviewBox('crosshairs',    'Ad Sets',     selSets.length,     selSets.map(function(s) { return s.name; }));
+    html += _buildSWReviewBox('rectangle-ad',  'Ads',         selAds.length,      selAds.map(function(a) { return a.name; }));
     html += '</div>';
 
-    // Campaign info box (if campaign name set)
+    // Campaign info box
     var cam = ws.campaign || {};
     if (cam.name) {
+      var objLabel = (Constants.META_OBJECTIVES[cam.objective] || {}).label || cam.objective || '';
+      var bmLabel = (Constants.META_BUDGET_MODES[cam.budget_mode] || {}).short || cam.budget_mode || '';
       html += '<div class="cp-sw-info-box cp-sw-info-box--success" style="margin-top:var(--cp-space-4)">';
-      html += icon('briefcase') + ' Campaign: <strong>' + esc(cam.name) + '</strong>';
-      if (cam.date_start && cam.date_end) {
-        html += ' &nbsp;&middot;&nbsp; ' + esc(cam.date_start) + ' &rarr; ' + esc(cam.date_end);
-      }
-      if (cam.budget_notes) {
-        html += ' &nbsp;&middot;&nbsp; ' + esc(cam.budget_notes);
-      }
+      html += icon('bullhorn') + ' <strong>' + esc(cam.name) + '</strong>';
+      if (objLabel) html += ' &nbsp;&middot;&nbsp; ' + esc(objLabel);
+      if (bmLabel)  html += ' &nbsp;&middot;&nbsp; ' + esc(bmLabel);
+      if (cam.daily_budget) html += ' &nbsp;&middot;&nbsp; ' + esc(String(cam.daily_budget)) + '/day';
+      if (cam.start_time && cam.stop_time) html += ' &nbsp;&middot;&nbsp; ' + esc(cam.start_time) + ' → ' + esc(cam.stop_time);
       html += '</div>';
     }
 
-    // Launch note (button is in the footer)
+    // Launch note
     html += '<p class="cp-sw-finalize-note" style="margin-top:var(--cp-space-5);text-align:center">';
-    html += 'Hit <strong>Launch Workspace</strong> below to create ' + selCombos.length + ' ad recipe' + (selCombos.length !== 1 ? 's' : '') + ' and start your campaign.';
+    html += 'Hit <strong>Launch Workspace</strong> below to create your Campaign with ' + selSets.length + ' Ad Set' + (selSets.length !== 1 ? 's' : '');
+    html += ' and ' + selAds.length + ' Ad' + (selAds.length !== 1 ? 's' : '') + '.';
     html += '</p>';
 
     return html;
@@ -10958,7 +11340,6 @@
     html += '</div>';
     return html;
   }
-
 
 /* ===== src/20-part2a/16-campaign-wizard.js ===== */
   // ============================================================
@@ -11229,6 +11610,561 @@
     toast('Campaign "' + d.name + '" created with ' + selRecipes.length + ' recipes', 'success', 5000);
   }
 
+
+/* ===== src/20-part2a/16a-new-campaign-wizard.js ===== */
+  // ============================================================
+  // SECTION 9.6: NEW CAMPAIGN WIZARD (per-campaign, Meta v2 native)
+  // ============================================================
+  //
+  // Multi-step flow for creating a new Campaign once the workspace is set up.
+  // Step 1: Basics (name, objective, budget, brief)
+  // Step 2: Ad Sets (AI-suggest + manual edits, selection)
+  // Step 3: Ads per Ad Set (tabbed AI-suggest, selection)
+  // Step 4: Review + Launch
+  //
+  // Mirrors the singleton-state pattern of the setup wizard: never reassign
+  // `ncwState`, always mutate. Part 2B reads it via window._cpPart2A.ncwState.
+
+  var ncwState = {};
+
+  var NCW_STEPS = [
+    { num: 1, label: 'Basics',   icon: 'clipboard-list' },
+    { num: 2, label: 'Ad Sets',  icon: 'crosshairs' },
+    { num: 3, label: 'Ads',      icon: 'rectangle-ad' },
+    { num: 4, label: 'Review',   icon: 'check' }
+  ];
+
+  function _ncwReplaceState(newState) {
+    var keys = Object.keys(ncwState);
+    for (var i = 0; i < keys.length; i++) delete ncwState[keys[i]];
+    var nk = Object.keys(newState);
+    for (var j = 0; j < nk.length; j++) ncwState[nk[j]] = newState[nk[j]];
+  }
+
+  function _ncwFreshState() {
+    return {
+      step: 1,
+      aiLoading: false, aiActionId: '', aiError: '',
+      _expandedCards: {}, _activeAdSetTab: 0,
+      campaign: {
+        name: '', description: '',
+        objective: 'OUTCOME_LEADS',
+        budget_mode: 'CBO', bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
+        daily_budget: '', lifetime_budget: '',
+        start_time: '', stop_time: '',
+        brief: '', ai_instructions: ''
+      },
+      ad_sets: [],
+      _adsContext: {},        // { setIdx: contextString }
+      stepGenerated: { 2: false, 3: {} },
+      created: { campaignV2Id: '', adSetIds: [], adIds: [] }
+    };
+  }
+
+  function openNewCampaignWizard() {
+    _ncwReplaceState(_ncwFreshState());
+    _renderNCWDOM();
+  }
+
+  function _renderNCWDOM() {
+    $('.cp-ncw').remove();
+    var $w = $('<div class="cp-ncw" id="cpNCW" role="dialog" aria-modal="true" aria-label="New Campaign Wizard"></div>');
+    $('#cpApp').append($w);
+    renderNCW();
+  }
+
+  function renderNCW() {
+    var html = '';
+    html += '<div class="cp-ncw-progress-bar"><div class="cp-ncw-progress-fill" style="width:' + _ncwPct() + '%"></div></div>';
+    html += '<div class="cp-ncw-layout">';
+    html += _ncwBuildRail();
+    html += _ncwBuildContent();
+    html += '</div>';
+    $('#cpNCW').html(html);
+    setTimeout(function() {
+      var $first = $('#cpNCW .cp-ncw-content-inner input, #cpNCW .cp-ncw-content-inner textarea, #cpNCW .cp-ncw-content-inner select');
+      if ($first.length) $first.first().focus();
+    }, 50);
+  }
+
+  function refreshNCW() {
+    $('#cpNCW .cp-ncw-progress-fill').css('width', _ncwPct() + '%');
+    $('#cpNCW .cp-ncw-rail-steps').html(_ncwBuildRailSteps());
+    $('#cpNCW .cp-ncw-content-inner').html(_ncwBuildStepContent());
+    $('#cpNCW .cp-ncw-footer').html(_ncwBuildFooter());
+  }
+
+  function _ncwPct() { return Math.round(((ncwState.step - 1) / 4) * 100); }
+
+  function _ncwBuildRail() {
+    var html = '<div class="cp-ncw-rail">';
+    html += '<div class="cp-ncw-rail-header">';
+    html += '<div class="cp-ncw-rail-logo">New<span class="cp-ncw-rail-logo-accent">Campaign</span></div>';
+    html += '<div class="cp-ncw-rail-subtitle">Wizard</div>';
+    html += '</div>';
+    html += '<div class="cp-ncw-rail-steps">' + _ncwBuildRailSteps() + '</div>';
+    html += '<div class="cp-ncw-rail-close"><button class="cp-btn cp-btn-ghost cp-btn-sm" data-action="ncw-close">' + icon('x') + ' Cancel</button></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function _ncwBuildRailSteps() {
+    var current = ncwState.step;
+    var html = '';
+    for (var i = 0; i < NCW_STEPS.length; i++) {
+      var st = NCW_STEPS[i];
+      var isDone = st.num < current;
+      var isActive = st.num === current;
+      var isLocked = st.num > current;
+      var cls = 'cp-ncw-step';
+      if (isActive) cls += ' cp-ncw-step--active';
+      if (isDone)   cls += ' cp-ncw-step--done';
+      if (isLocked) cls += ' cp-ncw-step--locked';
+      var clickable = isDone;
+      html += '<div class="' + cls + (clickable ? ' cp-ncw-step--clickable' : '') + '"';
+      if (clickable) html += ' data-action="ncw-goto" data-step="' + st.num + '" role="button" tabindex="0"';
+      html += '>';
+      html += '<div class="cp-ncw-step-circle">' + (isDone ? icon('check') : st.num) + '</div>';
+      html += '<div class="cp-ncw-step-label">' + esc(st.label) + '</div>';
+      html += '</div>';
+    }
+    return html;
+  }
+
+  function _ncwBuildContent() {
+    var html = '<div class="cp-ncw-content">';
+    html += '<div class="cp-ncw-content-scroll"><div class="cp-ncw-content-inner">';
+    html += _ncwBuildStepContent();
+    html += '</div></div>';
+    html += '<div class="cp-ncw-footer">' + _ncwBuildFooter() + '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function _ncwBuildStepContent() {
+    switch (ncwState.step) {
+      case 1: return _ncwRenderStep1();
+      case 2: return _ncwRenderStep2();
+      case 3: return _ncwRenderStep3();
+      case 4: return _ncwRenderStep4();
+    }
+    return '';
+  }
+
+  function _ncwBuildFooter() {
+    var n = ncwState.step;
+    var html = '';
+    html += '<div class="cp-ncw-footer-left">';
+    if (n > 1) html += '<button class="cp-btn cp-btn-outline" data-action="ncw-back">' + icon('arrow-left') + ' Back</button>';
+    else       html += '<span></span>';
+    html += '</div>';
+    html += '<div class="cp-ncw-footer-center"><div class="cp-ncw-step-counter">Step ' + n + ' of 4</div></div>';
+    html += '<div class="cp-ncw-footer-right">';
+    if (n < 4) html += '<button class="cp-btn cp-btn-primary" data-action="ncw-next">Next ' + icon('arrow-right') + '</button>';
+    else       html += '<button class="cp-btn cp-btn-ai" data-action="ncw-launch">' + icon('rocket') + ' Create Campaign</button>';
+    html += '</div>';
+    return html;
+  }
+
+  function _ncwHeader(title, subtitle) {
+    return '<div class="cp-ncw-step-header"><h2 class="cp-ncw-step-title">' + esc(title) + '</h2>' +
+           '<p class="cp-ncw-step-subtitle">' + esc(subtitle) + '</p></div>';
+  }
+
+  // ----- Step 1: Basics -----
+  function _ncwRenderStep1() {
+    var cam = ncwState.campaign || {};
+    var C = Constants;
+    var html = _ncwHeader('Campaign Basics', 'Name your campaign, choose the Meta objective and budget mode, and provide a brief that AI will use to draft Ad Sets.');
+
+    html += '<div class="cp-ncw-form">';
+
+    html += '<div class="cp-field"><label class="cp-field-label">Campaign Name <span class="cp-required">*</span></label>';
+    html += '<input type="text" class="cp-input" data-ncw-field="campaign.name" value="' + esc(cam.name || '') + '" placeholder="e.g., Q3 SaaS Lead Gen" autocomplete="off"></div>';
+
+    html += '<div class="cp-ncw-field-row">';
+    html += '<div class="cp-field"><label class="cp-field-label">Objective</label>';
+    html += '<select class="cp-select" data-ncw-field="campaign.objective">';
+    for (var ok in C.META_OBJECTIVES) {
+      html += '<option value="' + esc(ok) + '"' + (cam.objective === ok ? ' selected' : '') + '>' + esc(C.META_OBJECTIVES[ok].label) + '</option>';
+    }
+    html += '</select></div>';
+    html += '<div class="cp-field"><label class="cp-field-label">Budget mode</label>';
+    html += '<select class="cp-select" data-ncw-field="campaign.budget_mode">';
+    for (var bmk in C.META_BUDGET_MODES) {
+      html += '<option value="' + esc(bmk) + '"' + (cam.budget_mode === bmk ? ' selected' : '') + '>' + esc(C.META_BUDGET_MODES[bmk].short) + '</option>';
+    }
+    html += '</select></div>';
+    html += '<div class="cp-field"><label class="cp-field-label">Daily budget</label>';
+    html += '<input type="number" class="cp-input" data-ncw-field="campaign.daily_budget" min="0" step="1" value="' + esc(cam.daily_budget != null ? cam.daily_budget : '') + '"></div>';
+    html += '</div>';
+
+    html += '<div class="cp-ncw-field-row">';
+    html += '<div class="cp-field"><label class="cp-field-label">Start date</label>';
+    html += '<input type="date" class="cp-input" data-ncw-field="campaign.start_time" value="' + esc(cam.start_time || '') + '"></div>';
+    html += '<div class="cp-field"><label class="cp-field-label">End date</label>';
+    html += '<input type="date" class="cp-input" data-ncw-field="campaign.stop_time" value="' + esc(cam.stop_time || '') + '"></div>';
+    html += '</div>';
+
+    html += '<div class="cp-field"><label class="cp-field-label">Brief <span class="cp-text-muted">— context for AI</span></label>';
+    html += '<textarea class="cp-textarea" data-ncw-field="campaign.brief" rows="4" placeholder="Describe what you\'re selling, who you\'re targeting, what success looks like, any constraints...">';
+    html += esc(cam.brief || '');
+    html += '</textarea></div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  // ----- Step 2: Ad Sets -----
+  function _ncwRenderStep2() {
+    var st = ncwState;
+    var sets = st.ad_sets || [];
+    var html = _ncwHeader('Ad Sets', 'Each Ad Set targets one persona or audience cut. AI will suggest 2-3 Ad Sets from your campaign brief.');
+
+    html += _ncwErrorBanner();
+
+    html += '<div class="cp-ncw-gen-bar">';
+    html += '<button class="cp-btn cp-btn-ai"' + (st.aiLoading ? ' disabled' : '') + ' data-action="ncw-ai-suggest-sets">';
+    html += icon('sparkles') + ' ' + (st.stepGenerated[2] ? 'Regenerate with AI' : 'Suggest with AI');
+    html += '</button>';
+    html += '<button class="cp-btn cp-btn-outline" data-action="ncw-add-ad-set">' + icon('plus') + ' Add Ad Set manually</button>';
+    if (st.aiLoading) {
+      html += '<button class="cp-btn cp-btn-ghost" data-action="ncw-ai-cancel">' + icon('x') + ' Cancel</button>';
+    }
+    html += '</div>';
+
+    if (st.aiLoading) {
+      html += _ncwBuildSetSkeleton(3);
+      return html;
+    }
+
+    if (!sets.length) {
+      html += '<div class="cp-ncw-empty">';
+      html += '<div class="cp-ncw-empty-icon">' + icon('crosshairs') + '</div>';
+      html += '<p>No Ad Sets yet. Use <strong>Suggest with AI</strong> to draft 2-3 based on your brief, or <strong>Add manually</strong>.</p>';
+      html += '</div>';
+      return html;
+    }
+
+    var selCount = sets.filter(function(s) { return s._selected; }).length;
+    html += '<div class="cp-ncw-bar">';
+    html += '<span class="cp-ncw-sel-count' + (selCount > 0 ? ' cp-ncw-sel-count--ok' : '') + '">';
+    html += selCount + ' of ' + sets.length + ' Ad Set' + (sets.length !== 1 ? 's' : '') + ' selected';
+    html += '</span>';
+    html += '</div>';
+
+    html += '<div class="cp-ncw-set-grid">';
+    for (var i = 0; i < sets.length; i++) {
+      html += _ncwBuildSetCard(sets[i], i);
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function _ncwBuildSetSkeleton(n) {
+    var html = '<div class="cp-ncw-set-grid">';
+    for (var i = 0; i < n; i++) {
+      html += '<div class="cp-sw-skeleton-card">';
+      html += '<div class="cp-sw-skeleton-line cp-sw-skeleton-line--title"></div>';
+      html += '<div class="cp-sw-skeleton-line"></div><div class="cp-sw-skeleton-line"></div>';
+      html += '<div class="cp-sw-skeleton-line cp-sw-skeleton-line--short"></div>';
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function _ncwBuildSetCard(adSet, idx) {
+    var selected = adSet._selected;
+    var personas = getAllPersonas ? getAllPersonas() : (S.data.personas || []);
+    var goalLabel = (Constants.META_OPTIMIZATION_GOALS[adSet.optimization_goal] || {}).label || adSet.optimization_goal || '';
+    var brief = adSet.brief || {};
+
+    var html = '<div class="cp-ncw-set-card' + (selected ? ' cp-ncw-set-card--selected' : '') + '">';
+
+    html += '<div class="cp-ncw-set-card-header">';
+    html += '<button class="cp-sw-tree-check' + (selected ? ' cp-sw-tree-check--on' : '') + '" data-action="ncw-set-toggle" data-set-idx="' + idx + '">';
+    html += selected ? icon('check') : '';
+    html += '</button>';
+    html += '<input type="text" class="cp-input cp-input-sm cp-ncw-set-name" data-ncw-set-field="name" data-set-idx="' + idx + '" value="' + esc(adSet.name || '') + '" placeholder="Ad Set name">';
+    html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ncw-set-delete" data-set-idx="' + idx + '" title="Delete">' + icon('trash') + '</button>';
+    html += '</div>';
+
+    html += '<div class="cp-ncw-set-card-fields">';
+    html += '<div class="cp-field cp-field-inline"><label>Persona</label>';
+    html += '<select class="cp-select cp-select-sm" data-ncw-set-field="persona_id" data-set-idx="' + idx + '">';
+    html += '<option value="">(no persona)</option>';
+    for (var p = 0; p < personas.length; p++) {
+      html += '<option value="' + esc(personas[p].id) + '"' + (adSet.persona_id === personas[p].id ? ' selected' : '') + '>' + esc(personas[p].name) + '</option>';
+    }
+    html += '</select></div>';
+    html += '<div class="cp-field cp-field-inline"><label>Optimization</label>';
+    html += '<select class="cp-select cp-select-sm" data-ncw-set-field="optimization_goal" data-set-idx="' + idx + '">';
+    for (var gk in Constants.META_OPTIMIZATION_GOALS) {
+      html += '<option value="' + esc(gk) + '"' + (adSet.optimization_goal === gk ? ' selected' : '') + '>' + esc(Constants.META_OPTIMIZATION_GOALS[gk].label) + '</option>';
+    }
+    html += '</select></div>';
+    html += '</div>';
+
+    if (brief.creative_direction) {
+      html += '<div class="cp-ncw-set-brief"><strong>Direction:</strong> ' + esc(brief.creative_direction) + '</div>';
+    }
+    if (brief.hook_angles && brief.hook_angles.length) {
+      html += '<div class="cp-ncw-set-hooks"><strong>Hook angles:</strong> ';
+      html += brief.hook_angles.map(function(h) { return '<span class="cp-badge">' + esc(h) + '</span>'; }).join('');
+      html += '</div>';
+    }
+
+    var adCount = (adSet.ads || []).length;
+    html += '<div class="cp-ncw-set-footer">';
+    html += '<span class="cp-text-muted">' + adCount + ' Ad' + (adCount !== 1 ? 's' : '') + ' drafted</span>';
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  // ----- Step 3: Ads per Ad Set (tabs) -----
+  function _ncwRenderStep3() {
+    var st = ncwState;
+    var sets = (st.ad_sets || []).filter(function(s) { return s._selected; });
+    var html = _ncwHeader('Ads', 'Each Ad Set needs at least one Ad. Use AI to suggest 2-3 Ads per Ad Set, each with a distinct hook angle.');
+
+    html += _ncwErrorBanner();
+
+    if (!sets.length) {
+      html += '<div class="cp-ncw-empty">';
+      html += '<div class="cp-ncw-empty-icon">' + icon('rectangle-ad') + '</div>';
+      html += '<p>No selected Ad Sets. Go back to Step 2 and select at least one.</p>';
+      html += '</div>';
+      return html;
+    }
+
+    var activeTab = st._activeAdSetTab || 0;
+    if (activeTab >= sets.length) activeTab = 0;
+
+    // Tab bar
+    html += '<div class="cp-sw-pp-tabs">';
+    for (var ti = 0; ti < sets.length; ti++) {
+      var s = sets[ti];
+      var adsSel = (s.ads || []).filter(function(a) { return a._selected; }).length;
+      html += '<button class="cp-sw-pp-tab' + (ti === activeTab ? ' cp-sw-pp-tab--active' : '') + '" data-action="ncw-tab" data-tab="' + ti + '">';
+      html += esc(truncate(s.name || ('Ad Set ' + (ti + 1)), 26));
+      if (adsSel) html += ' <span class="cp-sw-pp-tab-badge">' + adsSel + '</span>';
+      html += '</button>';
+    }
+    html += '</div>';
+
+    var current = sets[activeTab];
+    var setRealIdx = (st.ad_sets || []).indexOf(current);
+    var ads = current.ads || [];
+    var ctx = (st._adsContext || {})[setRealIdx] || '';
+    var generated = (st.stepGenerated[3] || {})[setRealIdx];
+
+    html += '<div class="cp-ncw-gen-bar">';
+    html += '<textarea class="cp-textarea" id="ncwAdsContext" rows="2" placeholder="Optional: ad direction for this Ad Set...">' + esc(ctx) + '</textarea>';
+    html += '<button class="cp-btn cp-btn-ai"' + (st.aiLoading ? ' disabled' : '') + ' data-action="ncw-ai-suggest-ads" data-set-idx="' + setRealIdx + '">';
+    html += icon('sparkles') + ' ' + (generated ? 'Regenerate' : 'Suggest Ads');
+    html += '</button>';
+    html += '<button class="cp-btn cp-btn-outline" data-action="ncw-add-ad" data-set-idx="' + setRealIdx + '">' + icon('plus') + ' Add manually</button>';
+    if (st.aiLoading) {
+      html += '<button class="cp-btn cp-btn-ghost" data-action="ncw-ai-cancel">' + icon('x') + ' Cancel</button>';
+    }
+    html += '</div>';
+
+    if (st.aiLoading) {
+      html += _ncwBuildSetSkeleton(3);
+      return html;
+    }
+
+    if (!ads.length) {
+      html += '<div class="cp-ncw-empty">';
+      html += '<div class="cp-ncw-empty-icon">' + icon('rectangle-ad') + '</div>';
+      html += '<p>No Ads yet for this Ad Set. Use <strong>Suggest Ads</strong> or add one manually.</p>';
+      html += '</div>';
+      return html;
+    }
+
+    html += '<div class="cp-ncw-ad-grid">';
+    for (var j = 0; j < ads.length; j++) {
+      html += _ncwBuildAdCard(ads[j], setRealIdx, j);
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function _ncwBuildAdCard(ad, setIdx, adIdx) {
+    var selected = ad._selected;
+    var creative = ad.creative || {};
+    var hook = ad.hook || {};
+    var ctype = Constants.META_AD_CREATIVE_TYPES[ad.creative_type] || { label: 'Ad', icon: 'rectangle-ad' };
+    var cta = Constants.META_CTA_TYPES[creative.cta_type];
+
+    var html = '<div class="cp-ncw-ad-card' + (selected ? ' cp-ncw-ad-card--selected' : '') + '">';
+    html += '<div class="cp-ncw-ad-card-header">';
+    html += '<button class="cp-sw-tree-check cp-sw-tree-check--sm' + (selected ? ' cp-sw-tree-check--on' : '') + '" data-action="ncw-ad-toggle" data-set-idx="' + setIdx + '" data-ad-idx="' + adIdx + '">';
+    html += selected ? icon('check') : '';
+    html += '</button>';
+    html += '<div class="cp-ncw-ad-card-title">' + icon(ctype.icon) + ' ' + esc(ad.name || ('Ad ' + (adIdx + 1))) + '</div>';
+    html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ncw-ad-delete" data-set-idx="' + setIdx + '" data-ad-idx="' + adIdx + '" title="Delete">' + icon('trash') + '</button>';
+    html += '</div>';
+
+    if (hook.text)             html += '<blockquote class="cp-sw-tree-ad-hook">' + esc(hook.text) + '</blockquote>';
+    if (creative.primary_text) html += '<div class="cp-sw-tree-ad-text">' + esc(truncate(creative.primary_text, 160)) + '</div>';
+
+    var meta = [];
+    if (creative.headline)    meta.push('<strong>H:</strong> ' + esc(creative.headline));
+    if (creative.description) meta.push('<strong>D:</strong> ' + esc(creative.description));
+    if (cta)                  meta.push('<span class="cp-sw-tree-ad-cta">' + esc(cta.label) + '</span>');
+    if (meta.length) html += '<div class="cp-sw-tree-ad-meta">' + meta.join(' · ') + '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  // ----- Step 4: Review -----
+  function _ncwRenderStep4() {
+    var st = ncwState;
+    var cam = st.campaign || {};
+    var sets = (st.ad_sets || []).filter(function(s) { return s._selected; });
+    var adCount = 0;
+    sets.forEach(function(s) { adCount += (s.ads || []).filter(function(a) { return a._selected; }).length; });
+
+    var html = _ncwHeader('Review & Launch', 'Final check. On Launch we create the Campaign + selected Ad Sets + selected Ads.');
+
+    if (st.finalizing) {
+      html += '<div class="cp-sw-finalize-progress"><div class="cp-sw-finalize-spinner">' + icon('loader') + '</div>';
+      html += '<p class="cp-sw-finalize-msg">' + esc(st.finalizeMsg || 'Creating Campaign…') + '</p></div>';
+      return html;
+    }
+
+    html += '<div class="cp-sw-review-grid">';
+    html += '<div class="cp-sw-review-box"><div class="cp-sw-review-box-icon">' + icon('bullhorn') + '</div>';
+    html += '<div class="cp-sw-review-box-count">1</div><div class="cp-sw-review-box-label">Campaign</div>';
+    html += '<div class="cp-sw-review-box-names"><span>' + esc(cam.name || '(untitled)') + '</span></div></div>';
+
+    html += '<div class="cp-sw-review-box"><div class="cp-sw-review-box-icon">' + icon('crosshairs') + '</div>';
+    html += '<div class="cp-sw-review-box-count">' + sets.length + '</div><div class="cp-sw-review-box-label">Ad Sets</div>';
+    html += '<div class="cp-sw-review-box-names">';
+    sets.slice(0, 3).forEach(function(s) { html += '<span>' + esc(truncate(s.name || '', 30)) + '</span>'; });
+    if (sets.length > 3) html += '<span>+' + (sets.length - 3) + ' more</span>';
+    html += '</div></div>';
+
+    html += '<div class="cp-sw-review-box"><div class="cp-sw-review-box-icon">' + icon('rectangle-ad') + '</div>';
+    html += '<div class="cp-sw-review-box-count">' + adCount + '</div><div class="cp-sw-review-box-label">Ads</div></div>';
+    html += '</div>';
+
+    var objLabel = (Constants.META_OBJECTIVES[cam.objective] || {}).label || cam.objective || '';
+    html += '<div class="cp-sw-info-box cp-sw-info-box--success" style="margin-top:var(--cp-space-4)">';
+    html += icon('bullhorn') + ' <strong>' + esc(cam.name || '(untitled)') + '</strong>';
+    if (objLabel) html += ' · ' + esc(objLabel);
+    if (cam.daily_budget) html += ' · ' + esc(String(cam.daily_budget)) + '/day';
+    html += '</div>';
+
+    return html;
+  }
+
+  function _ncwErrorBanner() {
+    if (!ncwState.aiError) return '';
+    var html = '<div class="cp-sw-ai-error" role="alert">';
+    html += '<div class="cp-sw-ai-error-icon">' + icon('triangle-alert') + '</div>';
+    html += '<div class="cp-sw-ai-error-body">';
+    html += '<div class="cp-sw-ai-error-title">AI failed</div>';
+    html += '<div class="cp-sw-ai-error-msg">' + esc(ncwState.aiError) + '</div>';
+    html += '</div>';
+    html += '<button class="cp-btn cp-btn-sm cp-btn-ghost" data-action="ncw-error-dismiss">' + icon('x') + ' Dismiss</button>';
+    html += '</div>';
+    return html;
+  }
+
+  // ----- Field collection / navigation -----
+  function _ncwCollectFields() {
+    $('#cpNCW [data-ncw-field]').each(function() {
+      var path = $(this).data('ncw-field'); if (!path) return;
+      var parts = String(path).split('.');
+      var obj = ncwState;
+      for (var i = 0; i < parts.length - 1; i++) { obj = obj[parts[i]] = obj[parts[i]] || {}; }
+      var val = $(this).val();
+      obj[parts[parts.length - 1]] = val == null ? '' : val;
+    });
+  }
+
+  function _ncwValidate(n) {
+    if (n === 1) {
+      if (!ncwState.campaign.name || !ncwState.campaign.name.trim()) {
+        return { valid: false, message: 'Please enter a campaign name.' };
+      }
+    }
+    if (n === 2) {
+      var sets = (ncwState.ad_sets || []).filter(function(s) { return s._selected; });
+      if (!sets.length) return { valid: false, message: 'Select at least one Ad Set.' };
+    }
+    if (n === 3) {
+      var sels = (ncwState.ad_sets || []).filter(function(s) { return s._selected; });
+      var anyAd = false;
+      for (var i = 0; i < sels.length; i++) {
+        if ((sels[i].ads || []).some(function(a) { return a._selected; })) { anyAd = true; break; }
+      }
+      if (!anyAd) return { valid: false, message: 'Each selected Ad Set needs at least one selected Ad.' };
+    }
+    return { valid: true };
+  }
+
+  function ncwGoNext() {
+    _ncwCollectFields();
+    var v = _ncwValidate(ncwState.step);
+    if (!v.valid) { toast(v.message, 'warning'); return; }
+    if (ncwState.step < 4) {
+      ncwState.step++;
+      refreshNCW();
+    }
+  }
+  function ncwGoBack() { _ncwCollectFields(); if (ncwState.step > 1) { ncwState.step--; refreshNCW(); } }
+  function ncwGotoStep(n) { if (n < ncwState.step) { _ncwCollectFields(); ncwState.step = n; refreshNCW(); } }
+  function ncwClose() {
+    openConfirmDialog(
+      'Close New Campaign Wizard?',
+      'Your in-progress draft will be lost.',
+      function() { $('.cp-ncw').remove(); }
+    );
+  }
+
+  function ncwAddAdSetManual() {
+    var sets = ncwState.ad_sets || (ncwState.ad_sets = []);
+    sets.push({
+      name: 'Ad Set ' + (sets.length + 1),
+      persona_id: '',
+      audience_overrides: '',
+      optimization_goal: 'OFFSITE_CONVERSIONS',
+      billing_event: 'IMPRESSIONS',
+      attribution_setting: '7d_click',
+      brief: { creative_direction: '', message_ids: [], style_ids: [], format_ids: [], hook_angles: [], ai_notes: '' },
+      ads: [],
+      _selected: true
+    });
+    refreshNCW();
+  }
+
+  function ncwAddAdManual(setIdx) {
+    var s = (ncwState.ad_sets || [])[setIdx]; if (!s) return;
+    s.ads = s.ads || [];
+    s.ads.push({
+      name: 'Ad ' + (s.ads.length + 1), creative_type: 'single_image',
+      hook: { text: '', type: 'direct' },
+      creative: { primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '' },
+      media: { image_brief: '', image_prompt: '', video_concept: '' },
+      _selected: true
+    });
+    refreshNCW();
+  }
+
+  function ncwLaunch() {
+    if (typeof window._cpRenderers.finalizeNewCampaignWizard === 'function') {
+      window._cpRenderers.finalizeNewCampaignWizard();
+    } else {
+      toast('Wizard finalize not loaded.', 'error');
+    }
+  }
 
 /* ===== src/20-part2a/17-tag-crud.js ===== */
   // ============================================================
@@ -13587,17 +14523,130 @@
       if (typeof R.swAIGenerateStylesFormats === 'function') R.swAIGenerateStylesFormats();
       else toast('AI not ready — please wait for the page to fully load.', 'warning');
     });
-    $(document).off('click.cp2a-sw-combo-toggle').on('click.cp2a-sw-combo-toggle', '[data-action="sw-combo-toggle"]', function(e) {
+    $(document).off('click.cp2a-sw-gen-tree').on('click.cp2a-sw-gen-tree', '[data-action="sw-ai-gen-campaign-tree"]', function(e) {
       e.preventDefault();
-      var idx = parseInt($(this).data('idx'), 10);
-      var combos = setupWizardState.combos;
-      if (!combos || isNaN(idx) || !combos[idx]) return;
-      combos[idx].selected = !combos[idx].selected;
+      if (setupWizardState.aiLoading) return;
+      setupWizardState._campaignTreeContext = $('#swCampaignTreeContext').val() || '';
+      // Capture any pending form values (campaign.name etc.) before re-rendering
+      swCollectFields();
+      setupWizardState.stepGenerated[7] = false;
+      var R = window._cpRenderers || {};
+      if (typeof R.swAIGenerateCampaignTree === 'function') R.swAIGenerateCampaignTree();
+      else toast('AI not ready — please wait for the page to fully load.', 'warning');
+    });
+    $(document).off('click.cp2a-sw-ai-cancel').on('click.cp2a-sw-ai-cancel', '[data-action="sw-ai-cancel"]', function(e) {
+      e.preventDefault();
+      swCancelAIGeneration();
+    });
+    $(document).off('click.cp2a-sw-ai-error-dismiss').on('click.cp2a-sw-ai-error-dismiss', '[data-action="sw-ai-error-dismiss"]', function(e) {
+      e.preventDefault();
+      setupWizardState.aiError = '';
       refreshSetupWizard();
     });
-    $(document).off('click.cp2a-sw-regen-combos').on('click.cp2a-sw-regen-combos', '[data-action="sw-regen-combos"]', function(e) {
+    $(document).off('click.cp2a-sw-ai-retry').on('click.cp2a-sw-ai-retry', '[data-action="sw-ai-retry-step"]', function(e) {
       e.preventDefault();
-      _swAutoGenerateCombos();
+      var n = parseInt($(this).data('step'), 10);
+      if (!isNaN(n)) swRetryStep(n);
+    });
+    $(document).off('click.cp2a-sw-step7-mode').on('click.cp2a-sw-step7-mode', '[data-action="sw-step7-mode"]', function(e) {
+      e.preventDefault();
+      var mode = $(this).data('mode');
+      if (mode === 'ai' || mode === 'manual') {
+        setupWizardState._step7Mode = mode;
+        refreshSetupWizard();
+      }
+    });
+    // --- Step 7 tree toggle handlers ---
+    $(document).off('click.cp2a-sw-tree-set').on('click.cp2a-sw-tree-set', '[data-action="sw-tree-ad-set-toggle"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var i = parseInt($(this).data('set-idx'), 10);
+      var sets = setupWizardState.ad_sets || [];
+      if (isNaN(i) || !sets[i]) return;
+      var newVal = !sets[i]._selected;
+      sets[i]._selected = newVal;
+      // Cascade to children
+      if (!newVal) {
+        (sets[i].ads || []).forEach(function(a) { a._selected = false; });
+      } else {
+        // Re-enable any unselected ads when set is re-enabled
+        (sets[i].ads || []).forEach(function(a) { if (a._selected === false) a._selected = true; });
+      }
+      refreshSetupWizard();
+    });
+    $(document).off('click.cp2a-sw-tree-ad').on('click.cp2a-sw-tree-ad', '[data-action="sw-tree-ad-toggle"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var i = parseInt($(this).data('set-idx'), 10);
+      var j = parseInt($(this).data('ad-idx'), 10);
+      var sets = setupWizardState.ad_sets || [];
+      if (isNaN(i) || isNaN(j) || !sets[i] || !sets[i].ads || !sets[i].ads[j]) return;
+      sets[i].ads[j]._selected = !sets[i].ads[j]._selected;
+      // Re-enable parent if a child was just enabled
+      if (sets[i].ads[j]._selected && !sets[i]._selected) sets[i]._selected = true;
+      refreshSetupWizard();
+    });
+    $(document).off('click.cp2a-sw-tree-expand').on('click.cp2a-sw-tree-expand', '[data-action="sw-tree-expand"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var key = $(this).data('key');
+      if (!key) return;
+      setupWizardState._expandedCards[key] = !setupWizardState._expandedCards[key];
+      refreshSetupWizard();
+    });
+    // Manual-mode ad-set field updates (write directly to state.ad_sets[i].field)
+    $(document).off('change.cp2a-sw-manual-set').on('change.cp2a-sw-manual-set', '[data-sw-set-field]', function() {
+      var i = parseInt($(this).data('set-idx'), 10);
+      var field = $(this).data('sw-set-field');
+      var sets = setupWizardState.ad_sets || [];
+      if (isNaN(i) || !sets[i] || !field) return;
+      var val = $(this).val();
+      if (field === 'persona_idx') val = parseInt(val, 10);
+      sets[i][field] = val;
+    });
+    $(document).off('click.cp2a-sw-manual-add-set').on('click.cp2a-sw-manual-add-set', '[data-action="sw-manual-add-ad-set"]', function(e) {
+      e.preventDefault();
+      var state = setupWizardState;
+      state.ad_sets = state.ad_sets || [];
+      var n = state.ad_sets.length + 1;
+      state.ad_sets.push({
+        name: 'Ad Set ' + n,
+        persona_idx: 0,
+        audience_overrides: '',
+        optimization_goal: 'OFFSITE_CONVERSIONS',
+        billing_event: 'IMPRESSIONS',
+        attribution_setting: '7d_click',
+        brief: { creative_direction: '', hook_angles: [], message_idx_list: [], style_idx_list: [], format_idx_list: [], ai_notes: '' },
+        ads: [{
+          name: 'Ad 1', creative_type: 'single_image',
+          hook: { text: '', type: 'direct' },
+          creative: { primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '' },
+          media: { image_brief: '', image_prompt: '', video_concept: '' },
+          _selected: true
+        }],
+        _selected: true
+      });
+      refreshSetupWizard();
+    });
+    $(document).off('click.cp2a-sw-manual-add-ad').on('click.cp2a-sw-manual-add-ad', '[data-action="sw-manual-add-ad"]', function(e) {
+      e.preventDefault();
+      var i = parseInt($(this).data('set-idx'), 10);
+      var sets = setupWizardState.ad_sets || [];
+      if (isNaN(i) || !sets[i]) return;
+      sets[i].ads = sets[i].ads || [];
+      sets[i].ads.push({
+        name: 'Ad ' + (sets[i].ads.length + 1), creative_type: 'single_image',
+        hook: { text: '', type: 'direct' },
+        creative: { primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '' },
+        media: { image_brief: '', image_prompt: '', video_concept: '' },
+        _selected: true
+      });
+      refreshSetupWizard();
+    });
+    $(document).off('click.cp2a-sw-manual-del-set').on('click.cp2a-sw-manual-del-set', '[data-action="sw-manual-delete-ad-set"]', function(e) {
+      e.preventDefault();
+      var i = parseInt($(this).data('set-idx'), 10);
+      var sets = setupWizardState.ad_sets || [];
+      if (isNaN(i) || !sets[i]) return;
+      sets.splice(i, 1);
+      refreshSetupWizard();
     });
     $(document).off('click.cp2a-sw-launch').on('click.cp2a-sw-launch', '[data-action="sw-launch"]', function(e) {
       e.preventDefault();
@@ -13705,7 +14754,90 @@
   function setupMetaV2EventHandlers() {
     // List view + workspace navigation
     $(document).off('click.cpv2-new-campaign').on('click.cpv2-new-campaign', '[data-action="new-campaign-v2"]', function(e) {
-      e.preventDefault(); openMetaCampaignModal();
+      e.preventDefault();
+      // Open the multi-step New Campaign Wizard instead of the legacy modal
+      if (typeof openNewCampaignWizard === 'function') openNewCampaignWizard();
+      else openMetaCampaignModal();
+    });
+
+    // --- New Campaign Wizard event wiring ---
+    $(document).off('click.ncw-next').on('click.ncw-next', '[data-action="ncw-next"]', function(e) { e.preventDefault(); ncwGoNext(); });
+    $(document).off('click.ncw-back').on('click.ncw-back', '[data-action="ncw-back"]', function(e) { e.preventDefault(); ncwGoBack(); });
+    $(document).off('click.ncw-goto').on('click.ncw-goto', '[data-action="ncw-goto"]', function(e) {
+      e.preventDefault();
+      var n = parseInt($(this).data('step'), 10);
+      if (!isNaN(n)) ncwGotoStep(n);
+    });
+    $(document).off('click.ncw-close').on('click.ncw-close', '[data-action="ncw-close"]', function(e) { e.preventDefault(); ncwClose(); });
+    $(document).off('click.ncw-launch').on('click.ncw-launch', '[data-action="ncw-launch"]', function(e) { e.preventDefault(); ncwLaunch(); });
+    $(document).off('click.ncw-error-dismiss').on('click.ncw-error-dismiss', '[data-action="ncw-error-dismiss"]', function(e) {
+      e.preventDefault(); ncwState.aiError = ''; refreshNCW();
+    });
+    $(document).off('click.ncw-ai-cancel').on('click.ncw-ai-cancel', '[data-action="ncw-ai-cancel"]', function(e) {
+      e.preventDefault();
+      var p2b = window._cpPart2B;
+      if (p2b && p2b.LLMService && typeof p2b.LLMService.abortAction === 'function') p2b.LLMService.abortAction(ncwState.aiActionId || 'ncw-ai');
+      ncwState.aiLoading = false; ncwState.aiActionId = ''; ncwState.aiError = 'Generation cancelled.';
+      refreshNCW();
+    });
+    $(document).off('click.ncw-suggest-sets').on('click.ncw-suggest-sets', '[data-action="ncw-ai-suggest-sets"]', function(e) {
+      e.preventDefault();
+      var R = window._cpRenderers || {};
+      if (typeof R.ncwAISuggestAdSets === 'function') R.ncwAISuggestAdSets();
+    });
+    $(document).off('click.ncw-suggest-ads').on('click.ncw-suggest-ads', '[data-action="ncw-ai-suggest-ads"]', function(e) {
+      e.preventDefault();
+      var i = parseInt($(this).data('set-idx'), 10);
+      var R = window._cpRenderers || {};
+      if (typeof R.ncwAISuggestAds === 'function' && !isNaN(i)) R.ncwAISuggestAds(i);
+    });
+    $(document).off('click.ncw-add-set').on('click.ncw-add-set', '[data-action="ncw-add-ad-set"]', function(e) { e.preventDefault(); ncwAddAdSetManual(); });
+    $(document).off('click.ncw-add-ad').on('click.ncw-add-ad', '[data-action="ncw-add-ad"]', function(e) {
+      e.preventDefault();
+      var i = parseInt($(this).data('set-idx'), 10);
+      if (!isNaN(i)) ncwAddAdManual(i);
+    });
+    $(document).off('click.ncw-set-toggle').on('click.ncw-set-toggle', '[data-action="ncw-set-toggle"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var i = parseInt($(this).data('set-idx'), 10);
+      var s = (ncwState.ad_sets || [])[i]; if (!s) return;
+      s._selected = !s._selected;
+      refreshNCW();
+    });
+    $(document).off('click.ncw-set-delete').on('click.ncw-set-delete', '[data-action="ncw-set-delete"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var i = parseInt($(this).data('set-idx'), 10);
+      if (!isNaN(i) && ncwState.ad_sets) {
+        ncwState.ad_sets.splice(i, 1);
+        refreshNCW();
+      }
+    });
+    $(document).off('click.ncw-ad-toggle').on('click.ncw-ad-toggle', '[data-action="ncw-ad-toggle"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var i = parseInt($(this).data('set-idx'), 10);
+      var j = parseInt($(this).data('ad-idx'), 10);
+      var s = (ncwState.ad_sets || [])[i]; if (!s || !s.ads || !s.ads[j]) return;
+      s.ads[j]._selected = !s.ads[j]._selected;
+      refreshNCW();
+    });
+    $(document).off('click.ncw-ad-delete').on('click.ncw-ad-delete', '[data-action="ncw-ad-delete"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var i = parseInt($(this).data('set-idx'), 10);
+      var j = parseInt($(this).data('ad-idx'), 10);
+      var s = (ncwState.ad_sets || [])[i]; if (!s || !s.ads) return;
+      s.ads.splice(j, 1);
+      refreshNCW();
+    });
+    $(document).off('click.ncw-tab').on('click.ncw-tab', '[data-action="ncw-tab"]', function(e) {
+      e.preventDefault();
+      var t = parseInt($(this).data('tab'), 10);
+      if (!isNaN(t)) { ncwState._activeAdSetTab = t; refreshNCW(); }
+    });
+    $(document).off('change.ncw-set-field').on('change.ncw-set-field', '[data-ncw-set-field]', function() {
+      var i = parseInt($(this).data('set-idx'), 10);
+      var field = $(this).data('ncw-set-field');
+      var s = (ncwState.ad_sets || [])[i]; if (!s || !field) return;
+      s[field] = $(this).val();
     });
     $(document).off('click.cpv2-open-campaign').on('click.cpv2-open-campaign', '[data-action="open-campaign-v2"]', function(e) {
       e.preventDefault(); e.stopPropagation();
@@ -14199,7 +15331,15 @@
     openSetupWizard: openSetupWizard,
     refreshSetupWizard: refreshSetupWizard,
     setupWizardState: setupWizardState,
-    swClearSession: swClearSession
+    swClearSession: swClearSession,
+    swCancelAIGeneration: swCancelAIGeneration,
+    swRetryStep: swRetryStep,
+    swRelTime: _swRelTime,
+
+    // New Campaign Wizard
+    openNewCampaignWizard: openNewCampaignWizard,
+    refreshNCW: refreshNCW,
+    ncwState: ncwState
   };
 
   console.log('[CP] Part 2A loaded');
@@ -14363,12 +15503,17 @@
     R.imagePicker = renderImagePicker;
     R.aiResearchPanel = renderAIResearchPanelBody;
     // Setup Wizard AI generators
-    R.swAIGeneratePersonas      = swAIGeneratePersonas;
-    R.swAIGeneratePainPoints    = swAIGeneratePainPoints;
-    R.swAIGenerateMessages      = swAIGenerateMessages;
-    R.swAIGenerateStylesFormats = swAIGenerateStylesFormats;
+    R.swAIGeneratePersonas       = swAIGeneratePersonas;
+    R.swAIGeneratePainPoints     = swAIGeneratePainPoints;
+    R.swAIGenerateMessages       = swAIGenerateMessages;
+    R.swAIGenerateStylesFormats  = swAIGenerateStylesFormats;
+    R.swAIGenerateCampaignTree   = swAIGenerateCampaignTree;
     // Setup Wizard finalize
-    R.finalizeSetupWizard       = finalizeSetupWizard;
+    R.finalizeSetupWizard        = finalizeSetupWizard;
+    // New Campaign Wizard AI + finalize
+    R.ncwAISuggestAdSets         = ncwAISuggestAdSets;
+    R.ncwAISuggestAds            = ncwAISuggestAds;
+    R.finalizeNewCampaignWizard  = finalizeNewCampaignWizard;
 
     setupPart2BEvents(); setupKeyboardShortcuts();
     LLMService.init();
@@ -14580,7 +15725,14 @@
       } catch(e) { return JSON.stringify(data); }
     }
 
-    return { init: init, isConfigured: isConfigured, getActiveProviders: getActiveProviders, getActiveModels: getActiveModels, getDefault: getDefault, resolveSelection: resolveSelection, savePreference: savePreference, renderInlinePicker: renderInlinePicker, callAI: callAI };
+    function abortAction(actionId) {
+      if (!actionId || !_inFlight[actionId]) return false;
+      try { _inFlight[actionId].abort(); } catch(e) {}
+      delete _inFlight[actionId];
+      return true;
+    }
+
+    return { init: init, isConfigured: isConfigured, getActiveProviders: getActiveProviders, getActiveModels: getActiveModels, getDefault: getDefault, resolveSelection: resolveSelection, savePreference: savePreference, renderInlinePicker: renderInlinePicker, callAI: callAI, abortAction: abortAction };
   })();
 
 
@@ -16402,10 +17554,299 @@
        'ai-generate-video-script', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
+/* ===== src/30-part2b/17b-ai-new-campaign-wizard.js ===== */
+  // ============================================================
+  // SECTION 17B: AI — NEW CAMPAIGN WIZARD (per-campaign)
+  // ============================================================
+
+  function _ncwState() {
+    return window._cpPart2A && window._cpPart2A.ncwState;
+  }
+  function _ncwRefresh() {
+    if (window._cpPart2A && typeof window._cpPart2A.refreshNCW === 'function') {
+      window._cpPart2A.refreshNCW();
+    }
+  }
+  function _ncwBegin(state)   { state.aiLoading = true;  state.aiActionId = 'ncw-ai'; state.aiError = ''; _ncwRefresh(); }
+  function _ncwEndOk(state)   { state.aiLoading = false; state.aiActionId = ''; state.aiError = ''; }
+  function _ncwEndErr(state, err) { state.aiLoading = false; state.aiActionId = ''; state.aiError = String(err || 'AI failed').substring(0, 240); }
+
+  // ----- Suggest Ad Sets from the Campaign brief -----
+  function ncwAISuggestAdSets() {
+    var state = _ncwState(); if (!state) return;
+    if (state.aiLoading) return;
+    if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — open Settings → AI.'; _ncwRefresh(); return; }
+
+    _ncwBegin(state);
+
+    var cam = state.campaign || {};
+    var personas = (S.data.personas || []).slice(0, 24).map(function(p) {
+      return { id: p.id, name: p.name, description: truncate(p.description || '', 100) };
+    });
+    var objList = Object.keys(Constants.META_OBJECTIVES).join(', ');
+    var goalList = Object.keys(Constants.META_OPTIMIZATION_GOALS).join(', ');
+
+    var prompt = 'You are a Meta Ads strategist. Suggest 3 distinct Ad Sets for this Campaign.\n\n';
+    prompt += 'Campaign: ' + (cam.name || '(untitled)') + '\n';
+    if (cam.objective) prompt += 'Objective: ' + cam.objective + '\n';
+    if (cam.budget_mode) prompt += 'Budget mode: ' + cam.budget_mode + '\n';
+    if (cam.daily_budget) prompt += 'Daily budget: ' + cam.daily_budget + '\n';
+    if (cam.brief) prompt += '\nBrief: ' + cam.brief + '\n';
+    if (personas.length) {
+      prompt += '\nAvailable personas (use persona_id if a match):\n';
+      prompt += personas.map(function(p) { return '- ' + p.id + ': ' + p.name + (p.description ? ' — ' + p.description : ''); }).join('\n') + '\n';
+    }
+    prompt += brandSnippet('research');
+    prompt += '\n\nValid optimization goals: ' + goalList + '\nValid objectives: ' + objList;
+    prompt += '\n\nRules: Each Ad Set targets a DIFFERENT angle / audience cut. Optimization goal must be valid for the campaign objective.';
+    prompt += '\nReturn ONLY this JSON:\n';
+    prompt += '{ "ad_sets": [{\n';
+    prompt += '  "name": "Ad Set name",\n';
+    prompt += '  "persona_id": "library id or empty",\n';
+    prompt += '  "audience_overrides": "",\n';
+    prompt += '  "optimization_goal": "...",\n';
+    prompt += '  "brief": { "creative_direction": "", "hook_angles": ["","",""], "ai_notes": "" }\n';
+    prompt += '}] }';
+    prompt += '\n\nNo markdown, no preamble.';
+
+    callAIWithRetry(prompt, function(parsed) {
+      var sets = (parsed && Array.isArray(parsed.ad_sets)) ? parsed.ad_sets : [];
+      var allowedGoals = Constants.META_OPTIMIZATION_GOALS;
+      state.ad_sets = sets.slice(0, 4).map(function(s, i) {
+        var b = s.brief || {};
+        var personaId = (s.persona_id && S.personaMap && S.personaMap[s.persona_id]) ? s.persona_id : '';
+        return {
+          name: String(s.name || 'Ad Set ' + (i + 1)).trim().substring(0, 80),
+          persona_id: personaId,
+          audience_overrides: String(s.audience_overrides || '').trim(),
+          optimization_goal: allowedGoals[s.optimization_goal] ? s.optimization_goal : 'OFFSITE_CONVERSIONS',
+          billing_event: 'IMPRESSIONS',
+          attribution_setting: '7d_click',
+          brief: {
+            creative_direction: String(b.creative_direction || '').trim(),
+            message_ids: [],
+            style_ids: [],
+            format_ids: [],
+            hook_angles: Array.isArray(b.hook_angles) ? b.hook_angles.filter(Boolean).slice(0, 5) : [],
+            ai_notes: String(b.ai_notes || '').trim()
+          },
+          ads: [],
+          _selected: true
+        };
+      });
+      state.stepGenerated[2] = true;
+      _ncwEndOk(state);
+      _ncwRefresh();
+    }, function(err) {
+      _ncwEndErr(state, err);
+      _ncwRefresh();
+    }, 'ncw-ai', BrandService.getSystemPrompt('research'), parseJSON);
+  }
+
+  // ----- Suggest Ads for one Ad Set -----
+  function ncwAISuggestAds(setIdx) {
+    var state = _ncwState(); if (!state) return;
+    if (state.aiLoading) return;
+    if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — open Settings → AI.'; _ncwRefresh(); return; }
+
+    var adSet = (state.ad_sets || [])[setIdx]; if (!adSet) return;
+    var cam = state.campaign || {};
+
+    state._adsContext = state._adsContext || {};
+    state._adsContext[setIdx] = $('#ncwAdsContext').val() || state._adsContext[setIdx] || '';
+
+    _ncwBegin(state);
+
+    var persona = adSet.persona_id ? S.personaMap[adSet.persona_id] : null;
+    var prompt = 'You are a Meta Ads creative director. Generate 3 distinct Ads for the Ad Set below.\n\n';
+    prompt += 'Campaign: ' + (cam.name || '(untitled)') + '\n';
+    if (cam.objective) prompt += 'Objective: ' + cam.objective + '\n';
+    if (cam.brief)     prompt += 'Campaign brief: ' + cam.brief + '\n';
+    prompt += '\nAd Set: ' + (adSet.name || '') + '\n';
+    if (persona)       prompt += 'Persona: ' + persona.name + ' — ' + truncate(persona.description || '', 140) + '\n';
+    var brief = adSet.brief || {};
+    if (brief.creative_direction) prompt += 'Creative direction: ' + brief.creative_direction + '\n';
+    if (brief.hook_angles && brief.hook_angles.length) prompt += 'Hook angles to consider: ' + brief.hook_angles.join(' | ') + '\n';
+    if (state._adsContext[setIdx]) prompt += '\nAdditional ad direction: ' + state._adsContext[setIdx] + '\n';
+    prompt += brandSnippet('content');
+    prompt += '\n\nRules: each Ad uses a DIFFERENT hook angle. Primary text 90-140 chars. Headline ≤27. Description ≤27.';
+    prompt += '\nReturn ONLY this JSON:\n';
+    prompt += '{ "ads": [{\n';
+    prompt += '  "name": "",\n';
+    prompt += '  "creative_type": "single_image|single_video|carousel",\n';
+    prompt += '  "hook": { "text": "", "type": "question|bold|story|data|direct|curiosity|challenge" },\n';
+    prompt += '  "creative": { "primary_text": "", "headline": "", "description": "", "cta_type": "LEARN_MORE|SHOP_NOW|...", "cta_link": "" }\n';
+    prompt += '}] }';
+    prompt += '\n\nNo markdown, no preamble.';
+
+    callAIWithRetry(prompt, function(parsed) {
+      var ads = (parsed && Array.isArray(parsed.ads)) ? parsed.ads : [];
+      var allowedCTAs = Constants.META_CTA_TYPES;
+      var allowedTypes = Constants.META_AD_CREATIVE_TYPES;
+      var allowedHook = { question:1, bold:1, story:1, data:1, direct:1, curiosity:1, challenge:1 };
+      adSet.ads = ads.slice(0, 4).map(function(a, i) {
+        var h = a.hook || {}; var cr = a.creative || {};
+        return {
+          name: String(a.name || 'Ad ' + (i + 1)).trim().substring(0, 80),
+          creative_type: allowedTypes[a.creative_type] ? a.creative_type : 'single_image',
+          hook: {
+            text: String(h.text || '').trim(),
+            type: allowedHook[h.type] ? h.type : 'direct'
+          },
+          creative: {
+            primary_text: String(cr.primary_text || '').trim(),
+            headline:     String(cr.headline     || '').trim(),
+            description:  String(cr.description  || '').trim(),
+            cta_type:     allowedCTAs[cr.cta_type] ? cr.cta_type : 'LEARN_MORE',
+            cta_link:     String(cr.cta_link     || '').trim()
+          },
+          media: { image_brief: '', image_prompt: '', video_concept: '' },
+          _selected: true
+        };
+      });
+      state.stepGenerated[3] = state.stepGenerated[3] || {};
+      state.stepGenerated[3][setIdx] = true;
+      _ncwEndOk(state);
+      _ncwRefresh();
+    }, function(err) {
+      _ncwEndErr(state, err);
+      _ncwRefresh();
+    }, 'ncw-ai', BrandService.getSystemPrompt('content'), parseJSON);
+  }
+
+  // ----- Finalize: create Campaign + Ad Sets + Ads -----
+  function finalizeNewCampaignWizard() {
+    var state = _ncwState(); if (!state) { toast('Wizard state not available.', 'error'); return; }
+    state.finalizing = true;
+    state.finalizeMsg = 'Creating Campaign…';
+    _ncwRefresh();
+
+    setTimeout(function() {
+      try { _runNCWFinalize(state); }
+      catch(e) {
+        console.error('[NCW] Finalize error:', e);
+        state.finalizing = false;
+        _ncwRefresh();
+        toast('Create failed: ' + (e.message || String(e)), 'error');
+      }
+    }, 150);
+  }
+
+  function _runNCWFinalize(state) {
+    var C = Constants;
+    var cam = state.campaign || {};
+
+    function setMsg(msg) { state.finalizeMsg = msg; _ncwRefresh(); }
+
+    setMsg('Creating Campaign…');
+    var campEnt = createEntity('campaign_v2', $.extend({}, C.META_CAMPAIGN_DEFAULTS, {
+      name: cam.name || 'Untitled Campaign',
+      description: cam.description || '',
+      objective: C.META_OBJECTIVES[cam.objective] ? cam.objective : C.META_CAMPAIGN_DEFAULTS.objective,
+      budget_mode: cam.budget_mode === 'ABO' ? 'ABO' : 'CBO',
+      daily_budget: cam.daily_budget !== '' && cam.daily_budget != null ? Number(cam.daily_budget) : null,
+      lifetime_budget: cam.lifetime_budget !== '' && cam.lifetime_budget != null ? Number(cam.lifetime_budget) : null,
+      bid_strategy: cam.bid_strategy || C.META_CAMPAIGN_DEFAULTS.bid_strategy,
+      start_time: cam.start_time || '',
+      stop_time: cam.stop_time || '',
+      brief: cam.brief || '',
+      ai_instructions: cam.ai_instructions || '',
+      status: 'DRAFT'
+    }));
+    if (!campEnt) throw new Error('Failed to create Campaign');
+    state.created.campaignV2Id = campEnt.id;
+
+    var buildPS = (window._cpPart2A && window._cpPart2A.buildPersonaSnapshot) ? window._cpPart2A.buildPersonaSnapshot : null;
+    var selSets = (state.ad_sets || []).filter(function(s) { return s._selected; });
+    var adSetCount = 0, adCount = 0;
+
+    setMsg('Creating Ad Sets and Ads…');
+    for (var i = 0; i < selSets.length; i++) {
+      var s = selSets[i];
+      var personaEnt = s.persona_id ? getPersona(s.persona_id) : null;
+      var brief = s.brief || {};
+      var setEnt = createEntity('ad_set', {
+        campaign_id: campEnt.id,
+        name: s.name || ('Ad Set ' + (i + 1)),
+        persona_id: personaEnt ? personaEnt.id : '',
+        persona_snapshot: (personaEnt && buildPS) ? buildPS(personaEnt) : null,
+        audience_overrides: s.audience_overrides || '',
+        optimization_goal: C.META_OPTIMIZATION_GOALS[s.optimization_goal] ? s.optimization_goal : C.META_AD_SET_DEFAULTS.optimization_goal,
+        billing_event: s.billing_event || C.META_AD_SET_DEFAULTS.billing_event,
+        attribution_setting: s.attribution_setting || C.META_AD_SET_DEFAULTS.attribution_setting,
+        brief: {
+          creative_direction: brief.creative_direction || '',
+          message_ids: brief.message_ids || [],
+          style_ids: brief.style_ids || [],
+          format_ids: brief.format_ids || [],
+          hook_angles: brief.hook_angles || [],
+          ai_notes: brief.ai_notes || ''
+        }
+      });
+      if (!setEnt) continue;
+      state.created.adSetIds.push(setEnt.id);
+      adSetCount++;
+
+      var selAds = (s.ads || []).filter(function(a) { return a._selected; });
+      for (var j = 0; j < selAds.length; j++) {
+        var ad = selAds[j];
+        var cr = ad.creative || {}; var h = ad.hook || {}; var m = ad.media || {};
+        var adEnt = createEntity('ad', {
+          ad_set_id: setEnt.id,
+          name: ad.name || ((setEnt.name || 'Ad Set') + ' — Ad ' + (j + 1)),
+          creative_type: C.META_AD_CREATIVE_TYPES[ad.creative_type] ? ad.creative_type : 'single_image',
+          hook: { text: h.text || '', type: h.type || 'direct', source_message_id: '', selected_hook_id: '' },
+          creative: {
+            primary_text: cr.primary_text || '',
+            headline:     cr.headline     || '',
+            description:  cr.description  || '',
+            cta_type:     C.META_CTA_TYPES[cr.cta_type] ? cr.cta_type : 'LEARN_MORE',
+            cta_link:     cr.cta_link     || '',
+            display_link: '', tracking_params: ''
+          },
+          media: {
+            image: { asset_id: '', ai_prompt: m.image_prompt || '', brief: m.image_brief || '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] },
+            video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: m.video_concept || '', blueprint: { scenes: [] }, script: { rows: [] } },
+            carousel_cards: []
+          }
+        });
+        if (adEnt) {
+          state.created.adIds.push(adEnt.id);
+          adCount++;
+          if (typeof window._cpMaybeAdvanceAdStatus === 'function') window._cpMaybeAdvanceAdStatus(adEnt, 'new campaign wizard');
+        }
+      }
+    }
+
+    setMsg('Finishing up…');
+    logActivity('campaign_v2_created', 'campaign_v2', campEnt.id, campEnt.name,
+      'New Campaign wizard: ' + adSetCount + ' Ad Set(s), ' + adCount + ' Ad(s)');
+    buildMaps();
+    syncToTextarea();
+
+    $('.cp-ncw').remove();
+
+    S.selectedCampaignV2Id = campEnt.id;
+    S.selectedAdSetId = null; S.selectedAdId = null;
+    navigate('campaign_workspace', { hash: 'campaign/' + campEnt.id });
+
+    toast(
+      'Campaign created with ' + adSetCount + ' Ad Set' + (adSetCount !== 1 ? 's' : '') +
+      ' and ' + adCount + ' Ad' + (adCount !== 1 ? 's' : '') + '.',
+      'success', 5000
+    );
+  }
+
 /* ===== src/30-part2b/18-ai-setup-wizard.js ===== */
   // ============================================================
   // SECTION 15b: SETUP WIZARD AI GENERATORS
   // ============================================================
+
+  // Strict-JSON rules appended to every prompt to discourage prose / markdown.
+  var SW_JSON_RULES =
+    '\n\nRules: Respond with RAW JSON ONLY. No markdown fences. No preamble. ' +
+    'No prose before, after, or between fields. If a value is unknown, return ' +
+    'an empty string rather than text like "N/A" or "unknown".';
 
   function _swState() {
     return window._cpPart2A && window._cpPart2A.setupWizardState;
@@ -16417,253 +17858,501 @@
     }
   }
 
+  // Consistent workspace context block injected into every prompt.
+  function _swWorkspaceBlock(ws) {
+    var lines = ['Workspace context:'];
+    if (ws.name)               lines.push('Workspace: ' + ws.name);
+    if (ws.product_name)       lines.push('Product: ' + ws.product_name);
+    if (ws.description)        lines.push('Description: ' + ws.description);
+    if (ws.target_audience)    lines.push('Target audience: ' + ws.target_audience);
+    if (ws.brand_voice)        lines.push('Brand voice: ' + ws.brand_voice);
+    if (ws.objective)          lines.push('Objective hint: ' + ws.objective);
+    if (ws.custom_instructions) lines.push('Custom instructions: ' + ws.custom_instructions);
+    return lines.join('\n') + '\n';
+  }
+
+  function _swBeginAI(state, n) {
+    state.aiLoading   = true;
+    state.aiActionId  = 'sw-ai-config';
+    state.aiStartedAt = Date.now();
+    state.aiError     = '';
+    state.stepGenerated[n] = false;
+  }
+
+  function _swEndAISuccess(state, n) {
+    state.aiLoading  = false;
+    state.aiActionId = '';
+    state.aiError    = '';
+    state.stepGenerated[n] = true;
+    state.created = state.created || {};
+    state.created.lastGeneratedAt = state.created.lastGeneratedAt || {};
+    state.created.lastGeneratedAt[n] = Date.now();
+  }
+
+  function _swEndAIError(state, n, err) {
+    state.aiLoading  = false;
+    state.aiActionId = '';
+    state.aiError    = String(err || 'AI generation failed').substring(0, 240);
+    state.stepGenerated[n] = true;
+  }
+
+  // ----- 1. Personas -----
+
   function swAIGeneratePersonas() {
     var state = _swState();
     if (!state) { console.warn('[SW] setupWizardState not available'); return; }
     if (state.aiLoading) return;
-    if (!LLMService.isConfigured()) { toast('AI not configured — check Settings → AI.', 'warning'); return; }
+    if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — check Settings → AI.'; _swRefresh(); return; }
 
-    state.aiLoading = true;
+    _swBeginAI(state, 3);
     _swRefresh();
 
-    var ws      = state.workspace || {};
-    var extra   = state._personaContext || '';
+    var ws    = state.workspace || {};
+    var extra = state._personaContext || '';
 
-    var prompt  = 'You are a senior marketing strategist. Create 4 distinct buyer persona profiles for the following product.\n\n';
-    prompt += 'Product: ' + (ws.product_name || 'Unknown product') + '\n';
-    if (ws.description)      prompt += 'Description: ' + ws.description + '\n';
-    if (ws.target_audience)  prompt += 'Target audience: ' + ws.target_audience + '\n';
-    if (ws.objective)        prompt += 'Campaign objective: ' + ws.objective + '\n';
-    if (extra)               prompt += 'Additional context: ' + extra + '\n';
+    var prompt = 'You are a senior marketing strategist. Create 4-6 DISTINCT buyer persona profiles for the product below. Each persona must be measurably different — different role, different psychographics, different demographics.\n\n';
+    prompt += _swWorkspaceBlock(ws);
+    if (extra) prompt += 'Additional persona context: ' + extra + '\n';
     prompt += brandSnippet('persona');
-    prompt += '\n\nReturn ONLY a valid JSON array. Each element must have:\n';
-    prompt += '{ "name": "The [Type] [Role]", "description": "1-2 sentence character summary", ';
-    prompt += '"demographics": { "age_range": "28-40", "gender": "Female", "location": "Urban US", "occupation": "Marketing Manager", "income_level": "$70k-$100k" }, ';
-    prompt += '"psychographics": { "desires": "...", "fears": "...", "motivations": "...", "values": "..." } }\n';
-    prompt += 'No markdown, no explanation. Valid JSON array only.';
+    prompt += '\n\nSchema (return ONLY a JSON array of objects matching this shape):\n';
+    prompt += '[{ "name": "The [Type] [Role]",\n';
+    prompt += '   "description": "1-2 sentence character summary anchored in their job-to-be-done",\n';
+    prompt += '   "demographics": {\n';
+    prompt += '     "age_range": "NN-NN",\n';
+    prompt += '     "gender": "Male|Female|Mixed|Non-binary|All",\n';
+    prompt += '     "location": "Region or city archetype",\n';
+    prompt += '     "occupation": "Specific job title",\n';
+    prompt += '     "income_level": "$X-$Y or qualitative",\n';
+    prompt += '     "education": "level",\n';
+    prompt += '     "industry": "industry vertical"\n';
+    prompt += '   },\n';
+    prompt += '   "psychographics": {\n';
+    prompt += '     "desires": "1 sentence — what they want most",\n';
+    prompt += '     "fears": "1 sentence — what blocks them",\n';
+    prompt += '     "motivations": "1 sentence — what drives action",\n';
+    prompt += '     "values": "1 sentence — what they believe in"\n';
+    prompt += '   } }]';
+    prompt += SW_JSON_RULES;
 
-    callAIWithRetry(
-      prompt,
-      function(parsed) {
-        state.aiLoading = false;
-        state.stepGenerated[3] = true;
-        var arr = Array.isArray(parsed) ? parsed : (parsed && parsed.personas ? parsed.personas : []);
-        state.personas = arr.slice(0, 8).map(function(p) {
+    callAIWithRetry(prompt, function(parsed) {
+      var arr = Array.isArray(parsed) ? parsed : (parsed && parsed.personas ? parsed.personas : []);
+      var clean = arr
+        .filter(function(p) { return p && p.name && p.description; })
+        .slice(0, 6)
+        .map(function(p) {
           return {
-            name:          p.name         || 'Persona',
-            description:   p.description  || '',
-            demographics:  p.demographics  || {},
+            name:           String(p.name).trim(),
+            description:    String(p.description).trim(),
+            demographics:   p.demographics  || {},
             psychographics: p.psychographics || {},
             _selected: true
           };
         });
-        _swRefresh();
-      },
-      function(err) {
-        state.aiLoading = false;
-        state.stepGenerated[3] = true;
-        toast('Persona generation failed: ' + err, 'error');
-        _swRefresh();
-      },
-      'sw-ai-config',
-      BrandService.getSystemPrompt('persona'),
-      parseJSON
-    );
+      state.personas = clean;
+      _swEndAISuccess(state, 3);
+      _swRefresh();
+    }, function(err) {
+      _swEndAIError(state, 3, err);
+      _swRefresh();
+    }, 'sw-ai-config', BrandService.getSystemPrompt('persona'), parseJSON);
   }
+
+  // ----- 2. Pain Points -----
 
   function swAIGeneratePainPoints() {
     var state = _swState();
     if (!state) { console.warn('[SW] setupWizardState not available'); return; }
     if (state.aiLoading) return;
-    if (!LLMService.isConfigured()) { toast('AI not configured — check Settings → AI.', 'warning'); return; }
+    if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — check Settings → AI.'; _swRefresh(); return; }
 
     var selPersonas = (state.personas || []).filter(function(p) { return p._selected; });
-    if (!selPersonas.length) { toast('No personas selected — go back to Step 3.', 'warning'); return; }
+    if (!selPersonas.length) {
+      state.aiError = 'No personas selected. Go back to Step 3 and select at least one.';
+      _swRefresh();
+      return;
+    }
 
-    state.aiLoading = true;
+    _swBeginAI(state, 4);
     _swRefresh();
 
     var ws    = state.workspace || {};
     var extra = state._ppContext || '';
 
-    // Build numbered persona list with index tracking
     var personaLines = selPersonas.map(function(p, i) {
       var d = p.demographics || {};
-      var line = i + '. ' + (p.name || 'Persona ' + i) + ': ' + (p.description || '');
-      if (d.occupation) line += ' (' + d.occupation + ')';
+      var line = i + '. ' + (p.name || 'Persona ' + i) + ' — ' + (p.description || '');
+      if (d.occupation) line += ' [' + d.occupation + ']';
       return line;
     }).join('\n');
 
-    var prompt  = 'You are a marketing strategist. Generate pain points for each buyer persona listed below.\n\n';
-    prompt += 'Product: ' + (ws.product_name || 'Unknown product') + '\n';
-    if (ws.description) prompt += 'Description: ' + ws.description + '\n';
-    prompt += '\nPersonas:\n' + personaLines + '\n';
+    var prompt = 'You are a marketing strategist. Generate 3-4 SPECIFIC pain points for EACH persona listed below. Pain points must be concrete (e.g. "spends 6 hrs/week reconciling spreadsheets") rather than abstract ("lacks time").\n\n';
+    prompt += _swWorkspaceBlock(ws);
+    prompt += '\nSelected personas (use persona_idx to match):\n' + personaLines + '\n';
     if (extra) prompt += '\nAdditional context: ' + extra + '\n';
     prompt += brandSnippet('persona');
-    prompt += '\n\nReturn ONLY a valid JSON array. Each element must have:\n';
-    prompt += '{ "pain_point": "specific challenge they face", "solution": "how this product solves it (1 sentence)", ';
-    prompt += '"category": "one of: Productivity | Cost / Budget | Knowledge Gap | Competition | Growth", ';
-    prompt += '"persona_idx": 0 }\n';
-    prompt += 'Generate 3-4 pain points per persona. Use persona_idx to match the 0-based index above.\n';
-    prompt += 'No markdown, no explanation. Valid JSON array only.';
+    prompt += '\n\nSchema (return ONLY a JSON array):\n';
+    prompt += '[{ "pain_point": "specific challenge they face",\n';
+    prompt += '   "solution": "1 sentence: how this product solves it",\n';
+    prompt += '   "category": "Productivity|Cost / Budget|Knowledge Gap|Competition|Growth",\n';
+    prompt += '   "persona_idx": INTEGER (0 to ' + (selPersonas.length - 1) + ') }]';
+    prompt += SW_JSON_RULES;
 
-    callAIWithRetry(
-      prompt,
-      function(parsed) {
-        state.aiLoading = false;
-        state.stepGenerated[4] = true;
-        var arr = Array.isArray(parsed) ? parsed : (parsed && parsed.pain_points ? parsed.pain_points : []);
-        state.pain_points = arr.map(function(pp) {
+    callAIWithRetry(prompt, function(parsed) {
+      var arr = Array.isArray(parsed) ? parsed : (parsed && parsed.pain_points ? parsed.pain_points : []);
+      var allowedCats = { 'Productivity':1, 'Cost / Budget':1, 'Knowledge Gap':1, 'Competition':1, 'Growth':1 };
+      var clean = arr
+        .filter(function(pp) { return pp && pp.pain_point && String(pp.pain_point).trim(); })
+        .map(function(pp) {
+          // Clamp persona_idx into selPersonas range, then translate to real state.personas index
+          var idx = parseInt(pp.persona_idx, 10);
+          if (isNaN(idx) || idx < 0 || idx >= selPersonas.length) idx = 0;
+          var realIdx = (state.personas || []).indexOf(selPersonas[idx]);
+          var cat = pp.category && allowedCats[pp.category] ? pp.category : '';
           return {
-            pain_point:   pp.pain_point  || '',
-            solution:     pp.solution    || '',
-            category:     pp.category    || '',
-            _persona_idx: typeof pp.persona_idx === 'number' ? pp.persona_idx : 0,
+            pain_point:   String(pp.pain_point).trim(),
+            solution:     String(pp.solution || '').trim(),
+            category:     cat,
+            _persona_idx: realIdx >= 0 ? realIdx : 0,
             _selected:    true
           };
         });
-        _swRefresh();
-      },
-      function(err) {
-        state.aiLoading = false;
-        state.stepGenerated[4] = true;
-        toast('Pain point generation failed: ' + err, 'error');
-        _swRefresh();
-      },
-      'sw-ai-config',
-      BrandService.getSystemPrompt('research'),
-      parseJSON
-    );
+      state.pain_points = clean;
+      _swEndAISuccess(state, 4);
+      _swRefresh();
+    }, function(err) {
+      _swEndAIError(state, 4, err);
+      _swRefresh();
+    }, 'sw-ai-config', BrandService.getSystemPrompt('research'), parseJSON);
   }
+
+  // ----- 3. Messages -----
 
   function swAIGenerateMessages() {
     var state = _swState();
     if (!state) return;
     if (state.aiLoading) return;
-    if (!LLMService.isConfigured()) { toast('AI not configured — check Settings → AI.', 'warning'); return; }
+    if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — check Settings → AI.'; _swRefresh(); return; }
 
-    state.aiLoading = true;
+    _swBeginAI(state, 5);
     _swRefresh();
 
-    var ws           = state.workspace || {};
-    var selPersonas  = (state.personas    || []).filter(function(p)  { return p._selected; });
-    var selPainPoints= (state.pain_points || []).filter(function(pp) { return pp._selected; });
-    var extra        = state._messageContext || '';
+    var ws            = state.workspace || {};
+    var selPersonas   = (state.personas    || []).filter(function(p)  { return p._selected; });
+    var selPainPoints = (state.pain_points || []).filter(function(pp) { return pp._selected; });
+    var extra         = state._messageContext || '';
 
     var personaLines = selPersonas.slice(0, 4).map(function(p) {
       return '- ' + (p.name || 'Persona') + ': ' + (p.description || '');
     }).join('\n');
 
-    var ppLines = selPainPoints.slice(0, 6).map(function(pp) {
+    var ppLines = selPainPoints.slice(0, 8).map(function(pp) {
       return '- ' + (pp.pain_point || '');
     }).join('\n');
 
-    var prompt  = 'You are a direct-response copywriter. Create 5 distinct ad message angles for the following product.\n\n';
-    prompt += 'Product: ' + (ws.product_name || 'Unknown') + '\n';
-    if (ws.description)  prompt += 'Description: ' + ws.description + '\n';
-    if (personaLines)    prompt += '\nTarget personas:\n' + personaLines + '\n';
-    if (ppLines)         prompt += '\nKey pain points:\n' + ppLines + '\n';
-    if (ws.objective)    prompt += '\nObjective: ' + ws.objective + '\n';
-    if (extra)           prompt += '\nAdditional context: ' + extra + '\n';
+    var prompt = 'You are a direct-response copywriter. Create 5-6 DISTINCT ad message angles for the product below. Each angle must use a different theme and different hook type. Each message body must be a usable starter for Meta primary text (≤180 chars).\n\n';
+    prompt += _swWorkspaceBlock(ws);
+    if (personaLines) prompt += '\nTarget personas:\n' + personaLines + '\n';
+    if (ppLines)      prompt += '\nKey pain points to leverage:\n' + ppLines + '\n';
+    if (extra)        prompt += '\nAdditional context: ' + extra + '\n';
     prompt += brandSnippet('content');
-    prompt += '\n\nReturn ONLY a valid JSON array. Each element must have:\n';
-    prompt += '{ "name": "The [Angle Name]", ';
-    prompt += '"description": "How this angle positions the product to the audience (2 sentences)", ';
-    prompt += '"theme": "Transformation | Social Proof | FOMO | Problem-Solution | Authority | Curiosity | Urgency", ';
-    prompt += '"hook_type": "Bold Claim | Question | Shocking Stat | Story | Challenge | Testimonial", ';
-    prompt += '"funnel_stage": "top | mid | bot", ';
-    prompt += '"body": "1-2 sentence copy direction or sample hook line" }\n';
-    prompt += 'No markdown, no explanation. Valid JSON array only.';
+    prompt += '\n\nSchema (return ONLY a JSON array):\n';
+    prompt += '[{ "name": "The [Angle Name]",\n';
+    prompt += '   "description": "2 sentences: how this angle positions the product",\n';
+    prompt += '   "theme": "Transformation|Social Proof|FOMO|Problem-Solution|Authority|Curiosity|Urgency",\n';
+    prompt += '   "hook_type": "Bold Claim|Question|Shocking Stat|Story|Challenge|Testimonial",\n';
+    prompt += '   "funnel_stage": "top|mid|bot",\n';
+    prompt += '   "body": "1-2 sentence ad-ready primary text starter, ≤180 chars" }]';
+    prompt += SW_JSON_RULES;
 
-    callAIWithRetry(
-      prompt,
-      function(parsed) {
-        state.aiLoading = false;
-        state.stepGenerated[5] = true;
-        var arr = Array.isArray(parsed) ? parsed : (parsed && parsed.messages ? parsed.messages : []);
-        state.messages = arr.slice(0, 8).map(function(m) {
+    callAIWithRetry(prompt, function(parsed) {
+      var arr = Array.isArray(parsed) ? parsed : (parsed && parsed.messages ? parsed.messages : []);
+      var clean = arr
+        .filter(function(m) { return m && m.name && (m.description || m.body); })
+        .slice(0, 6)
+        .map(function(m) {
           return {
-            name:         m.name         || 'Message',
-            description:  m.description  || '',
-            theme:        m.theme        || '',
-            hook_type:    m.hook_type    || '',
-            funnel_stage: m.funnel_stage || 'top',
-            body:         m.body         || '',
+            name:         String(m.name).trim(),
+            description:  String(m.description || '').trim(),
+            theme:        String(m.theme || '').trim(),
+            hook_type:    String(m.hook_type || '').trim(),
+            funnel_stage: ['top','mid','bot'].indexOf(m.funnel_stage) >= 0 ? m.funnel_stage : 'top',
+            body:         String(m.body || '').trim(),
             _selected:    true
           };
         });
-        _swRefresh();
-      },
-      function(err) {
-        state.aiLoading = false;
-        state.stepGenerated[5] = true;
-        toast('Message generation failed: ' + err, 'error');
-        _swRefresh();
-      },
-      'sw-ai-config',
-      BrandService.getSystemPrompt('content'),
-      parseJSON
-    );
+      state.messages = clean;
+      _swEndAISuccess(state, 5);
+      _swRefresh();
+    }, function(err) {
+      _swEndAIError(state, 5, err);
+      _swRefresh();
+    }, 'sw-ai-config', BrandService.getSystemPrompt('content'), parseJSON);
   }
+
+  // ----- 4. Styles & Formats -----
 
   function swAIGenerateStylesFormats() {
     var state = _swState();
     if (!state) return;
     if (state.aiLoading) return;
-    if (!LLMService.isConfigured()) { toast('AI not configured — check Settings → AI.', 'warning'); return; }
+    if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — check Settings → AI.'; _swRefresh(); return; }
 
-    state.aiLoading = true;
+    _swBeginAI(state, 6);
     _swRefresh();
 
     var ws    = state.workspace || {};
     var extra = state._styleFormatContext || '';
 
-    var prompt  = 'You are a creative director and media strategist. Generate creative styles and ad formats for the following product.\n\n';
-    prompt += 'Product: ' + (ws.product_name || 'Unknown') + '\n';
-    if (ws.description)  prompt += 'Description: ' + ws.description + '\n';
-    if (ws.objective)    prompt += 'Objective: ' + ws.objective + '\n';
-    if (extra)           prompt += 'Additional context: ' + extra + '\n';
+    var prompt = 'You are a creative director and media strategist. Generate creative styles and ad formats for the product below. Styles describe the visual/tone treatment; formats describe the technical container (aspect ratio, platform).\n\n';
+    prompt += _swWorkspaceBlock(ws);
+    if (extra) prompt += 'Additional context: ' + extra + '\n';
     prompt += brandSnippet('content');
-    prompt += '\n\nReturn ONLY a valid JSON object with two arrays:\n';
+    prompt += '\n\nSchema (return ONLY a JSON object with two arrays):\n';
     prompt += '{\n';
-    prompt += '  "styles": [ { "name": "...", "description": "Visual and creative direction in 1-2 sentences" } ],\n';
-    prompt += '  "formats": [ { "name": "...", "description": "Format specs and use-case in 1-2 sentences", "category": "Shoot | UGC | Graphic | Animation" } ]\n';
+    prompt += '  "styles":  [ { "name": "Style name", "description": "1-2 sentences: visual + creative direction" } ],\n';
+    prompt += '  "formats": [ { "name": "Format name", "description": "1-2 sentences: specs + best use",\n';
+    prompt += '                 "category": "Shoot|UGC|Graphic|Animation" } ]\n';
     prompt += '}\n';
-    prompt += 'Generate 4 styles and 6 formats. Formats should cover different aspect ratios and platforms (TikTok, Meta, YouTube, etc.).\n';
-    prompt += 'No markdown, no explanation. Valid JSON object only.';
+    prompt += 'Generate 4-5 styles and 6-8 formats covering Meta Feed, Reels/Stories (9:16), TikTok-native, Square 1:1, and Carousel.';
+    prompt += SW_JSON_RULES;
 
-    callAIWithRetry(
-      prompt,
-      function(parsed) {
-        state.aiLoading = false;
-        state.stepGenerated[6] = true;
-        var stylesArr  = (parsed && Array.isArray(parsed.styles))  ? parsed.styles  : [];
-        var formatsArr = (parsed && Array.isArray(parsed.formats)) ? parsed.formats : [];
-        state.styles = stylesArr.slice(0, 8).map(function(s) {
-          return { name: s.name || 'Style', description: s.description || '', _selected: true };
+    callAIWithRetry(prompt, function(parsed) {
+      var stylesArr  = (parsed && Array.isArray(parsed.styles))  ? parsed.styles  : [];
+      var formatsArr = (parsed && Array.isArray(parsed.formats)) ? parsed.formats : [];
+      var allowedCats = { 'Shoot':1, 'UGC':1, 'Graphic':1, 'Animation':1 };
+      state.styles = stylesArr
+        .filter(function(s) { return s && s.name && s.description; })
+        .slice(0, 5)
+        .map(function(s) {
+          return { name: String(s.name).trim(), description: String(s.description).trim(), _selected: true };
         });
-        state.formats = formatsArr.slice(0, 10).map(function(f) {
-          return { name: f.name || 'Format', description: f.description || '', category: f.category || '', _selected: true };
+      state.formats = formatsArr
+        .filter(function(f) { return f && f.name && f.description; })
+        .slice(0, 8)
+        .map(function(f) {
+          var cat = f.category && allowedCats[f.category] ? f.category : '';
+          return { name: String(f.name).trim(), description: String(f.description).trim(), category: cat, _selected: true };
         });
-        _swRefresh();
-      },
-      function(err) {
-        state.aiLoading = false;
-        state.stepGenerated[6] = true;
-        toast('Styles & formats generation failed: ' + err, 'error');
-        _swRefresh();
-      },
-      'sw-ai-config',
-      BrandService.getSystemPrompt('content'),
-      parseJSON
-    );
+      _swEndAISuccess(state, 6);
+      _swRefresh();
+    }, function(err) {
+      _swEndAIError(state, 6, err);
+      _swRefresh();
+    }, 'sw-ai-config', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
+  // ----- 5. Campaign Tree (Step 7) -----
+
+  function swAIGenerateCampaignTree() {
+    var state = _swState();
+    if (!state) return;
+    if (state.aiLoading) return;
+    if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — check Settings → AI.'; _swRefresh(); return; }
+
+    _swBeginAI(state, 7);
+    _swRefresh();
+
+    var ws            = state.workspace || {};
+    var selPersonas   = (state.personas    || []).filter(function(p)  { return p._selected; });
+    var selPainPoints = (state.pain_points || []).filter(function(pp) { return pp._selected; });
+    var selMessages   = (state.messages    || []).filter(function(m)  { return m._selected; });
+    var selStyles     = (state.styles      || []).filter(function(s)  { return s._selected; });
+    var selFormats    = (state.formats     || []).filter(function(f)  { return f._selected; });
+    var extra         = state._campaignTreeContext || '';
+
+    if (!selPersonas.length) {
+      _swEndAIError(state, 7, 'No personas selected. Go back to Step 3.');
+      _swRefresh();
+      return;
+    }
+
+    var personaLines = selPersonas.map(function(p, i) {
+      var d = p.demographics || {};
+      return i + '. ' + (p.name || 'Persona ' + i) + ' — ' + truncate(p.description || '', 90) + (d.occupation ? ' [' + d.occupation + ']' : '');
+    }).join('\n');
+
+    var ppLines = selPainPoints.slice(0, 8).map(function(pp) {
+      return '- ' + truncate(pp.pain_point || '', 100);
+    }).join('\n');
+
+    var messageLines = selMessages.map(function(m, i) {
+      return i + '. ' + (m.name || 'Message ' + i) + ' [' + (m.theme || '?') + '] — ' + truncate(m.description || m.body || '', 90);
+    }).join('\n');
+
+    var styleLines = selStyles.map(function(s, i) {
+      return i + '. ' + (s.name || 'Style ' + i) + ' — ' + truncate(s.description || '', 90);
+    }).join('\n');
+
+    var formatLines = selFormats.map(function(f, i) {
+      return i + '. ' + (f.name || 'Format ' + i) + ' [' + (f.category || '?') + '] — ' + truncate(f.description || '', 90);
+    }).join('\n');
+
+    var objList = Object.keys(Constants.META_OBJECTIVES).join(', ');
+    var goalList = Object.keys(Constants.META_OPTIMIZATION_GOALS).join(', ');
+    var ctaList = Object.keys(Constants.META_CTA_TYPES).slice(0, 14).join(', ');
+
+    var prompt = 'You are a Meta Ads strategist. Build a complete Campaign tree for the workspace below.\n\n';
+    prompt += _swWorkspaceBlock(ws);
+    prompt += '\nSelected personas (use persona_idx, 0-based from this list):\n' + personaLines + '\n';
+    if (ppLines)     prompt += '\nKey pain points:\n' + ppLines + '\n';
+    if (messageLines) prompt += '\nSelected messages (use message_idx_list):\n' + messageLines + '\n';
+    if (styleLines)  prompt += '\nSelected styles (use style_idx_list):\n' + styleLines + '\n';
+    if (formatLines) prompt += '\nSelected formats (use format_idx_list):\n' + formatLines + '\n';
+    if (extra)       prompt += '\nAdditional campaign direction: ' + extra + '\n';
+    prompt += brandSnippet('research');
+    prompt += '\n\nAvailable Meta enums:\n';
+    prompt += '- objective: ' + objList + '\n';
+    prompt += '- optimization_goal: ' + goalList + '\n';
+    prompt += '- cta_type: ' + ctaList + '\n';
+    prompt += '\nRules:\n';
+    prompt += '- 1 Campaign. 2-3 Ad Sets. 2-3 Ads per Ad Set.\n';
+    prompt += '- Each Ad Set must target a DIFFERENT persona angle / audience cut.\n';
+    prompt += '- Each Ad inside an Ad Set must use a DIFFERENT hook angle.\n';
+    prompt += '- Primary text: 90-140 chars. Headline: ≤27 chars. Description: ≤27 chars.\n';
+    prompt += '- optimization_goal must be valid for the chosen objective.\n';
+    prompt += '- persona_idx, message_idx_list, style_idx_list, format_idx_list are 0-based indices into the lists above (drop any that don\'t map).\n';
+    prompt += '\nSchema (return ONLY this JSON):\n';
+    prompt += '{\n';
+    prompt += '  "campaign": {\n';
+    prompt += '    "name": "Short campaign name (≤50 chars)",\n';
+    prompt += '    "description": "1-2 sentence rationale",\n';
+    prompt += '    "objective": "OUTCOME_*",\n';
+    prompt += '    "budget_mode": "CBO|ABO",\n';
+    prompt += '    "daily_budget": NUMBER or null,\n';
+    prompt += '    "bid_strategy": "LOWEST_COST_WITHOUT_CAP|LOWEST_COST_WITH_BID_CAP|COST_CAP|LOWEST_COST_WITH_MIN_ROAS",\n';
+    prompt += '    "brief": "2-3 sentence campaign brief"\n';
+    prompt += '  },\n';
+    prompt += '  "ad_sets": [{\n';
+    prompt += '    "name": "Ad Set name",\n';
+    prompt += '    "persona_idx": INTEGER,\n';
+    prompt += '    "audience_overrides": "free-text audience tweaks (locales, behaviours)",\n';
+    prompt += '    "optimization_goal": "...",\n';
+    prompt += '    "billing_event": "IMPRESSIONS|LINK_CLICKS|THRUPLAY|APP_INSTALLS",\n';
+    prompt += '    "attribution_setting": "1d_view|1d_click|7d_click|1d_view_1d_click|1d_view_7d_click",\n';
+    prompt += '    "brief": {\n';
+    prompt += '      "creative_direction": "2-3 sentences",\n';
+    prompt += '      "hook_angles": ["Angle 1", "Angle 2", "Angle 3"],\n';
+    prompt += '      "message_idx_list": [INTEGER, ...],\n';
+    prompt += '      "style_idx_list": [INTEGER, ...],\n';
+    prompt += '      "format_idx_list": [INTEGER, ...],\n';
+    prompt += '      "ai_notes": "production notes for the creative team"\n';
+    prompt += '    },\n';
+    prompt += '    "ads": [{\n';
+    prompt += '      "name": "Ad name",\n';
+    prompt += '      "creative_type": "single_image|single_video|carousel",\n';
+    prompt += '      "hook": { "text": "1 sentence hook", "type": "question|bold|story|data|direct|curiosity|challenge" },\n';
+    prompt += '      "creative": {\n';
+    prompt += '        "primary_text": "90-140 chars",\n';
+    prompt += '        "headline": "≤27 chars",\n';
+    prompt += '        "description": "≤27 chars",\n';
+    prompt += '        "cta_type": "LEARN_MORE|SHOP_NOW|...",\n';
+    prompt += '        "cta_link": ""\n';
+    prompt += '      },\n';
+    prompt += '      "media": {\n';
+    prompt += '        "image_brief": "1-2 sentence brief for image ads",\n';
+    prompt += '        "image_prompt": "production-ready AI image prompt for image ads",\n';
+    prompt += '        "video_concept": "1-2 sentence concept for video ads"\n';
+    prompt += '      }\n';
+    prompt += '    }]\n';
+    prompt += '  }]\n';
+    prompt += '}';
+    prompt += SW_JSON_RULES;
+
+    callAIWithRetry(prompt, function(parsed) {
+      if (!parsed || typeof parsed !== 'object' || !parsed.campaign || !Array.isArray(parsed.ad_sets)) {
+        _swEndAIError(state, 7, 'AI returned an invalid tree structure. Try regenerating.');
+        _swRefresh();
+        return;
+      }
+      var c = parsed.campaign || {};
+      var allowedObj = Constants.META_OBJECTIVES;
+      var allowedGoals = Constants.META_OPTIMIZATION_GOALS;
+      var allowedCTAs = Constants.META_CTA_TYPES;
+      var allowedCreative = Constants.META_AD_CREATIVE_TYPES;
+      var allowedHook = { question:1, bold:1, story:1, data:1, direct:1, curiosity:1, challenge:1 };
+
+      state.campaign = {
+        name:         String(c.name || ws.product_name + ' Launch').trim().substring(0, 80),
+        description:  String(c.description || '').trim(),
+        objective:    allowedObj[c.objective] ? c.objective : 'OUTCOME_LEADS',
+        budget_mode:  (c.budget_mode === 'ABO' || c.budget_mode === 'CBO') ? c.budget_mode : 'CBO',
+        daily_budget: (c.daily_budget == null || c.daily_budget === '') ? '' : Number(c.daily_budget),
+        lifetime_budget: '',
+        bid_strategy: c.bid_strategy || 'LOWEST_COST_WITHOUT_CAP',
+        start_time:   '',
+        stop_time:    '',
+        brief:        String(c.brief || '').trim(),
+        ai_instructions: ''
+      };
+
+      state.ad_sets = (parsed.ad_sets || []).slice(0, 5).map(function(s) {
+        var b = s.brief || {};
+        var clampedPI = parseInt(s.persona_idx, 10);
+        if (isNaN(clampedPI) || clampedPI < 0 || clampedPI >= selPersonas.length) clampedPI = 0;
+        var clampIdxList = function(arr, maxN) {
+          return (Array.isArray(arr) ? arr : [])
+            .map(function(i) { return parseInt(i, 10); })
+            .filter(function(i) { return !isNaN(i) && i >= 0 && i < maxN; });
+        };
+        return {
+          name:               String(s.name || 'Ad Set').trim().substring(0, 80),
+          persona_idx:        clampedPI,
+          audience_overrides: String(s.audience_overrides || '').trim(),
+          optimization_goal:  allowedGoals[s.optimization_goal] ? s.optimization_goal : 'OFFSITE_CONVERSIONS',
+          billing_event:      s.billing_event || 'IMPRESSIONS',
+          attribution_setting: s.attribution_setting || '7d_click',
+          brief: {
+            creative_direction: String(b.creative_direction || '').trim(),
+            hook_angles:        Array.isArray(b.hook_angles) ? b.hook_angles.filter(Boolean).slice(0, 5) : [],
+            message_idx_list:   clampIdxList(b.message_idx_list, selMessages.length),
+            style_idx_list:     clampIdxList(b.style_idx_list,   selStyles.length),
+            format_idx_list:    clampIdxList(b.format_idx_list,  selFormats.length),
+            ai_notes:           String(b.ai_notes || '').trim()
+          },
+          ads: (s.ads || []).slice(0, 4).map(function(a) {
+            var h = a.hook || {}; var cr = a.creative || {}; var md = a.media || {};
+            return {
+              name:          String(a.name || 'Ad').trim().substring(0, 80),
+              creative_type: allowedCreative[a.creative_type] ? a.creative_type : 'single_image',
+              hook: {
+                text: String(h.text || '').trim(),
+                type: allowedHook[h.type] ? h.type : 'direct'
+              },
+              creative: {
+                primary_text: String(cr.primary_text || '').trim(),
+                headline:     String(cr.headline     || '').trim(),
+                description:  String(cr.description  || '').trim(),
+                cta_type:     allowedCTAs[cr.cta_type] ? cr.cta_type : 'LEARN_MORE',
+                cta_link:     String(cr.cta_link     || '').trim()
+              },
+              media: {
+                image_brief:   String(md.image_brief   || '').trim(),
+                image_prompt:  String(md.image_prompt  || '').trim(),
+                video_concept: String(md.video_concept || '').trim()
+              },
+              _selected: true
+            };
+          }),
+          _selected: true
+        };
+      });
+
+      _swEndAISuccess(state, 7);
+      _swRefresh();
+    }, function(err) {
+      _swEndAIError(state, 7, err);
+      _swRefresh();
+    }, 'sw-ai-config', BrandService.getSystemPrompt('research'), parseJSON);
+  }
 
 /* ===== src/30-part2b/19-ai-setup-finalize.js ===== */
   // ============================================================
-  // SECTION 15c: SETUP WIZARD — FINALIZE
+  // SECTION 15c: SETUP WIZARD — FINALIZE (Meta v2 only)
   // ============================================================
+  //
+  // Creates library entities (personas / pain points / messages / styles /
+  // formats), then a Meta v2 Campaign with its Ad Sets and Ads in one pass.
+  // No legacy v1 path — the wizard always produces Meta-native output.
 
   function finalizeSetupWizard() {
     var state = _swState();
@@ -16687,6 +18376,7 @@
 
   function _runFinalizeSetup(state) {
     var ws = state.workspace || {};
+    var C  = Constants;
 
     // --- Category maps ---
     var ppCatMap = {
@@ -16711,11 +18401,13 @@
 
     // ---- 1. Workspace settings ----
     setMsg('Saving workspace settings…');
-    if (ws.name)                S.meta.workspace.name                  = ws.name;
-    if (!S.meta.workspace.created) S.meta.workspace.created            = new Date().toISOString();
-    if (ws.product_name)        S.meta.setup.product_name              = ws.product_name;
-    if (ws.objective)           S.meta.setup.objective                 = ws.objective;
-    if (ws.custom_instructions) S.meta.setup.custom_instructions       = ws.custom_instructions;
+    if (ws.name)                S.meta.workspace.name           = ws.name;
+    if (!S.meta.workspace.created) S.meta.workspace.created     = new Date().toISOString();
+    if (ws.product_name)        S.meta.setup.product_name       = ws.product_name;
+    if (ws.objective)           S.meta.setup.objective          = ws.objective;
+    if (ws.custom_instructions) S.meta.setup.custom_instructions = ws.custom_instructions;
+    // Mark Meta v2 enabled — there is no legacy path
+    S.meta.setup.meta_v2 = true;
 
     // ---- 2. Personas ----
     setMsg('Creating personas…');
@@ -16755,7 +18447,7 @@
       state.created.painPointIds.push(ppEnt.id);
     }
 
-    buildMaps(); // rebuild so IDs are resolvable
+    buildMaps();
 
     // ---- 4. Messages ----
     setMsg('Creating messages…');
@@ -16806,47 +18498,144 @@
       state.created.formatIds.push(fEnt.id);
     }
 
-    buildMaps(); // rebuild again before campaign + recipe creation
+    buildMaps();
 
-    // ---- 7. Campaign ----
-    setMsg('Creating campaign…');
+    // ---- 7. Meta v2 Campaign ----
+    setMsg('Creating Campaign…');
     var cam = state.campaign || {};
-    var campEnt = createEntity('campaign', {
-      name:         cam.name         || ws.product_name || 'My Campaign',
-      objective:    cam.objective    || ws.objective    || '',
-      date_start:   cam.date_start   || '',
-      date_end:     cam.date_end     || '',
-      budget_notes: cam.budget_notes || '',
-      persona_ids:  state.created.personaIds.slice(),
-      message_ids:  state.created.messageIds.slice(),
-      style_ids:    state.created.styleIds.slice(),
-      format_ids:   state.created.formatIds.slice()
-    });
-    state.created.campaignId = campEnt.id;
+    var campEnt = createEntity('campaign_v2', $.extend({}, C.META_CAMPAIGN_DEFAULTS, {
+      name:           cam.name || ws.product_name || 'My Campaign',
+      description:    cam.description || '',
+      objective:      C.META_OBJECTIVES[cam.objective] ? cam.objective : C.META_CAMPAIGN_DEFAULTS.objective,
+      budget_mode:    cam.budget_mode === 'ABO' ? 'ABO' : 'CBO',
+      daily_budget:   cam.daily_budget !== '' && cam.daily_budget != null ? Number(cam.daily_budget) : null,
+      lifetime_budget: cam.lifetime_budget !== '' && cam.lifetime_budget != null ? Number(cam.lifetime_budget) : null,
+      bid_strategy:   cam.bid_strategy || C.META_CAMPAIGN_DEFAULTS.bid_strategy,
+      start_time:     cam.start_time || '',
+      stop_time:      cam.stop_time || '',
+      brief:          cam.brief || '',
+      ai_instructions: cam.ai_instructions || '',
+      status:         'DRAFT'
+    }));
+    if (!campEnt) {
+      throw new Error('Failed to create Campaign entity.');
+    }
+    state.created.campaignV2Id = campEnt.id;
 
-    // ---- 8. Recipes (selected combos) ----
-    setMsg('Creating ad recipes…');
-    var selCombos = (state.combos || []).filter(function(c) { return c.selected; });
-    for (var ci = 0; ci < selCombos.length; ci++) {
-      var combo  = selCombos[ci];
-      var pOri   = combo.persona ? (state.personas || []).indexOf(combo.persona) : -1;
-      var mOri   = combo.message ? (state.messages || []).indexOf(combo.message) : -1;
-      var sOri   = combo.style   ? (state.styles   || []).indexOf(combo.style)   : -1;
-      var fOri   = combo.format  ? (state.formats  || []).indexOf(combo.format)  : -1;
-      var rEnt   = createEntity('recipe', {
-        campaign_id:      campEnt.id,
-        persona_id:       personaIdxToId[pOri]  || '',
-        message_id:       messageIdxToId[mOri]  || '',
-        style_id:         styleIdxToId[sOri]    || '',
-        visual_format_id: formatIdxToId[fOri]   || ''
+    // ---- 8. Ad Sets + Ads ----
+    setMsg('Creating Ad Sets and Ads…');
+    var selSets = (state.ad_sets || []).filter(function(s) { return s._selected; });
+    var adSetCount = 0, adCount = 0;
+    var buildPS = (window._cpPart2A && window._cpPart2A.buildPersonaSnapshot) ? window._cpPart2A.buildPersonaSnapshot : null;
+
+    for (var asi = 0; asi < selSets.length; asi++) {
+      var as = selSets[asi];
+
+      // Resolve persona via selPersonas-relative idx → real state.personas idx → created entity id
+      var personaWizard = selPersonas[as.persona_idx];
+      var personaRealIdx = personaWizard ? (state.personas || []).indexOf(personaWizard) : -1;
+      var personaEntId = personaRealIdx >= 0 ? personaIdxToId[personaRealIdx] : '';
+      var personaEnt = personaEntId ? getPersona(personaEntId) : null;
+
+      var brief = as.brief || {};
+      var msgIds = (brief.message_idx_list || []).map(function(i) {
+        var realI = selMessages[i] ? (state.messages || []).indexOf(selMessages[i]) : -1;
+        return realI >= 0 ? messageIdxToId[realI] : null;
+      }).filter(Boolean);
+      var styleIds = (brief.style_idx_list || []).map(function(i) {
+        var realI = selStyles[i] ? (state.styles || []).indexOf(selStyles[i]) : -1;
+        return realI >= 0 ? styleIdxToId[realI] : null;
+      }).filter(Boolean);
+      var formatIds = (brief.format_idx_list || []).map(function(i) {
+        var realI = selFormats[i] ? (state.formats || []).indexOf(selFormats[i]) : -1;
+        return realI >= 0 ? formatIdxToId[realI] : null;
+      }).filter(Boolean);
+
+      var setEnt = createEntity('ad_set', {
+        campaign_id:         campEnt.id,
+        name:                as.name || 'Ad Set ' + (asi + 1),
+        persona_id:          personaEntId || '',
+        persona_snapshot:    (personaEnt && buildPS) ? buildPS(personaEnt) : null,
+        audience_overrides:  as.audience_overrides || '',
+        optimization_goal:   C.META_OPTIMIZATION_GOALS[as.optimization_goal] ? as.optimization_goal : C.META_AD_SET_DEFAULTS.optimization_goal,
+        billing_event:       as.billing_event       || C.META_AD_SET_DEFAULTS.billing_event,
+        attribution_setting: as.attribution_setting || C.META_AD_SET_DEFAULTS.attribution_setting,
+        brief: {
+          creative_direction: brief.creative_direction || '',
+          message_ids:        msgIds,
+          style_ids:          styleIds,
+          format_ids:         formatIds,
+          hook_angles:        Array.isArray(brief.hook_angles) ? brief.hook_angles : [],
+          ai_notes:           brief.ai_notes || ''
+        }
       });
-      state.created.recipeIds.push(rEnt.id);
+      if (!setEnt) continue;
+      state.created.adSetIds.push(setEnt.id);
+      adSetCount++;
+
+      var selAds = (as.ads || []).filter(function(a) { return a._selected; });
+      for (var adi = 0; adi < selAds.length; adi++) {
+        var ad = selAds[adi];
+        var hook = ad.hook || {};
+        var creative = ad.creative || {};
+        var media = ad.media || {};
+        var adEnt = createEntity('ad', {
+          ad_set_id:     setEnt.id,
+          name:          ad.name || ((setEnt.name || 'Ad Set') + ' — Ad ' + (adi + 1)),
+          creative_type: C.META_AD_CREATIVE_TYPES[ad.creative_type] ? ad.creative_type : 'single_image',
+          hook: {
+            text:               hook.text || '',
+            type:               hook.type || 'direct',
+            source_message_id:  '',
+            selected_hook_id:   ''
+          },
+          creative: {
+            primary_text: creative.primary_text || '',
+            headline:     creative.headline     || '',
+            description:  creative.description  || '',
+            cta_type:     C.META_CTA_TYPES[creative.cta_type] ? creative.cta_type : 'LEARN_MORE',
+            cta_link:     creative.cta_link     || '',
+            display_link: '',
+            tracking_params: ''
+          },
+          media: {
+            image: {
+              asset_id: '',
+              ai_prompt: media.image_prompt || '',
+              brief: media.image_brief || '',
+              aspect_ratio: '1:1',
+              negative_prompt: '',
+              reference_image_ids: []
+            },
+            video: {
+              asset_id: '',
+              duration_seconds: 30,
+              aspect_ratio: '9:16',
+              concept: media.video_concept || '',
+              blueprint: { scenes: [] },
+              script: { rows: [] }
+            },
+            carousel_cards: []
+          }
+        });
+        if (adEnt) {
+          state.created.adIds.push(adEnt.id);
+          adCount++;
+          if (typeof window._cpMaybeAdvanceAdStatus === 'function') {
+            window._cpMaybeAdvanceAdStatus(adEnt, 'setup wizard');
+          }
+        }
+      }
     }
 
-    // ---- 9. Mark setup complete ----
+    // ---- 9. Mark setup complete + log ----
     setMsg('Finishing up…');
     S.meta.setup.setup_complete = true;
-    logActivity('setup_completed', '', '', ws.name || 'Workspace', 'Setup wizard completed');
+    logActivity(
+      'campaign_tree_generated', 'campaign_v2', campEnt.id, campEnt.name,
+      'Setup wizard: ' + adSetCount + ' Ad Set' + (adSetCount !== 1 ? 's' : '') +
+      ', ' + adCount + ' Ad' + (adCount !== 1 ? 's' : '')
+    );
     buildMaps();
     syncToTextarea();
 
@@ -16856,26 +18645,27 @@
     }
     $('.cp-setup-wizard').remove();
 
-    // ---- 11. Re-render app shell & navigate to campaigns ----
+    // ---- 11. Re-render app shell & navigate to the new Campaign Workspace ----
     if (window._cpRenderAppShell) {
       $('#cpApp').html(window._cpRenderAppShell());
-      // Re-attach AI picker placeholders and status indicator into new shell
       $('.cp-ai-picker-loading').each(function() {
         var actionId = $(this).data('pending-action');
         if (actionId) $(this).replaceWith(LLMService.renderInlinePicker(actionId));
       });
       updateAIStatusIndicator();
     }
-    navigate('campaigns');
+    S.selectedCampaignV2Id = campEnt.id;
+    S.selectedAdSetId = null;
+    S.selectedAdId = null;
+    navigate('campaign_workspace', { hash: 'campaign/' + campEnt.id });
 
-    var rCount = state.created.recipeIds.length;
     toast(
-      'Workspace ready! Created ' + state.created.personaIds.length + ' personas, ' +
-      state.created.messageIds.length + ' messages, and ' + rCount + ' recipe' + (rCount !== 1 ? 's' : '') + '.',
+      'Workspace ready! Created Campaign with ' +
+      adSetCount + ' Ad Set' + (adSetCount !== 1 ? 's' : '') + ' and ' +
+      adCount + ' Ad' + (adCount !== 1 ? 's' : '') + '.',
       'success', 6000
     );
   }
-
 
 /* ===== src/30-part2b/20-view-research-lab.js ===== */
   // ============================================================
@@ -18993,7 +20783,13 @@
     // Setup Wizard AI generators + finalize
     swAIGeneratePersonas: swAIGeneratePersonas, swAIGeneratePainPoints: swAIGeneratePainPoints,
     swAIGenerateMessages: swAIGenerateMessages, swAIGenerateStylesFormats: swAIGenerateStylesFormats,
+    swAIGenerateCampaignTree: swAIGenerateCampaignTree,
     finalizeSetupWizard: finalizeSetupWizard,
+
+    // New Campaign Wizard AI + finalize
+    ncwAISuggestAdSets: ncwAISuggestAdSets,
+    ncwAISuggestAds: ncwAISuggestAds,
+    finalizeNewCampaignWizard: finalizeNewCampaignWizard,
 
     // Status
     updateAIStatusIndicator: updateAIStatusIndicator, testAIConnection: testAIConnection,

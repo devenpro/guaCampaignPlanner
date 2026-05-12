@@ -52,7 +52,13 @@
     // Setup Wizard AI generators + finalize
     swAIGeneratePersonas: swAIGeneratePersonas, swAIGeneratePainPoints: swAIGeneratePainPoints,
     swAIGenerateMessages: swAIGenerateMessages, swAIGenerateStylesFormats: swAIGenerateStylesFormats,
+    swAIGenerateCampaignTree: swAIGenerateCampaignTree,
     finalizeSetupWizard: finalizeSetupWizard,
+
+    // New Campaign Wizard AI + finalize
+    ncwAISuggestAdSets: ncwAISuggestAdSets,
+    ncwAISuggestAds: ncwAISuggestAds,
+    finalizeNewCampaignWizard: finalizeNewCampaignWizard,
 
     // Status
     updateAIStatusIndicator: updateAIStatusIndicator, testAIConnection: testAIConnection,

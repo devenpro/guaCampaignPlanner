@@ -69,13 +69,11 @@
       html += '<div class="cp-nav-group">';
       html += '<div class="cp-nav-group-label">' + esc(grp.label) + '</div>';
 
-      var metaV2 = !!(S.meta && S.meta.setup && S.meta.setup.meta_v2);
       for (var key in APP_VIEWS) {
         var v = APP_VIEWS[key];
         if (v.group !== gk) continue;
         if (v.hidden) continue;                       // never in sidebar (e.g. campaign_workspace)
-        if (v.metaV2 && !metaV2) continue;            // gated to v2-enabled workspaces
-        if (v.legacy && metaV2) continue;             // hide legacy entries once v2 is on
+        if (v.legacy) continue;                       // legacy v1 surfaces are gone — always hide
         var active = S.currentView === key ? ' cp-nav-item-active' : '';
         var badgeHtml = renderSidebarBadge(key);
         html += '<a href="#' + key + '" class="cp-nav-item' + active + '" data-view="' + key + '">';

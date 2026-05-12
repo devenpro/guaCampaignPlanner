@@ -31,9 +31,8 @@
       workspace: { name: '', description: '', created: new Date().toISOString() },
       setup: {
         product_name: '', objective: '', custom_instructions: '', setup_complete: false,
-        // Meta v2 gate: false = old recipe-centric UI; true = new Workspace.
-        // Flipped by the Stage 6 migration wizard.
-        meta_v2: false,
+        // Meta v2 is the only supported surface — always on for new workspaces.
+        meta_v2: true,
         migrated_to_v2: false
       },
       settings: {
@@ -371,8 +370,9 @@
     var m = S.meta;
     m.workspace = m.workspace || { name: '', description: '', created: new Date().toISOString() };
     m.setup = m.setup || { product_name: '', objective: '', custom_instructions: '', setup_complete: false };
-    // Meta v2 setup flags (idempotent — don't clobber existing values)
-    if (typeof m.setup.meta_v2 !== 'boolean') m.setup.meta_v2 = false;
+    // Meta v2 is the only supported surface. Default true for new and existing
+    // workspaces. Existing v1 data is preserved but no longer visible.
+    if (m.setup.meta_v2 !== true) m.setup.meta_v2 = true;
     if (typeof m.setup.migrated_to_v2 !== 'boolean') m.setup.migrated_to_v2 = false;
     m.settings = m.settings || {};
     m.settings.timezone = m.settings.timezone || 'Asia/Kolkata';

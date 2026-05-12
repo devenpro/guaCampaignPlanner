@@ -181,6 +181,13 @@
       } catch(e) { return JSON.stringify(data); }
     }
 
-    return { init: init, isConfigured: isConfigured, getActiveProviders: getActiveProviders, getActiveModels: getActiveModels, getDefault: getDefault, resolveSelection: resolveSelection, savePreference: savePreference, renderInlinePicker: renderInlinePicker, callAI: callAI };
+    function abortAction(actionId) {
+      if (!actionId || !_inFlight[actionId]) return false;
+      try { _inFlight[actionId].abort(); } catch(e) {}
+      delete _inFlight[actionId];
+      return true;
+    }
+
+    return { init: init, isConfigured: isConfigured, getActiveProviders: getActiveProviders, getActiveModels: getActiveModels, getDefault: getDefault, resolveSelection: resolveSelection, savePreference: savePreference, renderInlinePicker: renderInlinePicker, callAI: callAI, abortAction: abortAction };
   })();
 
