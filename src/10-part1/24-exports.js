@@ -174,5 +174,11 @@
   window._cpEvaluateAutoStatus = evaluateAutoStatus;
   window._cpMaybeAdvanceRecipeStatus = maybeAdvanceRecipeStatus;
 
+  // Meta v2 snapshot + auto-status (Stage 2)
+  window._cpIsPersonaSnapshotStale = isPersonaSnapshotStale;
+  window._cpIsMessageSnapshotStale = isMessageSnapshotStale;
+  window._cpEvaluateAdAutoStatus = evaluateAdAutoStatus;
+  window._cpMaybeAdvanceAdStatus = maybeAdvanceAdStatus;
+
   console.log('[CP] Part 1 loaded');
 })(jQuery, Drupal);

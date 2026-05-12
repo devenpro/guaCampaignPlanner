@@ -24,6 +24,8 @@
   var metaObjective, metaOptimizationGoal, metaBillingEvent, metaPlacement;
   var metaCTA, metaCampaignStatus, metaAdSetStatus, metaAdStatus;
   var metaOptimizationGoalsForObjective;
+  var isPersonaSnapshotStale, isMessageSnapshotStale;
+  var evaluateAdAutoStatus, maybeAdvanceAdStatus;
 
   console.log('[CP] Part 2A script loaded');
 
@@ -90,6 +92,10 @@
     metaCTA = window._cpMetaCTA; metaCampaignStatus = window._cpMetaCampaignStatus;
     metaAdSetStatus = window._cpMetaAdSetStatus; metaAdStatus = window._cpMetaAdStatus;
     metaOptimizationGoalsForObjective = window._cpMetaOptimizationGoalsForObjective;
+    isPersonaSnapshotStale = window._cpIsPersonaSnapshotStale;
+    isMessageSnapshotStale = window._cpIsMessageSnapshotStale;
+    evaluateAdAutoStatus = window._cpEvaluateAdAutoStatus;
+    maybeAdvanceAdStatus = window._cpMaybeAdvanceAdStatus;
 
     // AI picker helper — lazy evaluation (Part 2B may not be loaded yet)
     window._cpAiSel = function(actionId) {

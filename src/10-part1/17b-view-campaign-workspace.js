@@ -147,8 +147,14 @@
   // --- Inspector ---
 
   function renderWorkspaceInspector(camp) {
-    if (S.selectedAdId)    return renderInspectorForAd(S.adMap[S.selectedAdId]);
-    if (S.selectedAdSetId) return renderInspectorForAdSet(S.adSetMap[S.selectedAdSetId]);
+    if (S.selectedAdId) {
+      var ad = S.adMap[S.selectedAdId];
+      if (ad) return renderInspectorForAdTabbed(ad);
+    }
+    if (S.selectedAdSetId) {
+      var adSet = S.adSetMap[S.selectedAdSetId];
+      if (adSet) return renderInspectorForAdSetTabbed(adSet);
+    }
     return renderInspectorForCampaign(camp);
   }
 

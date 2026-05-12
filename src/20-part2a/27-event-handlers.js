@@ -1053,5 +1053,239 @@
     $(document).off('click.cpv2-ai-sug-ads').on('click.cpv2-ai-sug-ads', '[data-action="ai-suggest-ads"]', function(e) {
       e.preventDefault(); toast('AI Ad suggestions arrive in Stage 4', 'info');
     });
+
+    // Stage 2: inspector tab switching
+    $(document).off('click.cpv2-set-tab').on('click.cpv2-set-tab', '[data-action="set-inspector-tab"]', function(e) {
+      e.preventDefault();
+      S.workspaceInspectorTab = $(this).data('tab') || 'overview';
+      render();
+    });
+
+    // Inline field save (blur for text/textarea; change for select/date)
+    $(document).off('blur.cpv2-inline change.cpv2-inline').on('blur.cpv2-inline change.cpv2-inline', '.cp-v2-inline-field', function() {
+      var $f = $(this);
+      var entityType = $f.data('entity-type');
+      var entityId = $f.data('entity-id');
+      var field = $f.data('field');
+      if (!entityType || !entityId || !field) return;
+      var value = $f.val();
+      if ($f.attr('type') === 'number') value = (value === '' ? null : Number(value));
+      saveEntityField(entityType, entityId, field, value);
+      // Auto-status for ads
+      if (entityType === 'ad') {
+        var ad = getAd(entityId);
+        if (ad && typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'edit');
+      }
+    });
+
+    // Brief chip toggles (Ad Set message_ids / style_ids / format_ids)
+    $(document).off('change.cpv2-brief-id').on('change.cpv2-brief-id', '.cp-v2-brief-id', function() {
+      var $f = $(this);
+      var field = $f.data('field');               // e.g. 'brief.message_ids'
+      var entityId = $f.data('entity-id');
+      var itemId = $f.data('id');
+      var adSet = getAdSet(entityId);
+      if (!adSet || !field) return;
+      adSet.brief = adSet.brief || {};
+      // Get the array via nested path
+      var pathParts = field.split('.');
+      var arr = adSet[pathParts[0]][pathParts[1]] || [];
+      var idx = arr.indexOf(itemId);
+      if (this.checked && idx === -1) arr.push(itemId);
+      if (!this.checked && idx > -1)  arr.splice(idx, 1);
+      saveEntityField('ad_set', entityId, field, arr);
+      // Toggle visual state
+      $(this).closest('.cp-chip').toggleClass('cp-chip-active', this.checked);
+    });
+
+    // Hook angles add/remove + edit (blur on the input)
+    $(document).off('click.cpv2-add-angle').on('click.cpv2-add-angle', '[data-action="ws-add-hook-angle"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var adSet = getAdSet(id);
+      if (!adSet) return;
+      adSet.brief = adSet.brief || {};
+      adSet.brief.hook_angles = (adSet.brief.hook_angles || []).concat(['']);
+      snapshot('Add hook angle');
+      saveEntityField('ad_set', id, 'brief.hook_angles', adSet.brief.hook_angles);
+    });
+    $(document).off('click.cpv2-rm-angle').on('click.cpv2-rm-angle', '[data-action="ws-remove-hook-angle"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id'); var idx = $(this).data('index');
+      var adSet = getAdSet(id);
+      if (!adSet || !adSet.brief) return;
+      adSet.brief.hook_angles = (adSet.brief.hook_angles || []).filter(function(_, i) { return i !== idx; });
+      snapshot('Remove hook angle');
+      saveEntityField('ad_set', id, 'brief.hook_angles', adSet.brief.hook_angles);
+    });
+    $(document).off('blur.cpv2-edit-angle').on('blur.cpv2-edit-angle', '.cp-v2-hook-angle', function() {
+      var $f = $(this);
+      var id = $f.data('entity-id'); var idx = $f.data('index');
+      var adSet = getAdSet(id);
+      if (!adSet || !adSet.brief) return;
+      var angles = adSet.brief.hook_angles || [];
+      if (angles[idx] === $f.val()) return;
+      angles[idx] = $f.val();
+      saveEntityField('ad_set', id, 'brief.hook_angles', angles);
+    });
+
+    // Pull a hook from a library message into an Ad (also captures snapshot)
+    $(document).off('click.cpv2-pull-hook').on('click.cpv2-pull-hook', '[data-action="ws-pull-hook"]', function(e) {
+      e.preventDefault();
+      var adId = $(this).data('ad-id');
+      var msgId = $(this).data('message-id');
+      var hookId = $(this).data('hook-id');
+      var ad = getAd(adId);
+      var msg = getMessage(msgId);
+      if (!ad || !msg) return;
+      var hook = (msg.hooks || []).find(function(h) { return h.id === hookId; });
+      if (!hook) return;
+      snapshot('Pull hook from message');
+      ad.hook = ad.hook || {};
+      ad.hook.text = hook.text;
+      ad.hook.type = hook.type || 'direct';
+      ad.hook.source_message_id = msg.id;
+      ad.hook.selected_hook_id = hook.id;
+      // Capture message snapshot
+      ad.message_snapshot = {
+        captured_at: new Date().toISOString(),
+        source_id: msg.id,
+        source_updated: msg.updated || msg.created || '',
+        title: msg.title || '',
+        body: msg.body || '',
+        funnel_stages: (msg.funnel_stages || []).slice(),
+        hook_snapshot: { id: hook.id, text: hook.text, type: hook.type || 'direct' }
+      };
+      ad.updated = new Date().toISOString();
+      if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'hook pulled');
+      buildMaps(); syncToTextarea(); render();
+      toast('Hook pulled from "' + msg.title + '"', 'success');
+    });
+
+    // Re-sync persona snapshot (stage 3 surfaces the button)
+    $(document).off('click.cpv2-resync-persona').on('click.cpv2-resync-persona', '[data-action="resync-persona-snapshot"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var adSet = getAdSet(id);
+      if (!adSet || !adSet.persona_id) return;
+      var persona = getPersona(adSet.persona_id);
+      if (!persona) return;
+      snapshot('Re-sync persona snapshot');
+      adSet.persona_snapshot = buildPersonaSnapshot(persona);
+      adSet.updated = new Date().toISOString();
+      logActivity('snapshot_resynced', 'ad_set', adSet.id, adSet.name, 'Re-synced persona snapshot from library');
+      buildMaps(); syncToTextarea(); render();
+      toast('Persona snapshot re-synced', 'success');
+    });
+
+    // Ad creative-type switch (media tab segmented control)
+    $(document).off('change.cpv2-mediatype').on('change.cpv2-mediatype', '.cp-v2-media-type-switch', function() {
+      var id = $(this).data('entity-id');
+      var val = $(this).val();
+      saveEntityField('ad', id, 'creative_type', val);
+    });
+
+    // Ad set pipeline status setter (Review tab)
+    $(document).off('click.cpv2-set-ad-status').on('click.cpv2-set-ad-status', '[data-action="ws-set-ad-status"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var status = $(this).data('status');
+      saveEntityField('ad', id, 'pipeline_status', status);
+    });
+
+    // Video scene rows
+    $(document).off('click.cpv2-add-scene').on('click.cpv2-add-scene', '[data-action="ws-ad-add-scene"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = getAd(id); if (!ad) return;
+      ad.media = ad.media || {};
+      ad.media.video = ad.media.video || { blueprint: { scenes: [] }, script: { rows: [] } };
+      ad.media.video.blueprint = ad.media.video.blueprint || { scenes: [] };
+      ad.media.video.blueprint.scenes.push({ name: '', description: '', timestamp: '', duration: 5 });
+      snapshot('Add scene');
+      saveEntityField('ad', id, 'media.video.blueprint.scenes', ad.media.video.blueprint.scenes);
+    });
+    $(document).off('click.cpv2-rm-scene').on('click.cpv2-rm-scene', '[data-action="ws-ad-remove-scene"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id'); var idx = $(this).data('index');
+      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
+      var arr = (ad.media.video.blueprint && ad.media.video.blueprint.scenes) || [];
+      arr.splice(idx, 1);
+      snapshot('Remove scene');
+      saveEntityField('ad', id, 'media.video.blueprint.scenes', arr);
+    });
+    $(document).off('blur.cpv2-scene-field').on('blur.cpv2-scene-field', '.cp-v2-scene-field', function() {
+      var $f = $(this);
+      var id = $f.data('entity-id'); var idx = $f.data('index'); var key = $f.data('key');
+      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
+      var arr = (ad.media.video.blueprint && ad.media.video.blueprint.scenes) || [];
+      if (!arr[idx]) return;
+      if (arr[idx][key] === $f.val()) return;
+      arr[idx][key] = $f.val();
+      saveEntityField('ad', id, 'media.video.blueprint.scenes', arr);
+    });
+
+    // Video script rows
+    $(document).off('click.cpv2-add-row').on('click.cpv2-add-row', '[data-action="ws-ad-add-script-row"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = getAd(id); if (!ad) return;
+      ad.media = ad.media || {};
+      ad.media.video = ad.media.video || { blueprint: { scenes: [] }, script: { rows: [] } };
+      ad.media.video.script = ad.media.video.script || { rows: [] };
+      ad.media.video.script.rows.push({ time: '', dialogue: '', visual: '', camera: '', audio: '' });
+      snapshot('Add script row');
+      saveEntityField('ad', id, 'media.video.script.rows', ad.media.video.script.rows);
+    });
+    $(document).off('click.cpv2-rm-row').on('click.cpv2-rm-row', '[data-action="ws-ad-remove-script-row"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id'); var idx = $(this).data('index');
+      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
+      var arr = (ad.media.video.script && ad.media.video.script.rows) || [];
+      arr.splice(idx, 1);
+      snapshot('Remove script row');
+      saveEntityField('ad', id, 'media.video.script.rows', arr);
+    });
+    $(document).off('blur.cpv2-script-field').on('blur.cpv2-script-field', '.cp-v2-script-field', function() {
+      var $f = $(this);
+      var id = $f.data('entity-id'); var idx = $f.data('index'); var key = $f.data('key');
+      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
+      var arr = (ad.media.video.script && ad.media.video.script.rows) || [];
+      if (!arr[idx]) return;
+      if (arr[idx][key] === $f.val()) return;
+      arr[idx][key] = $f.val();
+      saveEntityField('ad', id, 'media.video.script.rows', arr);
+    });
+
+    // Carousel cards
+    $(document).off('click.cpv2-add-card').on('click.cpv2-add-card', '[data-action="ws-ad-add-card"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = getAd(id); if (!ad) return;
+      ad.media = ad.media || {};
+      ad.media.carousel_cards = ad.media.carousel_cards || [];
+      ad.media.carousel_cards.push({ image_asset_id: '', headline: '', description: '', link: '' });
+      snapshot('Add carousel card');
+      saveEntityField('ad', id, 'media.carousel_cards', ad.media.carousel_cards);
+    });
+    $(document).off('click.cpv2-rm-card').on('click.cpv2-rm-card', '[data-action="ws-ad-remove-card"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id'); var idx = $(this).data('index');
+      var ad = getAd(id); if (!ad) return;
+      var arr = ad.media.carousel_cards || [];
+      arr.splice(idx, 1);
+      snapshot('Remove carousel card');
+      saveEntityField('ad', id, 'media.carousel_cards', arr);
+    });
+    $(document).off('blur.cpv2-card-field').on('blur.cpv2-card-field', '.cp-v2-card-field', function() {
+      var $f = $(this);
+      var id = $f.data('entity-id'); var idx = $f.data('index'); var key = $f.data('key');
+      var ad = getAd(id); if (!ad || !ad.media) return;
+      var arr = ad.media.carousel_cards || [];
+      if (!arr[idx]) return;
+      if (arr[idx][key] === $f.val()) return;
+      arr[idx][key] = $f.val();
+      saveEntityField('ad', id, 'media.carousel_cards', arr);
+    });
   }
 
