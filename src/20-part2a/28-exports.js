@@ -74,7 +74,15 @@
     openSetupWizard: openSetupWizard,
     refreshSetupWizard: refreshSetupWizard,
     setupWizardState: setupWizardState,
-    swClearSession: swClearSession
+    swClearSession: swClearSession,
+    swCancelAIGeneration: swCancelAIGeneration,
+    swRetryStep: swRetryStep,
+    swRelTime: _swRelTime,
+
+    // New Campaign Wizard
+    openNewCampaignWizard: openNewCampaignWizard,
+    refreshNCW: refreshNCW,
+    ncwState: ncwState
   };
 
   console.log('[CP] Part 2A loaded');

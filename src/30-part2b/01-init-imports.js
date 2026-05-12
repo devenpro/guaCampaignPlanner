@@ -112,12 +112,17 @@
     R.imagePicker = renderImagePicker;
     R.aiResearchPanel = renderAIResearchPanelBody;
     // Setup Wizard AI generators
-    R.swAIGeneratePersonas      = swAIGeneratePersonas;
-    R.swAIGeneratePainPoints    = swAIGeneratePainPoints;
-    R.swAIGenerateMessages      = swAIGenerateMessages;
-    R.swAIGenerateStylesFormats = swAIGenerateStylesFormats;
+    R.swAIGeneratePersonas       = swAIGeneratePersonas;
+    R.swAIGeneratePainPoints     = swAIGeneratePainPoints;
+    R.swAIGenerateMessages       = swAIGenerateMessages;
+    R.swAIGenerateStylesFormats  = swAIGenerateStylesFormats;
+    R.swAIGenerateCampaignTree   = swAIGenerateCampaignTree;
     // Setup Wizard finalize
-    R.finalizeSetupWizard       = finalizeSetupWizard;
+    R.finalizeSetupWizard        = finalizeSetupWizard;
+    // New Campaign Wizard AI + finalize
+    R.ncwAISuggestAdSets         = ncwAISuggestAdSets;
+    R.ncwAISuggestAds            = ncwAISuggestAds;
+    R.finalizeNewCampaignWizard  = finalizeNewCampaignWizard;
 
     setupPart2BEvents(); setupKeyboardShortcuts();
     LLMService.init();

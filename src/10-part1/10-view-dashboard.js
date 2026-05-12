@@ -5,8 +5,9 @@
   function renderDashboardView() {
     var html = '<div class="cp-view cp-view-dashboard">';
 
-    // Check if library is empty → show onboarding
-    if (S.totalPersonas === 0 && S.totalMessages === 0 && S.totalRecipes === 0) {
+    var camps = getAllCampaignsV2 ? getAllCampaignsV2() : [];
+    var libraryEmpty = S.totalPersonas === 0 && S.totalMessages === 0;
+    if (libraryEmpty && camps.length === 0) {
       html += renderDashOnboarding();
     } else {
       html += renderDashPopulated();
@@ -20,32 +21,25 @@
     var html = '<div class="cp-dash-onboarding">';
     html += '<div class="cp-dash-onboarding-header">';
     html += '<div class="cp-dash-onboarding-icon">' + icon('bullseye') + '</div>';
-    html += '<h1>Start Building Your Creative Library</h1>';
-    html += '<p>Build the four dimensions of creative diversity, then mix them into unique ad recipes. Start with personas — or jump to any step.</p>';
+    html += '<h1>Build Your First Meta Campaign</h1>';
+    html += '<p>Run the Setup Wizard to scaffold your library and your first Campaign + Ad Sets + Ads in one guided flow. Or jump straight to creating a Campaign.</p>';
     html += '</div>';
 
-    // 4-step guide
+    // 3-step guide tuned for Meta v2
     html += '<div class="cp-dash-steps">';
     var steps = [
-      { num: '1', label: 'Create Personas', desc: 'Define who you speak to', dim: 'persona', view: 'personas' },
-      { num: '2', label: 'Add Messages', desc: 'Define what you say', dim: 'message', view: 'messages' },
-      { num: '3', label: 'Set Styles & Formats', desc: 'Define how it looks & feels', dim: 'style', view: 'styles' },
-      { num: '4', label: 'Generate Recipes', desc: 'Mix & match combinations', dim: 'format', view: 'recipes' }
+      { num: '1', label: 'Run Setup Wizard',  desc: 'Personas, messages, and a starter Campaign — all from AI', action: 'open-setup-wizard',     icon: 'wand-magic',  color: '#9334e9' },
+      { num: '2', label: 'New Campaign',      desc: 'Skip setup — go straight to the Campaign Wizard',           action: 'new-campaign-v2',     icon: 'bullhorn',    color: '#1a73e8' },
+      { num: '3', label: 'Open Research Lab', desc: 'Browse and refine library entities individually',           action: 'go-view',             view:  'research',   icon: 'flask',       color: '#0d904f' }
     ];
     for (var i = 0; i < steps.length; i++) {
       var st = steps[i];
-      var dim = DIMENSIONS[st.dim];
-      html += '<div class="cp-dash-step-card" data-action="go-view" data-view="' + st.view + '">';
-      html += '<div class="cp-dash-step-num" style="background:' + dim.color + '15;color:' + dim.color + '">' + st.num + '</div>';
+      html += '<div class="cp-dash-step-card" data-action="' + esc(st.action) + '"' + (st.view ? ' data-view="' + esc(st.view) + '"' : '') + '>';
+      html += '<div class="cp-dash-step-num" style="background:' + st.color + '15;color:' + st.color + '">' + icon(st.icon) + '</div>';
       html += '<div class="cp-dash-step-label">' + esc(st.label) + '</div>';
       html += '<div class="cp-dash-step-desc">' + esc(st.desc) + '</div>';
       html += '</div>';
     }
-    html += '</div>';
-
-    // Research Lab shortcut
-    html += '<div class="cp-dash-onboarding-actions">';
-    html += '<button class="cp-btn cp-btn-ai" data-action="go-view" data-view="research">' + icon('sparkles') + ' Or use AI Research Lab to build everything at once</button>';
     html += '</div>';
 
     html += '</div>';
@@ -55,20 +49,16 @@
   function renderDashPopulated() {
     var html = '';
 
-    // View header
-    var v2 = isMetaV2Enabled();
+    // View header — Meta v2 is the only mode
     html += '<div class="cp-view-header"><div class="cp-view-header-left"><h1>' + icon('chart-pie') + ' Dashboard</h1></div>';
     html += '<div class="cp-view-header-right">';
-    if (v2) {
-      html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-campaign-tree">' + icon('wand-magic') + ' Generate Campaign</button>';
-    } else {
-      html += '<button class="cp-btn cp-btn-ai" data-action="open-campaign-wizard">' + icon('wand-magic') + ' New Campaign</button>';
-    }
+    html += '<button class="cp-btn cp-btn-ai" data-action="new-campaign-v2">' + icon('wand-magic') + ' New Campaign</button>';
+    html += '<button class="cp-btn cp-btn-outline" data-action="ai-generate-campaign-tree">' + icon('sparkles') + ' Quick draft from brief</button>';
     html += '<button class="cp-btn cp-btn-outline" data-action="go-view" data-view="research">' + icon('flask') + ' Research Lab</button>';
     html += '</div></div>';
 
-    // Meta v2 widget (only when enabled)
-    if (v2) html += renderDashMetaV2Widget();
+    // Meta v2 widget (Campaigns / Ad Sets / Ads rollups)
+    html += renderDashMetaV2Widget();
 
     // Continue working card (last edited recipe)
     var lastRecipe = (S.data.recipes || []).slice().sort(function(a, b) { return (b.updated || '') > (a.updated || '') ? 1 : -1; })[0];

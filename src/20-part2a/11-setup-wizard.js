@@ -3,54 +3,47 @@
   // ============================================================
 
   // --- State ---
-  var setupWizardState = {
-    step: 1,
-    aiLoading: false,
-    stepGenerated: {},   // { 3: true } — AI has been triggered for this step
-    stepSkipped: {},     // { 4: true } — user explicitly skipped
-    _expandedCards: {},  // { 'persona_2': true } — expanded detail cards
-    _ppActiveTab: 0,     // active persona tab on Step 4
-
-    workspace: { name: '', description: '', product_name: '', objective: '',
-                 brand_voice: '', target_audience: '', custom_instructions: '' },
-    aiConfig: { provider: '', model: '', tested: false },
-
-    personas:    [],  // [{ name, description, demographics:{}, psychographics:{}, _selected }]
-    pain_points: [],  // [{ pain_point, solution, category, _persona_idx, _selected }]
-    messages:    [],  // [{ title, body, theme, funnel_stages:[], hooks:[], _selected }]
-    styles:      [],  // [{ name, description, _selected }]
-    formats:     [],  // [{ name, description, category, _selected }]
-
-    campaign: { name: '', objective: '', date_start: '', date_end: '',
-                budget_notes: '', ai_instructions: '', default_media_type: 'image', default_priority: 'normal' },
-    combos: [],         // [{ p_idx, m_idx, s_idx, f_idx, title, selected }]
-
-    created: { personaIds: [], painPointIds: [], messageIds: [],
-               styleIds: [], formatIds: [], campaignId: '', recipeIds: [] },
-    finalizing: false
-  };
+  // Singleton object. NEVER reassign — always mutate via _swReplaceState() so the
+  // exported reference in window._cpPart2A.setupWizardState stays in sync with
+  // Part 2B's AI generators (which read it as a snapshot).
+  var setupWizardState = {};
 
   var SW_STEPS = [
-    { num: 1, label: 'Workspace',       sublabel: 'Brand & product',      phase: 'a', icon: 'building' },
-    { num: 2, label: 'AI Setup',        sublabel: 'Configure provider',   phase: 'a', icon: 'robot' },
-    { num: 3, label: 'Personas',        sublabel: 'Target audiences',     phase: 'b', icon: 'users' },
-    { num: 4, label: 'Pain Points',     sublabel: 'Audience challenges',  phase: 'b', icon: 'bolt' },
-    { num: 5, label: 'Messages',        sublabel: 'Ad angles & hooks',    phase: 'b', icon: 'comment-dots' },
-    { num: 6, label: 'Styles & Formats', sublabel: 'Creative approach',   phase: 'b', icon: 'palette' },
-    { num: 7, label: 'First Campaign',  sublabel: 'Campaign + recipes',   phase: 'c', icon: 'bullseye' },
-    { num: 8, label: 'Review',          sublabel: 'Launch your planner',  phase: 'c', icon: 'rocket' }
+    { num: 1, label: 'Workspace',        sublabel: 'Brand & product',      phase: 'a', icon: 'building' },
+    { num: 2, label: 'AI Setup',         sublabel: 'Configure provider',   phase: 'a', icon: 'robot' },
+    { num: 3, label: 'Personas',         sublabel: 'Target audiences',     phase: 'b', icon: 'users' },
+    { num: 4, label: 'Pain Points',      sublabel: 'Audience challenges',  phase: 'b', icon: 'bolt' },
+    { num: 5, label: 'Messages',         sublabel: 'Ad angles & hooks',    phase: 'b', icon: 'comment-dots' },
+    { num: 6, label: 'Styles & Formats', sublabel: 'Creative approach',    phase: 'b', icon: 'palette' },
+    { num: 7, label: 'Campaign Tree',    sublabel: 'Campaign + ad sets',   phase: 'c', icon: 'sitemap' },
+    { num: 8, label: 'Review',           sublabel: 'Launch your workspace',phase: 'c', icon: 'rocket' }
   ];
 
   var SW_PHASE_LABELS = { a: 'Phase A — Foundation', b: 'Phase B — Library', c: 'Phase C — Campaign' };
 
+  // Volatile keys excluded from session persistence (re-derived each run)
+  var SW_VOLATILE_KEYS = ['aiLoading', 'aiActionId', 'aiStartedAt', 'aiError'];
+
   // --- State persistence (session storage) ---
   function swSaveSession() {
-    try { sessionStorage.setItem('cp_sw_state', JSON.stringify(setupWizardState)); } catch(e) {}
+    try {
+      var clone = $.extend(true, {}, setupWizardState);
+      for (var i = 0; i < SW_VOLATILE_KEYS.length; i++) delete clone[SW_VOLATILE_KEYS[i]];
+      sessionStorage.setItem('cp_sw_state', JSON.stringify(clone));
+    } catch(e) {}
   }
   function swLoadSession() {
     try {
       var saved = sessionStorage.getItem('cp_sw_state');
-      if (saved) { var parsed = JSON.parse(saved); if (parsed && parsed.step) return parsed; }
+      if (saved) {
+        var parsed = JSON.parse(saved);
+        if (parsed && parsed.step) {
+          // Merge over fresh defaults so older sessions get any new fields
+          var merged = $.extend(true, _swFreshState(), parsed);
+          merged.aiLoading = false; merged.aiActionId = ''; merged.aiStartedAt = 0;
+          return merged;
+        }
+      }
     } catch(e) {}
     return null;
   }
@@ -89,6 +82,54 @@
     }
   }
 
+  // Replace properties on the singleton `setupWizardState` object instead of
+  // reassigning the variable. The exported reference in window._cpPart2A.setupWizardState
+  // is captured at module load time, so reassigning the IIFE-local variable
+  // would silently desync Part 2B (AI generators) from Part 2A (renderers).
+  function _swReplaceState(newState) {
+    var keys = Object.keys(setupWizardState);
+    for (var i = 0; i < keys.length; i++) delete setupWizardState[keys[i]];
+    var nkeys = Object.keys(newState);
+    for (var j = 0; j < nkeys.length; j++) setupWizardState[nkeys[j]] = newState[nkeys[j]];
+  }
+
+  // Forward-declared call at end of file initializes the singleton shape.
+  function _swFreshState() {
+    return {
+      step: 1,
+      aiLoading: false, aiActionId: '', aiStartedAt: 0, aiError: '',
+      stepGenerated: {}, stepSkipped: {},
+      _expandedCards: {}, _ppActiveTab: 0, _step7Mode: 'ai',
+      workspace: { name: '', description: '', product_name: '', objective: '',
+                   brand_voice: '', target_audience: '', custom_instructions: '' },
+      aiConfig: { provider: '', model: '', tested: false },
+      // Library entities — selected during steps 3-6
+      personas:    [],  // [{ name, description, demographics:{}, psychographics:{}, _selected }]
+      pain_points: [],  // [{ pain_point, solution, category, _persona_idx, _selected }]
+      messages:    [],  // [{ name, description, theme, hook_type, funnel_stage, body, _selected }]
+      styles:      [],  // [{ name, description, _selected }]
+      formats:     [],  // [{ name, description, category, _selected }]
+      // Meta v2 Campaign tree — generated in Step 7
+      campaign: {
+        name: '', description: '',
+        objective: 'OUTCOME_LEADS',
+        budget_mode: 'CBO', bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
+        daily_budget: '', lifetime_budget: '',
+        start_time: '', stop_time: '',
+        brief: '', ai_instructions: ''
+      },
+      ad_sets: [],          // [{ name, persona_idx, audience_overrides, optimization_goal, billing_event, attribution_setting, brief:{creative_direction,hook_angles,message_idx_list,style_idx_list,format_idx_list,ai_notes}, ads:[{name,creative_type,hook:{text,type},creative:{primary_text,headline,description,cta_type,cta_link},media:{image_brief,image_prompt,video_concept},_selected}], _selected }]
+      _campaignTreeContext: '',
+      created: {
+        personaIds: [], painPointIds: [], messageIds: [],
+        styleIds: [], formatIds: [],
+        campaignV2Id: '', adSetIds: [], adIds: [],
+        lastGeneratedAt: {}
+      },
+      finalizing: false, finalizeMsg: ''
+    };
+  }
+
   // --- Open wizard (entry point) ---
   function openSetupWizard(forceReset) {
     // Try to resume session unless forced reset
@@ -101,7 +142,7 @@
           message: 'You have an incomplete setup from a previous session (Step ' + saved.step + ' of 8). Would you like to continue where you left off?',
           confirmLabel: 'Resume',
           cancelLabel: 'Start Over',
-          onConfirm: function() { setupWizardState = saved; _renderSetupWizardDOM(); },
+          onConfirm: function() { _swReplaceState(saved); _renderSetupWizardDOM(); },
           onCancel:  function() { swClearSession(); _initFreshWizard(); }
         });
         return;
@@ -111,21 +152,7 @@
   }
 
   function _initFreshWizard() {
-    setupWizardState = {
-      step: 1, aiLoading: false, stepGenerated: {}, stepSkipped: {},
-      _expandedCards: {}, _ppActiveTab: 0,
-      workspace: { name: '', description: '', product_name: '', objective: '',
-                   brand_voice: '', target_audience: '', custom_instructions: '' },
-      aiConfig: { provider: '', model: '', tested: false },
-      personas: [], pain_points: [], messages: [], styles: [], formats: [],
-      campaign: { name: '', objective: '', date_start: '', date_end: '',
-                  budget_notes: '', ai_instructions: '',
-                  default_media_type: 'image', default_priority: 'normal' },
-      combos: [],
-      created: { personaIds: [], painPointIds: [], messageIds: [],
-                 styleIds: [], formatIds: [], campaignId: '', recipeIds: [] },
-      finalizing: false
-    };
+    _swReplaceState(_swFreshState());
     _renderSetupWizardDOM();
   }
 
@@ -199,13 +226,15 @@
     var ws          = setupWizardState;
     var currentStep = ws.step;
     // Count map: how many items are selected per step (for done badge)
+    var selSets = (ws.ad_sets || []).filter(function(s) { return s._selected; });
+    var step7Count = selSets.length;
     var stepCounts = {
       3: (ws.personas    || []).filter(function(p) { return p._selected; }).length,
       4: (ws.pain_points || []).filter(function(p) { return p._selected; }).length,
       5: (ws.messages    || []).filter(function(m) { return m._selected; }).length,
       6: (ws.styles      || []).filter(function(s) { return s._selected; }).length +
          (ws.formats     || []).filter(function(f) { return f._selected; }).length,
-      7: (ws.combos      || []).filter(function(c) { return c.selected; }).length
+      7: step7Count
     };
     var html = '';
     var lastPhase = '';
@@ -365,9 +394,19 @@
       }
     }
     if (n === 7) {
-      if (!ws.campaign.name.trim()) return { valid: false, message: 'Please enter a campaign name.' };
-      if (ws.combos.filter(function(c) { return c.selected; }).length === 0) {
-        return { valid: false, message: 'Please select at least one recipe combination.' };
+      if (!ws.campaign.name || !ws.campaign.name.trim()) {
+        return { valid: false, message: 'Please enter a campaign name.' };
+      }
+      var sets = (ws.ad_sets || []).filter(function(s) { return s._selected; });
+      if (sets.length === 0) {
+        return { valid: false, message: 'Please select at least one Ad Set to continue.' };
+      }
+      var anyAd = false;
+      for (var i = 0; i < sets.length; i++) {
+        if ((sets[i].ads || []).some(function(a) { return a._selected; })) { anyAd = true; break; }
+      }
+      if (!anyAd) {
+        return { valid: false, message: 'Each selected Ad Set needs at least one selected Ad.' };
       }
     }
     return { valid: true };
@@ -424,67 +463,72 @@
 
   // --- Auto-trigger AI for steps that support it ---
   function _swAutoTriggerAI(n) {
-    var R   = window._cpRenderers || {};
-    var cfg = setupWizardState.aiConfig;
-    // Always persist the wizard AI picker selection first so Part 2B resolves it correctly
-    if (cfg.provider && cfg.model && window._cpPart2B && window._cpPart2B.LLMService) {
-      window._cpPart2B.LLMService.savePreference('sw-ai-config', cfg.provider, cfg.model);
-    }
-    // Step 7: auto-generate combos algorithmically (no AI — always refresh on entry)
-    if (n === 7) { _swAutoGenerateCombos(); return; }
-    // All other AI steps: only generate once per wizard session
-    if (setupWizardState.stepGenerated[n]) return;
-    if (n === 3 && typeof R.swAIGeneratePersonas === 'function')       R.swAIGeneratePersonas();
-    if (n === 4 && typeof R.swAIGeneratePainPoints === 'function')     R.swAIGeneratePainPoints();
-    if (n === 5 && typeof R.swAIGenerateMessages === 'function')       R.swAIGenerateMessages();
-    if (n === 6 && typeof R.swAIGenerateStylesFormats === 'function')  R.swAIGenerateStylesFormats();
-  }
+    var R    = window._cpRenderers || {};
+    var p2b  = window._cpPart2B;
+    var cfg  = setupWizardState.aiConfig;
+    var LLM  = p2b && p2b.LLMService;
 
-  // --- Algorithmically generate recipe combos for Step 7 (no AI) ---
-  function _swAutoGenerateCombos() {
-    var state = setupWizardState;
-    // Auto-fill campaign name from product name if still blank
-    if (!state.campaign.name && state.workspace.product_name) {
-      state.campaign.name = state.workspace.product_name + ' Campaign';
+    // Persist wizard picker selection so Part 2B's resolveSelection finds it
+    if (cfg.provider && cfg.model && LLM) {
+      LLM.savePreference('sw-ai-config', cfg.provider, cfg.model);
     }
-    var selPersonas = (state.personas   || []).filter(function(p) { return p._selected; });
-    var selMessages = (state.messages   || []).filter(function(m) { return m._selected; });
-    var selStyles   = (state.styles     || []).filter(function(s) { return s._selected; });
-    var selFormats  = (state.formats    || []).filter(function(f) { return f._selected; });
 
-    if (!selPersonas.length && !selMessages.length) {
-      state.combos = [];
+    // Show inline error if AI isn't configured and the step needs it
+    if (n >= 3 && n <= 7 && LLM && !LLM.isConfigured()) {
+      setupWizardState.aiError = 'AI not configured. Go back to Step 2 (AI Setup) or configure providers in Settings → AI.';
       refreshSetupWizard();
       return;
     }
 
-    var personasToUse = selPersonas.length ? selPersonas : [null];
-    var messagesToUse = selMessages.length ? selMessages : [null];
-    var stylesToUse   = selStyles.length   ? selStyles   : [null];
-    var formatsToUse  = selFormats.length  ? selFormats  : [null];
+    // Only generate once per wizard session per step (Regenerate flips the flag)
+    if (setupWizardState.stepGenerated[n]) return;
 
-    var combos    = [];
-    var styleIdx  = 0;
-    var formatIdx = 0;
-
-    outer:
-    for (var pi = 0; pi < personasToUse.length; pi++) {
-      var msgSlice = messagesToUse.slice(0, 2); // up to 2 messages per persona
-      for (var mi = 0; mi < msgSlice.length; mi++) {
-        combos.push({
-          persona:  personasToUse[pi],
-          message:  msgSlice[mi],
-          style:    stylesToUse[styleIdx  % stylesToUse.length],
-          format:   formatsToUse[formatIdx % formatsToUse.length],
-          selected: true
-        });
-        styleIdx++;
-        formatIdx++;
-        if (combos.length >= 8) break outer;
+    if (n === 3 && typeof R.swAIGeneratePersonas       === 'function') R.swAIGeneratePersonas();
+    if (n === 4 && typeof R.swAIGeneratePainPoints     === 'function') R.swAIGeneratePainPoints();
+    if (n === 5 && typeof R.swAIGenerateMessages       === 'function') R.swAIGenerateMessages();
+    if (n === 6 && typeof R.swAIGenerateStylesFormats  === 'function') R.swAIGenerateStylesFormats();
+    if (n === 7 && typeof R.swAIGenerateCampaignTree   === 'function' && setupWizardState._step7Mode !== 'manual') {
+      // Auto-fill campaign name from product name if blank
+      if (!setupWizardState.campaign.name && setupWizardState.workspace.product_name) {
+        setupWizardState.campaign.name = setupWizardState.workspace.product_name + ' Launch';
       }
+      R.swAIGenerateCampaignTree();
     }
+  }
 
-    state.combos = combos;
+  // --- Cancel any in-flight wizard AI generation ---
+  function swCancelAIGeneration() {
+    var state = setupWizardState;
+    var aid   = state.aiActionId || 'sw-ai-config';
+    if (window._cpPart2B && window._cpPart2B.LLMService && typeof window._cpPart2B.LLMService.abortAction === 'function') {
+      window._cpPart2B.LLMService.abortAction(aid);
+    }
+    state.aiLoading = false;
+    state.aiActionId = '';
+    state.aiError = 'Generation cancelled.';
     refreshSetupWizard();
   }
+
+  // --- Retry a step's AI generation ---
+  function swRetryStep(n) {
+    setupWizardState.stepGenerated[n] = false;
+    setupWizardState.aiError = '';
+    refreshSetupWizard();
+    _swAutoTriggerAI(n);
+  }
+
+  // --- Format relative time for "Last generated" badges ---
+  function _swRelTime(ts) {
+    if (!ts) return '';
+    var diff = Date.now() - ts;
+    if (diff < 5000)      return 'just now';
+    if (diff < 60000)     return Math.round(diff / 1000) + 's ago';
+    if (diff < 3600000)   return Math.round(diff / 60000) + 'm ago';
+    if (diff < 86400000)  return Math.round(diff / 3600000) + 'h ago';
+    return new Date(ts).toLocaleString();
+  }
+
+  // Initialize singleton with fresh state shape so anything reading it before
+  // openSetupWizard runs gets a sensible object (rather than `{}`).
+  _swReplaceState(_swFreshState());
 

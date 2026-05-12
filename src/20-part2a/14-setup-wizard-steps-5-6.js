@@ -15,19 +15,21 @@
       'b'
     );
 
+    html += _swAIErrorBanner(5);
+
     // Generation bar
     html += '<div class="cp-sw-gen-bar">';
     html += '<textarea class="cp-textarea" id="swMessageContext" rows="2"';
     html += ' placeholder="Optional: focus on specific angles (e.g., emphasise ROI, use testimonial hooks)...">';
     html += esc(ws._messageContext || '');
     html += '</textarea>';
-    html += '<button class="cp-btn cp-btn-ai" data-action="sw-ai-gen-messages"' + (ws.aiLoading ? ' disabled' : '') + '>';
-    html += icon('sparkles') + ' ' + (generated ? 'Regenerate' : 'Generate with AI');
-    html += '</button>';
+    html += _swGenButton('sw-ai-gen-messages', generated, ws.aiLoading);
     html += '</div>';
 
     if (ws.aiLoading) {
       html += _buildSWSkeletonCards(4);
+    } else if (generated && !messages.length) {
+      html += _swAIEmptyAfterGenBanner('messages', ws._messageContext || '');
     } else if (!messages.length) {
       html += '<div class="cp-sw-empty-state">';
       html += '<div class="cp-sw-empty-icon">' + icon('message-square') + '</div>';
@@ -39,6 +41,7 @@
       html += '<span class="cp-sw-sel-count' + (selCount > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
       html += selCount + ' of ' + messages.length + ' message' + (messages.length !== 1 ? 's' : '') + ' selected';
       html += '</span>';
+      html += _swLastGeneratedLabel(5);
       html += '</div>';
       html += '<div class="cp-sw-card-grid">';
       for (var i = 0; i < messages.length; i++) {
@@ -55,6 +58,7 @@
     var expanded = setupWizardState._expandedCards['m_' + idx];
 
     var stageLabel = { top: 'TOFU', mid: 'MOFU', bot: 'BOFU' }[msg.funnel_stage] || msg.funnel_stage || '';
+    var funnelSlug = msg.funnel_stage ? ('--funnel-' + esc(msg.funnel_stage)) : '';
 
     var html = '<div class="cp-sw-sel-card' + (selected ? ' cp-sw-sel-card--selected' : '') + '" data-idx="' + idx + '" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '">';
     html += '<div class="cp-sw-sel-card-check">' + (selected ? icon('check') : '') + '</div>';
@@ -62,24 +66,28 @@
     if (msg.description) {
       html += '<div class="cp-sw-sel-card-body">' + esc(truncate(msg.description, 100)) + '</div>';
     }
+    // Always-visible body as blockquote — the actual starter copy line
+    if (msg.body) {
+      html += '<blockquote class="cp-sw-msg-body">' + esc(truncate(msg.body, 160)) + '</blockquote>';
+    }
     var tags = [];
-    if (msg.theme)      tags.push(msg.theme);
-    if (msg.hook_type)  tags.push(msg.hook_type);
-    if (stageLabel)     tags.push(stageLabel);
+    if (msg.theme)      tags.push({ label: msg.theme,     cls: 'cp-sw-sel-card-tag--theme' });
+    if (msg.hook_type)  tags.push({ label: msg.hook_type, cls: 'cp-sw-sel-card-tag--hook' });
+    if (stageLabel)     tags.push({ label: stageLabel,    cls: 'cp-sw-sel-card-tag--funnel cp-sw-sel-card-tag' + funnelSlug });
     if (tags.length) {
       html += '<div class="cp-sw-sel-card-tags">';
       for (var t = 0; t < tags.length; t++) {
-        html += '<span class="cp-sw-sel-card-tag">' + esc(tags[t]) + '</span>';
+        html += '<span class="cp-sw-sel-card-tag ' + esc(tags[t].cls) + '">' + esc(tags[t].label) + '</span>';
       }
       html += '</div>';
     }
-    if (msg.body) {
+    if (msg.body && msg.body.length > 160) {
       html += '<button class="cp-sw-sel-card-expand" data-action="sw-card-expand" data-key="m_' + idx + '">';
-      html += icon(expanded ? 'chevron-up' : 'chevron-down') + ' ' + (expanded ? 'Hide copy' : 'View copy angle');
+      html += icon(expanded ? 'chevron-up' : 'chevron-down') + ' ' + (expanded ? 'Hide full copy' : 'Show full copy');
       html += '</button>';
       if (expanded) {
         html += '<div class="cp-sw-sel-card-expanded-body">';
-        html += '<div class="cp-sw-sel-card-detail-label">Copy angle</div>';
+        html += '<div class="cp-sw-sel-card-detail-label">Full copy angle</div>';
         html += '<div class="cp-sw-sel-card-detail-value" style="white-space:pre-line">' + esc(msg.body) + '</div>';
         html += '</div>';
       }
@@ -103,15 +111,15 @@
       'b'
     );
 
+    html += _swAIErrorBanner(6);
+
     // Single generation bar for both styles and formats
     html += '<div class="cp-sw-gen-bar">';
     html += '<textarea class="cp-textarea" id="swStyleFormatContext" rows="2"';
     html += ' placeholder="Optional: specify platforms, formats or style direction (e.g., focus on TikTok-native, minimalist aesthetic)...">';
     html += esc(ws._styleFormatContext || '');
     html += '</textarea>';
-    html += '<button class="cp-btn cp-btn-ai" data-action="sw-ai-gen-styles-formats"' + (ws.aiLoading ? ' disabled' : '') + '>';
-    html += icon('sparkles') + ' ' + (generated ? 'Regenerate All' : 'Generate with AI');
-    html += '</button>';
+    html += _swGenButton('sw-ai-gen-styles-formats', generated, ws.aiLoading);
     html += '</div>';
 
     if (ws.aiLoading) {
@@ -120,6 +128,8 @@
       html += _buildSWSkeletonCards(3);
       html += _buildSWSubSection('Formats', 0, 0);
       html += _buildSWSkeletonCards(4);
+    } else if (generated && bothEmpty) {
+      html += _swAIEmptyAfterGenBanner('styles or formats', ws._styleFormatContext || '');
     } else if (bothEmpty && !generated) {
       html += '<div class="cp-sw-empty-state">';
       html += '<div class="cp-sw-empty-icon">' + icon('palette') + '</div>';
