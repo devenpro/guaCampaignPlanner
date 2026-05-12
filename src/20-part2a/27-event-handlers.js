@@ -920,6 +920,138 @@
       }
     });
 
+    // --- Meta v2 actions (Campaign Workspace, Meta Campaigns list, modals) ---
+    setupMetaV2EventHandlers();
+
     console.log('[CP] Part 2A event handlers ready');
+  }
+
+  function setupMetaV2EventHandlers() {
+    // List view + workspace navigation
+    $(document).off('click.cpv2-new-campaign').on('click.cpv2-new-campaign', '[data-action="new-campaign-v2"]', function(e) {
+      e.preventDefault(); openMetaCampaignModal();
+    });
+    $(document).off('click.cpv2-open-campaign').on('click.cpv2-open-campaign', '[data-action="open-campaign-v2"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var id = $(this).data('id');
+      if (id && window._cpNavigateToCampaignV2) window._cpNavigateToCampaignV2(id);
+    });
+    $(document).off('click.cpv2-edit-campaign').on('click.cpv2-edit-campaign', '[data-action="edit-campaign-v2"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); openMetaCampaignModal($(this).data('id'));
+    });
+    $(document).off('click.cpv2-delete-campaign').on('click.cpv2-delete-campaign', '[data-action="delete-campaign-v2"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); confirmDeleteMetaCampaign($(this).data('id'));
+    });
+
+    // Ad Set CRUD
+    $(document).off('click.cpv2-add-adset').on('click.cpv2-add-adset', '[data-action="ws-add-ad-set"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var campId = $(this).data('campaign-id') || S.selectedCampaignV2Id;
+      if (campId) openMetaAdSetModal(campId, { create: true });
+    });
+    $(document).off('click.cpv2-edit-adset').on('click.cpv2-edit-adset', '[data-action="edit-ad-set"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); openMetaAdSetModal($(this).data('id'));
+    });
+    $(document).off('click.cpv2-delete-adset').on('click.cpv2-delete-adset', '[data-action="delete-ad-set"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); confirmDeleteMetaAdSet($(this).data('id'));
+    });
+
+    // Ad CRUD
+    $(document).off('click.cpv2-add-ad').on('click.cpv2-add-ad', '[data-action="ws-add-ad"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var setId = $(this).data('ad-set-id') || S.selectedAdSetId;
+      if (setId) openMetaAdModal(setId, { create: true });
+    });
+    $(document).off('click.cpv2-edit-ad').on('click.cpv2-edit-ad', '[data-action="edit-ad"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); openMetaAdModal($(this).data('id'));
+    });
+    $(document).off('click.cpv2-delete-ad').on('click.cpv2-delete-ad', '[data-action="delete-ad"]', function(e) {
+      e.preventDefault(); e.stopPropagation(); confirmDeleteMetaAd($(this).data('id'));
+    });
+
+    // Workspace tree selection
+    $(document).off('click.cpv2-sel-camp').on('click.cpv2-sel-camp', '[data-action="ws-select-campaign"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id') || S.selectedCampaignV2Id;
+      if (!id) return;
+      S.selectedAdSetId = null; S.selectedAdId = null;
+      navigate('campaign_workspace', { hash: 'campaign/' + id });
+    });
+    $(document).off('click.cpv2-sel-set').on('click.cpv2-sel-set', '[data-action="ws-select-ad-set"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var set = id ? getAdSet(id) : null;
+      if (!set) return;
+      S.selectedAdSetId = id; S.selectedAdId = null;
+      navigate('campaign_workspace', { hash: 'campaign/' + set.campaign_id + '/ad_set/' + id });
+    });
+    $(document).off('click.cpv2-sel-ad').on('click.cpv2-sel-ad', '[data-action="ws-select-ad"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = id ? getAd(id) : null;
+      if (!ad) return;
+      var set = getAdSet(ad.ad_set_id);
+      S.selectedAdSetId = ad.ad_set_id; S.selectedAdId = id;
+      navigate('campaign_workspace', { hash: 'campaign/' + (set ? set.campaign_id : '') + '/ad_set/' + ad.ad_set_id + '/ad/' + id });
+    });
+
+    // Tree branch collapse toggle
+    $(document).off('click.cpv2-tree-toggle').on('click.cpv2-tree-toggle', '[data-action="ws-toggle-tree"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var id = $(this).data('id');
+      if (!id) return;
+      S.workspaceTreeCollapsed = S.workspaceTreeCollapsed || {};
+      S.workspaceTreeCollapsed[id] = !S.workspaceTreeCollapsed[id];
+      render();
+    });
+
+    // Meta Campaigns list filters
+    $(document).off('input.cpv2-camp-search').on('input.cpv2-camp-search', '#cpCampaignV2Search', debounce(function() {
+      S.campaignV2Filter = S.campaignV2Filter || {};
+      S.campaignV2Filter.search = $(this).val() || '';
+      render();
+    }, 250));
+    $(document).off('change.cpv2-camp-status').on('change.cpv2-camp-status', '#cpCampaignV2StatusFilter', function() {
+      S.campaignV2Filter = S.campaignV2Filter || {};
+      S.campaignV2Filter.status = $(this).val();
+      render();
+    });
+    $(document).off('change.cpv2-camp-obj').on('change.cpv2-camp-obj', '#cpCampaignV2ObjectiveFilter', function() {
+      S.campaignV2Filter = S.campaignV2Filter || {};
+      S.campaignV2Filter.objective = $(this).val();
+      render();
+    });
+
+    // Modal: chip toggles for Special Ad Categories + placements
+    $(document).off('change.cpv2-chip').on('change.cpv2-chip', '.cp-modal-body .cp-chip input[type="checkbox"]', function() {
+      var $label = $(this).closest('.cp-chip');
+      $label.toggleClass('cp-chip-active', this.checked);
+      // Special-case: if "NONE" is being toggled on, clear other categories
+      if (this.checked && $(this).hasClass('cp-v2-special-cat') && $(this).data('key') === 'NONE') {
+        $('.cp-v2-special-cat').not(this).each(function() {
+          this.checked = false; $(this).closest('.cp-chip').removeClass('cp-chip-active');
+        });
+      }
+      // If toggling a non-NONE category on, deselect NONE
+      else if (this.checked && $(this).hasClass('cp-v2-special-cat') && $(this).data('key') !== 'NONE') {
+        var $none = $('.cp-v2-special-cat[data-key="NONE"]');
+        if ($none.is(':checked')) { $none.prop('checked', false); $none.closest('.cp-chip').removeClass('cp-chip-active'); }
+      }
+    });
+    // Ad Set: Advantage Placements toggle hides/shows custom-placements section
+    $(document).off('change.cpv2-adv-pl').on('change.cpv2-adv-pl', '.cp-v2-placements-advantage', function() {
+      $('.cp-v2-custom-placements').toggle(!this.checked);
+    });
+
+    // Stub stage-4 AI buttons — wire to a real handler later, just toast for now
+    $(document).off('click.cpv2-ai-tree').on('click.cpv2-ai-tree', '[data-action="ai-generate-campaign-tree"]', function(e) {
+      e.preventDefault(); toast('AI Campaign Tree generator arrives in Stage 4', 'info');
+    });
+    $(document).off('click.cpv2-ai-sug-sets').on('click.cpv2-ai-sug-sets', '[data-action="ai-suggest-ad-sets"]', function(e) {
+      e.preventDefault(); toast('AI Ad Set suggestions arrive in Stage 4', 'info');
+    });
+    $(document).off('click.cpv2-ai-sug-ads').on('click.cpv2-ai-sug-ads', '[data-action="ai-suggest-ads"]', function(e) {
+      e.preventDefault(); toast('AI Ad suggestions arrive in Stage 4', 'info');
+    });
   }
 

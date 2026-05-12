@@ -1,0 +1,159 @@
+/* ==========================================================
+   Meta v2 modal components — sections, chips, segmented, toggle
+   Used by Campaign / Ad Set / Ad CRUD modals.
+   ========================================================== */
+
+/* ----- Modal context banner (parent breadcrumb in modal header) ----- */
+.cp-modal-context {
+  font-size: 12px;
+  color: var(--cp-text-secondary);
+  padding: var(--cp-space-2) var(--cp-space-3);
+  background: var(--cp-gray-50);
+  border-left: 3px solid var(--cp-primary);
+  border-radius: var(--cp-radius-sm);
+  margin-bottom: var(--cp-space-3);
+}
+.cp-modal-context strong { color: var(--cp-text-primary); }
+
+/* ----- Form sections (visual grouping inside modal body) ----- */
+.cp-form-section {
+  border-top: 1px solid var(--cp-border-light);
+  padding-top: var(--cp-space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cp-space-3);
+}
+.cp-form-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+.cp-form-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cp-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ----- Extra form-row helpers ----- */
+.cp-form-grow {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cp-space-1);
+}
+.cp-form-grow label,
+.cp-form-grow > label {
+  font-size: var(--cp-font-size-xs);
+  font-weight: 600;
+  color: var(--cp-text-secondary);
+}
+
+.cp-form-help {
+  font-size: 11px;
+  color: var(--cp-text-muted);
+  line-height: 1.45;
+  margin-top: 2px;
+}
+.cp-form-hint {
+  font-size: 11px;
+  color: var(--cp-text-muted);
+  background: var(--cp-gray-50);
+  padding: 6px 10px;
+  border-radius: var(--cp-radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ----- Toggle-style label-wrapped checkbox ----- */
+.cp-form-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--cp-space-2);
+  padding: var(--cp-space-2) var(--cp-space-3);
+  border: 1px solid var(--cp-border-light);
+  border-radius: var(--cp-radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  transition: border-color 120ms, background 120ms;
+}
+.cp-form-toggle:hover {
+  border-color: var(--cp-primary);
+}
+.cp-form-toggle input[type="checkbox"] {
+  accent-color: var(--cp-primary);
+}
+.cp-form-toggle input[type="checkbox"]:checked + span {
+  color: var(--cp-text-primary);
+}
+
+/* ----- Chip grid (multi-select tags) ----- */
+.cp-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1.5px solid var(--cp-border-default);
+  border-radius: var(--cp-radius-full);
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--cp-white);
+  color: var(--cp-text-secondary);
+  cursor: pointer;
+  transition: all var(--cp-transition-fast);
+  user-select: none;
+}
+.cp-chip:hover {
+  border-color: var(--cp-primary);
+  color: var(--cp-primary);
+}
+.cp-chip-active {
+  background: var(--cp-primary);
+  border-color: var(--cp-primary);
+  color: var(--cp-white) !important;
+}
+
+/* ----- Segmented control (radio-style buttons) ----- */
+.cp-segmented {
+  display: inline-flex;
+  border: 1.5px solid var(--cp-border-default);
+  border-radius: var(--cp-radius-md);
+  overflow: hidden;
+  background: var(--cp-white);
+  flex-wrap: wrap;
+}
+.cp-segmented-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cp-text-secondary);
+  background: transparent;
+  cursor: pointer;
+  border-right: 1px solid var(--cp-border-light);
+  transition: all var(--cp-transition-fast);
+}
+.cp-segmented-option:last-child { border-right: none; }
+.cp-segmented-option:hover {
+  background: var(--cp-gray-50);
+  color: var(--cp-primary);
+}
+.cp-segmented-active {
+  background: var(--cp-primary);
+  color: var(--cp-white);
+}
+.cp-segmented-active:hover {
+  background: var(--cp-primary);
+  color: var(--cp-white);
+}

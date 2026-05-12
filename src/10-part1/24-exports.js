@@ -8,6 +8,7 @@
   window._cpRender = renderCurrentView;
   window._cpRenderAppShell = renderAppShell;
   window._cpNavigate = navigate;
+  window._cpNavigateToCampaignV2 = navigateToCampaignV2;
   window._cpToast = toast;
   window._cpGenerateId = generateId;
   window._cpBuildMaps = buildMaps;

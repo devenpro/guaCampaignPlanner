@@ -29,6 +29,12 @@
     // Campaign CRUD
     openCampaignModal: openCampaignModal, confirmDeleteCampaign: confirmDeleteCampaign,
 
+    // Meta v2 CRUD
+    openMetaCampaignModal: openMetaCampaignModal, confirmDeleteMetaCampaign: confirmDeleteMetaCampaign,
+    openMetaAdSetModal: openMetaAdSetModal, confirmDeleteMetaAdSet: confirmDeleteMetaAdSet,
+    openMetaAdModal: openMetaAdModal, confirmDeleteMetaAd: confirmDeleteMetaAd,
+    buildPersonaSnapshot: buildPersonaSnapshot,
+
     // Tag CRUD
     openTagModal: openTagModal, confirmDeleteTag: confirmDeleteTag,
 

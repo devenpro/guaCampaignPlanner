@@ -82,6 +82,13 @@
       'folder-plus': 'fa-folder-plus', 'trophy': 'fa-trophy',
       'blender': 'fa-blender', 'shuffle': 'fa-shuffle', 'sitemap': 'fa-sitemap',
       'diagram-project': 'fa-diagram-project', 'link-simple': 'fa-link',
+      'crosshairs': 'fa-crosshairs', 'bullseye-arrow': 'fa-bullseye-arrow',
+      'people-group': 'fa-people-group', 'circle-dot': 'fa-circle-dot',
+      'plus-circle': 'fa-circle-plus', 'minus-circle': 'fa-circle-minus',
+      'magnifying-glass-chart': 'fa-magnifying-glass-chart',
+      'arrows-up-down-left-right': 'fa-arrows-up-down-left-right',
+      'note-sticky': 'fa-note-sticky', 'rectangle-list': 'fa-rectangle-list',
+      'list-tree': 'fa-list-tree', 'object-group': 'fa-object-group',
       'chart-mixed': 'fa-chart-mixed', 'square-poll-vertical': 'fa-square-poll-vertical',
       // Brand icons (use fab class)
       'youtube': 'fa-youtube', 'instagram': 'fa-instagram', 'facebook': 'fa-facebook',

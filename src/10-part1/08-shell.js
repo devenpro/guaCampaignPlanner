@@ -69,9 +69,13 @@
       html += '<div class="cp-nav-group">';
       html += '<div class="cp-nav-group-label">' + esc(grp.label) + '</div>';
 
+      var metaV2 = !!(S.meta && S.meta.setup && S.meta.setup.meta_v2);
       for (var key in APP_VIEWS) {
         var v = APP_VIEWS[key];
         if (v.group !== gk) continue;
+        if (v.hidden) continue;                       // never in sidebar (e.g. campaign_workspace)
+        if (v.metaV2 && !metaV2) continue;            // gated to v2-enabled workspaces
+        if (v.legacy && metaV2) continue;             // hide legacy entries once v2 is on
         var active = S.currentView === key ? ' cp-nav-item-active' : '';
         var badgeHtml = renderSidebarBadge(key);
         html += '<a href="#' + key + '" class="cp-nav-item' + active + '" data-view="' + key + '">';
@@ -105,6 +109,7 @@
       case 'styles': count = S.totalStyles + S.totalFormats; break;
       case 'recipes': count = S.activeRecipes; break;
       case 'campaigns': count = S.activeCampaigns; break;
+      case 'meta_campaigns': count = S.activeCampaignsV2; break;
       case 'images': count = S.images.length; break;
       case 'activity':
         var recent24h = (S.activity || []).filter(function(a) {

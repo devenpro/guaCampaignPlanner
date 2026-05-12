@@ -16,6 +16,14 @@
   var getFilteredRecipes, getRecipe;
   var getRecipeProduction, getProductionStatusStyle, parseProductionData;
   var Constants;
+  // Meta v2 imports
+  var getCampaignV2, getAdSet, getAd;
+  var getAllCampaignsV2, getAllAdSets, getAllAds;
+  var getAdSetsByCampaign, getAdsByAdSet, getAdsByCampaign;
+  var isMetaV2Enabled;
+  var metaObjective, metaOptimizationGoal, metaBillingEvent, metaPlacement;
+  var metaCTA, metaCampaignStatus, metaAdSetStatus, metaAdStatus;
+  var metaOptimizationGoalsForObjective;
 
   console.log('[CP] Part 2A script loaded');
 
@@ -72,6 +80,16 @@
     getProductionStatusStyle = window._cpGetProductionStatusStyle;
     parseProductionData = window._cpParseProductionData;
     Constants = window._cpConstants;
+    // Meta v2 helpers
+    getCampaignV2 = window._cpGetCampaignV2; getAdSet = window._cpGetAdSet; getAd = window._cpGetAd;
+    getAllCampaignsV2 = window._cpGetAllCampaignsV2; getAllAdSets = window._cpGetAllAdSets; getAllAds = window._cpGetAllAds;
+    getAdSetsByCampaign = window._cpGetAdSetsByCampaign; getAdsByAdSet = window._cpGetAdsByAdSet; getAdsByCampaign = window._cpGetAdsByCampaign;
+    isMetaV2Enabled = window._cpIsMetaV2Enabled;
+    metaObjective = window._cpMetaObjective; metaOptimizationGoal = window._cpMetaOptimizationGoal;
+    metaBillingEvent = window._cpMetaBillingEvent; metaPlacement = window._cpMetaPlacement;
+    metaCTA = window._cpMetaCTA; metaCampaignStatus = window._cpMetaCampaignStatus;
+    metaAdSetStatus = window._cpMetaAdSetStatus; metaAdStatus = window._cpMetaAdStatus;
+    metaOptimizationGoalsForObjective = window._cpMetaOptimizationGoalsForObjective;
 
     // AI picker helper — lazy evaluation (Part 2B may not be loaded yet)
     window._cpAiSel = function(actionId) {
