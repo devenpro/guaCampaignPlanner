@@ -282,6 +282,35 @@
 .cp-inspector-title-input:hover { border-color: var(--cp-border-light) !important; background: var(--cp-gray-50, #f8f9fa) !important; }
 .cp-inspector-title-input:focus { border-color: var(--cp-primary) !important; background: #fff !important; outline: none; }
 
+/* Phase 7c: Inspector tab bar — pin above any overlapping content so the
+   Hook / Copy / Media / Review buttons always receive clicks. */
+.cp-inspector-tabs {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: var(--cp-space-2) 0;
+  border-bottom: 1px solid var(--cp-border-light);
+  margin-bottom: var(--cp-space-3);
+}
+.cp-inspector-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--cp-radius-sm);
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: var(--cp-font-size-sm);
+  color: var(--cp-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background var(--cp-transition-fast), color var(--cp-transition-fast), border-color var(--cp-transition-fast);
+}
+.cp-inspector-tab:hover { background: var(--cp-gray-50, #f8f9fa); color: var(--cp-text-primary); }
+.cp-inspector-tab-active { background: var(--cp-primary-subtle, #e8f0fe); color: var(--cp-primary); border-color: var(--cp-primary); font-weight: 600; }
+.cp-workspace-inspector-tab-body { position: relative; z-index: 1; }
+
 /* Phase 5: Structured media brief — export section */
 .cp-media-brief-actions { border: 1px solid var(--cp-border-light); }
 .cp-media-brief-preview { background: var(--cp-gray-50, #f8f9fa); color: var(--cp-text-primary); border: 1px solid var(--cp-border-light); }
@@ -291,3 +320,15 @@
 .cp-sw-idea-chips { display: flex; flex-wrap: wrap; gap: 4px; }
 .cp-sw-idea-chips .cp-chip { cursor: pointer; user-select: none; }
 
+/* Phase 7b: Error boundary — diagnostic card shown when a view renderer throws */
+.cp-view-crash { padding: var(--cp-space-6); display: flex; justify-content: center; }
+.cp-view-crash-inner { max-width: 720px; width: 100%; background: #fff; border: 1px solid var(--cp-border-light); border-radius: var(--cp-radius-md); padding: var(--cp-space-5); box-shadow: var(--cp-shadow-sm); }
+.cp-view-crash-icon { font-size: 28px; color: var(--cp-error, #d93025); margin-bottom: var(--cp-space-2); }
+.cp-view-crash-title { font-size: var(--cp-font-size-lg, 1.15rem); font-weight: 700; margin: 0 0 var(--cp-space-2) 0; color: var(--cp-text-primary); }
+.cp-view-crash-view { font-size: var(--cp-font-size-sm); color: var(--cp-text-secondary); margin: 0 0 var(--cp-space-3) 0; }
+.cp-view-crash-view code { background: var(--cp-gray-100, #f1f3f4); padding: 2px 6px; border-radius: var(--cp-radius-sm); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; }
+.cp-view-crash-msg { background: var(--cp-error-light, #fde9e7); color: var(--cp-error, #d93025); border: 1px solid rgba(217,48,37,0.2); border-radius: var(--cp-radius-sm); padding: var(--cp-space-3); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: var(--cp-font-size-sm); margin: 0 0 var(--cp-space-3) 0; white-space: pre-wrap; word-break: break-word; }
+.cp-view-crash-stack { margin: 0 0 var(--cp-space-3) 0; font-size: var(--cp-font-size-sm); }
+.cp-view-crash-stack summary { cursor: pointer; color: var(--cp-text-secondary); padding: var(--cp-space-1) 0; user-select: none; }
+.cp-view-crash-stack pre { background: var(--cp-gray-50, #f8f9fa); border: 1px solid var(--cp-border-light); border-radius: var(--cp-radius-sm); padding: var(--cp-space-2); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; line-height: 1.5; overflow: auto; max-height: 320px; white-space: pre; }
+.cp-view-crash-actions { display: flex; gap: var(--cp-space-2); flex-wrap: wrap; }

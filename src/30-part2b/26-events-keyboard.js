@@ -2,7 +2,18 @@
   // SECTION 22: EVENTS & KEYBOARD SHORTCUTS
   // ============================================================
 
+  // Wraps a block of handler registrations so an error in one block
+  // doesn't suppress the rest. Mirrors Part 2A's _safeHandlerBlock.
+  function _safeHandlerBlockB(label, fn) {
+    try { fn(); }
+    catch (e) {
+      console.error('[CP] Handler block "' + label + '" failed:', e);
+      if (typeof toast === 'function') toast('Some controls in "' + label + '" may not work — see console.', 'warning', 5000);
+    }
+  }
+
   function setupPart2BEvents() {
+    _safeHandlerBlockB('Part 2B: core', function() {
     // AI Research Panel interactions
     $(document).off('click.cp2b-research-gen').on('click.cp2b-research-gen', '[data-action="ai-research-generate"]', function(e) {
       e.preventDefault();
@@ -234,6 +245,7 @@
       e.preventDefault(); e.stopPropagation();
       exportAdMediaBriefJSON($(this).data('id'));
     });
+    });  // _safeHandlerBlockB('Part 2B: core')
 
     console.log('[CP] Part 2B event handlers ready');
   }

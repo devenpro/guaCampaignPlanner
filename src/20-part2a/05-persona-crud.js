@@ -143,10 +143,9 @@
   function confirmDeletePersona(personaId) {
     var p = getPersona(personaId);
     if (!p) return;
-    var recipeCount = (S.personaRecipeCounts || {})[personaId] || 0;
     openConfirmDialog({
       title: 'Delete Persona',
-      message: 'Delete "' + p.name + '"?' + (recipeCount > 0 ? ' ' + recipeCount + ' recipe(s) will lose their persona reference.' : ''),
+      message: 'Delete "' + p.name + '"?',
       confirmLabel: 'Delete', danger: true,
       onConfirm: function() {
         snapshot('Delete persona');

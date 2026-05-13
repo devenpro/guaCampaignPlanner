@@ -59,6 +59,14 @@
       if (viewName) navigate(viewName);
     });
 
+    // View-crash card actions
+    $(document).off('click.cp-crash-reload').on('click.cp-crash-reload', '[data-action="crash-reload"]', function(e) {
+      e.preventDefault(); location.reload();
+    });
+    $(document).off('click.cp-crash-dash').on('click.cp-crash-dash', '[data-action="crash-go-dashboard"]', function(e) {
+      e.preventDefault(); navigate('dashboard');
+    });
+
     // Sidebar toggle
     $(document).off('click.cp-sidebar-toggle').on('click.cp-sidebar-toggle', '#cpSidebarToggle', function() {
       S.sidebarHidden = !S.sidebarHidden;

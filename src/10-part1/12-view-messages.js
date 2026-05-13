@@ -21,7 +21,6 @@
     }
     // Sort
     if (f.sortBy === 'title') filtered.sort(function(a, b) { return (a.title || '').localeCompare(b.title || ''); });
-    else if (f.sortBy === 'most_used') filtered.sort(function(a, b) { return (S.messageRecipeCounts[b.id] || 0) - (S.messageRecipeCounts[a.id] || 0); });
     else filtered.sort(function(a, b) { return (b.updated || b.created || '') > (a.updated || a.created || '') ? 1 : -1; });
 
     var funnels = (S.meta.settings && S.meta.settings.funnel_stages) || [];
@@ -50,7 +49,6 @@
     html += '<select class="cp-select cp-select-sm" id="cpMessageSort">';
     html += '<option value="updated"' + (f.sortBy === 'updated' ? ' selected' : '') + '>Newest</option>';
     html += '<option value="title"' + (f.sortBy === 'title' ? ' selected' : '') + '>Alphabetical</option>';
-    html += '<option value="most_used"' + (f.sortBy === 'most_used' ? ' selected' : '') + '>Most Used</option>';
     html += '</select>';
     html += '</div>';
 
@@ -76,7 +74,6 @@
   }
 
   function renderMessageCard(msg) {
-    var recipeCount = S.messageRecipeCounts[msg.id] || 0;
     var hookCount = (msg.hooks || []).length;
     var bodyPreview = stripHtml(msg.body || '');
 
@@ -111,10 +108,9 @@
       html += '<div class="cp-message-card-delivery">' + icon('pen-fancy') + ' ' + esc(truncate(msg.delivery_notes, 80)) + '</div>';
     }
 
-    // Footer: hooks + recipe count
+    // Footer: hooks
     html += '<div class="cp-message-card-footer">';
     if (hookCount > 0) html += '<span class="cp-badge" style="background:#9334e915;color:#9334e9">' + icon('anchor') + ' ' + hookCount + ' hook' + (hookCount !== 1 ? 's' : '') + '</span>';
-    html += '<span class="cp-text-muted">Used in <strong>' + recipeCount + '</strong> recipe' + (recipeCount !== 1 ? 's' : '') + '</span>';
     html += '</div>';
 
     html += '</div>';

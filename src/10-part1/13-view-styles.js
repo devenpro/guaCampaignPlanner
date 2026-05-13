@@ -45,8 +45,6 @@
   }
 
   function renderStyleCard(style) {
-    var recipeCount = S.styleRecipeCounts[style.id] || 0;
-
     var html = '<div class="cp-card cp-style-card" data-id="' + esc(style.id) + '">';
     html += '<div class="cp-style-card-header">';
     html += '<h3>' + esc(style.name || 'Untitled Style') + '</h3>';
@@ -69,9 +67,6 @@
       html += '</div>';
     }
 
-    html += '<div class="cp-style-card-footer">';
-    html += '<span class="cp-text-muted">Used in <strong>' + recipeCount + '</strong> recipe' + (recipeCount !== 1 ? 's' : '') + '</span>';
-    html += '</div>';
     html += '</div>';
     return html;
   }
@@ -96,7 +91,6 @@
   }
 
   function renderFormatCard(format) {
-    var recipeCount = S.formatRecipeCounts[format.id] || 0;
     var catLabel = '';
     if (format.category) {
       var fcat = FORMAT_CATEGORIES.find(function(c) { return c.id === format.category; });
@@ -150,9 +144,6 @@
       html += '</div>';
     }
 
-    html += '<div class="cp-format-card-footer">';
-    html += '<span class="cp-text-muted">Used in <strong>' + recipeCount + '</strong> recipe' + (recipeCount !== 1 ? 's' : '') + '</span>';
-    html += '</div>';
     html += '</div>';
     return html;
   }

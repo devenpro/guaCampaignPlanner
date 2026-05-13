@@ -1385,9 +1385,14 @@
 
     // If setup not complete, show setup view
     if (!S.meta.setup || !S.meta.setup.setup_complete) {
-      html = renderSetupView();
-      $('#cpContent').html(html);
-      setupViewEventHandlers();
+      try {
+        html = renderSetupView();
+        $('#cpContent').html(html);
+        setupViewEventHandlers();
+      } catch (e) {
+        console.error('[CP] renderSetupView crashed:', e);
+        $('#cpContent').html(renderViewCrashCard('setup', e));
+      }
       return;
     }
 
@@ -1399,32 +1404,63 @@
       S.personasTab = 'pain_points';
     }
 
-    switch (S.currentView) {
-      case 'dashboard':    html = renderDashboardView(); break;
-      case 'personas':     html = renderPersonasView(); break;
-      case 'messages':     html = renderMessagesView(); break;
-      case 'styles':       html = renderStylesView(); break;
-      case 'formats':      html = renderFormatsPageView(); break;
-      case 'meta_campaigns':     html = renderMetaCampaignsView(); break;
-      case 'campaign_workspace': html = renderCampaignWorkspaceView(); break;
-      case 'calendar':   html = renderCalendarView(); break;
-      case 'research':   html = (R.researchView) ? R.researchView() : renderResearchPlaceholder(); break;
-      case 'images':     html = (R.imagesView) ? R.imagesView() : renderImagesPlaceholder(); break;
-      case 'activity':   html = renderActivityView(); break;
-      case 'settings':   html = (R.settingsView) ? R.settingsView() : renderSettingsPlaceholder(); break;
-      default:           html = renderDashboardView();
+    // Error boundary — if any single view renderer throws, the user sees a
+    // diagnostic card instead of a blank #cpContent (silent failure).
+    try {
+      switch (S.currentView) {
+        case 'dashboard':    html = renderDashboardView(); break;
+        case 'personas':     html = renderPersonasView(); break;
+        case 'messages':     html = renderMessagesView(); break;
+        case 'styles':       html = renderStylesView(); break;
+        case 'formats':      html = renderFormatsPageView(); break;
+        case 'meta_campaigns':     html = renderMetaCampaignsView(); break;
+        case 'campaign_workspace': html = renderCampaignWorkspaceView(); break;
+        case 'calendar':   html = renderCalendarView(); break;
+        case 'research':   html = (R.researchView) ? R.researchView() : renderResearchPlaceholder(); break;
+        case 'images':     html = (R.imagesView) ? R.imagesView() : renderImagesPlaceholder(); break;
+        case 'activity':   html = renderActivityView(); break;
+        case 'settings':   html = (R.settingsView) ? R.settingsView() : renderSettingsPlaceholder(); break;
+        default:           html = renderDashboardView();
+      }
+      $('#cpContent').html(html);
+      setupViewEventHandlers();
+
+      // Trigger Part 2A/2B view-specific event setup
+      if (R.setupResearchEvents && S.currentView === 'research') R.setupResearchEvents();
+      if (R.setupImagesEvents && S.currentView === 'images') R.setupImagesEvents();
+      if (R.setupSettingsEvents && S.currentView === 'settings') R.setupSettingsEvents();
+
+      // Replace any AI picker placeholders left in the DOM (Part 2B loads async).
+      if (typeof window._cpReplaceAiPickers === 'function') window._cpReplaceAiPickers();
+    } catch (e) {
+      console.error('[CP] renderCurrentView crashed for view "' + S.currentView + '":', e);
+      $('#cpContent').html(renderViewCrashCard(S.currentView, e));
     }
+  }
 
-    $('#cpContent').html(html);
-    setupViewEventHandlers();
-
-    // Trigger Part 2A/2B view-specific event setup
-    if (R.setupResearchEvents && S.currentView === 'research') R.setupResearchEvents();
-    if (R.setupImagesEvents && S.currentView === 'images') R.setupImagesEvents();
-    if (R.setupSettingsEvents && S.currentView === 'settings') R.setupSettingsEvents();
-
-    // Replace any AI picker placeholders left in the DOM (Part 2B loads async).
-    if (typeof window._cpReplaceAiPickers === 'function') window._cpReplaceAiPickers();
+  // Diagnostic card shown when a view renderer throws. Replaces the blank
+  // #cpContent silent-failure mode with something the user can act on.
+  function renderViewCrashCard(viewName, err) {
+    var msg = (err && err.message) ? String(err.message) : String(err);
+    var stack = (err && err.stack) ? String(err.stack) : '';
+    var html = '';
+    html += '<div class="cp-view-crash">';
+    html += '<div class="cp-view-crash-inner">';
+    html += '<div class="cp-view-crash-icon">' + icon('triangle-exclamation') + '</div>';
+    html += '<h2 class="cp-view-crash-title">Something went wrong rendering this view.</h2>';
+    html += '<p class="cp-view-crash-view">View: <code>' + esc(viewName || '(unknown)') + '</code></p>';
+    html += '<pre class="cp-view-crash-msg">' + esc(msg) + '</pre>';
+    if (stack) {
+      html += '<details class="cp-view-crash-stack"><summary>Stack trace</summary><pre>' + esc(stack) + '</pre></details>';
+    }
+    html += '<div class="cp-view-crash-actions">';
+    html += '<button class="cp-btn cp-btn-primary" data-action="crash-reload">' + icon('rotate') + ' Reload page</button>';
+    html += '<button class="cp-btn cp-btn-outline" data-action="crash-go-dashboard">' + icon('chart-pie') + ' Back to Dashboard</button>';
+    html += '</div>';
+    html += '<p class="cp-text-muted" style="margin-top:var(--cp-space-3);font-size:var(--cp-font-size-xs)">Copy the stack trace above and share it with your developer for a fix.</p>';
+    html += '</div>';
+    html += '</div>';
+    return html;
   }
 
 
@@ -2514,14 +2550,12 @@
     var ppCount = (persona.pain_point_ids || []).length + (persona.custom_pain_points || []).length;
     var demo = persona.demographics || {};
     var demoStr = [demo.age_range, demo.gender !== 'all' ? demo.gender : '', demo.location].filter(Boolean).join(' · ');
-    var recipeCount = S.personaRecipeCounts[persona.id] || 0;
 
     var html = '<div class="cp-persona-item' + sel + '" data-action="select-persona" data-id="' + esc(persona.id) + '">';
     html += '<div class="cp-persona-item-name">' + esc(persona.name || 'Unnamed Persona') + '</div>';
     if (demoStr) html += '<div class="cp-persona-item-demo">' + esc(demoStr) + '</div>';
     html += '<div class="cp-persona-item-badges">';
     if (ppCount > 0) html += '<span class="cp-badge" style="background:#d9302515;color:#d93025">' + icon('bolt') + ' ' + ppCount + '</span>';
-    if (recipeCount > 0) html += '<span class="cp-badge" style="background:#e3740015;color:#e37400">' + icon('bolt') + ' ' + recipeCount + ' recipes</span>';
     html += '</div>';
     html += '</div>';
     return html;
@@ -2697,7 +2731,6 @@
     var demo = p.demographics || {};
     var psych = p.psychographics || {};
     var painPoints = getPersonaPainPoints(p);
-    var recipeCount = S.personaRecipeCounts[p.id] || 0;
 
     var html = '<div class="cp-persona-detail">';
 
@@ -2708,8 +2741,7 @@
     html += '<h2>' + esc(p.name || 'Unnamed Persona') + '</h2>';
     html += '<div class="cp-text-muted">';
     if (cat) html += 'Category: ' + esc(cat.name) + ' · ';
-    html += 'Used in ' + recipeCount + ' recipe' + (recipeCount !== 1 ? 's' : '');
-    html += ' · Created ' + formatDate(p.created);
+    html += 'Created ' + formatDate(p.created);
     html += '</div></div>';
     html += '<div class="cp-persona-detail-actions">';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="edit-persona" data-id="' + esc(p.id) + '">' + icon('edit') + ' Edit</button>';
@@ -2836,7 +2868,6 @@
     }
     // Sort
     if (f.sortBy === 'title') filtered.sort(function(a, b) { return (a.title || '').localeCompare(b.title || ''); });
-    else if (f.sortBy === 'most_used') filtered.sort(function(a, b) { return (S.messageRecipeCounts[b.id] || 0) - (S.messageRecipeCounts[a.id] || 0); });
     else filtered.sort(function(a, b) { return (b.updated || b.created || '') > (a.updated || a.created || '') ? 1 : -1; });
 
     var funnels = (S.meta.settings && S.meta.settings.funnel_stages) || [];
@@ -2865,7 +2896,6 @@
     html += '<select class="cp-select cp-select-sm" id="cpMessageSort">';
     html += '<option value="updated"' + (f.sortBy === 'updated' ? ' selected' : '') + '>Newest</option>';
     html += '<option value="title"' + (f.sortBy === 'title' ? ' selected' : '') + '>Alphabetical</option>';
-    html += '<option value="most_used"' + (f.sortBy === 'most_used' ? ' selected' : '') + '>Most Used</option>';
     html += '</select>';
     html += '</div>';
 
@@ -2891,7 +2921,6 @@
   }
 
   function renderMessageCard(msg) {
-    var recipeCount = S.messageRecipeCounts[msg.id] || 0;
     var hookCount = (msg.hooks || []).length;
     var bodyPreview = stripHtml(msg.body || '');
 
@@ -2926,10 +2955,9 @@
       html += '<div class="cp-message-card-delivery">' + icon('pen-fancy') + ' ' + esc(truncate(msg.delivery_notes, 80)) + '</div>';
     }
 
-    // Footer: hooks + recipe count
+    // Footer: hooks
     html += '<div class="cp-message-card-footer">';
     if (hookCount > 0) html += '<span class="cp-badge" style="background:#9334e915;color:#9334e9">' + icon('anchor') + ' ' + hookCount + ' hook' + (hookCount !== 1 ? 's' : '') + '</span>';
-    html += '<span class="cp-text-muted">Used in <strong>' + recipeCount + '</strong> recipe' + (recipeCount !== 1 ? 's' : '') + '</span>';
     html += '</div>';
 
     html += '</div>';
@@ -2985,8 +3013,6 @@
   }
 
   function renderStyleCard(style) {
-    var recipeCount = S.styleRecipeCounts[style.id] || 0;
-
     var html = '<div class="cp-card cp-style-card" data-id="' + esc(style.id) + '">';
     html += '<div class="cp-style-card-header">';
     html += '<h3>' + esc(style.name || 'Untitled Style') + '</h3>';
@@ -3009,9 +3035,6 @@
       html += '</div>';
     }
 
-    html += '<div class="cp-style-card-footer">';
-    html += '<span class="cp-text-muted">Used in <strong>' + recipeCount + '</strong> recipe' + (recipeCount !== 1 ? 's' : '') + '</span>';
-    html += '</div>';
     html += '</div>';
     return html;
   }
@@ -3036,7 +3059,6 @@
   }
 
   function renderFormatCard(format) {
-    var recipeCount = S.formatRecipeCounts[format.id] || 0;
     var catLabel = '';
     if (format.category) {
       var fcat = FORMAT_CATEGORIES.find(function(c) { return c.id === format.category; });
@@ -3090,9 +3112,6 @@
       html += '</div>';
     }
 
-    html += '<div class="cp-format-card-footer">';
-    html += '<span class="cp-text-muted">Used in <strong>' + recipeCount + '</strong> recipe' + (recipeCount !== 1 ? 's' : '') + '</span>';
-    html += '</div>';
     html += '</div>';
     return html;
   }
@@ -4736,6 +4755,14 @@
       e.preventDefault();
       var viewName = $(this).data('view');
       if (viewName) navigate(viewName);
+    });
+
+    // View-crash card actions
+    $(document).off('click.cp-crash-reload').on('click.cp-crash-reload', '[data-action="crash-reload"]', function(e) {
+      e.preventDefault(); location.reload();
+    });
+    $(document).off('click.cp-crash-dash').on('click.cp-crash-dash', '[data-action="crash-go-dashboard"]', function(e) {
+      e.preventDefault(); navigate('dashboard');
     });
 
     // Sidebar toggle
@@ -6466,10 +6493,9 @@
   function confirmDeletePersona(personaId) {
     var p = getPersona(personaId);
     if (!p) return;
-    var recipeCount = (S.personaRecipeCounts || {})[personaId] || 0;
     openConfirmDialog({
       title: 'Delete Persona',
-      message: 'Delete "' + p.name + '"?' + (recipeCount > 0 ? ' ' + recipeCount + ' recipe(s) will lose their persona reference.' : ''),
+      message: 'Delete "' + p.name + '"?',
       confirmLabel: 'Delete', danger: true,
       onConfirm: function() {
         snapshot('Delete persona');
@@ -6674,10 +6700,9 @@
   function confirmDeleteMessage(msgId) {
     var m = getMessage(msgId);
     if (!m) return;
-    var recipeCount = (S.messageRecipeCounts || {})[msgId] || 0;
     openConfirmDialog({
       title: 'Delete Message',
-      message: 'Delete "' + m.title + '"?' + (recipeCount > 0 ? ' ' + recipeCount + ' recipe(s) will lose their message reference.' : ''),
+      message: 'Delete "' + m.title + '"?',
       confirmLabel: 'Delete', danger: true,
       onConfirm: function() {
         snapshot('Delete message');
@@ -6726,10 +6751,9 @@
   function confirmDeleteStyle(styleId) {
     var s = getStyle(styleId);
     if (!s) return;
-    var recipeCount = (S.styleRecipeCounts || {})[styleId] || 0;
     openConfirmDialog({
       title: 'Delete Style',
-      message: 'Delete "' + s.name + '"?' + (recipeCount > 0 ? ' ' + recipeCount + ' recipe(s) will lose their style reference.' : ''),
+      message: 'Delete "' + s.name + '"?',
       confirmLabel: 'Delete', danger: true,
       onConfirm: function() { snapshot('Delete style'); deleteEntity('style', styleId); }
     });
@@ -6780,10 +6804,9 @@
   function confirmDeleteFormat(formatId) {
     var f = getFormat(formatId);
     if (!f) return;
-    var recipeCount = (S.formatRecipeCounts || {})[formatId] || 0;
     openConfirmDialog({
       title: 'Delete Visual Format',
-      message: 'Delete "' + f.name + '"?' + (recipeCount > 0 ? ' ' + recipeCount + ' recipe(s) will lose their format reference.' : ''),
+      message: 'Delete "' + f.name + '"?',
       confirmLabel: 'Delete', danger: true,
       onConfirm: function() { snapshot('Delete format'); deleteEntity('visual_format', formatId); }
     });
@@ -9976,9 +9999,20 @@
   // SECTION 19: EVENT HANDLERS
   // ============================================================
 
+  // Wraps a block of handler registrations so an error in one block
+  // doesn't suppress the rest. Use for each logical "island" of handlers.
+  function _safeHandlerBlock(label, fn) {
+    try { fn(); }
+    catch (e) {
+      console.error('[CP] Handler block "' + label + '" failed:', e);
+      if (typeof toast === 'function') toast('Some controls in "' + label + '" may not work — see console.', 'warning', 5000);
+    }
+  }
+
   function setupPart2AEvents() {
     console.log('[CP] Setting up Part 2A event handlers...');
 
+    _safeHandlerBlock('Part 2A: core', function() {
     // --- Modal events ---
     $(document).off('click.cp2a-modal-close').on('click.cp2a-modal-close', '[data-action="close-modal"]', function(e) {
       e.preventDefault(); closeModal();
@@ -10456,9 +10490,10 @@
         if (!$(e.target).is('input, textarea, [contenteditable]')) { e.preventDefault(); redo(); }
       }
     });
+    });  // _safeHandlerBlock('Part 2A: core')
 
     // --- Meta v2 actions (Campaign Workspace, Meta Campaigns list, modals) ---
-    setupMetaV2EventHandlers();
+    _safeHandlerBlock('Part 2A: Meta v2', function() { setupMetaV2EventHandlers(); });
 
     console.log('[CP] Part 2A event handlers ready');
   }
@@ -11209,8 +11244,9 @@
     R.ncwAISuggestAds            = ncwAISuggestAds;
     R.finalizeNewCampaignWizard  = finalizeNewCampaignWizard;
 
-    setupPart2BEvents(); setupKeyboardShortcuts();
-    LLMService.init();
+    try { setupPart2BEvents(); } catch(e) { console.error('[CP] setupPart2BEvents crashed:', e); }
+    try { setupKeyboardShortcuts(); } catch(e) { console.error('[CP] setupKeyboardShortcuts crashed:', e); }
+    try { LLMService.init(); } catch(e) { console.error('[CP] LLMService.init crashed:', e); }
     try { BrandService.init(); BrandService.autoPopulateBrandDesign(); } catch(e) { console.error('[CP] BrandService init error:', e); }
 
     // Replace AI picker loading placeholders (uses Part 2A helper if available).
@@ -15119,7 +15155,18 @@
   // SECTION 22: EVENTS & KEYBOARD SHORTCUTS
   // ============================================================
 
+  // Wraps a block of handler registrations so an error in one block
+  // doesn't suppress the rest. Mirrors Part 2A's _safeHandlerBlock.
+  function _safeHandlerBlockB(label, fn) {
+    try { fn(); }
+    catch (e) {
+      console.error('[CP] Handler block "' + label + '" failed:', e);
+      if (typeof toast === 'function') toast('Some controls in "' + label + '" may not work — see console.', 'warning', 5000);
+    }
+  }
+
   function setupPart2BEvents() {
+    _safeHandlerBlockB('Part 2B: core', function() {
     // AI Research Panel interactions
     $(document).off('click.cp2b-research-gen').on('click.cp2b-research-gen', '[data-action="ai-research-generate"]', function(e) {
       e.preventDefault();
@@ -15351,6 +15398,7 @@
       e.preventDefault(); e.stopPropagation();
       exportAdMediaBriefJSON($(this).data('id'));
     });
+    });  // _safeHandlerBlockB('Part 2B: core')
 
     console.log('[CP] Part 2B event handlers ready');
   }
