@@ -42,35 +42,62 @@ The build is a simple alphabetical-walk concatenation — no bundler, no plugins
 ## How Drupal loads this
 
 Configured via the Asset Injector module on the Drupal site. The Drupal admin
-points two External rules at jsDelivr URLs:
+points two External rules at jsDelivr URLs. Pick one of two stability levels:
 
-| Asset | URL |
-| --- | --- |
-| CSS | `https://cdn.jsdelivr.net/gh/devenpro/guaCampaignPlanner@main/dist/app.css` |
-| JS  | `https://cdn.jsdelivr.net/gh/devenpro/guaCampaignPlanner@main/dist/app.js` |
+| Mode | URL pattern | Notes |
+| --- | --- | --- |
+| **Production** (recommended) | `…@latest/dist/app.{js,css}` | jsDelivr resolves `@latest` to the highest semver tag. CI auto-tags every push to `main`, so the live page picks up new releases automatically. |
+| **Pinned** (for rollback) | `…@vX.Y.Z/dist/app.{js,css}` | Tag URLs are immutable. Use during incident response when you need to freeze the live page on a known-good release. |
+| **Bleeding edge** | `…@main/dist/app.{js,css}` | Follows the branch tip. Mutable; jsDelivr caches it ~12 h. Use only for short-lived hotfixes before a release exists. |
+
+Full URL for production:
+
+```
+https://cdn.jsdelivr.net/gh/devenpro/guaCampaignPlanner@latest/dist/app.js
+https://cdn.jsdelivr.net/gh/devenpro/guaCampaignPlanner@latest/dist/app.css
+```
 
 Both rules are conditional on the `node--type-campaign-planner` body class.
 
-### Pushing a change
+### Deploy flow
 
 1. Edit a file under `src/`.
-2. `node scripts/build.mjs` to rebuild `dist/app.js` and `dist/app.css`.
-3. `git add .` && `git commit -m "..."` && `git push`.
-4. (Optional, for instant pickup) purge the jsDelivr cache:
-   - `https://purge.jsdelivr.net/gh/devenpro/guaCampaignPlanner@main/dist/app.js`
-   - `https://purge.jsdelivr.net/gh/devenpro/guaCampaignPlanner@main/dist/app.css`
-   - Otherwise the CDN serves the previous version for up to 12 hours.
+2. `node scripts/build.mjs` to rebuild `dist/app.js` and `dist/app.css` locally (so reviewers can see the diff).
+3. Open a PR, merge to `main`.
+4. The `Release` GitHub Action bumps `package.json` patch, rebuilds, commits as `[release] vX.Y.Z`, tags, and publishes a GitHub Release. No manual `git tag` step.
+5. Asset Injector points at `@latest`, so the new release shows up on the live page within minutes (after the usual Drupal/browser caches expire — see Troubleshooting).
 
-### Cutting a version tag (for production stability)
+The running bundle prints its version to the browser console on load:
 
-```powershell
-git tag v1.0.1
-git push --tags
+```
+[CP] Campaign Planner v1.0.7 · built 2026-05-13T10:59:38.473Z
 ```
 
-Then change the Asset Injector URLs from `@main` to `@v1.0.1`. Tag URLs are
-immutable and cached forever on jsDelivr — you only update Asset Injector
-when you intentionally cut a release.
+A matching `vX.Y.Z` chip in the sidebar footer links to the GitHub release.
+
+### Rollback in 30 seconds
+
+1. Open Asset Injector. Change the JS and CSS External URLs from `@latest` to the previous good tag, e.g. `@v1.0.6`.
+2. Save. Clear all Drupal caches (Configuration → Performance → Clear all caches).
+3. Hard-refresh the page. The version chip and console banner should now read the pinned tag.
+
+Available tags: <https://github.com/devenpro/guaCampaignPlanner/tags>.
+
+When the fix lands and a new tag is cut, switch Asset Injector back to `@latest`.
+
+### Self-host fallback (Plan B)
+
+If jsDelivr is itself the cause of an outage:
+
+1. Download `dist/app.js` and `dist/app.css` from the GitHub release (or directly from the `dist/` folder on `main`).
+2. Upload them to `sites/default/files/campaign-planner/app.js` and `…/app.css` on the Drupal site.
+3. In Asset Injector, change the External URLs to:
+   - `/sites/default/files/campaign-planner/app.js?v=1.0.7`
+   - `/sites/default/files/campaign-planner/app.css?v=1.0.7`
+4. Bump the `?v=` query string every time you re-upload — Drupal and browsers will treat it as a new asset.
+5. Clear all Drupal caches.
+
+To revert to the CDN, flip the URLs back to `@latest`.
 
 ## Concatenation order
 
@@ -92,18 +119,18 @@ expected; lint the build output if needed.
 
 ## Troubleshooting
 
-### "I pushed a change but the live site still shows the old version"
+### "The page is blank after a deploy"
 
-The dist file is served from jsDelivr's CDN, which caches aggressively.
-Three layers may need invalidating, in this order:
+Use the console banner to pinpoint which layer is wrong. Open DevTools (F12) → Console.
 
-1. **jsDelivr CDN** — hit the purge URLs once:
-   - `https://purge.jsdelivr.net/gh/devenpro/guaCampaignPlanner@main/dist/app.js`
-   - `https://purge.jsdelivr.net/gh/devenpro/guaCampaignPlanner@main/dist/app.css`
-2. **Browser cache** — hard-refresh the Drupal page: Ctrl+Shift+R (Windows / Linux) or Cmd+Shift+R (Mac). A regular reload is not enough.
-3. **Drupal cache** — if Asset Injector or another caching module is storing the asset URL itself, clear it: Administration → Configuration → Performance → Clear all caches.
-
-Without a purge, jsDelivr serves the previous version for up to 12 hours.
+1. **No `[CP] Campaign Planner v…` line at all.** The bundle didn't execute. Open the Network tab, find the `app.js` request, click into Response. Common causes: 404 (Asset Injector URL is wrong), syntax error from a half-built bundle, or a CSP blocking jsDelivr.
+2. **Banner shows an older version than expected.** It's a cache. In order:
+   - Browser: hard-refresh (Ctrl+Shift+R / Cmd+Shift+R).
+   - jsDelivr (if you must — `@latest` resolves instantly to new tags, but you can purge anyway):
+     `https://purge.jsdelivr.net/gh/devenpro/guaCampaignPlanner@latest/dist/app.js`
+     `https://purge.jsdelivr.net/gh/devenpro/guaCampaignPlanner@latest/dist/app.css`
+   - Drupal: Configuration → Performance → Clear all caches.
+3. **Banner shows the right version, but the UI is blank.** It's a runtime bug, not a delivery problem. Look for `[CP] Part 1 init CRASHED` or `[CP] renderCurrentView crashed` in the console. Until the source is fixed, pin Asset Injector to the previous `@vX.Y.Z` tag (see "Rollback in 30 seconds" above).
 
 ### "A view opens blank"
 
