@@ -397,15 +397,17 @@
     var cta = metaCTA((ad.creative || {}).cta_type);
 
     var html = '';
-    html += '<div class="cp-inspector-header"><div>';
+    html += '<div class="cp-inspector-header"><div style="flex:1">';
     var crumb = (camp ? esc(camp.name) + ' · ' : '') + (adSet ? esc(adSet.name) : '');
     html += '<div class="cp-inspector-eyebrow">' + icon(ctype.icon) + ' ' + esc(ctype.label) + (crumb ? ' · ' + crumb : '') + '</div>';
-    html += '<h2 class="cp-inspector-title">' + esc(ad.name) + '</h2>';
-    html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap;margin-top:6px">';
+    // Inline-editable ad name (was a static <h2>). Blur saves via the
+    // generic cp-v2-inline-field handler in 27-event-handlers.js.
+    html += '<input type="text" class="cp-inspector-title-input cp-v2-inline-field" data-field="name" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.name || '') + '" placeholder="Ad name" style="font-size:var(--cp-font-size-2xl,1.6rem);font-weight:700;border:1px solid transparent;background:transparent;width:100%;padding:2px 4px;margin:-2px -4px">';
+    html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap;margin-top:6px;align-items:center">';
     html += '<span class="cp-badge" style="background:' + status.color + '15;color:' + status.color + '">' + icon(status.icon) + ' ' + esc(status.label) + '</span>';
+    html += '<span class="cp-text-muted" style="font-size:11px">Status set from the Review tab</span>';
     html += '</div></div><div class="cp-inspector-header-actions">';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-copy-ad-field" data-id="' + esc(ad.id) + '" data-field="all" title="Copy all ad fields">' + icon('copy') + '</button>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="edit-ad" data-id="' + esc(ad.id) + '">' + icon('edit') + ' Edit</button>';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-ad" data-id="' + esc(ad.id) + '">' + icon('trash') + '</button>';
     html += '</div></div>';
 

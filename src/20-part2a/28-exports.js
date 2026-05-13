@@ -29,7 +29,7 @@
     // Meta v2 CRUD
     openMetaCampaignModal: openMetaCampaignModal, confirmDeleteMetaCampaign: confirmDeleteMetaCampaign,
     openMetaAdSetModal: openMetaAdSetModal, confirmDeleteMetaAdSet: confirmDeleteMetaAdSet,
-    openMetaAdModal: openMetaAdModal, confirmDeleteMetaAd: confirmDeleteMetaAd,
+    openMetaAdModal: openMetaAdModal, openMetaAdQuickCreate: openMetaAdQuickCreate, confirmDeleteMetaAd: confirmDeleteMetaAd,
     buildPersonaSnapshot: buildPersonaSnapshot,
     // A/B testing
     openABTestConfigModal: openABTestConfigModal,

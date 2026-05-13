@@ -608,8 +608,22 @@
       var setId = $(this).data('ad-set-id') || S.selectedAdSetId;
       if (setId) openMetaAdModal(setId, { create: true });
     });
+    // "Edit ad" — open the Ad inline in the workspace inspector instead of
+    // a modal. The inspector tabs (Hook / Copy / Media / Review) are all
+    // inline-editable; the Overview tab is read-only summary.
     $(document).off('click.cpv2-edit-ad').on('click.cpv2-edit-ad', '[data-action="edit-ad"]', function(e) {
-      e.preventDefault(); e.stopPropagation(); openMetaAdModal($(this).data('id'));
+      e.preventDefault(); e.stopPropagation();
+      var adId = $(this).data('id');
+      var ad = adId ? getAd(adId) : null;
+      var setId = ad ? ad.ad_set_id : null;
+      var set = setId ? getAdSet(setId) : null;
+      if (ad && set && typeof window._cpNavigateToCampaignV2 === 'function') {
+        S.workspaceInspectorTab = 'hook';
+        window._cpNavigateToCampaignV2(set.campaign_id, set.id, ad.id);
+      } else {
+        // Fallback only if navigation context is missing
+        if (adId) openMetaAdModal(adId);
+      }
     });
     $(document).off('click.cpv2-delete-ad').on('click.cpv2-delete-ad', '[data-action="delete-ad"]', function(e) {
       e.preventDefault(); e.stopPropagation(); confirmDeleteMetaAd($(this).data('id'));

@@ -3696,15 +3696,17 @@
     var cta = metaCTA((ad.creative || {}).cta_type);
 
     var html = '';
-    html += '<div class="cp-inspector-header"><div>';
+    html += '<div class="cp-inspector-header"><div style="flex:1">';
     var crumb = (camp ? esc(camp.name) + ' · ' : '') + (adSet ? esc(adSet.name) : '');
     html += '<div class="cp-inspector-eyebrow">' + icon(ctype.icon) + ' ' + esc(ctype.label) + (crumb ? ' · ' + crumb : '') + '</div>';
-    html += '<h2 class="cp-inspector-title">' + esc(ad.name) + '</h2>';
-    html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap;margin-top:6px">';
+    // Inline-editable ad name (was a static <h2>). Blur saves via the
+    // generic cp-v2-inline-field handler in 27-event-handlers.js.
+    html += '<input type="text" class="cp-inspector-title-input cp-v2-inline-field" data-field="name" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.name || '') + '" placeholder="Ad name" style="font-size:var(--cp-font-size-2xl,1.6rem);font-weight:700;border:1px solid transparent;background:transparent;width:100%;padding:2px 4px;margin:-2px -4px">';
+    html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap;margin-top:6px;align-items:center">';
     html += '<span class="cp-badge" style="background:' + status.color + '15;color:' + status.color + '">' + icon(status.icon) + ' ' + esc(status.label) + '</span>';
+    html += '<span class="cp-text-muted" style="font-size:11px">Status set from the Review tab</span>';
     html += '</div></div><div class="cp-inspector-header-actions">';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-copy-ad-field" data-id="' + esc(ad.id) + '" data-field="all" title="Copy all ad fields">' + icon('copy') + '</button>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="edit-ad" data-id="' + esc(ad.id) + '">' + icon('edit') + ' Edit</button>';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-ad" data-id="' + esc(ad.id) + '">' + icon('trash') + '</button>';
     html += '</div></div>';
 
@@ -7229,24 +7231,78 @@
   // SECTION 9C: META AD CRUD
   // ============================================================
   //
-  // Modal for creating/editing an Ad. Stage 1 covers the basics (name,
-  // creative type, primary text, headline, description, CTA, link, hook).
-  // The fuller pipeline editor (Hook → Copy → Media → Review with rich
-  // editors per step) lands in Stage 2.
+  // Two flows:
+  //   * Create — quick modal asks for just name + creative_type, then
+  //     navigates to the workspace inspector where the user fills out
+  //     hook / copy / media / review inline.
+  //   * Edit — no modal at all; the edit-ad action navigates to the
+  //     workspace inspector. This function only runs as a legacy
+  //     fallback if the inspector context isn't available.
 
+  function openMetaAdQuickCreate(adSetId) {
+    var C = Constants;
+    var adSet = getAdSet(adSetId);
+    if (!adSet) { toast('Parent ad set not found', 'error'); return; }
+    var camp = getCampaignV2(adSet.campaign_id);
+    var existingCount = (getAdsByAdSet ? getAdsByAdSet(adSetId).length : 0);
+    var defaultName = adSet.name + ' — Ad ' + (existingCount + 1);
+
+    var html = '<div class="cp-editor-form">';
+    html += '<div class="cp-modal-context">';
+    if (camp) html += icon('bullhorn') + ' ' + esc(camp.name) + ' · ';
+    html += icon('crosshairs') + ' ' + esc(adSet.name) + '</div>';
+    html += '<div class="cp-form-group"><label>Ad Name <span class="cp-required">*</span></label>';
+    html += '<input type="text" class="cp-input" data-field="name" value="' + esc(defaultName) + '" autocomplete="off">';
+    html += '</div>';
+    html += '<div class="cp-form-group"><label>Creative type</label>';
+    html += '<div class="cp-segmented">';
+    for (var ctk in C.META_AD_CREATIVE_TYPES) {
+      var ct = C.META_AD_CREATIVE_TYPES[ctk];
+      var ctSel = (ctk === 'single_image') ? ' cp-segmented-active' : '';
+      html += '<label class="cp-segmented-option' + ctSel + '">';
+      html += '<input type="radio" name="cp-v2-ad-qc-creative-type" data-field="creative_type" value="' + ctk + '"' + (ctSel ? ' checked' : '') + ' style="display:none">';
+      html += icon(ct.icon) + ' ' + esc(ct.label);
+      html += '</label>';
+    }
+    html += '</div></div>';
+    html += '<p class="cp-form-help">After create, you\'ll be taken to the Ad\'s workspace where Hook, Copy, Media, and Review are inline-editable.</p>';
+    html += '</div>';
+
+    openModal('New Ad', html, {
+      titleIcon: 'rectangle-ad', size: 'sm', saveLabel: 'Create & open',
+      onSave: function() {
+        var fields = collectModalFields();
+        var name = (fields.name || '').trim();
+        if (!name) { toast('Ad name is required', 'warning'); return; }
+        var creativeType = $('input[name="cp-v2-ad-qc-creative-type"]:checked').val() || 'single_image';
+        snapshot('Create Ad');
+        var created = createEntity('ad', { ad_set_id: adSetId, name: name, creative_type: creativeType });
+        closeModal();
+        if (created) {
+          S.selectedCampaignV2Id = adSet.campaign_id;
+          S.selectedAdSetId = adSetId;
+          S.selectedAdId = created.id;
+          S.workspaceInspectorTab = 'hook';
+          navigate('campaign_workspace', { hash: 'campaign/' + adSet.campaign_id + '/ad_set/' + adSetId + '/ad/' + created.id });
+        }
+      }
+    });
+  }
+
+  // Legacy full-form edit modal — kept as a fallback only. The inline
+  // workspace inspector is the primary editing surface.
   function openMetaAdModal(adIdOrAdSetId, opts) {
     opts = opts || {};
+    // Quick-create branch
+    if (opts.create) { openMetaAdQuickCreate(adIdOrAdSetId); return; }
     var C = Constants;
-    // Two call shapes:
-    //   openMetaAdModal('ad_xxx')                     -> edit existing
-    //   openMetaAdModal('adset_xxx', { create: true }) -> create under ad set
-    var isEdit = !opts.create;
-    var ad = isEdit ? getAd(adIdOrAdSetId) : null;
-    var adSetId = isEdit ? (ad && ad.ad_set_id) : adIdOrAdSetId;
+    var ad = getAd(adIdOrAdSetId);
+    var adSetId = ad && ad.ad_set_id;
     var adSet = getAdSet(adSetId);
 
     if (!adSet) { toast('Parent ad set not found', 'error'); return; }
     var camp = getCampaignV2(adSet.campaign_id);
+    var isEdit = true;
 
     var a = ad || {};
     var creative = a.creative || {};
@@ -10509,8 +10565,22 @@
       var setId = $(this).data('ad-set-id') || S.selectedAdSetId;
       if (setId) openMetaAdModal(setId, { create: true });
     });
+    // "Edit ad" — open the Ad inline in the workspace inspector instead of
+    // a modal. The inspector tabs (Hook / Copy / Media / Review) are all
+    // inline-editable; the Overview tab is read-only summary.
     $(document).off('click.cpv2-edit-ad').on('click.cpv2-edit-ad', '[data-action="edit-ad"]', function(e) {
-      e.preventDefault(); e.stopPropagation(); openMetaAdModal($(this).data('id'));
+      e.preventDefault(); e.stopPropagation();
+      var adId = $(this).data('id');
+      var ad = adId ? getAd(adId) : null;
+      var setId = ad ? ad.ad_set_id : null;
+      var set = setId ? getAdSet(setId) : null;
+      if (ad && set && typeof window._cpNavigateToCampaignV2 === 'function') {
+        S.workspaceInspectorTab = 'hook';
+        window._cpNavigateToCampaignV2(set.campaign_id, set.id, ad.id);
+      } else {
+        // Fallback only if navigation context is missing
+        if (adId) openMetaAdModal(adId);
+      }
     });
     $(document).off('click.cpv2-delete-ad').on('click.cpv2-delete-ad', '[data-action="delete-ad"]', function(e) {
       e.preventDefault(); e.stopPropagation(); confirmDeleteMetaAd($(this).data('id'));
@@ -10925,7 +10995,7 @@
     // Meta v2 CRUD
     openMetaCampaignModal: openMetaCampaignModal, confirmDeleteMetaCampaign: confirmDeleteMetaCampaign,
     openMetaAdSetModal: openMetaAdSetModal, confirmDeleteMetaAdSet: confirmDeleteMetaAdSet,
-    openMetaAdModal: openMetaAdModal, confirmDeleteMetaAd: confirmDeleteMetaAd,
+    openMetaAdModal: openMetaAdModal, openMetaAdQuickCreate: openMetaAdQuickCreate, confirmDeleteMetaAd: confirmDeleteMetaAd,
     buildPersonaSnapshot: buildPersonaSnapshot,
     // A/B testing
     openABTestConfigModal: openABTestConfigModal,
