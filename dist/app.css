@@ -2477,6 +2477,88 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 .cp-inspector-title-input:hover { border-color: var(--cp-border-light) !important; background: var(--cp-gray-50, #f8f9fa) !important; }
 .cp-inspector-title-input:focus { border-color: var(--cp-primary) !important; background: #fff !important; outline: none; }
 
+/* Phase 8: Ad Overview tab — configuration + walkthrough layout */
+
+/* Inspector header — inline name input, badge row */
+.cp-inspector-header { display: flex; align-items: flex-start; gap: var(--cp-space-3); padding: var(--cp-space-4) var(--cp-space-4) var(--cp-space-3); border-bottom: 1px solid var(--cp-border-light); }
+.cp-inspector-header-meta { display: flex; gap: var(--cp-space-2); flex-wrap: wrap; margin-top: 6px; align-items: center; }
+.cp-inspector-header-actions { display: flex; gap: var(--cp-space-2); align-items: flex-start; flex-shrink: 0; }
+.cp-inspector-title-input {
+  font-size: var(--cp-font-size-2xl, 1.6rem);
+  font-weight: 700;
+  border: 1px solid transparent;
+  background: transparent;
+  width: 100%;
+  padding: 2px 6px;
+  margin: -2px -6px;
+  color: var(--cp-text-primary);
+  font-family: inherit;
+}
+
+/* Pipeline strip wrapper sits flush below the header */
+.cp-inspector-pipeline-strip { padding: var(--cp-space-3) var(--cp-space-4) 0; }
+
+/* Configuration card (creative type + pipeline status + tags + assignment) */
+.cp-inspector-config .cp-config-row { display: flex; align-items: center; gap: var(--cp-space-3); margin-bottom: var(--cp-space-3); flex-wrap: wrap; }
+.cp-inspector-config .cp-config-row:last-child { margin-bottom: 0; }
+.cp-config-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--cp-text-muted);
+  flex-shrink: 0;
+  min-width: 130px;
+}
+.cp-config-control { flex: 1; min-width: 200px; }
+.cp-inspector-section-compact { padding: var(--cp-space-2) var(--cp-space-4); }
+
+/* Pipeline-status button row — wraps onto multiple rows on narrow widths */
+.cp-status-buttons-overview { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; min-width: 0; }
+.cp-status-buttons-overview .cp-status-button { padding: 4px 10px; font-size: var(--cp-font-size-xs); }
+
+/* Summary card — read-only preview of Hook / Copy / Media / Review */
+.cp-inspector-summary-card {
+  border: 1px solid var(--cp-border-light);
+  border-radius: var(--cp-radius-md);
+  background: #fff;
+  margin: var(--cp-space-3) var(--cp-space-4);
+  padding: 0;
+  transition: border-color var(--cp-transition-fast), box-shadow var(--cp-transition-fast);
+}
+.cp-inspector-summary-card:hover { border-color: var(--cp-primary, #1a73e8); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+.cp-inspector-summary-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--cp-space-2);
+  padding: var(--cp-space-2) var(--cp-space-3);
+  border-bottom: 1px solid var(--cp-border-light);
+  background: var(--cp-gray-50, #f8f9fa);
+  border-radius: var(--cp-radius-md) var(--cp-radius-md) 0 0;
+}
+.cp-inspector-summary-card-icon { color: var(--cp-text-secondary); font-size: 14px; }
+.cp-inspector-summary-card-title { font-weight: 600; font-size: var(--cp-font-size-sm); color: var(--cp-text-primary); flex: 1; }
+.cp-inspector-summary-card-open { margin-left: auto; flex-shrink: 0; }
+.cp-inspector-summary-card-body { padding: var(--cp-space-3); font-size: var(--cp-font-size-sm); line-height: 1.55; color: var(--cp-text-secondary); }
+.cp-inspector-summary-card-body p { margin: 0 0 var(--cp-space-2); }
+.cp-inspector-summary-card-body p:last-child { margin-bottom: 0; }
+.cp-inspector-summary-card-body blockquote { margin: 0; padding: var(--cp-space-2) var(--cp-space-3); border-left: 3px solid var(--cp-primary-subtle, #e8f0fe); background: var(--cp-gray-50, #f8f9fa); border-radius: var(--cp-radius-sm); font-style: italic; }
+
+/* Status pills — filled / partial / empty */
+.cp-inspector-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: var(--cp-radius-full, 999px);
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.cp-inspector-status-pill-filled { background: rgba(13,144,79,0.10); color: var(--cp-success, #0d904f); }
+.cp-inspector-status-pill-partial { background: rgba(227,116,0,0.12); color: var(--cp-warning, #e37400); }
+.cp-inspector-status-pill-empty { background: var(--cp-gray-100, #f1f3f4); color: var(--cp-text-muted); }
+
 /* Phase 7c: Inspector tab bar — pin above any overlapping content so the
    Hook / Copy / Media / Review buttons always receive clicks. */
 .cp-inspector-tabs {

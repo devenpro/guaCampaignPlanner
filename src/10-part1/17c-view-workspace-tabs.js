@@ -299,6 +299,16 @@
     html += '<div class="cp-form-grow"><label>Destination URL</label>';
     html += '<input type="url" class="cp-input cp-v2-inline-field" data-field="creative.cta_link" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.cta_link || '') + '" placeholder="https://example.com">';
     html += '</div></div>';
+
+    // Display link + tracking params — orphaned fields from the old modal,
+    // both relate to destination so they live in the Copy tab now.
+    html += '<div class="cp-form-row" style="margin-top:var(--cp-space-2)">';
+    html += '<div class="cp-form-half"><label>Display link <span class="cp-text-muted" style="font-weight:400;font-size:11px">optional — shown to viewers if set</span></label>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.display_link" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.display_link || '') + '" placeholder="example.com/landing">';
+    html += '</div>';
+    html += '<div class="cp-form-half"><label>Tracking params <span class="cp-text-muted" style="font-weight:400;font-size:11px">UTM query string</span></label>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.tracking_params" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.tracking_params || '') + '" placeholder="utm_source=meta&amp;utm_medium=...">';
+    html += '</div></div>';
     html += '</div>';
 
     html += '<div class="cp-inspector-actions">';
@@ -496,38 +506,31 @@
     var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
     html += renderAdPipelineProgress(ad);
 
+    // Status snapshot — change is in Overview tab's Configuration card.
     var C = Constants;
-    html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('circle-check') + ' Pipeline status</div>';
-    html += '<div class="cp-status-buttons">';
-    for (var sk in C.META_AD_STATUSES) {
-      var st = C.META_AD_STATUSES[sk];
-      var isActive = ad.pipeline_status === sk;
-      html += '<button class="cp-status-button' + (isActive ? ' cp-status-button-active' : '') + '" data-action="ws-set-ad-status" data-id="' + esc(ad.id) + '" data-status="' + sk + '" style="' + (isActive ? '--btn-color:' + st.color + ';' : '') + '">';
-      html += icon(st.icon) + ' ' + esc(st.label);
-      html += '</button>';
-    }
+    var st = C.META_AD_STATUSES[ad.pipeline_status] || { label: ad.pipeline_status || '—', color: '#80868b', icon: 'circle' };
+    html += '<div class="cp-inspector-section cp-inspector-section-compact">';
+    html += '<div class="cp-inspector-section-title">' + icon('circle-check') + ' Current status</div>';
+    html += '<div style="display:flex;align-items:center;gap:var(--cp-space-3);flex-wrap:wrap">';
+    html += '<span class="cp-badge" style="background:' + st.color + '15;color:' + st.color + ';font-size:var(--cp-font-size-sm);padding:6px 12px">' + icon(st.icon) + ' ' + esc(st.label) + '</span>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="set-inspector-tab" data-tab="overview">' + icon('arrow-left') + ' Change in Overview</button>';
     html += '</div></div>';
 
-    html += '<div class="cp-form-row">';
-    html += '<div class="cp-form-half">';
-    html += '<div class="cp-inspector-section-title">' + icon('user') + ' Assigned to</div>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="assigned_to" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.assigned_to || '') + '" placeholder="Teammate name">';
-    html += '</div>';
-    html += '<div class="cp-form-half">';
-    html += '<div class="cp-inspector-section-title">' + icon('calendar') + ' Due date</div>';
-    html += '<input type="date" class="cp-input cp-v2-inline-field" data-field="due_date" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.due_date || '') + '">';
-    html += '</div></div>';
-
+    // Production notes + review notes are the primary purpose of this tab.
     html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('note-sticky') + ' Production notes</div>';
-    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="production_notes" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="2" placeholder="Where assets live, who is shooting, etc.">' + esc(ad.production_notes || '') + '</textarea>';
+    html += '<div class="cp-inspector-section-title">' + icon('note-sticky') + ' Production notes';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">where assets live, who is shooting, asset URLs, etc.</span>';
+    html += '</div>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="production_notes" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="4" placeholder="Where assets live, who is shooting, etc.">' + esc(ad.production_notes || '') + '</textarea>';
     html += '</div>';
 
     html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('comments') + ' Review notes</div>';
-    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="review_notes" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="3" placeholder="Feedback from reviewers...">' + esc(ad.review_notes || '') + '</textarea>';
+    html += '<div class="cp-inspector-section-title">' + icon('comments') + ' Review notes';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">feedback from reviewers, change requests, approval comments</span>';
     html += '</div>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="review_notes" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="5" placeholder="Feedback from reviewers...">' + esc(ad.review_notes || '') + '</textarea>';
+    html += '</div>';
+
     return html;
   }
 
