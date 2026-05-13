@@ -408,12 +408,13 @@
   // at src/20-part2a/27-event-handlers.js:723-727).
 
   function renderInspectorForAd(ad) {
+    // Identity (name, type, status, actions) renders persistently in
+    // `renderAdInspectorHeader` above the workflow tabs — no duplicate here.
     var adSet = S.adSetMap[ad.ad_set_id];
     var camp = adSet ? S.campaignV2Map[adSet.campaign_id] : null;
     var ctype = META_AD_CREATIVE_TYPES[ad.creative_type] || { label: 'Ad', icon: 'rectangle-ad' };
 
     var html = '';
-    html += _renderAdOverviewIdentity(ad, camp, adSet, ctype);
     html += _renderAdOverviewConfig(ad);
     html += _renderAdSummaryHook(ad);
     html += _renderAdSummaryCopy(ad);
@@ -425,24 +426,6 @@
   }
 
   // --- Ad overview helpers ---
-
-  function _renderAdOverviewIdentity(ad, camp, adSet, ctype) {
-    var status = metaAdStatus(ad.pipeline_status);
-    var crumb = (camp ? esc(camp.name) + ' · ' : '') + (adSet ? esc(adSet.name) : '');
-
-    var html = '<div class="cp-inspector-header"><div style="flex:1">';
-    html += '<div class="cp-inspector-eyebrow">' + icon(ctype.icon) + ' ' + esc(ctype.label) + (crumb ? ' · ' + crumb : '') + '</div>';
-    // Inline-editable name — large, transparent border, hover/focus indicate editability.
-    html += '<input type="text" class="cp-inspector-title-input cp-v2-inline-field" data-field="name" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.name || '') + '" placeholder="Ad name">';
-    html += '<div class="cp-inspector-header-meta">';
-    html += '<span class="cp-badge" style="background:' + status.color + '15;color:' + status.color + '">' + icon(status.icon) + ' ' + esc(status.label) + '</span>';
-    html += '<span class="cp-text-muted" style="font-size:11px">Change status in Configuration below</span>';
-    html += '</div></div><div class="cp-inspector-header-actions">';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-copy-ad-field" data-id="' + esc(ad.id) + '" data-field="all" title="Copy all ad fields">' + icon('copy') + '</button>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-ad" data-id="' + esc(ad.id) + '">' + icon('trash') + '</button>';
-    html += '</div></div>';
-    return html;
-  }
 
   function _renderAdOverviewConfig(ad) {
     var html = '<div class="cp-inspector-section cp-inspector-config">';
@@ -459,19 +442,6 @@
       html += '<input type="radio" name="cp-ov-ad-ct-' + esc(ad.id) + '" class="cp-v2-media-type-switch" data-entity-id="' + esc(ad.id) + '" value="' + ctk + '"' + (ctSel ? ' checked' : '') + ' style="display:none">';
       html += icon(ct.icon) + ' ' + esc(ct.label);
       html += '</label>';
-    }
-    html += '</div></div>';
-
-    // Pipeline status segmented (same handler as the old Review-tab buttons).
-    html += '<div class="cp-config-row">';
-    html += '<div class="cp-config-label">Pipeline status</div>';
-    html += '<div class="cp-status-buttons cp-status-buttons-overview">';
-    for (var sk in META_AD_STATUSES) {
-      var st = META_AD_STATUSES[sk];
-      var isActive = ad.pipeline_status === sk;
-      html += '<button class="cp-status-button' + (isActive ? ' cp-status-button-active' : '') + '" data-action="ws-set-ad-status" data-id="' + esc(ad.id) + '" data-status="' + sk + '" style="' + (isActive ? '--btn-color:' + st.color + ';' : '') + '">';
-      html += icon(st.icon) + ' ' + esc(st.label);
-      html += '</button>';
     }
     html += '</div></div>';
 

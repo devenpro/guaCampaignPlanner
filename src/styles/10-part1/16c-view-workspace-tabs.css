@@ -3,6 +3,142 @@
    inline editors (brief, hook/copy/media/review)
    ========================================================== */
 
+/* ----- Persistent ad inspector header ----- */
+.cp-ad-inspector-header {
+  align-items: flex-start;
+  gap: var(--cp-space-3);
+}
+.cp-ad-inspector-header-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cp-ad-inspector-header-side {
+  display: flex;
+  align-items: center;
+  gap: var(--cp-space-2);
+  flex-shrink: 0;
+}
+
+/* ----- Readiness pill (Hook ✓ · Copy ✓ · Media — · Review —) ----- */
+.cp-ad-readiness {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--cp-text-muted);
+}
+.cp-ad-readiness-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.cp-ad-readiness-step-done {
+  color: var(--cp-success);
+  font-weight: 600;
+}
+.cp-ad-readiness-sep {
+  color: var(--cp-border-default);
+}
+
+/* ----- Status dropdown ----- */
+.cp-status-dropdown {
+  position: relative;
+  display: inline-block;
+}
+.cp-status-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--cp-radius-full);
+  border: 1.5px solid var(--status-color, var(--cp-border-default));
+  background: color-mix(in srgb, var(--status-color, #80868b) 10%, var(--cp-white));
+  color: var(--status-color, var(--cp-text-secondary));
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 120ms, box-shadow 120ms;
+  white-space: nowrap;
+}
+.cp-status-dropdown-trigger:hover { filter: brightness(0.97); }
+.cp-status-dropdown-trigger[aria-expanded="true"] {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-color, #80868b) 20%, transparent);
+}
+.cp-status-dropdown-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cp-status-dropdown-label { line-height: 1; }
+.cp-status-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  background: var(--cp-white);
+  border: 1px solid var(--cp-border-light);
+  border-radius: var(--cp-radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 6px;
+  z-index: 50;
+  display: none;
+}
+.cp-status-dropdown-open .cp-status-dropdown-menu { display: block; }
+.cp-status-dropdown-group-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cp-text-muted);
+}
+.cp-status-dropdown-divider {
+  height: 1px;
+  background: var(--cp-border-light);
+  margin: 4px 0;
+}
+.cp-status-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--cp-radius-sm);
+  text-align: left;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--cp-text-primary);
+  cursor: pointer;
+  transition: background 100ms;
+}
+.cp-status-dropdown-item:hover {
+  background: var(--cp-gray-50);
+}
+.cp-status-dropdown-item-active {
+  background: color-mix(in srgb, var(--status-color, #80868b) 12%, transparent);
+  font-weight: 600;
+  color: var(--status-color, var(--cp-text-primary));
+}
+.cp-status-dropdown-item-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cp-status-dropdown-item-label { flex: 1; }
+
 /* ----- Tab bar ----- */
 .cp-inspector-tabs {
   display: flex;

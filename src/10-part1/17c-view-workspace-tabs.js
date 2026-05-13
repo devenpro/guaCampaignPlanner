@@ -176,6 +176,7 @@
     if (validTabs.indexOf(tab) === -1) tab = 'overview';
 
     var html = '';
+    html += renderAdInspectorHeader(ad);
     html += renderAdWorkflowTabs(ad, tab);
 
     html += '<div class="cp-workspace-inspector-tab-body">';
@@ -519,6 +520,88 @@
     html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="review_notes" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="5" placeholder="Feedback from reviewers...">' + esc(ad.review_notes || '') + '</textarea>';
     html += '</div>';
 
+    return html;
+  }
+
+  // --- Persistent CP Inspector header (rendered on every Ad tab) ---
+  //
+  // Lifted from the Overview-only identity block so name, creative-type
+  // chip, status, and primary actions stay visible while editing
+  // Hook/Copy/Media/Review. The status badge is replaced by a
+  // dropdown that lets the user override pipeline_status manually
+  // (forward or backward); auto-advance continues to run on field saves
+  // via `maybeAdvanceAdStatus`. Items are grouped Workflow / Review so
+  // it's clear which stages are normally auto-managed.
+
+  function renderAdInspectorHeader(ad) {
+    var C = Constants;
+    var adSet = S.adSetMap[ad.ad_set_id];
+    var camp  = adSet ? S.campaignV2Map[adSet.campaign_id] : null;
+    var ctype = C.META_AD_CREATIVE_TYPES[ad.creative_type] || { label: 'Ad', icon: 'rectangle-ad' };
+    var status = C.META_AD_STATUSES[ad.pipeline_status] || { label: ad.pipeline_status || '—', color: '#80868b', icon: 'circle', key: ad.pipeline_status };
+    var crumb = (camp ? esc(camp.name) + ' · ' : '') + (adSet ? esc(adSet.name) : '');
+
+    var html = '<div class="cp-inspector-header cp-ad-inspector-header"><div class="cp-ad-inspector-header-main">';
+    html += '<div class="cp-inspector-eyebrow">' + icon(ctype.icon) + ' ' + esc(ctype.label) + (crumb ? ' · ' + crumb : '') + '</div>';
+    html += '<input type="text" class="cp-inspector-title-input cp-v2-inline-field" data-field="name" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.name || '') + '" placeholder="Ad name">';
+    html += renderAdReadinessPill(ad);
+    html += '</div>';
+
+    html += '<div class="cp-ad-inspector-header-side">';
+    html += renderAdStatusDropdown(ad, status);
+    html += '<div class="cp-inspector-header-actions">';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-copy-ad-field" data-id="' + esc(ad.id) + '" data-field="all" title="Copy all ad fields">' + icon('copy') + '</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-ad" data-id="' + esc(ad.id) + '" title="Delete ad">' + icon('trash') + '</button>';
+    html += '</div>';
+    html += '</div></div>';
+    return html;
+  }
+
+  function renderAdReadinessPill(ad) {
+    var steps = [
+      { key: 'hook',   label: 'Hook',   done: isAdHookDone(ad) },
+      { key: 'copy',   label: 'Copy',   done: isAdCopyDone(ad) },
+      { key: 'media',  label: 'Media',  done: isAdMediaDone(ad) },
+      { key: 'review', label: 'Review', done: isAdReviewDone(ad) }
+    ];
+    var html = '<div class="cp-ad-readiness" title="Step completion — drives auto-advance">';
+    for (var i = 0; i < steps.length; i++) {
+      var s = steps[i];
+      var cls = 'cp-ad-readiness-step' + (s.done ? ' cp-ad-readiness-step-done' : '');
+      html += '<span class="' + cls + '">' + icon(s.done ? 'circle-check' : 'circle') + ' ' + esc(s.label) + '</span>';
+      if (i < steps.length - 1) html += '<span class="cp-ad-readiness-sep">·</span>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdStatusDropdown(ad, status) {
+    var C = Constants;
+    var workflowKeys = ['hook_ready', 'copy_ready', 'media_ready'];
+    var reviewKeys   = ['in_review', 'approved', 'live', 'paused', 'archived'];
+
+    function renderItem(key) {
+      var st = C.META_AD_STATUSES[key];
+      if (!st) return '';
+      var active = (ad.pipeline_status === key) ? ' cp-status-dropdown-item-active' : '';
+      return '<button type="button" class="cp-status-dropdown-item' + active + '" role="menuitem" data-action="ws-set-ad-status" data-id="' + esc(ad.id) + '" data-status="' + key + '" style="--status-color:' + st.color + '">' +
+             '<span class="cp-status-dropdown-item-dot" style="background:' + st.color + '"></span>' +
+             icon(st.icon) + '<span class="cp-status-dropdown-item-label">' + esc(st.label) + '</span>' +
+             '</button>';
+    }
+
+    var html = '<div class="cp-status-dropdown" data-ad-id="' + esc(ad.id) + '">';
+    html += '<button type="button" class="cp-status-dropdown-trigger" data-action="ws-status-dropdown-toggle" aria-haspopup="menu" aria-expanded="false" style="--status-color:' + status.color + '">';
+    html += '<span class="cp-status-dropdown-dot" style="background:' + status.color + '"></span>';
+    html += icon(status.icon) + '<span class="cp-status-dropdown-label">' + esc(status.label) + '</span>';
+    html += icon('caret-down') + '</button>';
+    html += '<div class="cp-status-dropdown-menu" role="menu">';
+    html += '<div class="cp-status-dropdown-group-label">' + icon('robot') + ' Workflow <span class="cp-text-muted" style="font-weight:400">· auto-advances</span></div>';
+    for (var i = 0; i < workflowKeys.length; i++) html += renderItem(workflowKeys[i]);
+    html += '<div class="cp-status-dropdown-divider"></div>';
+    html += '<div class="cp-status-dropdown-group-label">' + icon('user-check') + ' Review</div>';
+    for (var j = 0; j < reviewKeys.length; j++) html += renderItem(reviewKeys[j]);
+    html += '</div></div>';
     return html;
   }
 

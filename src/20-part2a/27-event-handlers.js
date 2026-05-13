@@ -862,12 +862,34 @@
       saveEntityField('ad', id, 'creative_type', val);
     });
 
-    // Ad set pipeline status setter (Review tab)
+    // Ad pipeline status setter — dropdown items in the persistent inspector
+    // header. Manual override; can move forward or backward. Activity log is
+    // written by saveEntityField (status changes are tracked in 22-crud-helpers).
     $(document).off('click.cpv2-set-ad-status').on('click.cpv2-set-ad-status', '[data-action="ws-set-ad-status"]', function(e) {
       e.preventDefault();
+      e.stopPropagation();
       var id = $(this).data('id');
       var status = $(this).data('status');
       saveEntityField('ad', id, 'pipeline_status', status);
+    });
+
+    // Inspector header status dropdown — show/hide without re-rendering so we
+    // don't blow away focus on the inline name input next to it.
+    $(document).off('click.cpv2-status-dd-toggle').on('click.cpv2-status-dd-toggle', '[data-action="ws-status-dropdown-toggle"]', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var $dd = $(this).closest('.cp-status-dropdown');
+      var willOpen = !$dd.hasClass('cp-status-dropdown-open');
+      $('.cp-status-dropdown.cp-status-dropdown-open').not($dd).removeClass('cp-status-dropdown-open');
+      $dd.toggleClass('cp-status-dropdown-open', willOpen);
+      $(this).attr('aria-expanded', willOpen ? 'true' : 'false');
+    });
+
+    // Close any open status dropdown when clicking outside it.
+    $(document).off('click.cpv2-status-dd-outside').on('click.cpv2-status-dd-outside', function(e) {
+      if ($(e.target).closest('.cp-status-dropdown').length) return;
+      $('.cp-status-dropdown.cp-status-dropdown-open').removeClass('cp-status-dropdown-open')
+        .find('[data-action="ws-status-dropdown-toggle"]').attr('aria-expanded', 'false');
     });
 
     // Video scene rows

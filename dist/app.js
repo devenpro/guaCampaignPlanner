@@ -3768,12 +3768,13 @@
   // at src/20-part2a/27-event-handlers.js:723-727).
 
   function renderInspectorForAd(ad) {
+    // Identity (name, type, status, actions) renders persistently in
+    // `renderAdInspectorHeader` above the workflow tabs — no duplicate here.
     var adSet = S.adSetMap[ad.ad_set_id];
     var camp = adSet ? S.campaignV2Map[adSet.campaign_id] : null;
     var ctype = META_AD_CREATIVE_TYPES[ad.creative_type] || { label: 'Ad', icon: 'rectangle-ad' };
 
     var html = '';
-    html += _renderAdOverviewIdentity(ad, camp, adSet, ctype);
     html += _renderAdOverviewConfig(ad);
     html += _renderAdSummaryHook(ad);
     html += _renderAdSummaryCopy(ad);
@@ -3785,24 +3786,6 @@
   }
 
   // --- Ad overview helpers ---
-
-  function _renderAdOverviewIdentity(ad, camp, adSet, ctype) {
-    var status = metaAdStatus(ad.pipeline_status);
-    var crumb = (camp ? esc(camp.name) + ' · ' : '') + (adSet ? esc(adSet.name) : '');
-
-    var html = '<div class="cp-inspector-header"><div style="flex:1">';
-    html += '<div class="cp-inspector-eyebrow">' + icon(ctype.icon) + ' ' + esc(ctype.label) + (crumb ? ' · ' + crumb : '') + '</div>';
-    // Inline-editable name — large, transparent border, hover/focus indicate editability.
-    html += '<input type="text" class="cp-inspector-title-input cp-v2-inline-field" data-field="name" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.name || '') + '" placeholder="Ad name">';
-    html += '<div class="cp-inspector-header-meta">';
-    html += '<span class="cp-badge" style="background:' + status.color + '15;color:' + status.color + '">' + icon(status.icon) + ' ' + esc(status.label) + '</span>';
-    html += '<span class="cp-text-muted" style="font-size:11px">Change status in Configuration below</span>';
-    html += '</div></div><div class="cp-inspector-header-actions">';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-copy-ad-field" data-id="' + esc(ad.id) + '" data-field="all" title="Copy all ad fields">' + icon('copy') + '</button>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-ad" data-id="' + esc(ad.id) + '">' + icon('trash') + '</button>';
-    html += '</div></div>';
-    return html;
-  }
 
   function _renderAdOverviewConfig(ad) {
     var html = '<div class="cp-inspector-section cp-inspector-config">';
@@ -3819,19 +3802,6 @@
       html += '<input type="radio" name="cp-ov-ad-ct-' + esc(ad.id) + '" class="cp-v2-media-type-switch" data-entity-id="' + esc(ad.id) + '" value="' + ctk + '"' + (ctSel ? ' checked' : '') + ' style="display:none">';
       html += icon(ct.icon) + ' ' + esc(ct.label);
       html += '</label>';
-    }
-    html += '</div></div>';
-
-    // Pipeline status segmented (same handler as the old Review-tab buttons).
-    html += '<div class="cp-config-row">';
-    html += '<div class="cp-config-label">Pipeline status</div>';
-    html += '<div class="cp-status-buttons cp-status-buttons-overview">';
-    for (var sk in META_AD_STATUSES) {
-      var st = META_AD_STATUSES[sk];
-      var isActive = ad.pipeline_status === sk;
-      html += '<button class="cp-status-button' + (isActive ? ' cp-status-button-active' : '') + '" data-action="ws-set-ad-status" data-id="' + esc(ad.id) + '" data-status="' + sk + '" style="' + (isActive ? '--btn-color:' + st.color + ';' : '') + '">';
-      html += icon(st.icon) + ' ' + esc(st.label);
-      html += '</button>';
     }
     html += '</div></div>';
 
@@ -4212,6 +4182,7 @@
     if (validTabs.indexOf(tab) === -1) tab = 'overview';
 
     var html = '';
+    html += renderAdInspectorHeader(ad);
     html += renderAdWorkflowTabs(ad, tab);
 
     html += '<div class="cp-workspace-inspector-tab-body">';
@@ -4555,6 +4526,88 @@
     html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="review_notes" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="5" placeholder="Feedback from reviewers...">' + esc(ad.review_notes || '') + '</textarea>';
     html += '</div>';
 
+    return html;
+  }
+
+  // --- Persistent CP Inspector header (rendered on every Ad tab) ---
+  //
+  // Lifted from the Overview-only identity block so name, creative-type
+  // chip, status, and primary actions stay visible while editing
+  // Hook/Copy/Media/Review. The status badge is replaced by a
+  // dropdown that lets the user override pipeline_status manually
+  // (forward or backward); auto-advance continues to run on field saves
+  // via `maybeAdvanceAdStatus`. Items are grouped Workflow / Review so
+  // it's clear which stages are normally auto-managed.
+
+  function renderAdInspectorHeader(ad) {
+    var C = Constants;
+    var adSet = S.adSetMap[ad.ad_set_id];
+    var camp  = adSet ? S.campaignV2Map[adSet.campaign_id] : null;
+    var ctype = C.META_AD_CREATIVE_TYPES[ad.creative_type] || { label: 'Ad', icon: 'rectangle-ad' };
+    var status = C.META_AD_STATUSES[ad.pipeline_status] || { label: ad.pipeline_status || '—', color: '#80868b', icon: 'circle', key: ad.pipeline_status };
+    var crumb = (camp ? esc(camp.name) + ' · ' : '') + (adSet ? esc(adSet.name) : '');
+
+    var html = '<div class="cp-inspector-header cp-ad-inspector-header"><div class="cp-ad-inspector-header-main">';
+    html += '<div class="cp-inspector-eyebrow">' + icon(ctype.icon) + ' ' + esc(ctype.label) + (crumb ? ' · ' + crumb : '') + '</div>';
+    html += '<input type="text" class="cp-inspector-title-input cp-v2-inline-field" data-field="name" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.name || '') + '" placeholder="Ad name">';
+    html += renderAdReadinessPill(ad);
+    html += '</div>';
+
+    html += '<div class="cp-ad-inspector-header-side">';
+    html += renderAdStatusDropdown(ad, status);
+    html += '<div class="cp-inspector-header-actions">';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-copy-ad-field" data-id="' + esc(ad.id) + '" data-field="all" title="Copy all ad fields">' + icon('copy') + '</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-ad" data-id="' + esc(ad.id) + '" title="Delete ad">' + icon('trash') + '</button>';
+    html += '</div>';
+    html += '</div></div>';
+    return html;
+  }
+
+  function renderAdReadinessPill(ad) {
+    var steps = [
+      { key: 'hook',   label: 'Hook',   done: isAdHookDone(ad) },
+      { key: 'copy',   label: 'Copy',   done: isAdCopyDone(ad) },
+      { key: 'media',  label: 'Media',  done: isAdMediaDone(ad) },
+      { key: 'review', label: 'Review', done: isAdReviewDone(ad) }
+    ];
+    var html = '<div class="cp-ad-readiness" title="Step completion — drives auto-advance">';
+    for (var i = 0; i < steps.length; i++) {
+      var s = steps[i];
+      var cls = 'cp-ad-readiness-step' + (s.done ? ' cp-ad-readiness-step-done' : '');
+      html += '<span class="' + cls + '">' + icon(s.done ? 'circle-check' : 'circle') + ' ' + esc(s.label) + '</span>';
+      if (i < steps.length - 1) html += '<span class="cp-ad-readiness-sep">·</span>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdStatusDropdown(ad, status) {
+    var C = Constants;
+    var workflowKeys = ['hook_ready', 'copy_ready', 'media_ready'];
+    var reviewKeys   = ['in_review', 'approved', 'live', 'paused', 'archived'];
+
+    function renderItem(key) {
+      var st = C.META_AD_STATUSES[key];
+      if (!st) return '';
+      var active = (ad.pipeline_status === key) ? ' cp-status-dropdown-item-active' : '';
+      return '<button type="button" class="cp-status-dropdown-item' + active + '" role="menuitem" data-action="ws-set-ad-status" data-id="' + esc(ad.id) + '" data-status="' + key + '" style="--status-color:' + st.color + '">' +
+             '<span class="cp-status-dropdown-item-dot" style="background:' + st.color + '"></span>' +
+             icon(st.icon) + '<span class="cp-status-dropdown-item-label">' + esc(st.label) + '</span>' +
+             '</button>';
+    }
+
+    var html = '<div class="cp-status-dropdown" data-ad-id="' + esc(ad.id) + '">';
+    html += '<button type="button" class="cp-status-dropdown-trigger" data-action="ws-status-dropdown-toggle" aria-haspopup="menu" aria-expanded="false" style="--status-color:' + status.color + '">';
+    html += '<span class="cp-status-dropdown-dot" style="background:' + status.color + '"></span>';
+    html += icon(status.icon) + '<span class="cp-status-dropdown-label">' + esc(status.label) + '</span>';
+    html += icon('caret-down') + '</button>';
+    html += '<div class="cp-status-dropdown-menu" role="menu">';
+    html += '<div class="cp-status-dropdown-group-label">' + icon('robot') + ' Workflow <span class="cp-text-muted" style="font-weight:400">· auto-advances</span></div>';
+    for (var i = 0; i < workflowKeys.length; i++) html += renderItem(workflowKeys[i]);
+    html += '<div class="cp-status-dropdown-divider"></div>';
+    html += '<div class="cp-status-dropdown-group-label">' + icon('user-check') + ' Review</div>';
+    for (var j = 0; j < reviewKeys.length; j++) html += renderItem(reviewKeys[j]);
+    html += '</div></div>';
     return html;
   }
 
@@ -11102,12 +11155,34 @@
       saveEntityField('ad', id, 'creative_type', val);
     });
 
-    // Ad set pipeline status setter (Review tab)
+    // Ad pipeline status setter — dropdown items in the persistent inspector
+    // header. Manual override; can move forward or backward. Activity log is
+    // written by saveEntityField (status changes are tracked in 22-crud-helpers).
     $(document).off('click.cpv2-set-ad-status').on('click.cpv2-set-ad-status', '[data-action="ws-set-ad-status"]', function(e) {
       e.preventDefault();
+      e.stopPropagation();
       var id = $(this).data('id');
       var status = $(this).data('status');
       saveEntityField('ad', id, 'pipeline_status', status);
+    });
+
+    // Inspector header status dropdown — show/hide without re-rendering so we
+    // don't blow away focus on the inline name input next to it.
+    $(document).off('click.cpv2-status-dd-toggle').on('click.cpv2-status-dd-toggle', '[data-action="ws-status-dropdown-toggle"]', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var $dd = $(this).closest('.cp-status-dropdown');
+      var willOpen = !$dd.hasClass('cp-status-dropdown-open');
+      $('.cp-status-dropdown.cp-status-dropdown-open').not($dd).removeClass('cp-status-dropdown-open');
+      $dd.toggleClass('cp-status-dropdown-open', willOpen);
+      $(this).attr('aria-expanded', willOpen ? 'true' : 'false');
+    });
+
+    // Close any open status dropdown when clicking outside it.
+    $(document).off('click.cpv2-status-dd-outside').on('click.cpv2-status-dd-outside', function(e) {
+      if ($(e.target).closest('.cp-status-dropdown').length) return;
+      $('.cp-status-dropdown.cp-status-dropdown-open').removeClass('cp-status-dropdown-open')
+        .find('[data-action="ws-status-dropdown-toggle"]').attr('aria-expanded', 'false');
     });
 
     // Video scene rows

@@ -315,10 +315,6 @@
 .cp-config-control { flex: 1; min-width: 200px; }
 .cp-inspector-section-compact { padding: var(--cp-space-2) var(--cp-space-4); }
 
-/* Pipeline-status button row — wraps onto multiple rows on narrow widths */
-.cp-status-buttons-overview { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; min-width: 0; }
-.cp-status-buttons-overview .cp-status-button { padding: 4px 10px; font-size: var(--cp-font-size-xs); }
-
 /* Summary card — read-only preview of Hook / Copy / Media / Review */
 .cp-inspector-summary-card {
   border: 1px solid var(--cp-border-light);
