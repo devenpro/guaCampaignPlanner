@@ -41,6 +41,11 @@ The build is a simple alphabetical-walk concatenation — no bundler, no plugins
 
 ## How Drupal loads this
 
+For the full operating manual (branch model, release lifecycle, Asset
+Injector setup, rollback recipes, gotchas), see
+[`docs/release-management.md`](docs/release-management.md). Quick summary
+below.
+
 Configured via the Asset Injector module on the Drupal site. The Drupal admin
 points two External rules at jsDelivr URLs. Pick one of two stability levels:
 
