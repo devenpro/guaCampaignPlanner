@@ -416,55 +416,79 @@
 
   // --- 5. Generate Ad Hooks (alternatives) ---
 
-  function aiGenerateAdHooks(adId) {
+  // Open the AI runner modal for the Hook tab's Generate / Regenerate button.
+  // Captures an optional steering instruction + provider/model selection,
+  // then kicks off `aiGenerateAdHooks` with that context.
+  function openHookGenerationModal(adId) {
     if (!aiV2_assertConfigured()) return;
     var ad = getAd(adId); if (!ad) return;
+    var lastInstruction = (ad.hook && ad.hook.last_idea_instruction) || '';
+    var hasIdeas = !!(ad.hook && ad.hook.ai_ideas && ad.hook.ai_ideas.length);
+    openAiRunnerModal({
+      title: hasIdeas ? 'Regenerate hook ideas' : 'Generate hook ideas',
+      subtitle: hasIdeas ? 'Replaces the current list of ideas.' : 'AI will draft three distinct hook angles for this ad.',
+      actionId: 'ai-generate-ad-hooks',
+      instructionLabel: 'Angle or steer',
+      instructionPlaceholder: 'e.g. lean on social proof · keep them under 8 words · ask a question',
+      instructionInitial: lastInstruction,
+      instructionRequired: false,
+      confirmLabel: hasIdeas ? 'Regenerate' : 'Generate',
+      busyLabel: 'Generating…',
+      onConfirm: function(ctx, done) {
+        aiGenerateAdHooks(adId, ctx.instruction, function(err) { done(err); });
+      }
+    });
+  }
+
+  function aiGenerateAdHooks(adId, instruction, onDone) {
+    if (!aiV2_assertConfigured()) { if (onDone) onDone('not configured'); return; }
+    var ad = getAd(adId); if (!ad) { if (onDone) onDone('ad not found'); return; }
     var adSet = getAdSet(ad.ad_set_id);
     var camp = adSet ? getCampaignV2(adSet.campaign_id) : null;
+    instruction = (instruction || '').trim();
 
-    var prompt = 'Write 3 distinct hook options for this Meta Ad. Each should be 1 sentence, max 100 chars, with a different angle. For each, also rate it on three 0-100 scores and explain the psychology.\n\n';
+    var prompt = 'Write 3 distinct hook options for this Meta Ad. Each: 1 sentence, max 100 chars, a different angle. Rate each with a single 0-100 score (overall scroll-stopping potential) and a one-sentence "why this works" line.\n\n';
+    if (instruction) prompt += 'Extra steer from the user: ' + instruction + '\n\n';
     if (camp) prompt += aiV2_campaignContext(camp) + '\n';
     if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
     if (ad.creative && ad.creative.primary_text) prompt += 'Current primary text: ' + ad.creative.primary_text + '\n';
     prompt += '\n' + brandSnippet('content');
     prompt += '\n\nHook types: question, bold, story, data, direct, curiosity, challenge.\n';
-    prompt += 'scores.conversion = how likely this hook moves a cold viewer toward the CTA (0-100).\n';
-    prompt += 'scores.readability = how easy it is to read at a glance — short words, low cognitive load (0-100).\n';
-    prompt += 'scores.connection = how strongly it speaks to the audience\'s pain / desire (0-100).\n';
-    prompt += 'psychology = 1-2 sentences explaining why this hook works for this audience.\n';
-    prompt += 'Respond JSON only: {"hooks":[{"text":"","type":"","scores":{"conversion":0,"readability":0,"connection":0},"psychology":""}]}';
+    prompt += 'Respond JSON only: {"hooks":[{"text":"","type":"","score":0,"psychology":""}]}';
 
     toast('AI writing hooks...', 'info');
     callAIWithRetry(prompt, function(parsed) {
       var hooks = (parsed && parsed.hooks) || [];
-      if (hooks.length === 0) { toast('AI returned no hooks', 'warning'); return; }
+      if (hooks.length === 0) { toast('AI returned no hooks', 'warning'); if (onDone) onDone('empty'); return; }
       var ideas = hooks.map(function(h) {
         var s = h.scores || {};
+        var derived = (h.score != null) ? h.score : (s.conversion != null ? s.conversion : (s.readability != null ? s.readability : s.connection));
         return {
           id: generateId('hki'),
           text: String(h.text || '').trim(),
           type: String(h.type || 'direct').trim(),
-          scores: {
-            conversion:  clamp100(s.conversion),
-            readability: clamp100(s.readability),
-            connection:  clamp100(s.connection)
-          },
+          score: clamp100(derived),
           psychology: String(h.psychology || '').trim(),
+          instruction: instruction,
           generated_at: new Date().toISOString()
         };
       }).filter(function(i) { return i.text; });
-      if (ideas.length === 0) { toast('AI returned no usable hooks', 'warning'); return; }
+      if (ideas.length === 0) { toast('AI returned no usable hooks', 'warning'); if (onDone) onDone('empty'); return; }
 
       snapshot('AI hook ideas');
       ad.hook = ad.hook || { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' };
       ad.hook.ai_ideas = ideas;
       ad.hook.active_idea_id = '';
+      ad.hook.last_idea_instruction = instruction;
       ad.updated = new Date().toISOString();
       buildMaps(); syncToTextarea(); render();
-      logActivity('hook_generated', 'ad', adId, ad.name, 'AI generated ' + ideas.length + ' hook ideas');
+      logActivity('hook_generated', 'ad', adId, ad.name, 'AI generated ' + ideas.length + ' hook ideas' + (instruction ? ' (with steer)' : ''));
       toast('Got ' + ideas.length + ' hook ideas — pick one in the Hook tab', 'success');
-    }, function(err) { toast('AI error: ' + err, 'error'); },
-       'ai-generate-ad-hooks', BrandService.getSystemPrompt('content'), parseJSON);
+      if (onDone) onDone();
+    }, function(err) {
+      toast('AI error: ' + err, 'error');
+      if (onDone) onDone(err);
+    }, 'ai-generate-ad-hooks', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
   function clamp100(n) {

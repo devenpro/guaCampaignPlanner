@@ -809,6 +809,13 @@
     // AI hook ideas — pick / discard / clear / expand. Lives on
     // `ad.hook.ai_ideas` and is populated by `aiGenerateAdHooks`. Active
     // selection tracked by `ad.hook.active_idea_id`.
+    //
+    // saveEntityField('ad', id, 'hook', ad.hook) used to short-circuit here
+    // because `ad === entity` so the same object reference is passed as
+    // value — saveEntityField's identity check (`entity[field] === value`)
+    // returned early and never re-rendered, leaving the hook text textarea
+    // stale. Mutate directly and call the same buildMaps/sync/render trio
+    // that aiGenerateAdHooks uses for its own writes.
     $(document).off('click.cpv2-use-hook-idea').on('click.cpv2-use-hook-idea', '[data-action="ws-use-ad-hook-idea"]', function(e) {
       e.preventDefault();
       var id = $(this).data('id');
@@ -823,7 +830,7 @@
       ad.hook.source_message_id = '';
       ad.hook.selected_hook_id = '';
       ad.updated = new Date().toISOString();
-      saveEntityField('ad', id, 'hook', ad.hook);
+      buildMaps(); syncToTextarea(); render();
       if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI hook idea');
       logActivity('hook_selected', 'ad', id, ad.name, 'Applied AI hook idea (' + (idea.type || 'direct') + ')');
       toast('Hook applied', 'success');
@@ -838,8 +845,9 @@
       var removed = ideas[idx]; if (!removed) return;
       ideas.splice(idx, 1);
       if (ad.hook.active_idea_id === removed.id) ad.hook.active_idea_id = '';
+      ad.updated = new Date().toISOString();
       snapshot('Discard hook idea');
-      saveEntityField('ad', id, 'hook', ad.hook);
+      buildMaps(); syncToTextarea(); render();
     });
 
     $(document).off('click.cpv2-clear-hook-ideas').on('click.cpv2-clear-hook-ideas', '[data-action="ws-clear-ad-hook-ideas"]', function(e) {
@@ -850,8 +858,10 @@
       snapshot('Clear hook ideas');
       ad.hook.ai_ideas = [];
       ad.hook.active_idea_id = '';
-      saveEntityField('ad', id, 'hook', ad.hook);
+      ad.updated = new Date().toISOString();
+      buildMaps(); syncToTextarea(); render();
     });
+
 
     // Expand a collapsed hook idea card without re-rendering — same pattern
     // as the status dropdown toggle, so adjacent inline fields keep focus.

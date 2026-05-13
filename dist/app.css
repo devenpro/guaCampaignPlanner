@@ -1332,7 +1332,7 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
   color: var(--cp-white);
 }
 
-/* ----- AI hook ideas (scored, with psychology) ----- */
+/* ----- AI hook ideas (single score chip + psychology) ----- */
 .cp-hook-ideas {
   display: flex;
   flex-direction: column;
@@ -1341,8 +1341,8 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 .cp-hook-idea-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 10px;
+  padding: 12px 14px;
   background: var(--cp-white);
   border: 1px solid var(--cp-border-light);
   border-radius: var(--cp-radius-md);
@@ -1355,37 +1355,40 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
   box-shadow: 0 0 0 1px var(--cp-primary) inset;
 }
 .cp-hook-idea-card-collapsed {
-  padding: 6px 12px;
+  padding: 8px 12px;
   background: var(--cp-gray-50);
+  gap: 0;
 }
-.cp-hook-idea-card-collapsed .cp-hook-idea-head { gap: 8px; }
 .cp-hook-idea-head {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-wrap: wrap;
 }
+.cp-hook-idea-card-collapsed .cp-hook-idea-head { flex-wrap: nowrap; }
 .cp-hook-idea-active-badge {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  padding: 2px 8px;
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--cp-primary);
+  color: var(--cp-white);
+  background: var(--cp-primary);
+  border-radius: var(--cp-radius-full);
 }
 .cp-hook-idea-text {
-  flex: 1 1 100%;
-  font-size: 13px;
-  line-height: 1.45;
+  font-size: 15px;
+  line-height: 1.5;
   color: var(--cp-text-primary);
-  margin: 4px 0 0;
+  font-weight: 500;
 }
 .cp-hook-idea-card-collapsed .cp-hook-idea-text {
   flex: 1 1 0;
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 400;
   color: var(--cp-text-secondary);
 }
 .cp-hook-idea-text-clamp {
@@ -1395,59 +1398,57 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
   min-width: 0;
 }
 
-/* Score row: label · bar · value */
-.cp-hook-idea-scores {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.cp-hook-score-row {
-  display: grid;
-  grid-template-columns: 90px 1fr 36px;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  color: var(--cp-text-secondary);
-}
-.cp-hook-score-label {
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-}
-.cp-hook-score-bar {
-  position: relative;
-  height: 6px;
-  background: var(--cp-gray-100, #f1f3f4);
+/* Single overall-score chip */
+.cp-hook-idea-score-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 4px 10px;
   border-radius: var(--cp-radius-full);
-  overflow: hidden;
-}
-.cp-hook-score-fill {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--cp-primary);
-  transition: width 200ms ease;
-}
-.cp-hook-score-value {
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  text-align: right;
+  font-weight: 700;
+  font-size: 13px;
+  margin-left: auto;
+  background: var(--cp-gray-100, #f1f3f4);
   color: var(--cp-text-primary);
 }
-.cp-hook-score-low  .cp-hook-score-fill { background: #be123c; }
-.cp-hook-score-ok   .cp-hook-score-fill { background: #e37400; }
-.cp-hook-score-good .cp-hook-score-fill { background: #0d904f; }
+.cp-hook-idea-score-chip-suffix {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.7;
+}
+.cp-hook-idea-card-collapsed .cp-hook-idea-score-chip {
+  font-size: 11px;
+  padding: 2px 8px;
+  margin-left: 0;
+}
+.cp-hook-idea-score-chip-low  { background: #be123c20; color: #be123c; }
+.cp-hook-idea-score-chip-ok   { background: #e3740020; color: #b95900; }
+.cp-hook-idea-score-chip-good { background: #0d904f1f; color: #0d904f; }
 
 .cp-hook-idea-psychology {
   display: flex;
-  align-items: flex-start;
-  gap: 6px;
+  flex-direction: column;
+  gap: 2px;
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.55;
   color: var(--cp-text-secondary);
-  padding: 6px 8px;
+  padding: 8px 10px;
   background: var(--cp-gray-50);
   border-radius: var(--cp-radius-sm);
+}
+.cp-hook-idea-card-active .cp-hook-idea-psychology {
+  background: rgba(255, 255, 255, 0.65);
+}
+.cp-hook-idea-psychology-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cp-text-muted);
 }
 .cp-hook-idea-psychology em { font-style: italic; }
 
@@ -1686,6 +1687,82 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+/* ----- AI runner modal (instruction + provider/model picker) ----- */
+.cp-ai-runner-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(32, 33, 36, 0.42);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--cp-space-3);
+}
+.cp-ai-runner-dialog {
+  width: min(560px, 100%);
+  background: var(--cp-white);
+  border-radius: var(--cp-radius-lg, 12px);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.24);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  overflow: hidden;
+}
+.cp-ai-runner-header {
+  padding: 16px 20px 8px;
+  border-bottom: 1px solid var(--cp-border-light);
+}
+.cp-ai-runner-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--cp-text-primary);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.cp-ai-runner-subtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--cp-text-muted);
+}
+.cp-ai-runner-body {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  overflow-y: auto;
+}
+.cp-ai-runner-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cp-ai-runner-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--cp-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.cp-ai-runner-instruction { width: 100%; }
+.cp-ai-runner-picker-row .cp-ai-picker {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cp-ai-runner-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px 16px;
+  border-top: 1px solid var(--cp-border-light);
+  background: var(--cp-gray-50);
 }
 
 /* ===== src/styles/10-part1/17-view-calendar.css ===== */

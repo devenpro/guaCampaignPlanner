@@ -1,4 +1,4 @@
-/* Campaign Planner — built from 82 source files (see src/) */
+/* Campaign Planner — built from 83 source files (see src/) */
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -4280,21 +4280,20 @@
     }
 
     html += '<div class="cp-inspector-actions">';
-    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-ad-hooks" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate hooks</button>';
+    html += '<button class="cp-btn cp-btn-ai" data-action="ws-open-hook-gen-modal" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate hooks</button>';
     html += '</div>';
 
     html += '</div>';
     return html;
   }
 
-  // --- AI hook ideas — inline scored options on the Hook tab ---
+  // --- AI hook ideas — inline options on the Hook tab ---
   //
-  // Replaces the old preview modal. After "Generate hooks" runs, options live
-  // on `ad.hook.ai_ideas`. The active selection is tracked by
+  // After "Generate hooks" (or Regenerate) runs, options live on
+  // `ad.hook.ai_ideas`. The active selection is tracked by
   // `ad.hook.active_idea_id`: that card pins to the top, others collapse to
-  // a one-line summary the user can re-expand. Each option exposes three
-  // 0–100 scores (conversion / readability / connection) and a psychology
-  // blurb explaining why it works.
+  // a one-line summary. Each option shows a single 0–100 score chip and a
+  // one-sentence "why this works" line.
 
   function renderAdHookIdeas(ad) {
     var hook = ad.hook || {};
@@ -4314,9 +4313,9 @@
 
     var html = '<div class="cp-inspector-section">';
     html += '<div class="cp-inspector-section-title">' + icon('sparkles') + ' AI hook ideas';
-    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">' + ideas.length + ' option' + (ideas.length !== 1 ? 's' : '') + ' · scored 0–100</span>';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">' + ideas.length + ' option' + (ideas.length !== 1 ? 's' : '') + '</span>';
     html += '<div class="cp-hook-ideas-actions" style="margin-left:auto;display:inline-flex;gap:6px">';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ai-generate-ad-hooks" data-id="' + esc(ad.id) + '" title="Regenerate (replaces these ideas)">' + icon('rotate') + ' Regenerate</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-open-hook-gen-modal" data-id="' + esc(ad.id) + '" title="Regenerate (opens modal — replaces these ideas)">' + icon('rotate') + ' Regenerate</button>';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-clear-ad-hook-ideas" data-id="' + esc(ad.id) + '" title="Clear all ideas">' + icon('trash') + '</button>';
     html += '</div>';
     html += '</div>';
@@ -4335,59 +4334,62 @@
     return html;
   }
 
+  // Read the score off the new shape (`idea.score`) with a back-compat
+  // fallback to the legacy three-score map used before this refactor.
+  function getAdHookIdeaScore(idea) {
+    if (!idea) return 0;
+    if (idea.score != null) return Math.max(0, Math.min(100, Math.round(Number(idea.score) || 0)));
+    var s = idea.scores || {};
+    var legacy = (s.conversion != null) ? s.conversion : (s.readability != null ? s.readability : s.connection);
+    return Math.max(0, Math.min(100, Math.round(Number(legacy) || 0)));
+  }
+
   function renderAdHookIdeaCard(ad, idea, idx, isActive, collapsed) {
-    var scores = idea.scores || {};
     var cls = 'cp-hook-idea-card';
     if (isActive) cls += ' cp-hook-idea-card-active';
     if (collapsed) cls += ' cp-hook-idea-card-collapsed';
 
+    var score = getAdHookIdeaScore(idea);
+    var tone = score >= 75 ? 'good' : (score >= 50 ? 'ok' : 'low');
+
     var html = '<div class="' + cls + '" data-idea-id="' + esc(idea.id) + '">';
 
-    // Header row — always visible
-    html += '<div class="cp-hook-idea-head">';
-    html += '<span class="cp-pullable-hook-type">' + esc(idea.type || 'direct') + '</span>';
-    if (isActive) html += '<span class="cp-hook-idea-active-badge">' + icon('circle-check') + ' Active</span>';
-    html += '<div class="cp-hook-idea-text' + (collapsed ? ' cp-hook-idea-text-clamp' : '') + '">' + esc(idea.text) + '</div>';
     if (collapsed) {
-      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-toggle-hook-idea-expanded" data-id="' + esc(ad.id) + '" data-idea-id="' + esc(idea.id) + '" title="Expand">' + icon('chevron-down') + '</button>';
-    }
-    html += '</div>';
-
-    if (!collapsed) {
-      // Score bars
-      html += '<div class="cp-hook-idea-scores">';
-      html += renderAdHookScoreRow('Conversion',  scores.conversion);
-      html += renderAdHookScoreRow('Readability', scores.readability);
-      html += renderAdHookScoreRow('Connection',  scores.connection);
+      // Compact row: type · text (truncated) · score · use · expand
+      html += '<div class="cp-hook-idea-head">';
+      html += '<span class="cp-pullable-hook-type">' + esc(idea.type || 'direct') + '</span>';
+      html += '<div class="cp-hook-idea-text cp-hook-idea-text-clamp">' + esc(idea.text) + '</div>';
+      html += '<span class="cp-hook-idea-score-chip cp-hook-idea-score-chip-' + tone + '" title="Score">' + score + '</span>';
+      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="ws-use-ad-hook-idea" data-id="' + esc(ad.id) + '" data-idx="' + idx + '" title="Use this hook">' + icon('check') + '</button>';
+      html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-toggle-hook-idea-expanded" data-id="' + esc(ad.id) + '" data-idea-id="' + esc(idea.id) + '" title="Expand">' + icon('chevron-down') + '</button>';
+      html += '</div>';
+    } else {
+      // Expanded card: header row, hook text, psychology, actions
+      html += '<div class="cp-hook-idea-head">';
+      html += '<span class="cp-pullable-hook-type">' + esc(idea.type || 'direct') + '</span>';
+      if (isActive) html += '<span class="cp-hook-idea-active-badge">' + icon('circle-check') + ' Active</span>';
+      html += '<span class="cp-hook-idea-score-chip cp-hook-idea-score-chip-' + tone + '" title="Overall scroll-stopping score">' + score + '<span class="cp-hook-idea-score-chip-suffix">/100</span></span>';
       html += '</div>';
 
-      // Psychology
+      html += '<div class="cp-hook-idea-text">' + esc(idea.text) + '</div>';
+
       if (idea.psychology) {
-        html += '<div class="cp-hook-idea-psychology">' + icon('lightbulb') + ' <em>' + esc(idea.psychology) + '</em></div>';
+        html += '<div class="cp-hook-idea-psychology">';
+        html += '<span class="cp-hook-idea-psychology-label">' + icon('lightbulb') + ' Why this works</span>';
+        html += '<em>' + esc(idea.psychology) + '</em>';
+        html += '</div>';
       }
 
-      // Actions
       html += '<div class="cp-hook-idea-actions">';
       if (isActive) {
-        html += '<span class="cp-text-muted" style="font-size:11px;flex:1">This hook is applied to the ad.</span>';
+        html += '<span class="cp-text-muted" style="font-size:11px;flex:1">This hook is applied to the ad above.</span>';
       } else {
         html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="ws-use-ad-hook-idea" data-id="' + esc(ad.id) + '" data-idx="' + idx + '">' + icon('check') + ' Use this hook</button>';
       }
-      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-remove-ad-hook-idea" data-id="' + esc(ad.id) + '" data-idx="' + idx + '" title="Discard">' + icon('trash') + '</button>';
+      html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-remove-ad-hook-idea" data-id="' + esc(ad.id) + '" data-idx="' + idx + '" title="Discard">' + icon('trash') + '</button>';
       html += '</div>';
     }
 
-    html += '</div>';
-    return html;
-  }
-
-  function renderAdHookScoreRow(label, raw) {
-    var score = Math.max(0, Math.min(100, Math.round(Number(raw) || 0)));
-    var tone = score >= 75 ? 'good' : (score >= 50 ? 'ok' : 'low');
-    var html = '<div class="cp-hook-score-row cp-hook-score-' + tone + '">';
-    html += '<span class="cp-hook-score-label">' + esc(label) + '</span>';
-    html += '<span class="cp-hook-score-bar"><span class="cp-hook-score-fill" style="width:' + score + '%"></span></span>';
-    html += '<span class="cp-hook-score-value">' + score + '</span>';
     html += '</div>';
     return html;
   }
@@ -11268,6 +11270,13 @@
     // AI hook ideas — pick / discard / clear / expand. Lives on
     // `ad.hook.ai_ideas` and is populated by `aiGenerateAdHooks`. Active
     // selection tracked by `ad.hook.active_idea_id`.
+    //
+    // saveEntityField('ad', id, 'hook', ad.hook) used to short-circuit here
+    // because `ad === entity` so the same object reference is passed as
+    // value — saveEntityField's identity check (`entity[field] === value`)
+    // returned early and never re-rendered, leaving the hook text textarea
+    // stale. Mutate directly and call the same buildMaps/sync/render trio
+    // that aiGenerateAdHooks uses for its own writes.
     $(document).off('click.cpv2-use-hook-idea').on('click.cpv2-use-hook-idea', '[data-action="ws-use-ad-hook-idea"]', function(e) {
       e.preventDefault();
       var id = $(this).data('id');
@@ -11282,7 +11291,7 @@
       ad.hook.source_message_id = '';
       ad.hook.selected_hook_id = '';
       ad.updated = new Date().toISOString();
-      saveEntityField('ad', id, 'hook', ad.hook);
+      buildMaps(); syncToTextarea(); render();
       if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI hook idea');
       logActivity('hook_selected', 'ad', id, ad.name, 'Applied AI hook idea (' + (idea.type || 'direct') + ')');
       toast('Hook applied', 'success');
@@ -11297,8 +11306,9 @@
       var removed = ideas[idx]; if (!removed) return;
       ideas.splice(idx, 1);
       if (ad.hook.active_idea_id === removed.id) ad.hook.active_idea_id = '';
+      ad.updated = new Date().toISOString();
       snapshot('Discard hook idea');
-      saveEntityField('ad', id, 'hook', ad.hook);
+      buildMaps(); syncToTextarea(); render();
     });
 
     $(document).off('click.cpv2-clear-hook-ideas').on('click.cpv2-clear-hook-ideas', '[data-action="ws-clear-ad-hook-ideas"]', function(e) {
@@ -11309,8 +11319,10 @@
       snapshot('Clear hook ideas');
       ad.hook.ai_ideas = [];
       ad.hook.active_idea_id = '';
-      saveEntityField('ad', id, 'hook', ad.hook);
+      ad.updated = new Date().toISOString();
+      buildMaps(); syncToTextarea(); render();
     });
+
 
     // Expand a collapsed hook idea card without re-rendering — same pattern
     // as the status dropdown toggle, so adjacent inline fields keep focus.
@@ -12630,6 +12642,103 @@
   }
 
 
+/* ===== src/30-part2b/11-ai-runner-modal.js ===== */
+  // ============================================================
+  // SECTION 9.6: AI RUNNER MODAL (per-call instruction + model picker)
+  // ============================================================
+  //
+  // Generic modal that captures a free-form instruction from the user and
+  // lets them pick the AI provider/model for a single call, then invokes
+  // `opts.onConfirm({ instruction }, done)`. The picker lives inside the
+  // modal with `data-action-id="<actionId>"` so `LLMService.callAI(...,
+  // actionId, ...)` reads the user's choice via the existing `_getPickerSel`
+  // lookup; the call inside `callAI` also persists the selection via
+  // `savePreference(actionId, ...)` so the next open of the same modal
+  // defaults to the user's last choice.
+  //
+  // The modal stays mounted while the AI request is in flight — the Run
+  // button is disabled and shows a busy label. The handler closes the
+  // modal on success or re-enables the button on error.
+
+  function openAiRunnerModal(opts) {
+    closeAiRunnerModal();
+    opts = opts || {};
+    var actionId = opts.actionId || 'ai-runner';
+    var instructionLabel = opts.instructionLabel || 'Instructions';
+    var instructionPlaceholder = opts.instructionPlaceholder || '';
+    var instructionInitial = opts.instructionInitial || '';
+    var instructionRequired = !!opts.instructionRequired;
+    var confirmLabel = opts.confirmLabel || 'Run';
+    var busyLabel = opts.busyLabel || 'Running…';
+    var subtitle = opts.subtitle || '';
+
+    var html = '<div class="cp-ai-runner-backdrop">';
+    html += '<div class="cp-ai-runner-dialog">';
+    html += '<div class="cp-ai-runner-header">';
+    html += '<h3 class="cp-ai-runner-title">' + icon('sparkles') + ' ' + esc(opts.title || 'Run AI') + '</h3>';
+    if (subtitle) html += '<p class="cp-ai-runner-subtitle">' + esc(subtitle) + '</p>';
+    html += '</div>';
+    html += '<div class="cp-ai-runner-body">';
+    html += '<div class="cp-ai-runner-field">';
+    html += '<label class="cp-ai-runner-label">' + esc(instructionLabel);
+    html += ' <span class="cp-text-muted" style="font-weight:400;font-size:11px">' + (instructionRequired ? 'required' : 'optional') + '</span>';
+    html += '</label>';
+    html += '<textarea class="cp-textarea cp-ai-runner-instruction" rows="4" placeholder="' + esc(instructionPlaceholder) + '">' + esc(instructionInitial) + '</textarea>';
+    html += '</div>';
+    html += '<div class="cp-ai-runner-field cp-ai-runner-picker-row">';
+    html += '<label class="cp-ai-runner-label">' + icon('robot') + ' AI model</label>';
+    html += LLMService.renderInlinePicker(actionId);
+    html += '</div>';
+    html += '</div>';
+    html += '<div class="cp-ai-runner-actions">';
+    html += '<button class="cp-btn cp-btn-outline" data-action="ai-runner-cancel">Cancel</button>';
+    html += '<button class="cp-btn cp-btn-primary cp-ai-runner-run" data-action="ai-runner-run">' + icon('sparkles') + ' ' + esc(confirmLabel) + '</button>';
+    html += '</div>';
+    html += '</div></div>';
+
+    $('body').append(html);
+
+    $(document).off('click.cp-air-cancel').on('click.cp-air-cancel', '[data-action="ai-runner-cancel"]', function(e) {
+      e.preventDefault();
+      closeAiRunnerModal();
+    });
+
+    $(document).off('click.cp-air-run').on('click.cp-air-run', '[data-action="ai-runner-run"]', function(e) {
+      e.preventDefault();
+      var $btn = $(this);
+      if ($btn.prop('disabled')) return;
+      var instruction = ($('.cp-ai-runner-instruction').val() || '').trim();
+      if (instructionRequired && !instruction) {
+        toast(instructionLabel + ' is required', 'warning');
+        $('.cp-ai-runner-instruction').focus();
+        return;
+      }
+      var originalHtml = $btn.html();
+      $btn.prop('disabled', true).html(icon('rotate') + ' ' + esc(busyLabel));
+      if (typeof opts.onConfirm !== 'function') {
+        closeAiRunnerModal();
+        return;
+      }
+      opts.onConfirm({ instruction: instruction }, function done(err) {
+        if (err) {
+          if ($('.cp-ai-runner-backdrop').length) {
+            $('.cp-ai-runner-run').prop('disabled', false).html(originalHtml);
+          }
+          return;
+        }
+        closeAiRunnerModal();
+      });
+    });
+
+    setTimeout(function() { $('.cp-ai-runner-instruction').focus(); }, 50);
+  }
+
+  function closeAiRunnerModal() {
+    $('.cp-ai-runner-backdrop').remove();
+    $(document).off('click.cp-air-cancel click.cp-air-run');
+  }
+
+
 /* ===== src/30-part2b/12-ai-pain-research.js ===== */
   // ============================================================
   // SECTION 11: AI — PAIN POINT RESEARCH
@@ -13223,55 +13332,79 @@
 
   // --- 5. Generate Ad Hooks (alternatives) ---
 
-  function aiGenerateAdHooks(adId) {
+  // Open the AI runner modal for the Hook tab's Generate / Regenerate button.
+  // Captures an optional steering instruction + provider/model selection,
+  // then kicks off `aiGenerateAdHooks` with that context.
+  function openHookGenerationModal(adId) {
     if (!aiV2_assertConfigured()) return;
     var ad = getAd(adId); if (!ad) return;
+    var lastInstruction = (ad.hook && ad.hook.last_idea_instruction) || '';
+    var hasIdeas = !!(ad.hook && ad.hook.ai_ideas && ad.hook.ai_ideas.length);
+    openAiRunnerModal({
+      title: hasIdeas ? 'Regenerate hook ideas' : 'Generate hook ideas',
+      subtitle: hasIdeas ? 'Replaces the current list of ideas.' : 'AI will draft three distinct hook angles for this ad.',
+      actionId: 'ai-generate-ad-hooks',
+      instructionLabel: 'Angle or steer',
+      instructionPlaceholder: 'e.g. lean on social proof · keep them under 8 words · ask a question',
+      instructionInitial: lastInstruction,
+      instructionRequired: false,
+      confirmLabel: hasIdeas ? 'Regenerate' : 'Generate',
+      busyLabel: 'Generating…',
+      onConfirm: function(ctx, done) {
+        aiGenerateAdHooks(adId, ctx.instruction, function(err) { done(err); });
+      }
+    });
+  }
+
+  function aiGenerateAdHooks(adId, instruction, onDone) {
+    if (!aiV2_assertConfigured()) { if (onDone) onDone('not configured'); return; }
+    var ad = getAd(adId); if (!ad) { if (onDone) onDone('ad not found'); return; }
     var adSet = getAdSet(ad.ad_set_id);
     var camp = adSet ? getCampaignV2(adSet.campaign_id) : null;
+    instruction = (instruction || '').trim();
 
-    var prompt = 'Write 3 distinct hook options for this Meta Ad. Each should be 1 sentence, max 100 chars, with a different angle. For each, also rate it on three 0-100 scores and explain the psychology.\n\n';
+    var prompt = 'Write 3 distinct hook options for this Meta Ad. Each: 1 sentence, max 100 chars, a different angle. Rate each with a single 0-100 score (overall scroll-stopping potential) and a one-sentence "why this works" line.\n\n';
+    if (instruction) prompt += 'Extra steer from the user: ' + instruction + '\n\n';
     if (camp) prompt += aiV2_campaignContext(camp) + '\n';
     if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
     if (ad.creative && ad.creative.primary_text) prompt += 'Current primary text: ' + ad.creative.primary_text + '\n';
     prompt += '\n' + brandSnippet('content');
     prompt += '\n\nHook types: question, bold, story, data, direct, curiosity, challenge.\n';
-    prompt += 'scores.conversion = how likely this hook moves a cold viewer toward the CTA (0-100).\n';
-    prompt += 'scores.readability = how easy it is to read at a glance — short words, low cognitive load (0-100).\n';
-    prompt += 'scores.connection = how strongly it speaks to the audience\'s pain / desire (0-100).\n';
-    prompt += 'psychology = 1-2 sentences explaining why this hook works for this audience.\n';
-    prompt += 'Respond JSON only: {"hooks":[{"text":"","type":"","scores":{"conversion":0,"readability":0,"connection":0},"psychology":""}]}';
+    prompt += 'Respond JSON only: {"hooks":[{"text":"","type":"","score":0,"psychology":""}]}';
 
     toast('AI writing hooks...', 'info');
     callAIWithRetry(prompt, function(parsed) {
       var hooks = (parsed && parsed.hooks) || [];
-      if (hooks.length === 0) { toast('AI returned no hooks', 'warning'); return; }
+      if (hooks.length === 0) { toast('AI returned no hooks', 'warning'); if (onDone) onDone('empty'); return; }
       var ideas = hooks.map(function(h) {
         var s = h.scores || {};
+        var derived = (h.score != null) ? h.score : (s.conversion != null ? s.conversion : (s.readability != null ? s.readability : s.connection));
         return {
           id: generateId('hki'),
           text: String(h.text || '').trim(),
           type: String(h.type || 'direct').trim(),
-          scores: {
-            conversion:  clamp100(s.conversion),
-            readability: clamp100(s.readability),
-            connection:  clamp100(s.connection)
-          },
+          score: clamp100(derived),
           psychology: String(h.psychology || '').trim(),
+          instruction: instruction,
           generated_at: new Date().toISOString()
         };
       }).filter(function(i) { return i.text; });
-      if (ideas.length === 0) { toast('AI returned no usable hooks', 'warning'); return; }
+      if (ideas.length === 0) { toast('AI returned no usable hooks', 'warning'); if (onDone) onDone('empty'); return; }
 
       snapshot('AI hook ideas');
       ad.hook = ad.hook || { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' };
       ad.hook.ai_ideas = ideas;
       ad.hook.active_idea_id = '';
+      ad.hook.last_idea_instruction = instruction;
       ad.updated = new Date().toISOString();
       buildMaps(); syncToTextarea(); render();
-      logActivity('hook_generated', 'ad', adId, ad.name, 'AI generated ' + ideas.length + ' hook ideas');
+      logActivity('hook_generated', 'ad', adId, ad.name, 'AI generated ' + ideas.length + ' hook ideas' + (instruction ? ' (with steer)' : ''));
       toast('Got ' + ideas.length + ' hook ideas — pick one in the Hook tab', 'success');
-    }, function(err) { toast('AI error: ' + err, 'error'); },
-       'ai-generate-ad-hooks', BrandService.getSystemPrompt('content'), parseJSON);
+      if (onDone) onDone();
+    }, function(err) {
+      toast('AI error: ' + err, 'error');
+      if (onDone) onDone(err);
+    }, 'ai-generate-ad-hooks', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
   function clamp100(n) {
@@ -15927,8 +16060,15 @@
     $(document).off('click.cp2b-ai-set-brief').on('click.cp2b-ai-set-brief', '[data-action="ai-generate-ad-set-brief"]', function(e) {
       e.preventDefault(); aiGenerateAdSetBrief($(this).data('id'));
     });
+    // Hook tab Generate / Regenerate → opens the AI runner modal which
+    // captures an optional steer + provider/model and then runs the
+    // generator. The legacy `ai-generate-ad-hooks` action stays bound (in
+    // case anything else dispatches it) but now goes through the modal too.
+    $(document).off('click.cp2b-open-hook-gen').on('click.cp2b-open-hook-gen', '[data-action="ws-open-hook-gen-modal"]', function(e) {
+      e.preventDefault(); openHookGenerationModal($(this).data('id'));
+    });
     $(document).off('click.cp2b-ai-hooks').on('click.cp2b-ai-hooks', '[data-action="ai-generate-ad-hooks"]', function(e) {
-      e.preventDefault(); aiGenerateAdHooks($(this).data('id'));
+      e.preventDefault(); openHookGenerationModal($(this).data('id'));
     });
     $(document).off('click.cp2b-ai-copy').on('click.cp2b-ai-copy', '[data-action="ai-write-ad-copy"]', function(e) {
       e.preventDefault(); aiWriteAdCopy($(this).data('id'));
