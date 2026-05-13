@@ -315,19 +315,15 @@
     var media = ad.media || {};
     var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
 
-    // Creative type selector at top
+    // Creative type is fixed for the Media tab — changing it would invalidate
+    // the type-specific editors and any work in progress. Pick / reset from
+    // Overview → Configuration.
     var C = Constants;
-    html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('rectangle-ad') + ' Creative type</div>';
-    html += '<div class="cp-segmented">';
-    for (var ctk in C.META_AD_CREATIVE_TYPES) {
-      var ct = C.META_AD_CREATIVE_TYPES[ctk];
-      var ctSel = (ad.creative_type === ctk) ? ' cp-segmented-active' : '';
-      html += '<label class="cp-segmented-option' + ctSel + '">';
-      html += '<input type="radio" name="cp-v2-ad-ct-' + esc(ad.id) + '" class="cp-v2-media-type-switch" data-entity-id="' + esc(ad.id) + '" value="' + ctk + '"' + (ctSel ? ' checked' : '') + ' style="display:none">';
-      html += icon(ct.icon) + ' ' + esc(ct.label);
-      html += '</label>';
-    }
+    var ctype = C.META_AD_CREATIVE_TYPES[ad.creative_type] || { label: ad.creative_type || '—', icon: 'rectangle-ad' };
+    html += '<div class="cp-inspector-section cp-inspector-section-compact">';
+    html += '<div class="cp-creative-type-locked">';
+    html += icon('lock') + ' Editing as <strong>' + esc(ctype.label) + '</strong>';
+    html += '<button class="cp-btn cp-btn-text cp-btn-sm" data-action="set-inspector-tab" data-tab="overview">' + icon('arrow-left') + ' Change in Overview</button>';
     html += '</div>';
     html += '</div>';
 
@@ -691,6 +687,22 @@
     if (!ad) return false;
     var s = ad.pipeline_status;
     return s === 'in_review' || s === 'approved' || s === 'live' || s === 'paused' || s === 'archived';
+  }
+
+  // True iff no media-bearing field has any user content. Used to decide
+  // whether the Overview creative-type selector is editable (untouched) or
+  // shown locked with a "Reset" CTA (any media content exists).
+  function isAdMediaUntouched(ad) {
+    if (!ad) return true;
+    var m = ad.media || {};
+    var img = m.image || {};
+    if ((img.brief || '').trim() || (img.ai_prompt || '').trim() || img.asset_id || (img.negative_prompt || '').trim()) return false;
+    var vid = m.video || {};
+    if ((vid.concept || '').trim() || vid.asset_id) return false;
+    if (vid.script && vid.script.rows && vid.script.rows.length) return false;
+    if (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length) return false;
+    if (m.carousel_cards && m.carousel_cards.length) return false;
+    return true;
   }
 
   // --- Inspector tab bar (shared) ---

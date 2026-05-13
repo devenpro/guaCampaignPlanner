@@ -3791,19 +3791,31 @@
     var html = '<div class="cp-inspector-section cp-inspector-config">';
     html += '<div class="cp-inspector-section-title">' + icon('gear') + ' Configuration</div>';
 
-    // Creative type segmented (drives which Media tab variant renders).
+    // Creative type — editable while no media work exists, locked once media
+    // content has been entered (changing it would invalidate the type-specific
+    // editor). Reset button wipes ad.media and unlocks.
     html += '<div class="cp-config-row">';
     html += '<div class="cp-config-label">Creative type</div>';
-    html += '<div class="cp-segmented">';
-    for (var ctk in META_AD_CREATIVE_TYPES) {
-      var ct = META_AD_CREATIVE_TYPES[ctk];
-      var ctSel = (ad.creative_type === ctk) ? ' cp-segmented-active' : '';
-      html += '<label class="cp-segmented-option' + ctSel + '">';
-      html += '<input type="radio" name="cp-ov-ad-ct-' + esc(ad.id) + '" class="cp-v2-media-type-switch" data-entity-id="' + esc(ad.id) + '" value="' + ctk + '"' + (ctSel ? ' checked' : '') + ' style="display:none">';
-      html += icon(ct.icon) + ' ' + esc(ct.label);
-      html += '</label>';
+    if (typeof isAdMediaUntouched === 'function' && !isAdMediaUntouched(ad)) {
+      var currentCtype = META_AD_CREATIVE_TYPES[ad.creative_type] || { label: ad.creative_type || '—', icon: 'rectangle-ad' };
+      html += '<div class="cp-config-control cp-creative-type-locked">';
+      html += '<span class="cp-creative-type-locked-chip">' + icon('lock') + ' ' + icon(currentCtype.icon) + ' ' + esc(currentCtype.label) + '</span>';
+      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ad-reset-creative-type" data-id="' + esc(ad.id) + '">' + icon('rotate') + ' Reset (clears media)</button>';
+      html += '<span class="cp-text-muted" style="font-size:11px">Locked once media work exists.</span>';
+      html += '</div>';
+    } else {
+      html += '<div class="cp-segmented">';
+      for (var ctk in META_AD_CREATIVE_TYPES) {
+        var ct = META_AD_CREATIVE_TYPES[ctk];
+        var ctSel = (ad.creative_type === ctk) ? ' cp-segmented-active' : '';
+        html += '<label class="cp-segmented-option' + ctSel + '">';
+        html += '<input type="radio" name="cp-ov-ad-ct-' + esc(ad.id) + '" class="cp-v2-media-type-switch" data-entity-id="' + esc(ad.id) + '" value="' + ctk + '"' + (ctSel ? ' checked' : '') + ' style="display:none">';
+        html += icon(ct.icon) + ' ' + esc(ct.label);
+        html += '</label>';
+      }
+      html += '</div>';
     }
-    html += '</div></div>';
+    html += '</div>';
 
     // Tags (uses the Part 2A renderTagInput component if loaded).
     html += '<div class="cp-config-row">';
@@ -4321,19 +4333,15 @@
     var media = ad.media || {};
     var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
 
-    // Creative type selector at top
+    // Creative type is fixed for the Media tab — changing it would invalidate
+    // the type-specific editors and any work in progress. Pick / reset from
+    // Overview → Configuration.
     var C = Constants;
-    html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('rectangle-ad') + ' Creative type</div>';
-    html += '<div class="cp-segmented">';
-    for (var ctk in C.META_AD_CREATIVE_TYPES) {
-      var ct = C.META_AD_CREATIVE_TYPES[ctk];
-      var ctSel = (ad.creative_type === ctk) ? ' cp-segmented-active' : '';
-      html += '<label class="cp-segmented-option' + ctSel + '">';
-      html += '<input type="radio" name="cp-v2-ad-ct-' + esc(ad.id) + '" class="cp-v2-media-type-switch" data-entity-id="' + esc(ad.id) + '" value="' + ctk + '"' + (ctSel ? ' checked' : '') + ' style="display:none">';
-      html += icon(ct.icon) + ' ' + esc(ct.label);
-      html += '</label>';
-    }
+    var ctype = C.META_AD_CREATIVE_TYPES[ad.creative_type] || { label: ad.creative_type || '—', icon: 'rectangle-ad' };
+    html += '<div class="cp-inspector-section cp-inspector-section-compact">';
+    html += '<div class="cp-creative-type-locked">';
+    html += icon('lock') + ' Editing as <strong>' + esc(ctype.label) + '</strong>';
+    html += '<button class="cp-btn cp-btn-text cp-btn-sm" data-action="set-inspector-tab" data-tab="overview">' + icon('arrow-left') + ' Change in Overview</button>';
     html += '</div>';
     html += '</div>';
 
@@ -4697,6 +4705,22 @@
     if (!ad) return false;
     var s = ad.pipeline_status;
     return s === 'in_review' || s === 'approved' || s === 'live' || s === 'paused' || s === 'archived';
+  }
+
+  // True iff no media-bearing field has any user content. Used to decide
+  // whether the Overview creative-type selector is editable (untouched) or
+  // shown locked with a "Reset" CTA (any media content exists).
+  function isAdMediaUntouched(ad) {
+    if (!ad) return true;
+    var m = ad.media || {};
+    var img = m.image || {};
+    if ((img.brief || '').trim() || (img.ai_prompt || '').trim() || img.asset_id || (img.negative_prompt || '').trim()) return false;
+    var vid = m.video || {};
+    if ((vid.concept || '').trim() || vid.asset_id) return false;
+    if (vid.script && vid.script.rows && vid.script.rows.length) return false;
+    if (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length) return false;
+    if (m.carousel_cards && m.carousel_cards.length) return false;
+    return true;
   }
 
   // --- Inspector tab bar (shared) ---
@@ -11153,6 +11177,26 @@
       var id = $(this).data('entity-id');
       var val = $(this).val();
       saveEntityField('ad', id, 'creative_type', val);
+    });
+
+    // Reset ad.media so the creative-type selector unlocks. Wipes all
+    // image / video / carousel content for the ad. Triggered from the
+    // Overview Configuration card's "Reset" button when media is touched.
+    $(document).off('click.cpv2-reset-ctype').on('click.cpv2-reset-ctype', '[data-action="ws-ad-reset-creative-type"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      openConfirmDialog({
+        title: 'Reset creative type',
+        message: 'This clears all media work on this ad (image brief, video script and scenes, carousel cards) so you can switch creative type. Continue?',
+        confirmLabel: 'Clear media',
+        danger: true,
+        onConfirm: function() {
+          var ad = getAd(id); if (!ad) return;
+          snapshot('Reset creative type');
+          ad.media = {};
+          saveEntityField('ad', id, 'media', {});
+        }
+      });
     });
 
     // Ad pipeline status setter — dropdown items in the persistent inspector

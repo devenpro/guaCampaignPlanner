@@ -431,19 +431,31 @@
     var html = '<div class="cp-inspector-section cp-inspector-config">';
     html += '<div class="cp-inspector-section-title">' + icon('gear') + ' Configuration</div>';
 
-    // Creative type segmented (drives which Media tab variant renders).
+    // Creative type — editable while no media work exists, locked once media
+    // content has been entered (changing it would invalidate the type-specific
+    // editor). Reset button wipes ad.media and unlocks.
     html += '<div class="cp-config-row">';
     html += '<div class="cp-config-label">Creative type</div>';
-    html += '<div class="cp-segmented">';
-    for (var ctk in META_AD_CREATIVE_TYPES) {
-      var ct = META_AD_CREATIVE_TYPES[ctk];
-      var ctSel = (ad.creative_type === ctk) ? ' cp-segmented-active' : '';
-      html += '<label class="cp-segmented-option' + ctSel + '">';
-      html += '<input type="radio" name="cp-ov-ad-ct-' + esc(ad.id) + '" class="cp-v2-media-type-switch" data-entity-id="' + esc(ad.id) + '" value="' + ctk + '"' + (ctSel ? ' checked' : '') + ' style="display:none">';
-      html += icon(ct.icon) + ' ' + esc(ct.label);
-      html += '</label>';
+    if (typeof isAdMediaUntouched === 'function' && !isAdMediaUntouched(ad)) {
+      var currentCtype = META_AD_CREATIVE_TYPES[ad.creative_type] || { label: ad.creative_type || '—', icon: 'rectangle-ad' };
+      html += '<div class="cp-config-control cp-creative-type-locked">';
+      html += '<span class="cp-creative-type-locked-chip">' + icon('lock') + ' ' + icon(currentCtype.icon) + ' ' + esc(currentCtype.label) + '</span>';
+      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ad-reset-creative-type" data-id="' + esc(ad.id) + '">' + icon('rotate') + ' Reset (clears media)</button>';
+      html += '<span class="cp-text-muted" style="font-size:11px">Locked once media work exists.</span>';
+      html += '</div>';
+    } else {
+      html += '<div class="cp-segmented">';
+      for (var ctk in META_AD_CREATIVE_TYPES) {
+        var ct = META_AD_CREATIVE_TYPES[ctk];
+        var ctSel = (ad.creative_type === ctk) ? ' cp-segmented-active' : '';
+        html += '<label class="cp-segmented-option' + ctSel + '">';
+        html += '<input type="radio" name="cp-ov-ad-ct-' + esc(ad.id) + '" class="cp-v2-media-type-switch" data-entity-id="' + esc(ad.id) + '" value="' + ctk + '"' + (ctSel ? ' checked' : '') + ' style="display:none">';
+        html += icon(ct.icon) + ' ' + esc(ct.label);
+        html += '</label>';
+      }
+      html += '</div>';
     }
-    html += '</div></div>';
+    html += '</div>';
 
     // Tags (uses the Part 2A renderTagInput component if loaded).
     html += '<div class="cp-config-row">';

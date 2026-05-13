@@ -862,6 +862,26 @@
       saveEntityField('ad', id, 'creative_type', val);
     });
 
+    // Reset ad.media so the creative-type selector unlocks. Wipes all
+    // image / video / carousel content for the ad. Triggered from the
+    // Overview Configuration card's "Reset" button when media is touched.
+    $(document).off('click.cpv2-reset-ctype').on('click.cpv2-reset-ctype', '[data-action="ws-ad-reset-creative-type"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      openConfirmDialog({
+        title: 'Reset creative type',
+        message: 'This clears all media work on this ad (image brief, video script and scenes, carousel cards) so you can switch creative type. Continue?',
+        confirmLabel: 'Clear media',
+        danger: true,
+        onConfirm: function() {
+          var ad = getAd(id); if (!ad) return;
+          snapshot('Reset creative type');
+          ad.media = {};
+          saveEntityField('ad', id, 'media', {});
+        }
+      });
+    });
+
     // Ad pipeline status setter — dropdown items in the persistent inspector
     // header. Manual override; can move forward or backward. Activity log is
     // written by saveEntityField (status changes are tracked in 22-crud-helpers).
