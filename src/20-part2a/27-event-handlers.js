@@ -809,6 +809,13 @@
     // AI hook ideas — pick / discard / clear / expand. Lives on
     // `ad.hook.ai_ideas` and is populated by `aiGenerateAdHooks`. Active
     // selection tracked by `ad.hook.active_idea_id`.
+    //
+    // saveEntityField('ad', id, 'hook', ad.hook) used to short-circuit here
+    // because `ad === entity` so the same object reference is passed as
+    // value — saveEntityField's identity check (`entity[field] === value`)
+    // returned early and never re-rendered, leaving the hook text textarea
+    // stale. Mutate directly and call the same buildMaps/sync/render trio
+    // that aiGenerateAdHooks uses for its own writes.
     $(document).off('click.cpv2-use-hook-idea').on('click.cpv2-use-hook-idea', '[data-action="ws-use-ad-hook-idea"]', function(e) {
       e.preventDefault();
       var id = $(this).data('id');
@@ -823,7 +830,7 @@
       ad.hook.source_message_id = '';
       ad.hook.selected_hook_id = '';
       ad.updated = new Date().toISOString();
-      saveEntityField('ad', id, 'hook', ad.hook);
+      buildMaps(); syncToTextarea(); render();
       if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI hook idea');
       logActivity('hook_selected', 'ad', id, ad.name, 'Applied AI hook idea (' + (idea.type || 'direct') + ')');
       toast('Hook applied', 'success');
@@ -838,8 +845,9 @@
       var removed = ideas[idx]; if (!removed) return;
       ideas.splice(idx, 1);
       if (ad.hook.active_idea_id === removed.id) ad.hook.active_idea_id = '';
+      ad.updated = new Date().toISOString();
       snapshot('Discard hook idea');
-      saveEntityField('ad', id, 'hook', ad.hook);
+      buildMaps(); syncToTextarea(); render();
     });
 
     $(document).off('click.cpv2-clear-hook-ideas').on('click.cpv2-clear-hook-ideas', '[data-action="ws-clear-ad-hook-ideas"]', function(e) {
@@ -850,8 +858,10 @@
       snapshot('Clear hook ideas');
       ad.hook.ai_ideas = [];
       ad.hook.active_idea_id = '';
-      saveEntityField('ad', id, 'hook', ad.hook);
+      ad.updated = new Date().toISOString();
+      buildMaps(); syncToTextarea(); render();
     });
+
 
     // Expand a collapsed hook idea card without re-rendering — same pattern
     // as the status dropdown toggle, so adjacent inline fields keep focus.
@@ -864,9 +874,12 @@
       $card.removeClass('cp-hook-idea-card-collapsed');
     });
 
-    // AI copy variants — pick / discard / clear. Stored on
-    // `ad.creative.ai_copy_variants`; populated by `aiWriteAdCopy`
-    // (three options) or `aiImproveAdCopy` (one refinement).
+    // AI copy variants — pick / discard. Stored on
+    // `ad.creative.ai_copy_variants`; populated by `aiWriteAdCopy` (single
+    // draft) or `aiImproveAdCopy` (single refinement). Same bug as the
+    // hook handlers: passing `ad.creative` to `saveEntityField` was a
+    // no-op because of the identity short-circuit, so the primary_text
+    // textarea never refreshed after Use. Mutate + sync + render.
     $(document).off('click.cpv2-use-copy-variant').on('click.cpv2-use-copy-variant', '[data-action="ws-use-ad-copy-variant"]', function(e) {
       e.preventDefault();
       var id = $(this).data('id');
@@ -878,7 +891,7 @@
       ad.creative.primary_text = v.text;
       ad.creative.ai_copy_variants = [];
       ad.updated = new Date().toISOString();
-      saveEntityField('ad', id, 'creative', ad.creative);
+      buildMaps(); syncToTextarea(); render();
       if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI copy variant');
       logActivity('content_applied', 'ad', id, ad.name, 'Applied AI ' + (v.source || 'write') + ' variant to primary text');
       toast('Copy applied', 'success');
@@ -892,18 +905,9 @@
       var variants = ad.creative.ai_copy_variants || [];
       if (idx < 0 || idx >= variants.length) return;
       variants.splice(idx, 1);
+      ad.updated = new Date().toISOString();
       snapshot('Discard copy variant');
-      saveEntityField('ad', id, 'creative', ad.creative);
-    });
-
-    $(document).off('click.cpv2-clear-copy-variants').on('click.cpv2-clear-copy-variants', '[data-action="ws-clear-ad-copy-variants"]', function(e) {
-      e.preventDefault();
-      var id = $(this).data('id');
-      var ad = getAd(id); if (!ad || !ad.creative) return;
-      if (!(ad.creative.ai_copy_variants && ad.creative.ai_copy_variants.length)) return;
-      snapshot('Clear copy variants');
-      ad.creative.ai_copy_variants = [];
-      saveEntityField('ad', id, 'creative', ad.creative);
+      buildMaps(); syncToTextarea(); render();
     });
 
     // Pull a hook from a library message into an Ad (also captures snapshot)

@@ -416,55 +416,79 @@
 
   // --- 5. Generate Ad Hooks (alternatives) ---
 
-  function aiGenerateAdHooks(adId) {
+  // Open the AI runner modal for the Hook tab's Generate / Regenerate button.
+  // Captures an optional steering instruction + provider/model selection,
+  // then kicks off `aiGenerateAdHooks` with that context.
+  function openHookGenerationModal(adId) {
     if (!aiV2_assertConfigured()) return;
     var ad = getAd(adId); if (!ad) return;
+    var lastInstruction = (ad.hook && ad.hook.last_idea_instruction) || '';
+    var hasIdeas = !!(ad.hook && ad.hook.ai_ideas && ad.hook.ai_ideas.length);
+    openAiRunnerModal({
+      title: hasIdeas ? 'Regenerate hook ideas' : 'Generate hook ideas',
+      subtitle: hasIdeas ? 'Replaces the current list of ideas.' : 'AI will draft three distinct hook angles for this ad.',
+      actionId: 'ai-generate-ad-hooks',
+      instructionLabel: 'Angle or steer',
+      instructionPlaceholder: 'e.g. lean on social proof · keep them under 8 words · ask a question',
+      instructionInitial: lastInstruction,
+      instructionRequired: false,
+      confirmLabel: hasIdeas ? 'Regenerate' : 'Generate',
+      busyLabel: 'Generating…',
+      onConfirm: function(ctx, done) {
+        aiGenerateAdHooks(adId, ctx.instruction, function(err) { done(err); });
+      }
+    });
+  }
+
+  function aiGenerateAdHooks(adId, instruction, onDone) {
+    if (!aiV2_assertConfigured()) { if (onDone) onDone('not configured'); return; }
+    var ad = getAd(adId); if (!ad) { if (onDone) onDone('ad not found'); return; }
     var adSet = getAdSet(ad.ad_set_id);
     var camp = adSet ? getCampaignV2(adSet.campaign_id) : null;
+    instruction = (instruction || '').trim();
 
-    var prompt = 'Write 3 distinct hook options for this Meta Ad. Each should be 1 sentence, max 100 chars, with a different angle. For each, also rate it on three 0-100 scores and explain the psychology.\n\n';
+    var prompt = 'Write 3 distinct hook options for this Meta Ad. Each: 1 sentence, max 100 chars, a different angle. Rate each with a single 0-100 score (overall scroll-stopping potential) and a one-sentence "why this works" line.\n\n';
+    if (instruction) prompt += 'Extra steer from the user: ' + instruction + '\n\n';
     if (camp) prompt += aiV2_campaignContext(camp) + '\n';
     if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
     if (ad.creative && ad.creative.primary_text) prompt += 'Current primary text: ' + ad.creative.primary_text + '\n';
     prompt += '\n' + brandSnippet('content');
     prompt += '\n\nHook types: question, bold, story, data, direct, curiosity, challenge.\n';
-    prompt += 'scores.conversion = how likely this hook moves a cold viewer toward the CTA (0-100).\n';
-    prompt += 'scores.readability = how easy it is to read at a glance — short words, low cognitive load (0-100).\n';
-    prompt += 'scores.connection = how strongly it speaks to the audience\'s pain / desire (0-100).\n';
-    prompt += 'psychology = 1-2 sentences explaining why this hook works for this audience.\n';
-    prompt += 'Respond JSON only: {"hooks":[{"text":"","type":"","scores":{"conversion":0,"readability":0,"connection":0},"psychology":""}]}';
+    prompt += 'Respond JSON only: {"hooks":[{"text":"","type":"","score":0,"psychology":""}]}';
 
     toast('AI writing hooks...', 'info');
     callAIWithRetry(prompt, function(parsed) {
       var hooks = (parsed && parsed.hooks) || [];
-      if (hooks.length === 0) { toast('AI returned no hooks', 'warning'); return; }
+      if (hooks.length === 0) { toast('AI returned no hooks', 'warning'); if (onDone) onDone('empty'); return; }
       var ideas = hooks.map(function(h) {
         var s = h.scores || {};
+        var derived = (h.score != null) ? h.score : (s.conversion != null ? s.conversion : (s.readability != null ? s.readability : s.connection));
         return {
           id: generateId('hki'),
           text: String(h.text || '').trim(),
           type: String(h.type || 'direct').trim(),
-          scores: {
-            conversion:  clamp100(s.conversion),
-            readability: clamp100(s.readability),
-            connection:  clamp100(s.connection)
-          },
+          score: clamp100(derived),
           psychology: String(h.psychology || '').trim(),
+          instruction: instruction,
           generated_at: new Date().toISOString()
         };
       }).filter(function(i) { return i.text; });
-      if (ideas.length === 0) { toast('AI returned no usable hooks', 'warning'); return; }
+      if (ideas.length === 0) { toast('AI returned no usable hooks', 'warning'); if (onDone) onDone('empty'); return; }
 
       snapshot('AI hook ideas');
       ad.hook = ad.hook || { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' };
       ad.hook.ai_ideas = ideas;
       ad.hook.active_idea_id = '';
+      ad.hook.last_idea_instruction = instruction;
       ad.updated = new Date().toISOString();
       buildMaps(); syncToTextarea(); render();
-      logActivity('hook_generated', 'ad', adId, ad.name, 'AI generated ' + ideas.length + ' hook ideas');
+      logActivity('hook_generated', 'ad', adId, ad.name, 'AI generated ' + ideas.length + ' hook ideas' + (instruction ? ' (with steer)' : ''));
       toast('Got ' + ideas.length + ' hook ideas — pick one in the Hook tab', 'success');
-    }, function(err) { toast('AI error: ' + err, 'error'); },
-       'ai-generate-ad-hooks', BrandService.getSystemPrompt('content'), parseJSON);
+      if (onDone) onDone();
+    }, function(err) {
+      toast('AI error: ' + err, 'error');
+      if (onDone) onDone(err);
+    }, 'ai-generate-ad-hooks', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
   function clamp100(n) {
@@ -475,54 +499,105 @@
     return Math.round(n);
   }
 
-  // --- 6. Write Ad Copy (alternatives bundle: primary text + headline + description) ---
+  // --- 6. Write Ad Copy — single primary_text variant + AI runner modal ---
 
-  function aiWriteAdCopy(adId) {
+  function openCopyWriteModal(adId) {
     if (!aiV2_assertConfigured()) return;
     var ad = getAd(adId); if (!ad) return;
+    var lastInstruction = (ad.creative && ad.creative.last_write_instruction) || '';
+    openAiRunnerModal({
+      title: 'AI write copy',
+      subtitle: 'Drafts one primary-text variant for this ad. You can compare it before applying.',
+      actionId: 'ai-write-ad-copy',
+      instructionLabel: 'Angle or notes',
+      instructionPlaceholder: 'e.g. lean on social proof · emphasise outcome · keep it under 100 chars',
+      instructionInitial: lastInstruction,
+      instructionRequired: false,
+      confirmLabel: 'Write',
+      busyLabel: 'Writing…',
+      onConfirm: function(ctx, done) {
+        aiWriteAdCopy(adId, ctx.instruction, function(err) { done(err); });
+      }
+    });
+  }
+
+  function aiWriteAdCopy(adId, instruction, onDone) {
+    if (!aiV2_assertConfigured()) { if (onDone) onDone('not configured'); return; }
+    var ad = getAd(adId); if (!ad) { if (onDone) onDone('ad not found'); return; }
     var adSet = getAdSet(ad.ad_set_id);
     var camp = adSet ? getCampaignV2(adSet.campaign_id) : null;
     var activeHook = (ad.hook && ad.hook.text) || '';
+    instruction = (instruction || '').trim();
 
-    var prompt = 'Write 3 distinct primary-text options for this Meta Ad. Each is the body copy that sits above the media — 90-140 chars, scroll-stopping, written in the brand voice. Use three different angles (e.g., problem framing, social proof, outcome promise). Headline and description are out of scope here; only return primary_text.\n\n';
+    var prompt = 'Write ONE primary-text option for this Meta Ad — the body copy that sits above the media. Aim for 90-140 chars, scroll-stopping, written in the brand voice. Headline and description are out of scope; return primary_text only.\n\n';
+    if (instruction) prompt += 'Extra steer from the user: ' + instruction + '\n\n';
     if (camp) prompt += aiV2_campaignContext(camp) + '\n';
     if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
-    if (activeHook) prompt += 'Selected hook (extend this thought into the body — do not repeat it verbatim): ' + activeHook + '\n';
+    if (activeHook) prompt += 'Selected hook (extend this thought — do not repeat verbatim): ' + activeHook + '\n';
     prompt += '\n' + brandSnippet('content');
-    prompt += '\nRespond JSON only: {"options":[{"primary_text":""}]}';
+    prompt += '\nRespond JSON only: {"primary_text":""}';
 
     toast('AI writing copy...', 'info');
     callAIWithRetry(prompt, function(parsed) {
-      var options = (parsed && parsed.options) || [];
-      var variants = options.map(function(o) {
-        return {
-          id: generateId('cpv'),
-          text: String((o && o.primary_text) || '').trim(),
-          source: 'write',
-          generated_at: new Date().toISOString()
-        };
-      }).filter(function(v) { return v.text; });
-      if (variants.length === 0) { toast('AI returned no copy', 'warning'); return; }
-      snapshot('AI copy variants');
+      var text = String((parsed && parsed.primary_text) || '').trim();
+      if (!text) { toast('AI returned no copy', 'warning'); if (onDone) onDone('empty'); return; }
+      snapshot('AI copy variant');
       ad.creative = ad.creative || {};
-      ad.creative.ai_copy_variants = variants;
+      ad.creative.ai_copy_variants = [{
+        id: generateId('cpv'),
+        text: text,
+        source: 'write',
+        instruction: instruction,
+        generated_at: new Date().toISOString()
+      }];
+      ad.creative.last_write_instruction = instruction;
       ad.updated = new Date().toISOString();
       buildMaps(); syncToTextarea(); render();
-      logActivity('content_generated', 'ad', adId, ad.name, 'AI wrote ' + variants.length + ' primary-text variants');
-      toast('Got ' + variants.length + ' copy variants — pick one in the Copy tab', 'success');
-    }, function(err) { toast('AI error: ' + err, 'error'); },
-       'ai-write-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
+      logActivity('content_generated', 'ad', adId, ad.name, 'AI wrote primary text' + (instruction ? ' (with steer)' : ''));
+      toast('Copy draft ready — compare in the Copy tab', 'success');
+      if (onDone) onDone();
+    }, function(err) {
+      toast('AI error: ' + err, 'error');
+      if (onDone) onDone(err);
+    }, 'ai-write-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
-  // --- 7. Improve Ad Copy (refinement on primary_text) ---
+  // --- 7. Improve Ad Copy — required instruction + AI runner modal ---
 
-  function aiImproveAdCopy(adId) {
+  function openCopyImproveModal(adId) {
     if (!aiV2_assertConfigured()) return;
     var ad = getAd(adId); if (!ad) return;
     var c = ad.creative || {};
     if (!(c.primary_text || '').trim()) { toast('Write some primary text first, then AI can improve it', 'info'); return; }
+    openAiRunnerModal({
+      title: 'Improve primary text',
+      subtitle: 'Tell the AI what to change. The original stays in the textarea until you apply the improvement.',
+      actionId: 'ai-improve-ad-copy',
+      instructionLabel: 'What should change?',
+      instructionPlaceholder: 'e.g. shorter · more emotional · remove jargon · swap "we" for "you"',
+      instructionInitial: '',
+      instructionRequired: true,
+      confirmLabel: 'Improve',
+      busyLabel: 'Improving…',
+      onConfirm: function(ctx, done) {
+        aiImproveAdCopy(adId, ctx.instruction, function(err) { done(err); });
+      }
+    });
+  }
 
-    var prompt = 'Rewrite this Meta Ad primary text. Sharpen it: more specific, more emotional, more scroll-stopping. Keep the same intent and approximate length. Only return primary_text.\n\n';
+  function aiImproveAdCopy(adId, instruction, onDone) {
+    if (!aiV2_assertConfigured()) { if (onDone) onDone('not configured'); return; }
+    var ad = getAd(adId); if (!ad) { if (onDone) onDone('ad not found'); return; }
+    var c = ad.creative || {};
+    if (!(c.primary_text || '').trim()) {
+      toast('Write some primary text first, then AI can improve it', 'info');
+      if (onDone) onDone('empty source');
+      return;
+    }
+    instruction = (instruction || '').trim();
+
+    var prompt = 'Rewrite this Meta Ad primary text per the user\'s instruction. Keep the same intent and approximate length unless the instruction asks otherwise. Return primary_text only.\n\n';
+    prompt += 'User instruction: ' + (instruction || '(make it sharper)') + '\n\n';
     prompt += 'Current primary text:\n' + c.primary_text + '\n\n';
     if (ad.hook && ad.hook.text) prompt += 'Selected hook context: ' + ad.hook.text + '\n\n';
     prompt += brandSnippet('content');
@@ -531,21 +606,25 @@
     toast('AI improving copy...', 'info');
     callAIWithRetry(prompt, function(parsed) {
       var improved = String((parsed && parsed.primary_text) || '').trim();
-      if (!improved) { toast('AI returned nothing', 'warning'); return; }
+      if (!improved) { toast('AI returned nothing', 'warning'); if (onDone) onDone('empty'); return; }
       snapshot('AI improved copy');
       ad.creative = ad.creative || {};
       ad.creative.ai_copy_variants = [{
         id: generateId('cpv'),
         text: improved,
         source: 'improve',
+        instruction: instruction,
         generated_at: new Date().toISOString()
       }];
       ad.updated = new Date().toISOString();
       buildMaps(); syncToTextarea(); render();
-      logActivity('content_generated', 'ad', adId, ad.name, 'AI improved primary text');
+      logActivity('content_generated', 'ad', adId, ad.name, 'AI improved primary text: ' + (instruction || '(no steer)'));
       toast('Improved copy ready — compare in the Copy tab', 'success');
-    }, function(err) { toast('AI error: ' + err, 'error'); },
-       'ai-improve-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
+      if (onDone) onDone();
+    }, function(err) {
+      toast('AI error: ' + err, 'error');
+      if (onDone) onDone(err);
+    }, 'ai-improve-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
   // --- 8. Generate Image Prompt ---

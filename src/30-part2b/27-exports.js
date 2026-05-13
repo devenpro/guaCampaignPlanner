@@ -39,6 +39,10 @@
     aiGenerateAdSetBrief: aiGenerateAdSetBrief,
     aiGenerateAdHooks: aiGenerateAdHooks,
     aiWriteAdCopy: aiWriteAdCopy, aiImproveAdCopy: aiImproveAdCopy,
+    openHookGenerationModal: openHookGenerationModal,
+    openCopyWriteModal: openCopyWriteModal,
+    openCopyImproveModal: openCopyImproveModal,
+    openAiRunnerModal: openAiRunnerModal,
     aiGenerateAdImagePrompt: aiGenerateAdImagePrompt,
     aiGenerateVideoScript: aiGenerateVideoScript,
 

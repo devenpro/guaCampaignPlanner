@@ -185,14 +185,30 @@
     $(document).off('click.cp2b-ai-set-brief').on('click.cp2b-ai-set-brief', '[data-action="ai-generate-ad-set-brief"]', function(e) {
       e.preventDefault(); aiGenerateAdSetBrief($(this).data('id'));
     });
+    // Hook tab Generate / Regenerate → opens the AI runner modal which
+    // captures an optional steer + provider/model and then runs the
+    // generator. The legacy `ai-generate-ad-hooks` action stays bound (in
+    // case anything else dispatches it) but now goes through the modal too.
+    $(document).off('click.cp2b-open-hook-gen').on('click.cp2b-open-hook-gen', '[data-action="ws-open-hook-gen-modal"]', function(e) {
+      e.preventDefault(); openHookGenerationModal($(this).data('id'));
+    });
     $(document).off('click.cp2b-ai-hooks').on('click.cp2b-ai-hooks', '[data-action="ai-generate-ad-hooks"]', function(e) {
-      e.preventDefault(); aiGenerateAdHooks($(this).data('id'));
+      e.preventDefault(); openHookGenerationModal($(this).data('id'));
+    });
+    // Copy tab Write / Improve — open the AI runner modal which captures the
+    // user's instructions + provider/model before running. Legacy direct
+    // actions are kept and routed through the modal too.
+    $(document).off('click.cp2b-open-copy-write').on('click.cp2b-open-copy-write', '[data-action="ws-open-copy-write-modal"]', function(e) {
+      e.preventDefault(); openCopyWriteModal($(this).data('id'));
+    });
+    $(document).off('click.cp2b-open-copy-improve').on('click.cp2b-open-copy-improve', '[data-action="ws-open-copy-improve-modal"]', function(e) {
+      e.preventDefault(); openCopyImproveModal($(this).data('id'));
     });
     $(document).off('click.cp2b-ai-copy').on('click.cp2b-ai-copy', '[data-action="ai-write-ad-copy"]', function(e) {
-      e.preventDefault(); aiWriteAdCopy($(this).data('id'));
+      e.preventDefault(); openCopyWriteModal($(this).data('id'));
     });
     $(document).off('click.cp2b-ai-improve').on('click.cp2b-ai-improve', '[data-action="ai-improve-ad-copy"]', function(e) {
-      e.preventDefault(); aiImproveAdCopy($(this).data('id'));
+      e.preventDefault(); openCopyImproveModal($(this).data('id'));
     });
     $(document).off('click.cp2b-ai-img-prompt').on('click.cp2b-ai-img-prompt', '[data-action="ai-generate-ad-image-prompt"]', function(e) {
       e.preventDefault(); aiGenerateAdImagePrompt($(this).data('id'));
