@@ -130,10 +130,9 @@
   function confirmDeleteMessage(msgId) {
     var m = getMessage(msgId);
     if (!m) return;
-    var recipeCount = (S.messageRecipeCounts || {})[msgId] || 0;
     openConfirmDialog({
       title: 'Delete Message',
-      message: 'Delete "' + m.title + '"?' + (recipeCount > 0 ? ' ' + recipeCount + ' recipe(s) will lose their message reference.' : ''),
+      message: 'Delete "' + m.title + '"?',
       confirmLabel: 'Delete', danger: true,
       onConfirm: function() {
         snapshot('Delete message');

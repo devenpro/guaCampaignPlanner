@@ -36,10 +36,9 @@
   function confirmDeleteStyle(styleId) {
     var s = getStyle(styleId);
     if (!s) return;
-    var recipeCount = (S.styleRecipeCounts || {})[styleId] || 0;
     openConfirmDialog({
       title: 'Delete Style',
-      message: 'Delete "' + s.name + '"?' + (recipeCount > 0 ? ' ' + recipeCount + ' recipe(s) will lose their style reference.' : ''),
+      message: 'Delete "' + s.name + '"?',
       confirmLabel: 'Delete', danger: true,
       onConfirm: function() { snapshot('Delete style'); deleteEntity('style', styleId); }
     });
@@ -90,10 +89,9 @@
   function confirmDeleteFormat(formatId) {
     var f = getFormat(formatId);
     if (!f) return;
-    var recipeCount = (S.formatRecipeCounts || {})[formatId] || 0;
     openConfirmDialog({
       title: 'Delete Visual Format',
-      message: 'Delete "' + f.name + '"?' + (recipeCount > 0 ? ' ' + recipeCount + ' recipe(s) will lose their format reference.' : ''),
+      message: 'Delete "' + f.name + '"?',
       confirmLabel: 'Delete', danger: true,
       onConfirm: function() { snapshot('Delete format'); deleteEntity('visual_format', formatId); }
     });

@@ -2514,14 +2514,12 @@
     var ppCount = (persona.pain_point_ids || []).length + (persona.custom_pain_points || []).length;
     var demo = persona.demographics || {};
     var demoStr = [demo.age_range, demo.gender !== 'all' ? demo.gender : '', demo.location].filter(Boolean).join(' · ');
-    var recipeCount = S.personaRecipeCounts[persona.id] || 0;
 
     var html = '<div class="cp-persona-item' + sel + '" data-action="select-persona" data-id="' + esc(persona.id) + '">';
     html += '<div class="cp-persona-item-name">' + esc(persona.name || 'Unnamed Persona') + '</div>';
     if (demoStr) html += '<div class="cp-persona-item-demo">' + esc(demoStr) + '</div>';
     html += '<div class="cp-persona-item-badges">';
     if (ppCount > 0) html += '<span class="cp-badge" style="background:#d9302515;color:#d93025">' + icon('bolt') + ' ' + ppCount + '</span>';
-    if (recipeCount > 0) html += '<span class="cp-badge" style="background:#e3740015;color:#e37400">' + icon('bolt') + ' ' + recipeCount + ' recipes</span>';
     html += '</div>';
     html += '</div>';
     return html;
@@ -2697,7 +2695,6 @@
     var demo = p.demographics || {};
     var psych = p.psychographics || {};
     var painPoints = getPersonaPainPoints(p);
-    var recipeCount = S.personaRecipeCounts[p.id] || 0;
 
     var html = '<div class="cp-persona-detail">';
 
@@ -2708,8 +2705,7 @@
     html += '<h2>' + esc(p.name || 'Unnamed Persona') + '</h2>';
     html += '<div class="cp-text-muted">';
     if (cat) html += 'Category: ' + esc(cat.name) + ' · ';
-    html += 'Used in ' + recipeCount + ' recipe' + (recipeCount !== 1 ? 's' : '');
-    html += ' · Created ' + formatDate(p.created);
+    html += 'Created ' + formatDate(p.created);
     html += '</div></div>';
     html += '<div class="cp-persona-detail-actions">';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="edit-persona" data-id="' + esc(p.id) + '">' + icon('edit') + ' Edit</button>';
@@ -2836,7 +2832,6 @@
     }
     // Sort
     if (f.sortBy === 'title') filtered.sort(function(a, b) { return (a.title || '').localeCompare(b.title || ''); });
-    else if (f.sortBy === 'most_used') filtered.sort(function(a, b) { return (S.messageRecipeCounts[b.id] || 0) - (S.messageRecipeCounts[a.id] || 0); });
     else filtered.sort(function(a, b) { return (b.updated || b.created || '') > (a.updated || a.created || '') ? 1 : -1; });
 
     var funnels = (S.meta.settings && S.meta.settings.funnel_stages) || [];
@@ -2865,7 +2860,6 @@
     html += '<select class="cp-select cp-select-sm" id="cpMessageSort">';
     html += '<option value="updated"' + (f.sortBy === 'updated' ? ' selected' : '') + '>Newest</option>';
     html += '<option value="title"' + (f.sortBy === 'title' ? ' selected' : '') + '>Alphabetical</option>';
-    html += '<option value="most_used"' + (f.sortBy === 'most_used' ? ' selected' : '') + '>Most Used</option>';
     html += '</select>';
     html += '</div>';
 
@@ -2891,7 +2885,6 @@
   }
 
   function renderMessageCard(msg) {
-    var recipeCount = S.messageRecipeCounts[msg.id] || 0;
     var hookCount = (msg.hooks || []).length;
     var bodyPreview = stripHtml(msg.body || '');
 
@@ -2926,10 +2919,9 @@
       html += '<div class="cp-message-card-delivery">' + icon('pen-fancy') + ' ' + esc(truncate(msg.delivery_notes, 80)) + '</div>';
     }
 
-    // Footer: hooks + recipe count
+    // Footer: hooks
     html += '<div class="cp-message-card-footer">';
     if (hookCount > 0) html += '<span class="cp-badge" style="background:#9334e915;color:#9334e9">' + icon('anchor') + ' ' + hookCount + ' hook' + (hookCount !== 1 ? 's' : '') + '</span>';
-    html += '<span class="cp-text-muted">Used in <strong>' + recipeCount + '</strong> recipe' + (recipeCount !== 1 ? 's' : '') + '</span>';
     html += '</div>';
 
     html += '</div>';
@@ -2985,8 +2977,6 @@
   }
 
   function renderStyleCard(style) {
-    var recipeCount = S.styleRecipeCounts[style.id] || 0;
-
     var html = '<div class="cp-card cp-style-card" data-id="' + esc(style.id) + '">';
     html += '<div class="cp-style-card-header">';
     html += '<h3>' + esc(style.name || 'Untitled Style') + '</h3>';
@@ -3009,9 +2999,6 @@
       html += '</div>';
     }
 
-    html += '<div class="cp-style-card-footer">';
-    html += '<span class="cp-text-muted">Used in <strong>' + recipeCount + '</strong> recipe' + (recipeCount !== 1 ? 's' : '') + '</span>';
-    html += '</div>';
     html += '</div>';
     return html;
   }
@@ -3036,7 +3023,6 @@
   }
 
   function renderFormatCard(format) {
-    var recipeCount = S.formatRecipeCounts[format.id] || 0;
     var catLabel = '';
     if (format.category) {
       var fcat = FORMAT_CATEGORIES.find(function(c) { return c.id === format.category; });
@@ -3090,9 +3076,6 @@
       html += '</div>';
     }
 
-    html += '<div class="cp-format-card-footer">';
-    html += '<span class="cp-text-muted">Used in <strong>' + recipeCount + '</strong> recipe' + (recipeCount !== 1 ? 's' : '') + '</span>';
-    html += '</div>';
     html += '</div>';
     return html;
   }
@@ -6466,10 +6449,9 @@
   function confirmDeletePersona(personaId) {
     var p = getPersona(personaId);
     if (!p) return;
-    var recipeCount = (S.personaRecipeCounts || {})[personaId] || 0;
     openConfirmDialog({
       title: 'Delete Persona',
-      message: 'Delete "' + p.name + '"?' + (recipeCount > 0 ? ' ' + recipeCount + ' recipe(s) will lose their persona reference.' : ''),
+      message: 'Delete "' + p.name + '"?',
       confirmLabel: 'Delete', danger: true,
       onConfirm: function() {
         snapshot('Delete persona');
@@ -6674,10 +6656,9 @@
   function confirmDeleteMessage(msgId) {
     var m = getMessage(msgId);
     if (!m) return;
-    var recipeCount = (S.messageRecipeCounts || {})[msgId] || 0;
     openConfirmDialog({
       title: 'Delete Message',
-      message: 'Delete "' + m.title + '"?' + (recipeCount > 0 ? ' ' + recipeCount + ' recipe(s) will lose their message reference.' : ''),
+      message: 'Delete "' + m.title + '"?',
       confirmLabel: 'Delete', danger: true,
       onConfirm: function() {
         snapshot('Delete message');
@@ -6726,10 +6707,9 @@
   function confirmDeleteStyle(styleId) {
     var s = getStyle(styleId);
     if (!s) return;
-    var recipeCount = (S.styleRecipeCounts || {})[styleId] || 0;
     openConfirmDialog({
       title: 'Delete Style',
-      message: 'Delete "' + s.name + '"?' + (recipeCount > 0 ? ' ' + recipeCount + ' recipe(s) will lose their style reference.' : ''),
+      message: 'Delete "' + s.name + '"?',
       confirmLabel: 'Delete', danger: true,
       onConfirm: function() { snapshot('Delete style'); deleteEntity('style', styleId); }
     });
@@ -6780,10 +6760,9 @@
   function confirmDeleteFormat(formatId) {
     var f = getFormat(formatId);
     if (!f) return;
-    var recipeCount = (S.formatRecipeCounts || {})[formatId] || 0;
     openConfirmDialog({
       title: 'Delete Visual Format',
-      message: 'Delete "' + f.name + '"?' + (recipeCount > 0 ? ' ' + recipeCount + ' recipe(s) will lose their format reference.' : ''),
+      message: 'Delete "' + f.name + '"?',
       confirmLabel: 'Delete', danger: true,
       onConfirm: function() { snapshot('Delete format'); deleteEntity('visual_format', formatId); }
     });

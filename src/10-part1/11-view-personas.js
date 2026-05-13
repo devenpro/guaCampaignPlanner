@@ -183,14 +183,12 @@
     var ppCount = (persona.pain_point_ids || []).length + (persona.custom_pain_points || []).length;
     var demo = persona.demographics || {};
     var demoStr = [demo.age_range, demo.gender !== 'all' ? demo.gender : '', demo.location].filter(Boolean).join(' · ');
-    var recipeCount = S.personaRecipeCounts[persona.id] || 0;
 
     var html = '<div class="cp-persona-item' + sel + '" data-action="select-persona" data-id="' + esc(persona.id) + '">';
     html += '<div class="cp-persona-item-name">' + esc(persona.name || 'Unnamed Persona') + '</div>';
     if (demoStr) html += '<div class="cp-persona-item-demo">' + esc(demoStr) + '</div>';
     html += '<div class="cp-persona-item-badges">';
     if (ppCount > 0) html += '<span class="cp-badge" style="background:#d9302515;color:#d93025">' + icon('bolt') + ' ' + ppCount + '</span>';
-    if (recipeCount > 0) html += '<span class="cp-badge" style="background:#e3740015;color:#e37400">' + icon('bolt') + ' ' + recipeCount + ' recipes</span>';
     html += '</div>';
     html += '</div>';
     return html;
@@ -366,7 +364,6 @@
     var demo = p.demographics || {};
     var psych = p.psychographics || {};
     var painPoints = getPersonaPainPoints(p);
-    var recipeCount = S.personaRecipeCounts[p.id] || 0;
 
     var html = '<div class="cp-persona-detail">';
 
@@ -377,8 +374,7 @@
     html += '<h2>' + esc(p.name || 'Unnamed Persona') + '</h2>';
     html += '<div class="cp-text-muted">';
     if (cat) html += 'Category: ' + esc(cat.name) + ' · ';
-    html += 'Used in ' + recipeCount + ' recipe' + (recipeCount !== 1 ? 's' : '');
-    html += ' · Created ' + formatDate(p.created);
+    html += 'Created ' + formatDate(p.created);
     html += '</div></div>';
     html += '<div class="cp-persona-detail-actions">';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="edit-persona" data-id="' + esc(p.id) + '">' + icon('edit') + ' Edit</button>';
