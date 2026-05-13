@@ -332,4 +332,3 @@
 .cp-view-crash-stack summary { cursor: pointer; color: var(--cp-text-secondary); padding: var(--cp-space-1) 0; user-select: none; }
 .cp-view-crash-stack pre { background: var(--cp-gray-50, #f8f9fa); border: 1px solid var(--cp-border-light); border-radius: var(--cp-radius-sm); padding: var(--cp-space-2); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; line-height: 1.5; overflow: auto; max-height: 320px; white-space: pre; }
 .cp-view-crash-actions { display: flex; gap: var(--cp-space-2); flex-wrap: wrap; }
-

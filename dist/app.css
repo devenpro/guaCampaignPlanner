@@ -2528,7 +2528,6 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 .cp-view-crash-stack pre { background: var(--cp-gray-50, #f8f9fa); border: 1px solid var(--cp-border-light); border-radius: var(--cp-radius-sm); padding: var(--cp-space-2); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; line-height: 1.5; overflow: auto; max-height: 320px; white-space: pre; }
 .cp-view-crash-actions { display: flex; gap: var(--cp-space-2); flex-wrap: wrap; }
 
-
 /* ===== src/styles/20-part2/15-setup-wizard.css ===== */
 /* ═══ S15: SETUP WIZARD ═══ */
 
