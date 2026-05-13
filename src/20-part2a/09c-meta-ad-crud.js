@@ -163,10 +163,8 @@
 
     // Single image fields
     html += '<div class="cp-v2-media-image" data-show-for="single_image">';
-    html += '<div class="cp-form-group"><label>Image brief</label>';
-    html += '<textarea class="cp-textarea" data-field="media.image.brief" rows="2" placeholder="What should the image show? Mood, subject, composition...">' + esc(img.brief || '') + '</textarea></div>';
-    html += '<div class="cp-form-row"><div class="cp-form-grow"><label>AI image prompt</label>';
-    html += '<textarea class="cp-textarea" data-field="media.image.ai_prompt" rows="2" placeholder="Auto-generated or hand-crafted Midjourney / SDXL / Imagen prompt.">' + esc(img.ai_prompt || '') + '</textarea>';
+    html += '<div class="cp-form-row"><div class="cp-form-grow"><label>Image prompt</label>';
+    html += '<textarea class="cp-textarea" data-field="media.image.prompt" rows="3" placeholder="Describe the image you want, or paste a generator prompt — hand off via the media brief export.">' + esc(img.prompt || img.ai_prompt || img.brief || '') + '</textarea>';
     html += '</div><div class="cp-form-third"><label>Aspect ratio</label>';
     html += '<select class="cp-select" data-field="media.image.aspect_ratio">';
     var imgAspects = ['1:1','4:5','9:16','16:9'];
@@ -247,11 +245,10 @@
           },
           media: {
             image: $.extend({}, img, {
-              brief: fields['media.image.brief'] || '',
-              ai_prompt: fields['media.image.ai_prompt'] || '',
+              prompt: fields['media.image.prompt'] || '',
               aspect_ratio: fields['media.image.aspect_ratio'] || '1:1'
             }),
-            video: $.extend({}, vid, {
+            video: $.extend({ script: { sections: [] } }, vid, {
               concept: fields['media.video.concept'] || '',
               duration_seconds: fields['media.video.duration_seconds'] !== '' ? Number(fields['media.video.duration_seconds']) : 30,
               aspect_ratio: fields['media.video.aspect_ratio'] || '9:16'

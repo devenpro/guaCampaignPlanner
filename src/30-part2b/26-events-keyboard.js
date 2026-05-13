@@ -197,9 +197,6 @@
     $(document).off('click.cp2b-ai-img-prompt').on('click.cp2b-ai-img-prompt', '[data-action="ai-generate-ad-image-prompt"]', function(e) {
       e.preventDefault(); aiGenerateAdImagePrompt($(this).data('id'));
     });
-    $(document).off('click.cp2b-ai-video-bp').on('click.cp2b-ai-video-bp', '[data-action="ai-generate-video-blueprint"]', function(e) {
-      e.preventDefault(); aiGenerateVideoBlueprint($(this).data('id'));
-    });
     $(document).off('click.cp2b-ai-video-scr').on('click.cp2b-ai-video-scr', '[data-action="ai-generate-video-script"]', function(e) {
       e.preventDefault(); aiGenerateVideoScript($(this).data('id'));
     });

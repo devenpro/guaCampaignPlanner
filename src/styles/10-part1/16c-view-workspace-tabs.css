@@ -3,6 +3,161 @@
    inline editors (brief, hook/copy/media/review)
    ========================================================== */
 
+/* ----- Persistent ad inspector header ----- */
+.cp-ad-inspector-header {
+  align-items: flex-start;
+  gap: var(--cp-space-3);
+}
+.cp-ad-inspector-header-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cp-ad-inspector-header-side {
+  display: flex;
+  align-items: center;
+  gap: var(--cp-space-2);
+  flex-shrink: 0;
+}
+
+/* ----- Readiness pill (Hook ✓ · Copy ✓ · Media — · Review —) ----- */
+.cp-ad-readiness {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--cp-text-muted);
+}
+.cp-ad-readiness-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.cp-ad-readiness-step-done {
+  color: var(--cp-success);
+  font-weight: 600;
+}
+.cp-ad-readiness-sep {
+  color: var(--cp-border-default);
+}
+
+/* ----- Status dropdown ----- */
+.cp-status-dropdown {
+  position: relative;
+  display: inline-block;
+}
+.cp-status-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--cp-radius-full);
+  border: 1.5px solid var(--status-color, var(--cp-border-default));
+  background: color-mix(in srgb, var(--status-color, #80868b) 10%, var(--cp-white));
+  color: var(--status-color, var(--cp-text-secondary));
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 120ms, box-shadow 120ms;
+  white-space: nowrap;
+}
+.cp-status-dropdown-trigger:hover { filter: brightness(0.97); }
+.cp-status-dropdown-trigger[aria-expanded="true"] {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-color, #80868b) 20%, transparent);
+}
+.cp-status-dropdown-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cp-status-dropdown-label { line-height: 1; }
+.cp-status-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  background: var(--cp-white);
+  border: 1px solid var(--cp-border-light);
+  border-radius: var(--cp-radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 6px;
+  z-index: 50;
+  display: none;
+}
+.cp-status-dropdown-open .cp-status-dropdown-menu { display: block; }
+.cp-status-dropdown-group-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cp-text-muted);
+}
+.cp-status-dropdown-divider {
+  height: 1px;
+  background: var(--cp-border-light);
+  margin: 4px 0;
+}
+.cp-status-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  background: transparent;
+  border: none;
+  border-radius: var(--cp-radius-sm);
+  text-align: left;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--cp-text-primary);
+  cursor: pointer;
+  transition: background 100ms;
+}
+.cp-status-dropdown-item:hover {
+  background: var(--cp-gray-50);
+}
+.cp-status-dropdown-item-active {
+  background: color-mix(in srgb, var(--status-color, #80868b) 12%, transparent);
+  font-weight: 600;
+  color: var(--status-color, var(--cp-text-primary));
+}
+.cp-status-dropdown-item-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.cp-status-dropdown-item-label { flex: 1; }
+
+/* ----- Locked creative-type chip ----- */
+.cp-creative-type-locked {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cp-creative-type-locked-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: var(--cp-gray-100, #f1f3f4);
+  color: var(--cp-text-secondary);
+  border-radius: var(--cp-radius-full);
+  font-size: 12px;
+  font-weight: 600;
+}
+
 /* ----- Tab bar ----- */
 .cp-inspector-tabs {
   display: flex;
@@ -65,52 +220,119 @@
   text-align: right;
 }
 
-/* ----- Pipeline progress strip ----- */
-.cp-pipeline-progress {
+/* ----- Ad workflow tabs (Overview pill + Hook → Copy → Media → Review stepper) ----- */
+.cp-ad-workflow-tabs {
   display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: var(--cp-space-3);
-  background: var(--cp-gray-50);
-  border-radius: var(--cp-radius-md);
+  align-items: stretch;
+  gap: 12px;
+  padding: 8px 4px 10px;
+  border-bottom: 1px solid var(--cp-border-light);
   margin-bottom: var(--cp-space-3);
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
-.cp-pipeline-step {
+.cp-ad-workflow-overview {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1.5px solid var(--cp-border-default);
+  border-radius: var(--cp-radius-full);
+  background: var(--cp-white);
+  color: var(--cp-text-secondary);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: color 120ms, border-color 120ms, background 120ms;
+  flex-shrink: 0;
+  align-self: center;
+}
+.cp-ad-workflow-overview:hover {
+  border-color: var(--cp-primary);
+  color: var(--cp-primary);
+}
+.cp-ad-workflow-overview-active {
+  background: var(--cp-primary-subtle, #e8f0fe);
+  border-color: var(--cp-primary);
+  color: var(--cp-primary);
+}
+.cp-ad-workflow-overview-label { font-size: 12px; }
+.cp-ad-workflow-divider {
+  width: 1px;
+  background: var(--cp-border-light);
+  margin: 4px 0;
+  flex-shrink: 0;
+  align-self: stretch;
+}
+.cp-ad-workflow-steps {
+  display: flex;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+  gap: 0;
+}
+.cp-ad-workflow-step {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 6px 8px;
-  flex: 1;
+  padding: 4px 8px;
+  background: transparent;
+  border: none;
   cursor: pointer;
-  transition: opacity 120ms;
+  color: var(--cp-text-secondary);
+  font-family: inherit;
+  flex: 0 1 auto;
+  min-width: 0;
   opacity: 0.55;
+  transition: opacity 120ms, color 120ms;
 }
-.cp-pipeline-step:hover { opacity: 1; }
-.cp-pipeline-step-done { opacity: 1; color: var(--cp-success); }
-.cp-pipeline-step-active { opacity: 1; color: var(--cp-primary); font-weight: 600; }
-.cp-pipeline-step-icon {
+.cp-ad-workflow-step:hover { opacity: 1; }
+.cp-ad-workflow-step-done { opacity: 1; color: var(--cp-success); }
+.cp-ad-workflow-step-active { opacity: 1; color: var(--cp-primary); font-weight: 600; }
+.cp-ad-workflow-step-marker {
   width: 28px;
   height: 28px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   background: var(--cp-white);
   border: 2px solid currentColor;
+  font-size: 13px;
+  flex-shrink: 0;
+  transition: background 120ms, color 120ms;
 }
-.cp-pipeline-step-label {
+.cp-ad-workflow-step-active .cp-ad-workflow-step-marker {
+  background: var(--cp-primary);
+  color: var(--cp-white);
+}
+.cp-ad-workflow-step-done .cp-ad-workflow-step-marker {
+  background: var(--cp-success);
+  color: var(--cp-white);
+  border-color: var(--cp-success);
+}
+.cp-ad-workflow-step-label {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
-.cp-pipeline-connector {
-  flex: 0 0 24px;
+.cp-ad-workflow-connector {
+  flex: 1 1 16px;
   height: 2px;
+  min-width: 16px;
   background: var(--cp-border-light);
-  margin-top: 12px;
+  align-self: flex-start;
+  margin-top: 17px; /* 4px step padding-top + half marker (14px) - half line (1px) */
+  transition: background 120ms;
 }
-.cp-pipeline-connector-done { background: var(--cp-success); }
+.cp-ad-workflow-connector-done { background: var(--cp-success); }
 
 /* ----- Status button group (Review tab) ----- */
 .cp-status-buttons {
@@ -239,65 +461,52 @@
   margin-top: var(--cp-space-2);
 }
 
-/* ----- Video scenes editor ----- */
-.cp-v2-scenes {
+/* ----- Video script sections editor ----- */
+.cp-v2-script-sections {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--cp-space-2);
 }
-.cp-v2-scene {
+.cp-v2-script-section {
   display: flex;
-  gap: 8px;
-  align-items: flex-start;
-  padding: 8px;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
   background: var(--cp-gray-50);
-  border-radius: var(--cp-radius-sm);
+  border: 1px solid var(--cp-border-light);
+  border-radius: var(--cp-radius-md);
 }
-.cp-v2-scene-num {
-  width: 28px;
-  height: 28px;
+.cp-v2-script-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cp-v2-script-section-num {
+  width: 24px;
+  height: 24px;
   background: var(--cp-primary);
   color: var(--cp-white);
   border-radius: 50%;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 12px;
+  font-size: 11px;
   flex-shrink: 0;
 }
-.cp-v2-scene-fields {
+.cp-v2-script-section-header input[type="text"] {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-/* ----- Video script table ----- */
-.cp-v2-script-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12px;
-}
-.cp-v2-script-table th {
-  text-align: left;
-  padding: 6px 8px;
-  background: var(--cp-gray-50);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--cp-text-muted);
   font-weight: 600;
 }
-.cp-v2-script-table td {
-  padding: 4px 6px;
-  border-top: 1px solid var(--cp-border-light);
+.cp-v2-script-section-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
 }
-.cp-v2-script-table td:first-child { width: 80px; }
-.cp-v2-script-table td:last-child { width: 40px; text-align: right; }
-.cp-v2-script-table .cp-input-sm {
-  padding: 4px 6px;
-  font-size: 12px;
+.cp-v2-script-section-actions .cp-btn-icon[disabled] {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 /* ----- Carousel cards editor ----- */

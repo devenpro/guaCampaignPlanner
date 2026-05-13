@@ -12,7 +12,7 @@
   // and the media direction (image brief + AI prompt, video scenes +
   // script, or carousel cards) in one self-contained document.
 
-  var MEDIA_BRIEF_SCHEMA_VERSION = '1.0';
+  var MEDIA_BRIEF_SCHEMA_VERSION = '1.1';
 
   function buildAdMediaBrief(adId, opts) {
     opts = opts || {};
@@ -116,46 +116,38 @@
       return {
         type: 'image',
         image: {
-          brief: img.brief || '',
-          ai_prompt: img.ai_prompt || '',
+          prompt: img.prompt || img.ai_prompt || img.brief || '',
           aspect_ratio: img.aspect_ratio || '1:1',
-          negative_prompt: img.negative_prompt || '',
           reference_image_ids: img.reference_image_ids || []
         }
       };
     }
     if (ctype === 'single_video') {
       var vid = media.video || {};
-      var blueprint = vid.blueprint || { scenes: [] };
-      var script = vid.script || { rows: [] };
+      // Sections are the new structure; legacy `script.rows` is folded into a
+      // single section so downstream tools still see content.
+      var sections = (vid.script && vid.script.sections) || [];
+      if (sections.length === 0 && vid.script && vid.script.rows && vid.script.rows.length) {
+        var combined = vid.script.rows.map(function(r) {
+          var bits = [];
+          if (r.time) bits.push('[' + r.time + ']');
+          if (r.dialogue) bits.push(r.dialogue);
+          if (r.visual) bits.push('(visual: ' + r.visual + ')');
+          return bits.join(' ');
+        }).filter(Boolean).join('\n');
+        if (combined) sections = [{ label: 'Script', script: combined }];
+      }
       return {
         type: 'video',
         video: {
           concept: vid.concept || '',
           duration_seconds: vid.duration_seconds || 30,
           aspect_ratio: vid.aspect_ratio || '9:16',
-          scenes: (blueprint.scenes || []).map(function(s, i) {
-            return {
-              index: i,
-              name: s.name || '',
-              description: s.description || '',
-              timestamp: s.timestamp || '',
-              duration: s.duration || null
-            };
-          }),
-          script: (script.rows || []).map(function(r, i) {
-            return {
-              index: i,
-              time: r.time || '',
-              dialogue: r.dialogue || '',
-              visual: r.visual || '',
-              camera: r.camera || '',
-              audio: r.audio || ''
-            };
-          }),
-          voiceover_notes: vid.voiceover_notes || '',
-          music_notes: vid.music_notes || '',
-          captions_notes: vid.captions_notes || ''
+          script: {
+            sections: sections.map(function(s, i) {
+              return { index: i, label: s.label || '', script: s.script || '' };
+            })
+          }
         }
       };
     }
@@ -166,12 +158,10 @@
           cards: (media.carousel_cards || []).map(function(c, i) {
             return {
               index: i,
-              headline: c.headline || '',
-              description: c.description || '',
-              link: c.link || ''
+              prompt:  c.prompt  || c.headline    || '',
+              caption: c.caption || c.description || ''
             };
-          }),
-          sequence_narrative: ''
+          })
         }
       };
     }
@@ -203,13 +193,13 @@
   function _mcpInstructions(ctype) {
     var common = 'This is a Meta Ads creative brief. Use the fields under `ad` (hook, copy, audience, brand) as creative direction. The `media` block tells you what kind of asset to produce and how. Match brand voice from `ad.brand.voice` and design tokens from `ad.brand.design`. Aim for the aspect_ratio and duration specified. Keep dialogue/headlines under the character limits the brief implies.';
     if (ctype === 'single_image') {
-      return common + ' For image: pass `media.image.ai_prompt` to your image-generation tool, applying `media.image.negative_prompt` if your tool supports it. Aspect ratio is in `media.image.aspect_ratio`.';
+      return common + ' For image: pass `media.image.prompt` to your image-generation tool. Aspect ratio is in `media.image.aspect_ratio`.';
     }
     if (ctype === 'single_video') {
-      return common + ' For video: each entry in `media.video.scenes` is one storyboard beat — generate one clip per scene at the implied duration, then concat. Use `media.video.script` for time-coded dialogue/voiceover and on-screen visuals. Aspect ratio is in `media.video.aspect_ratio`.';
+      return common + ' For video: `media.video.script.sections` is the script broken into labelled beats (Hook, Setup, Payoff, CTA, etc.) — write one shot or clip per section that delivers the script for that beat at the implied duration, then concat. Visual direction is intentionally out of scope here; treat the script and brand voice as the source of truth. Aspect ratio is in `media.video.aspect_ratio`.';
     }
     if (ctype === 'carousel') {
-      return common + ' For carousel: generate one image per entry in `media.carousel.cards`. Keep visual style consistent across cards; the `headline` and `description` describe what each card communicates.';
+      return common + ' For carousel: generate one image per entry in `media.carousel.cards` using its `prompt`. The `caption` is the on-image / under-image text the user will see. Keep visual style consistent across cards.';
     }
     return common;
   }

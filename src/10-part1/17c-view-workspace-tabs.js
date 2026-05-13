@@ -176,13 +176,8 @@
     if (validTabs.indexOf(tab) === -1) tab = 'overview';
 
     var html = '';
-    html += renderInspectorTabs([
-      { key: 'overview', label: 'Overview', icon: 'eye' },
-      { key: 'hook',     label: 'Hook',     icon: 'anchor' },
-      { key: 'copy',     label: 'Copy',     icon: 'pen-fancy' },
-      { key: 'media',    label: 'Media',    icon: 'wand-magic' },
-      { key: 'review',   label: 'Review',   icon: 'circle-check' }
-    ], tab);
+    html += renderAdInspectorHeader(ad);
+    html += renderAdWorkflowTabs(ad, tab);
 
     html += '<div class="cp-workspace-inspector-tab-body">';
     if (tab === 'overview')    html += renderInspectorForAd(ad);
@@ -201,9 +196,6 @@
     var hookAngles = (adSet && adSet.brief && adSet.brief.hook_angles) || [];
 
     var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
-
-    // Pipeline status indicator
-    html += renderAdPipelineProgress(ad);
 
     // Brief context (read from parent Ad Set)
     if (hookAngles.length || briefMsgs.length) {
@@ -265,7 +257,6 @@
   function renderAdCopyStep(ad) {
     var c = ad.creative || {};
     var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
-    html += renderAdPipelineProgress(ad);
 
     html += '<div class="cp-inspector-section">';
     html += '<div class="cp-inspector-section-title">' + icon('pen-fancy') + ' Primary text';
@@ -323,21 +314,16 @@
   function renderAdMediaStep(ad) {
     var media = ad.media || {};
     var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
-    html += renderAdPipelineProgress(ad);
 
-    // Creative type selector at top
+    // Creative type is fixed for the Media tab — changing it would invalidate
+    // the type-specific editors and any work in progress. Pick / reset from
+    // Overview → Configuration.
     var C = Constants;
-    html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('rectangle-ad') + ' Creative type</div>';
-    html += '<div class="cp-segmented">';
-    for (var ctk in C.META_AD_CREATIVE_TYPES) {
-      var ct = C.META_AD_CREATIVE_TYPES[ctk];
-      var ctSel = (ad.creative_type === ctk) ? ' cp-segmented-active' : '';
-      html += '<label class="cp-segmented-option' + ctSel + '">';
-      html += '<input type="radio" name="cp-v2-ad-ct-' + esc(ad.id) + '" class="cp-v2-media-type-switch" data-entity-id="' + esc(ad.id) + '" value="' + ctk + '"' + (ctSel ? ' checked' : '') + ' style="display:none">';
-      html += icon(ct.icon) + ' ' + esc(ct.label);
-      html += '</label>';
-    }
+    var ctype = C.META_AD_CREATIVE_TYPES[ad.creative_type] || { label: ad.creative_type || '—', icon: 'rectangle-ad' };
+    html += '<div class="cp-inspector-section cp-inspector-section-compact">';
+    html += '<div class="cp-creative-type-locked">';
+    html += icon('lock') + ' Editing as <strong>' + esc(ctype.label) + '</strong>';
+    html += '<button class="cp-btn-link" data-action="set-inspector-tab" data-tab="overview">' + icon('arrow-left') + ' Change in Overview</button>';
     html += '</div>';
     html += '</div>';
 
@@ -371,15 +357,16 @@
 
   function renderAdMediaImage(ad) {
     var img = (ad.media && ad.media.image) || {};
+    // Single prompt field. Falls back to legacy ai_prompt / brief so existing
+    // ads keep displaying their content; new edits write to `prompt`.
+    var promptValue = img.prompt || img.ai_prompt || img.brief || '';
+
     var html = '';
     html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('image') + ' Image brief</div>';
-    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="media.image.brief" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="3" placeholder="What should the image show? Subject, composition, mood, lighting.">' + esc(img.brief || '') + '</textarea>';
+    html += '<div class="cp-inspector-section-title">' + icon('image') + ' Image prompt';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">Plain description or a production-grade generator prompt — used in the exported brief.</span>';
     html += '</div>';
-
-    html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('wand-magic') + ' AI image prompt</div>';
-    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="media.image.ai_prompt" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="3" placeholder="Production-grade prompt for Midjourney / SDXL / Imagen.">' + esc(img.ai_prompt || '') + '</textarea>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="media.image.prompt" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="5" placeholder="Describe the image you want, or paste a generator prompt. Hand off via Copy JSON / MCP brief / Download below.">' + esc(promptValue) + '</textarea>';
     html += '<div class="cp-form-row" style="margin-top:var(--cp-space-2)">';
     html += '<div class="cp-form-third"><label>Aspect ratio</label>';
     html += '<select class="cp-select cp-v2-inline-field" data-field="media.image.aspect_ratio" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
@@ -388,22 +375,18 @@
       var sel = (img.aspect_ratio === aspects[i]) ? ' selected' : '';
       html += '<option value="' + aspects[i] + '"' + sel + '>' + aspects[i] + '</option>';
     }
-    html += '</select></div>';
-    html += '<div class="cp-form-grow"><label>Negative prompt</label>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="media.image.negative_prompt" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(img.negative_prompt || '') + '" placeholder="things to avoid">';
-    html += '</div></div>';
+    html += '</select></div></div>';
     html += '</div>';
 
     html += '<div class="cp-inspector-actions">';
-    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-ad-image-prompt" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate prompt from brief</button>';
+    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-ad-image-prompt" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate prompt from ad data</button>';
     html += '</div>';
     return html;
   }
 
   function renderAdMediaVideo(ad) {
     var vid = (ad.media && ad.media.video) || {};
-    var script = vid.script || { rows: [] };
-    var blueprint = vid.blueprint || { scenes: [] };
+    var sections = getAdVideoScriptSections(vid);
 
     var html = '';
     html += '<div class="cp-inspector-section">';
@@ -422,56 +405,59 @@
     }
     html += '</select></div></div></div>';
 
-    // Blueprint scenes
+    // Script sections
     html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('film') + ' Storyboard scenes';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ad-add-scene" data-id="' + esc(ad.id) + '" style="margin-left:auto">' + icon('plus') + ' Add scene</button>';
+    html += '<div class="cp-inspector-section-title">' + icon('list-tree') + ' Script';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">Add a section per beat (Hook · Setup · Payoff · CTA). Visual direction lives in your media app.</span>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ad-add-script-section" data-id="' + esc(ad.id) + '" style="margin-left:auto">' + icon('plus') + ' Add section</button>';
     html += '</div>';
-    if ((blueprint.scenes || []).length === 0) {
-      html += '<div class="cp-text-muted">No scenes yet.</div>';
+    if (sections.length === 0) {
+      html += '<div class="cp-text-muted">No sections yet. Add a section or use AI generate below.</div>';
     } else {
-      html += '<div class="cp-v2-scenes">';
-      for (var si = 0; si < blueprint.scenes.length; si++) {
-        var sc = blueprint.scenes[si];
-        html += '<div class="cp-v2-scene"><div class="cp-v2-scene-num">' + (si + 1) + '</div>';
-        html += '<div class="cp-v2-scene-fields">';
-        html += '<input type="text" class="cp-input cp-v2-scene-field" data-entity-id="' + esc(ad.id) + '" data-index="' + si + '" data-key="name" value="' + esc(sc.name || '') + '" placeholder="Scene name">';
-        html += '<textarea class="cp-textarea cp-v2-scene-field" data-entity-id="' + esc(ad.id) + '" data-index="' + si + '" data-key="description" rows="2" placeholder="What happens">' + esc(sc.description || '') + '</textarea>';
-        html += '</div>';
-        html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-remove-scene" data-id="' + esc(ad.id) + '" data-index="' + si + '">' + icon('trash') + '</button>';
+      html += '<div class="cp-v2-script-sections">';
+      for (var si = 0; si < sections.length; si++) {
+        var sec = sections[si];
+        html += '<div class="cp-v2-script-section">';
+        html += '<div class="cp-v2-script-section-header">';
+        html += '<span class="cp-v2-script-section-num">' + (si + 1) + '</span>';
+        html += '<input type="text" class="cp-input cp-v2-script-section-field" data-entity-id="' + esc(ad.id) + '" data-index="' + si + '" data-key="label" value="' + esc(sec.label || '') + '" placeholder="Section name (e.g., Hook)">';
+        html += '<div class="cp-v2-script-section-actions">';
+        html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-move-script-section" data-id="' + esc(ad.id) + '" data-index="' + si + '" data-dir="-1" title="Move up"' + (si === 0 ? ' disabled' : '') + '>' + icon('arrow-up') + '</button>';
+        html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-move-script-section" data-id="' + esc(ad.id) + '" data-index="' + si + '" data-dir="1" title="Move down"' + (si === sections.length - 1 ? ' disabled' : '') + '>' + icon('arrow-down') + '</button>';
+        html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-remove-script-section" data-id="' + esc(ad.id) + '" data-index="' + si + '" title="Remove">' + icon('trash') + '</button>';
+        html += '</div></div>';
+        html += '<textarea class="cp-textarea cp-v2-script-section-field" data-entity-id="' + esc(ad.id) + '" data-index="' + si + '" data-key="script" rows="3" placeholder="Write what is said and any on-screen text for this beat.">' + esc(sec.script || '') + '</textarea>';
         html += '</div>';
       }
       html += '</div>';
     }
     html += '</div>';
 
-    // Script rows
-    html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('list-tree') + ' Script';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ad-add-script-row" data-id="' + esc(ad.id) + '" style="margin-left:auto">' + icon('plus') + ' Add row</button>';
-    html += '</div>';
-    if ((script.rows || []).length === 0) {
-      html += '<div class="cp-text-muted">No script rows yet.</div>';
-    } else {
-      html += '<table class="cp-v2-script-table"><thead><tr><th>Time</th><th>Dialogue</th><th>Visual</th><th></th></tr></thead><tbody>';
-      for (var ri = 0; ri < script.rows.length; ri++) {
-        var row = script.rows[ri];
-        html += '<tr>';
-        html += '<td><input type="text" class="cp-input cp-input-sm cp-v2-script-field" data-entity-id="' + esc(ad.id) + '" data-index="' + ri + '" data-key="time" value="' + esc(row.time || '') + '" placeholder="0:00"></td>';
-        html += '<td><input type="text" class="cp-input cp-input-sm cp-v2-script-field" data-entity-id="' + esc(ad.id) + '" data-index="' + ri + '" data-key="dialogue" value="' + esc(row.dialogue || '') + '" placeholder="What\'s said"></td>';
-        html += '<td><input type="text" class="cp-input cp-input-sm cp-v2-script-field" data-entity-id="' + esc(ad.id) + '" data-index="' + ri + '" data-key="visual" value="' + esc(row.visual || '') + '" placeholder="What\'s shown"></td>';
-        html += '<td><button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-remove-script-row" data-id="' + esc(ad.id) + '" data-index="' + ri + '">' + icon('trash') + '</button></td>';
-        html += '</tr>';
-      }
-      html += '</tbody></table>';
-    }
-    html += '</div>';
-
     html += '<div class="cp-inspector-actions">';
-    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-video-blueprint" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate scenes</button>';
     html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-video-script" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate script</button>';
     html += '</div>';
     return html;
+  }
+
+  // Single source of truth for the section list shown in the Video editor and
+  // exported in the media brief. New ads carry `script.sections`; legacy ads
+  // built with the old time/dialogue/visual rows are folded into a single
+  // "Script" section so existing copy isn't lost. The migration is read-only;
+  // writes always go to `script.sections`.
+  function getAdVideoScriptSections(vid) {
+    var script = (vid && vid.script) || {};
+    if (script.sections && script.sections.length) return script.sections;
+    if (script.rows && script.rows.length) {
+      var combined = script.rows.map(function(r) {
+        var bits = [];
+        if (r.time) bits.push('[' + r.time + ']');
+        if (r.dialogue) bits.push(r.dialogue);
+        if (r.visual) bits.push('(visual: ' + r.visual + ')');
+        return bits.join(' ');
+      }).filter(Boolean).join('\n');
+      return combined ? [{ label: 'Script', script: combined }] : [];
+    }
+    return [];
   }
 
   function renderAdMediaCarousel(ad) {
@@ -479,6 +465,7 @@
     var html = '';
     html += '<div class="cp-inspector-section">';
     html += '<div class="cp-inspector-section-title">' + icon('images') + ' Carousel cards (' + cards.length + ')';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">One image prompt + caption per card. Hand off the brief to your media app to produce the images.</span>';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ad-add-card" data-id="' + esc(ad.id) + '" style="margin-left:auto">' + icon('plus') + ' Add card</button>';
     html += '</div>';
     if (cards.length === 0) {
@@ -487,11 +474,12 @@
       html += '<div class="cp-v2-carousel-cards">';
       for (var i = 0; i < cards.length; i++) {
         var card = cards[i];
+        var cardPrompt = card.prompt || card.headline || '';
+        var cardCaption = card.caption || card.description || '';
         html += '<div class="cp-v2-carousel-card"><div class="cp-v2-carousel-card-num">' + (i + 1) + '</div>';
         html += '<div class="cp-v2-carousel-card-fields">';
-        html += '<input type="text" class="cp-input cp-v2-card-field" data-entity-id="' + esc(ad.id) + '" data-index="' + i + '" data-key="headline" value="' + esc(card.headline || '') + '" placeholder="Card headline">';
-        html += '<input type="text" class="cp-input cp-v2-card-field" data-entity-id="' + esc(ad.id) + '" data-index="' + i + '" data-key="description" value="' + esc(card.description || '') + '" placeholder="Card description">';
-        html += '<input type="url" class="cp-input cp-v2-card-field" data-entity-id="' + esc(ad.id) + '" data-index="' + i + '" data-key="link" value="' + esc(card.link || '') + '" placeholder="https://...">';
+        html += '<textarea class="cp-textarea cp-v2-card-field" data-entity-id="' + esc(ad.id) + '" data-index="' + i + '" data-key="prompt" rows="3" placeholder="Image prompt for this card — describe what should be shown.">' + esc(cardPrompt) + '</textarea>';
+        html += '<input type="text" class="cp-input cp-v2-card-field" data-entity-id="' + esc(ad.id) + '" data-index="' + i + '" data-key="caption" value="' + esc(cardCaption) + '" placeholder="Card caption / on-image text">';
         html += '</div>';
         html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-remove-card" data-id="' + esc(ad.id) + '" data-index="' + i + '">' + icon('trash') + '</button>';
         html += '</div>';
@@ -504,7 +492,6 @@
 
   function renderAdReviewStep(ad) {
     var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
-    html += renderAdPipelineProgress(ad);
 
     // Status snapshot — change is in Overview tab's Configuration card.
     var C = Constants;
@@ -534,42 +521,203 @@
     return html;
   }
 
-  // --- Pipeline progress strip ---
+  // --- Persistent CP Inspector header (rendered on every Ad tab) ---
+  //
+  // Lifted from the Overview-only identity block so name, creative-type
+  // chip, status, and primary actions stay visible while editing
+  // Hook/Copy/Media/Review. The status badge is replaced by a
+  // dropdown that lets the user override pipeline_status manually
+  // (forward or backward); auto-advance continues to run on field saves
+  // via `maybeAdvanceAdStatus`. Items are grouped Workflow / Review so
+  // it's clear which stages are normally auto-managed.
 
-  function renderAdPipelineProgress(ad) {
+  function renderAdInspectorHeader(ad) {
     var C = Constants;
-    var steps = C.META_AD_PIPELINE_STEPS;
-    var currentIdx = pipelineStepIndexForStatus(ad.pipeline_status);
-    var html = '<div class="cp-pipeline-progress">';
+    var adSet = S.adSetMap[ad.ad_set_id];
+    var camp  = adSet ? S.campaignV2Map[adSet.campaign_id] : null;
+    var ctype = C.META_AD_CREATIVE_TYPES[ad.creative_type] || { label: 'Ad', icon: 'rectangle-ad' };
+    var status = C.META_AD_STATUSES[ad.pipeline_status] || { label: ad.pipeline_status || '—', color: '#80868b', icon: 'circle', key: ad.pipeline_status };
+    var crumb = (camp ? esc(camp.name) + ' · ' : '') + (adSet ? esc(adSet.name) : '');
+
+    var html = '<div class="cp-inspector-header cp-ad-inspector-header"><div class="cp-ad-inspector-header-main">';
+    html += '<div class="cp-inspector-eyebrow">' + icon(ctype.icon) + ' ' + esc(ctype.label) + (crumb ? ' · ' + crumb : '') + '</div>';
+    html += '<input type="text" class="cp-inspector-title-input cp-v2-inline-field" data-field="name" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.name || '') + '" placeholder="Ad name">';
+    html += renderAdReadinessPill(ad);
+    html += '</div>';
+
+    html += '<div class="cp-ad-inspector-header-side">';
+    html += renderAdStatusDropdown(ad, status);
+    html += '<div class="cp-inspector-header-actions">';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-copy-ad-field" data-id="' + esc(ad.id) + '" data-field="all" title="Copy all ad fields">' + icon('copy') + '</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-ad" data-id="' + esc(ad.id) + '" title="Delete ad">' + icon('trash') + '</button>';
+    html += '</div>';
+    html += '</div></div>';
+    return html;
+  }
+
+  function renderAdReadinessPill(ad) {
+    var steps = [
+      { key: 'hook',   label: 'Hook',   done: isAdHookDone(ad) },
+      { key: 'copy',   label: 'Copy',   done: isAdCopyDone(ad) },
+      { key: 'media',  label: 'Media',  done: isAdMediaDone(ad) },
+      { key: 'review', label: 'Review', done: isAdReviewDone(ad) }
+    ];
+    var html = '<div class="cp-ad-readiness" title="Step completion — drives auto-advance">';
     for (var i = 0; i < steps.length; i++) {
-      var st = steps[i];
-      var cls = '';
-      if (i < currentIdx) cls = ' cp-pipeline-step-done';
-      else if (i === currentIdx) cls = ' cp-pipeline-step-active';
-      html += '<div class="cp-pipeline-step' + cls + '" data-action="set-inspector-tab" data-tab="' + st.key + '">';
-      html += '<div class="cp-pipeline-step-icon">' + icon(i < currentIdx ? 'circle-check' : st.icon) + '</div>';
-      html += '<div class="cp-pipeline-step-label">' + esc(st.label) + '</div>';
-      html += '</div>';
-      if (i < steps.length - 1) html += '<div class="cp-pipeline-connector' + (i < currentIdx ? ' cp-pipeline-connector-done' : '') + '"></div>';
+      var s = steps[i];
+      var cls = 'cp-ad-readiness-step' + (s.done ? ' cp-ad-readiness-step-done' : '');
+      html += '<span class="' + cls + '">' + icon(s.done ? 'circle-check' : 'circle') + ' ' + esc(s.label) + '</span>';
+      if (i < steps.length - 1) html += '<span class="cp-ad-readiness-sep">·</span>';
     }
     html += '</div>';
     return html;
   }
 
-  // Map an ad pipeline_status to its step index. live/paused/archived map
-  // to the review step (the rightmost meaningful step for the editor).
-  function pipelineStepIndexForStatus(status) {
-    switch (status) {
-      case 'hook_ready':  return 0;
-      case 'copy_ready':  return 1;
-      case 'media_ready': return 2;
-      case 'in_review':
-      case 'approved':
-      case 'live':
-      case 'paused':
-      case 'archived':    return 3;
-      default:            return 0;
+  function renderAdStatusDropdown(ad, status) {
+    var C = Constants;
+    var workflowKeys = ['hook_ready', 'copy_ready', 'media_ready'];
+    var reviewKeys   = ['in_review', 'approved', 'live', 'paused', 'archived'];
+
+    function renderItem(key) {
+      var st = C.META_AD_STATUSES[key];
+      if (!st) return '';
+      var active = (ad.pipeline_status === key) ? ' cp-status-dropdown-item-active' : '';
+      return '<button type="button" class="cp-status-dropdown-item' + active + '" role="menuitem" data-action="ws-set-ad-status" data-id="' + esc(ad.id) + '" data-status="' + key + '" style="--status-color:' + st.color + '">' +
+             '<span class="cp-status-dropdown-item-dot" style="background:' + st.color + '"></span>' +
+             icon(st.icon) + '<span class="cp-status-dropdown-item-label">' + esc(st.label) + '</span>' +
+             '</button>';
     }
+
+    var html = '<div class="cp-status-dropdown" data-ad-id="' + esc(ad.id) + '">';
+    html += '<button type="button" class="cp-status-dropdown-trigger" data-action="ws-status-dropdown-toggle" aria-haspopup="menu" aria-expanded="false" style="--status-color:' + status.color + '">';
+    html += '<span class="cp-status-dropdown-dot" style="background:' + status.color + '"></span>';
+    html += icon(status.icon) + '<span class="cp-status-dropdown-label">' + esc(status.label) + '</span>';
+    html += icon('caret-down') + '</button>';
+    html += '<div class="cp-status-dropdown-menu" role="menu">';
+    html += '<div class="cp-status-dropdown-group-label">' + icon('robot') + ' Workflow <span class="cp-text-muted" style="font-weight:400">· auto-advances</span></div>';
+    for (var i = 0; i < workflowKeys.length; i++) html += renderItem(workflowKeys[i]);
+    html += '<div class="cp-status-dropdown-divider"></div>';
+    html += '<div class="cp-status-dropdown-group-label">' + icon('user-check') + ' Review</div>';
+    for (var j = 0; j < reviewKeys.length; j++) html += renderItem(reviewKeys[j]);
+    html += '</div></div>';
+    return html;
+  }
+
+  // --- Ad workflow tabs (Overview pill + Hook→Copy→Media→Review stepper) ---
+  //
+  // Replaces the old separate "tab bar + pipeline progress strip" duplication:
+  // the tab strip itself now visualizes pipeline progress. Completed steps
+  // show a green check marker, the active tab is highlighted, todo steps are
+  // dimmed. Connectors between markers reinforce the workflow direction.
+
+  function renderAdWorkflowTabs(ad, activeTab) {
+    var steps = Constants.META_AD_PIPELINE_STEPS;
+    var done = {
+      hook:   isAdHookDone(ad),
+      copy:   isAdCopyDone(ad),
+      media:  isAdMediaDone(ad),
+      review: isAdReviewDone(ad)
+    };
+
+    var html = '<div class="cp-ad-workflow-tabs">';
+
+    var overviewCls = 'cp-ad-workflow-overview' + (activeTab === 'overview' ? ' cp-ad-workflow-overview-active' : '');
+    html += '<button class="' + overviewCls + '" data-action="set-inspector-tab" data-tab="overview" role="tab" aria-selected="' + (activeTab === 'overview' ? 'true' : 'false') + '">';
+    html += icon('eye') + '<span class="cp-ad-workflow-overview-label">Overview</span>';
+    html += '</button>';
+
+    html += '<div class="cp-ad-workflow-divider" aria-hidden="true"></div>';
+
+    html += '<div class="cp-ad-workflow-steps" role="tablist">';
+    for (var i = 0; i < steps.length; i++) {
+      var step = steps[i];
+      var isActive = (activeTab === step.key);
+      var isDone = !!done[step.key];
+      var cls = 'cp-ad-workflow-step';
+      if (isDone) cls += ' cp-ad-workflow-step-done';
+      if (isActive) cls += ' cp-ad-workflow-step-active';
+
+      html += '<button class="' + cls + '" data-action="set-inspector-tab" data-tab="' + step.key + '" role="tab" aria-selected="' + (isActive ? 'true' : 'false') + '">';
+      html += '<span class="cp-ad-workflow-step-marker">' + icon(isDone ? 'circle-check' : step.icon) + '</span>';
+      html += '<span class="cp-ad-workflow-step-label">' + esc(step.label) + '</span>';
+      html += '</button>';
+
+      if (i < steps.length - 1) {
+        html += '<div class="cp-ad-workflow-connector' + (isDone ? ' cp-ad-workflow-connector-done' : '') + '" aria-hidden="true"></div>';
+      }
+    }
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  // --- Per-step completion helpers (single source of truth) ---
+  //
+  // Used by renderAdWorkflowTabs for the visual stepper and by
+  // evaluateAdAutoStatus for promoting pipeline_status. Keep these in lockstep.
+
+  function isAdHookDone(ad) {
+    var t = (ad && ad.hook && ad.hook.text) || '';
+    return t.trim().length >= 3;
+  }
+
+  function isAdCopyDone(ad) {
+    var c = (ad && ad.creative) || {};
+    var hasBody = (c.primary_text || '').trim().length >= 20;
+    var hasHeadline = !!(((c.headline || '').trim()) || ((c.description || '').trim()));
+    var hasLink = (c.cta_link || '').trim().length > 0;
+    return hasBody && hasHeadline && hasLink;
+  }
+
+  function isAdMediaDone(ad) {
+    if (!ad) return false;
+    var media = ad.media || {};
+    if (ad.creative_type === 'single_image') {
+      var img = media.image || {};
+      var p = (img.prompt || img.ai_prompt || img.brief || '').trim();
+      return !!(img.asset_id || p.length > 10);
+    } else if (ad.creative_type === 'single_video') {
+      var vid = media.video || {};
+      if (vid.asset_id || (vid.concept || '').trim()) return true;
+      var sections = (vid.script && vid.script.sections) || [];
+      for (var s = 0; s < sections.length; s++) {
+        if ((sections[s].label || '').trim() || (sections[s].script || '').trim()) return true;
+      }
+      // Back-compat: legacy ads still satisfy "done" via rows or scenes.
+      if (vid.script && vid.script.rows && vid.script.rows.length) return true;
+      if (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length) return true;
+      return false;
+    } else if (ad.creative_type === 'carousel') {
+      return !!(media.carousel_cards && media.carousel_cards.length >= 2);
+    }
+    return false;
+  }
+
+  function isAdReviewDone(ad) {
+    if (!ad) return false;
+    var s = ad.pipeline_status;
+    return s === 'in_review' || s === 'approved' || s === 'live' || s === 'paused' || s === 'archived';
+  }
+
+  // True iff no media-bearing field has any user content. Used to decide
+  // whether the Overview creative-type selector is editable (untouched) or
+  // shown locked with a "Reset" CTA (any media content exists).
+  function isAdMediaUntouched(ad) {
+    if (!ad) return true;
+    var m = ad.media || {};
+    var img = m.image || {};
+    if ((img.prompt || '').trim() || (img.ai_prompt || '').trim() || (img.brief || '').trim() || img.asset_id || (img.negative_prompt || '').trim()) return false;
+    var vid = m.video || {};
+    if ((vid.concept || '').trim() || vid.asset_id) return false;
+    var vidSections = (vid.script && vid.script.sections) || [];
+    for (var vsi = 0; vsi < vidSections.length; vsi++) {
+      if ((vidSections[vsi].label || '').trim() || (vidSections[vsi].script || '').trim()) return false;
+    }
+    if (vid.script && vid.script.rows && vid.script.rows.length) return false;
+    if (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length) return false;
+    if (m.carousel_cards && m.carousel_cards.length) return false;
+    return true;
   }
 
   // --- Inspector tab bar (shared) ---
@@ -622,9 +770,6 @@
     if (currentIdx < 0) return null;
 
     var suggested = ad.pipeline_status;
-    var hook = ad.hook || {};
-    var creative = ad.creative || {};
-    var media = ad.media || {};
 
     function bump(target) {
       var ti = order.indexOf(target);
@@ -632,27 +777,9 @@
       if (ti > si) suggested = target;
     }
 
-    // hook_ready: any hook.text
-    if (hook.text && hook.text.trim().length >= 3) bump('hook_ready');
-
-    // copy_ready: primary_text + (headline OR description) + cta_link
-    var hasCopy = (creative.primary_text || '').trim().length >= 20 &&
-                  ((creative.headline || '').trim() || (creative.description || '').trim());
-    var hasLink = (creative.cta_link || '').trim().length > 0;
-    if (hasCopy && hasLink) bump('copy_ready');
-
-    // media_ready: type-specific
-    var hasMedia = false;
-    if (ad.creative_type === 'single_image') {
-      var img = media.image || {};
-      hasMedia = !!(img.asset_id || (img.ai_prompt && img.ai_prompt.length > 10) || (img.brief && img.brief.length > 20));
-    } else if (ad.creative_type === 'single_video') {
-      var vid = media.video || {};
-      hasMedia = !!(vid.asset_id || vid.concept || (vid.script && vid.script.rows && vid.script.rows.length) || (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length));
-    } else if (ad.creative_type === 'carousel') {
-      hasMedia = !!(media.carousel_cards && media.carousel_cards.length >= 2);
-    }
-    if (hasMedia) bump('media_ready');
+    if (isAdHookDone(ad))  bump('hook_ready');
+    if (isAdCopyDone(ad))  bump('copy_ready');
+    if (isAdMediaDone(ad)) bump('media_ready');
 
     return suggested === ad.pipeline_status ? null : suggested;
   }

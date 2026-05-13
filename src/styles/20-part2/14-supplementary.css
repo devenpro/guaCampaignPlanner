@@ -300,9 +300,6 @@
   font-family: inherit;
 }
 
-/* Pipeline strip wrapper sits flush below the header */
-.cp-inspector-pipeline-strip { padding: var(--cp-space-3) var(--cp-space-4) 0; }
-
 /* Configuration card (creative type + pipeline status + tags + assignment) */
 .cp-inspector-config .cp-config-row { display: flex; align-items: center; gap: var(--cp-space-3); margin-bottom: var(--cp-space-3); flex-wrap: wrap; }
 .cp-inspector-config .cp-config-row:last-child { margin-bottom: 0; }
@@ -317,10 +314,6 @@
 }
 .cp-config-control { flex: 1; min-width: 200px; }
 .cp-inspector-section-compact { padding: var(--cp-space-2) var(--cp-space-4); }
-
-/* Pipeline-status button row — wraps onto multiple rows on narrow widths */
-.cp-status-buttons-overview { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; min-width: 0; }
-.cp-status-buttons-overview .cp-status-button { padding: 4px 10px; font-size: var(--cp-font-size-xs); }
 
 /* Summary card — read-only preview of Hook / Copy / Media / Review */
 .cp-inspector-summary-card {

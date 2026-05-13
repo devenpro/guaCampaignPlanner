@@ -240,8 +240,8 @@
           hook: { text: (aData.hook && aData.hook.text) || '', type: (aData.hook && aData.hook.type) || 'direct', source_message_id: '', selected_hook_id: '' },
           creative: $.extend({ primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' }, aData.creative || {}),
           media: {
-            image: { asset_id: '', ai_prompt: (aData.media && aData.media.image_prompt) || '', brief: (aData.media && aData.media.image_brief) || '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] },
-            video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: (aData.media && aData.media.video_concept) || '', blueprint: { scenes: [] }, script: { rows: [] } },
+            image: { asset_id: '', prompt: (aData.media && (aData.media.image_prompt || aData.media.image_brief)) || '', aspect_ratio: '1:1', reference_image_ids: [] },
+            video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: (aData.media && aData.media.video_concept) || '', script: { sections: [] } },
             carousel_cards: []
           }
         });
@@ -536,17 +536,17 @@
     if (camp) prompt += aiV2_campaignContext(camp) + '\n';
     if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
     if (ad.creative && ad.creative.primary_text) prompt += 'Ad copy: ' + ad.creative.primary_text + '\n';
-    if (img.brief) prompt += 'Image brief: ' + img.brief + '\n';
+    var existingImagePrompt = img.prompt || img.ai_prompt || img.brief;
+    if (existingImagePrompt) prompt += 'Existing image direction (refine this): ' + existingImagePrompt + '\n';
     prompt += '\n' + BrandService.getBrandDesignPrompt();
-    prompt += '\n\nReturn JSON only: {"prompt":"","negative_prompt":""}';
+    prompt += '\n\nReturn JSON only: {"prompt":""}';
 
     toast('AI generating prompt...', 'info');
     callAIWithRetry(prompt, function(parsed) {
       if (!parsed || !parsed.prompt) { toast('AI returned no prompt', 'warning'); return; }
       snapshot('AI image prompt');
       ad.media = ad.media || {}; ad.media.image = ad.media.image || {};
-      ad.media.image.ai_prompt = parsed.prompt;
-      if (parsed.negative_prompt) ad.media.image.negative_prompt = parsed.negative_prompt;
+      ad.media.image.prompt = parsed.prompt;
       ad.updated = new Date().toISOString();
       if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'image prompt');
       buildMaps(); syncToTextarea(); render();
@@ -558,36 +558,7 @@
 
   // --- 9. Generate Video Blueprint (scenes) ---
 
-  function aiGenerateVideoBlueprint(adId) {
-    if (!aiV2_assertConfigured()) return;
-    var ad = getAd(adId); if (!ad) return;
-    var vid = (ad.media && ad.media.video) || {};
-    var adSet = getAdSet(ad.ad_set_id);
-
-    var prompt = 'Create a scene-by-scene storyboard for this Meta video Ad. Target duration: ' + (vid.duration_seconds || 30) + 's. Aspect: ' + (vid.aspect_ratio || '9:16') + '.\n\n';
-    if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
-    if (vid.concept) prompt += 'Video concept: ' + vid.concept + '\n';
-    if (ad.hook && ad.hook.text) prompt += 'Hook: ' + ad.hook.text + '\n';
-    prompt += '\n' + brandSnippet('content');
-    prompt += '\n\nReturn 4-6 scenes. JSON only: {"scenes":[{"name":"","description":"","timestamp":"0:00","duration":5}]}';
-
-    toast('AI building storyboard...', 'info');
-    callAIWithRetry(prompt, function(parsed) {
-      var scenes = (parsed && parsed.scenes) || [];
-      if (scenes.length === 0) { toast('AI returned no scenes', 'warning'); return; }
-      snapshot('AI video blueprint');
-      ad.media = ad.media || {}; ad.media.video = ad.media.video || {};
-      ad.media.video.blueprint = { scenes: scenes };
-      ad.updated = new Date().toISOString();
-      if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'storyboard');
-      buildMaps(); syncToTextarea(); render();
-      logActivity('media_generated', 'ad', adId, ad.name, 'AI storyboard (' + scenes.length + ' scenes)');
-      toast('Storyboard added', 'success');
-    }, function(err) { toast('AI error: ' + err, 'error'); },
-       'ai-generate-video-blueprint', BrandService.getSystemPrompt('content'), parseJSON);
-  }
-
-  // --- 10. Generate Video Script ---
+  // --- 10. Generate Video Script (sectioned) ---
 
   function aiGenerateVideoScript(adId) {
     if (!aiV2_assertConfigured()) return;
@@ -595,28 +566,29 @@
     var vid = (ad.media && ad.media.video) || {};
     var adSet = getAdSet(ad.ad_set_id);
 
-    var prompt = 'Write a time-coded script for this Meta video Ad. Duration: ' + (vid.duration_seconds || 30) + 's. Aspect: ' + (vid.aspect_ratio || '9:16') + '.\n\n';
+    var prompt = 'Write a script for this Meta video Ad as labelled sections (e.g., Hook, Setup, Payoff, CTA). Target duration: ' + (vid.duration_seconds || 30) + 's. Aspect: ' + (vid.aspect_ratio || '9:16') + '.\n\n';
     if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
     if (vid.concept) prompt += 'Concept: ' + vid.concept + '\n';
-    if (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length) {
-      prompt += 'Storyboard:\n' + vid.blueprint.scenes.map(function(s, i) { return (i+1) + '. ' + s.name + ': ' + s.description; }).join('\n') + '\n';
-    }
     if (ad.hook && ad.hook.text) prompt += 'Hook: ' + ad.hook.text + '\n';
     if (ad.creative && ad.creative.cta_type) prompt += 'CTA: ' + (Constants.META_CTA_TYPES[ad.creative.cta_type] || {}).label + '\n';
+    prompt += '\nVisual direction is out of scope here — only write the spoken / on-screen script per section.\n';
     prompt += '\n' + brandSnippet('content');
-    prompt += '\n\nReturn 6-12 rows. JSON only: {"rows":[{"time":"0:00-0:03","dialogue":"","visual":"","camera":"","audio":""}]}';
+    prompt += '\n\nReturn 3-6 sections. JSON only: {"sections":[{"label":"Hook","script":""}]}';
 
     toast('AI writing script...', 'info');
     callAIWithRetry(prompt, function(parsed) {
-      var rows = (parsed && parsed.rows) || [];
-      if (rows.length === 0) { toast('AI returned no script', 'warning'); return; }
+      var sections = (parsed && parsed.sections) || [];
+      if (sections.length === 0) { toast('AI returned no script', 'warning'); return; }
+      var normalised = sections.map(function(s) { return { label: String(s.label || '').trim(), script: String(s.script || '').trim() }; })
+                               .filter(function(s) { return s.label || s.script; });
+      if (normalised.length === 0) { toast('AI returned no script', 'warning'); return; }
       snapshot('AI video script');
       ad.media = ad.media || {}; ad.media.video = ad.media.video || {};
-      ad.media.video.script = { rows: rows };
+      ad.media.video.script = { sections: normalised };
       ad.updated = new Date().toISOString();
       if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'video script');
       buildMaps(); syncToTextarea(); render();
-      logActivity('script_generated', 'ad', adId, ad.name, 'AI script (' + rows.length + ' rows)');
+      logActivity('script_generated', 'ad', adId, ad.name, 'AI script (' + normalised.length + ' sections)');
       toast('Script generated', 'success');
     }, function(err) { toast('AI error: ' + err, 'error'); },
        'ai-generate-video-script', BrandService.getSystemPrompt('content'), parseJSON);
