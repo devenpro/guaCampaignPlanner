@@ -369,53 +369,64 @@
 
     html += '<div class="cp-inspector-section">';
     html += '<div class="cp-inspector-section-title">' + icon('pen-fancy') + ' Primary text';
-    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">125 chars recommended · main body copy</span>';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">Body copy above the media · 125 chars recommended. Headline, description, and destination live in Overview.</span>';
     html += '</div>';
-    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="creative.primary_text" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="4" placeholder="The body copy above your media.">' + esc(c.primary_text || '') + '</textarea>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="creative.primary_text" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="6" placeholder="The body copy above your media.">' + esc(c.primary_text || '') + '</textarea>';
     html += '<div class="cp-char-counter">' + countChars(c.primary_text || '') + ' chars · ' + countWords(c.primary_text || '') + ' words</div>';
     html += '</div>';
 
-    html += '<div class="cp-form-row">';
-    html += '<div class="cp-form-half">';
-    html += '<div class="cp-inspector-section-title">' + icon('heading') + ' Headline <span class="cp-text-muted" style="font-weight:400;font-size:11px">27 chars</span></div>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.headline" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" maxlength="60" value="' + esc(c.headline || '') + '">';
-    html += '</div>';
-    html += '<div class="cp-form-half">';
-    html += '<div class="cp-inspector-section-title">' + icon('align-left') + ' Description <span class="cp-text-muted" style="font-weight:400;font-size:11px">27 chars</span></div>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.description" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" maxlength="60" value="' + esc(c.description || '') + '">';
-    html += '</div></div>';
-
-    html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('link') + ' Destination</div>';
-    html += '<div class="cp-form-row">';
-    html += '<div class="cp-form-third"><label>CTA</label>';
-    html += '<select class="cp-select cp-v2-inline-field" data-field="creative.cta_type" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
-    var C = Constants;
-    for (var ctk in C.META_CTA_TYPES) {
-      var ctSel = (c.cta_type === ctk) ? ' selected' : '';
-      html += '<option value="' + ctk + '"' + ctSel + '>' + esc(C.META_CTA_TYPES[ctk].label) + '</option>';
-    }
-    html += '</select></div>';
-    html += '<div class="cp-form-grow"><label>Destination URL</label>';
-    html += '<input type="url" class="cp-input cp-v2-inline-field" data-field="creative.cta_link" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.cta_link || '') + '" placeholder="https://example.com">';
-    html += '</div></div>';
-
-    // Display link + tracking params — orphaned fields from the old modal,
-    // both relate to destination so they live in the Copy tab now.
-    html += '<div class="cp-form-row" style="margin-top:var(--cp-space-2)">';
-    html += '<div class="cp-form-half"><label>Display link <span class="cp-text-muted" style="font-weight:400;font-size:11px">optional — shown to viewers if set</span></label>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.display_link" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.display_link || '') + '" placeholder="example.com/landing">';
-    html += '</div>';
-    html += '<div class="cp-form-half"><label>Tracking params <span class="cp-text-muted" style="font-weight:400;font-size:11px">UTM query string</span></label>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.tracking_params" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.tracking_params || '') + '" placeholder="utm_source=meta&amp;utm_medium=...">';
-    html += '</div></div>';
-    html += '</div>';
+    // Inline AI copy variants — populated by aiWriteAdCopy / aiImproveAdCopy.
+    html += renderAdCopyVariants(ad);
 
     html += '<div class="cp-inspector-actions">';
     html += '<button class="cp-btn cp-btn-ai" data-action="ai-write-ad-copy" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' AI write copy</button>';
     html += '<button class="cp-btn cp-btn-outline" data-action="ai-improve-ad-copy" data-id="' + esc(ad.id) + '">' + icon('wand-magic') + ' Improve</button>';
     html += '</div>';
 
+    html += '</div>';
+    return html;
+  }
+
+  // --- AI copy variants — inline primary_text options on the Copy tab ---
+  //
+  // Stored on `ad.creative.ai_copy_variants` as `{ id, text, source, generated_at }`.
+  // `source` is 'write' (one of three new variants) or 'improve' (a refinement
+  // of the current primary_text). User picks one to overwrite primary_text.
+
+  function renderAdCopyVariants(ad) {
+    var variants = (ad.creative && ad.creative.ai_copy_variants) || [];
+    if (!variants.length) return '';
+
+    var isImprove = variants.length === 1 && variants[0].source === 'improve';
+    var titleIcon = isImprove ? 'wand-magic' : 'sparkles';
+    var titleLabel = isImprove ? 'Improved primary text' : 'AI copy variants';
+    var subtitle = isImprove
+      ? 'Compare with what you have now.'
+      : variants.length + ' option' + (variants.length !== 1 ? 's' : '') + ' · click <strong>Use this</strong> to overwrite the textarea above.';
+
+    var html = '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon(titleIcon) + ' ' + esc(titleLabel);
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">' + subtitle + '</span>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-clear-ad-copy-variants" data-id="' + esc(ad.id) + '" style="margin-left:auto" title="Clear all variants">' + icon('trash') + '</button>';
+    html += '</div>';
+
+    html += '<div class="cp-copy-variants">';
+    for (var i = 0; i < variants.length; i++) {
+      var v = variants[i];
+      html += '<div class="cp-copy-variant-card" data-variant-id="' + esc(v.id) + '">';
+      html += '<div class="cp-copy-variant-head">';
+      html += '<span class="cp-copy-variant-num">' + (isImprove ? icon('wand-magic') : (i + 1)) + '</span>';
+      html += '<span class="cp-copy-variant-label">' + esc(isImprove ? 'AI improvement' : 'Variant ' + (i + 1)) + '</span>';
+      html += '<span class="cp-text-muted" style="font-size:11px;margin-left:auto">' + countChars(v.text || '') + ' chars</span>';
+      html += '</div>';
+      html += '<div class="cp-copy-variant-text">' + esc(v.text || '') + '</div>';
+      html += '<div class="cp-copy-variant-actions">';
+      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="ws-use-ad-copy-variant" data-id="' + esc(ad.id) + '" data-idx="' + i + '">' + icon('check') + ' Use this</button>';
+      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-remove-ad-copy-variant" data-id="' + esc(ad.id) + '" data-idx="' + i + '" title="Discard">' + icon('trash') + '</button>';
+      html += '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
     html += '</div>';
     return html;
   }
@@ -772,11 +783,10 @@
   }
 
   function isAdCopyDone(ad) {
+    // Copy step now scopes to primary_text only — headline / description /
+    // destination live in Overview and are validated at export time.
     var c = (ad && ad.creative) || {};
-    var hasBody = (c.primary_text || '').trim().length >= 20;
-    var hasHeadline = !!(((c.headline || '').trim()) || ((c.description || '').trim()));
-    var hasLink = (c.cta_link || '').trim().length > 0;
-    return hasBody && hasHeadline && hasLink;
+    return (c.primary_text || '').trim().length >= 20;
   }
 
   function isAdMediaDone(ad) {

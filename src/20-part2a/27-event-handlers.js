@@ -864,6 +864,48 @@
       $card.removeClass('cp-hook-idea-card-collapsed');
     });
 
+    // AI copy variants — pick / discard / clear. Stored on
+    // `ad.creative.ai_copy_variants`; populated by `aiWriteAdCopy`
+    // (three options) or `aiImproveAdCopy` (one refinement).
+    $(document).off('click.cpv2-use-copy-variant').on('click.cpv2-use-copy-variant', '[data-action="ws-use-ad-copy-variant"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var idx = parseInt($(this).data('idx'), 10);
+      var ad = getAd(id); if (!ad || !ad.creative) return;
+      var variants = ad.creative.ai_copy_variants || [];
+      var v = variants[idx]; if (!v) return;
+      snapshot('Apply AI copy variant');
+      ad.creative.primary_text = v.text;
+      ad.creative.ai_copy_variants = [];
+      ad.updated = new Date().toISOString();
+      saveEntityField('ad', id, 'creative', ad.creative);
+      if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI copy variant');
+      logActivity('content_applied', 'ad', id, ad.name, 'Applied AI ' + (v.source || 'write') + ' variant to primary text');
+      toast('Copy applied', 'success');
+    });
+
+    $(document).off('click.cpv2-rm-copy-variant').on('click.cpv2-rm-copy-variant', '[data-action="ws-remove-ad-copy-variant"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var idx = parseInt($(this).data('idx'), 10);
+      var ad = getAd(id); if (!ad || !ad.creative) return;
+      var variants = ad.creative.ai_copy_variants || [];
+      if (idx < 0 || idx >= variants.length) return;
+      variants.splice(idx, 1);
+      snapshot('Discard copy variant');
+      saveEntityField('ad', id, 'creative', ad.creative);
+    });
+
+    $(document).off('click.cpv2-clear-copy-variants').on('click.cpv2-clear-copy-variants', '[data-action="ws-clear-ad-copy-variants"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = getAd(id); if (!ad || !ad.creative) return;
+      if (!(ad.creative.ai_copy_variants && ad.creative.ai_copy_variants.length)) return;
+      snapshot('Clear copy variants');
+      ad.creative.ai_copy_variants = [];
+      saveEntityField('ad', id, 'creative', ad.creative);
+    });
+
     // Pull a hook from a library message into an Ad (also captures snapshot)
     $(document).off('click.cpv2-pull-hook').on('click.cpv2-pull-hook', '[data-action="ws-pull-hook"]', function(e) {
       e.preventDefault();

@@ -6,9 +6,10 @@
   //   callAIWithRetry(prompt, onSuccess, onError, actionId, systemPrompt, parseJSON)
   // and use BrandService.getSystemPrompt + brandSnippet for brand context.
   //
-  // For alternatives-style outputs (hooks, copy variants) we surface them
-  // through showAIPreview. For single-result outputs (image prompt, video
-  // script) we save directly and toast.
+  // For alternatives-style outputs (hook ideas, copy variants) we save the
+  // options directly onto the ad (ad.hook.ai_ideas, ad.creative.ai_copy_variants)
+  // and let the inspector tabs render them inline. For single-result outputs
+  // (image prompt, video script) we save directly and toast.
 
   // --- Small helpers ---
 
@@ -481,69 +482,68 @@
     var ad = getAd(adId); if (!ad) return;
     var adSet = getAdSet(ad.ad_set_id);
     var camp = adSet ? getCampaignV2(adSet.campaign_id) : null;
+    var activeHook = (ad.hook && ad.hook.text) || '';
 
-    var prompt = 'Write 3 distinct copy options for this Ad. Each option = {primary_text, headline, description}.\n';
-    prompt += 'Primary text 90-140 chars. Headline ≤27 chars (sales-y, scroll-stopping). Description ≤27 chars (supports the headline).\n\n';
+    var prompt = 'Write 3 distinct primary-text options for this Meta Ad. Each is the body copy that sits above the media — 90-140 chars, scroll-stopping, written in the brand voice. Use three different angles (e.g., problem framing, social proof, outcome promise). Headline and description are out of scope here; only return primary_text.\n\n';
     if (camp) prompt += aiV2_campaignContext(camp) + '\n';
     if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
-    if (ad.hook && ad.hook.text) prompt += 'Hook: ' + ad.hook.text + '\n';
+    if (activeHook) prompt += 'Selected hook (extend this thought into the body — do not repeat it verbatim): ' + activeHook + '\n';
     prompt += '\n' + brandSnippet('content');
-    prompt += '\nRespond JSON only: {"options":[{"primary_text":"","headline":"","description":""}]}';
+    prompt += '\nRespond JSON only: {"options":[{"primary_text":""}]}';
 
     toast('AI writing copy...', 'info');
     callAIWithRetry(prompt, function(parsed) {
-      var options = parsed.options || [];
-      if (options.length === 0) { toast('AI returned no copy', 'warning'); return; }
-      showAIPreview('Pick a copy variant', options.map(function(o, i) { return { label: 'Variant ' + (i+1), content: o.primary_text, _copy: o }; }), function(selected) {
-        snapshot('AI copy');
-        ad.creative = ad.creative || {};
-        ad.creative.primary_text = selected._copy.primary_text || ad.creative.primary_text;
-        ad.creative.headline     = selected._copy.headline     || ad.creative.headline;
-        ad.creative.description  = selected._copy.description  || ad.creative.description;
-        ad.updated = new Date().toISOString();
-        if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI copy');
-        buildMaps(); syncToTextarea(); render();
-        logActivity('content_generated', 'ad', adId, ad.name, 'AI wrote copy');
-        toast('Copy applied', 'success');
-      }, { formatItem: function(opt) {
-        return '<div><p><strong>' + esc(opt._copy.headline) + '</strong></p><p>' + esc(opt.content) + '</p><p class="cp-text-muted">' + esc(opt._copy.description) + '</p></div>';
-      } });
+      var options = (parsed && parsed.options) || [];
+      var variants = options.map(function(o) {
+        return {
+          id: generateId('cpv'),
+          text: String((o && o.primary_text) || '').trim(),
+          source: 'write',
+          generated_at: new Date().toISOString()
+        };
+      }).filter(function(v) { return v.text; });
+      if (variants.length === 0) { toast('AI returned no copy', 'warning'); return; }
+      snapshot('AI copy variants');
+      ad.creative = ad.creative || {};
+      ad.creative.ai_copy_variants = variants;
+      ad.updated = new Date().toISOString();
+      buildMaps(); syncToTextarea(); render();
+      logActivity('content_generated', 'ad', adId, ad.name, 'AI wrote ' + variants.length + ' primary-text variants');
+      toast('Got ' + variants.length + ' copy variants — pick one in the Copy tab', 'success');
     }, function(err) { toast('AI error: ' + err, 'error'); },
        'ai-write-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
-  // --- 7. Improve Ad Copy (refinement) ---
+  // --- 7. Improve Ad Copy (refinement on primary_text) ---
 
   function aiImproveAdCopy(adId) {
     if (!aiV2_assertConfigured()) return;
     var ad = getAd(adId); if (!ad) return;
     var c = ad.creative || {};
-    if (!(c.primary_text || c.headline)) { toast('Write some copy first, then AI can improve it', 'info'); return; }
+    if (!(c.primary_text || '').trim()) { toast('Write some primary text first, then AI can improve it', 'info'); return; }
 
-    var prompt = 'Improve this Meta Ad copy. Make it more specific, more emotional, more scroll-stopping. Keep same intent.\n\n';
-    prompt += 'Current copy:\nPrimary text: ' + (c.primary_text || '') + '\nHeadline: ' + (c.headline || '') + '\nDescription: ' + (c.description || '') + '\n\n';
+    var prompt = 'Rewrite this Meta Ad primary text. Sharpen it: more specific, more emotional, more scroll-stopping. Keep the same intent and approximate length. Only return primary_text.\n\n';
+    prompt += 'Current primary text:\n' + c.primary_text + '\n\n';
+    if (ad.hook && ad.hook.text) prompt += 'Selected hook context: ' + ad.hook.text + '\n\n';
     prompt += brandSnippet('content');
-    prompt += '\n\nRespond JSON only: {"primary_text":"","headline":"","description":""}';
+    prompt += '\n\nRespond JSON only: {"primary_text":""}';
 
     toast('AI improving copy...', 'info');
     callAIWithRetry(prompt, function(parsed) {
-      if (!parsed) { toast('AI returned nothing', 'warning'); return; }
-      showAIPreview('Compare improved copy', [
-        { label: 'Original',  content: c.primary_text, _copy: { primary_text: c.primary_text, headline: c.headline, description: c.description } },
-        { label: 'Improved',  content: parsed.primary_text, _copy: parsed }
-      ], function(selected) {
-        snapshot('AI improved copy');
-        ad.creative = ad.creative || {};
-        ad.creative.primary_text = selected._copy.primary_text || ad.creative.primary_text;
-        ad.creative.headline     = selected._copy.headline     || ad.creative.headline;
-        ad.creative.description  = selected._copy.description  || ad.creative.description;
-        ad.updated = new Date().toISOString();
-        if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI improved');
-        buildMaps(); syncToTextarea(); render();
-        toast('Applied', 'success');
-      }, { formatItem: function(opt) {
-        return '<div><p><strong>' + esc(opt._copy.headline) + '</strong></p><p>' + esc(opt.content) + '</p><p class="cp-text-muted">' + esc(opt._copy.description) + '</p></div>';
-      } });
+      var improved = String((parsed && parsed.primary_text) || '').trim();
+      if (!improved) { toast('AI returned nothing', 'warning'); return; }
+      snapshot('AI improved copy');
+      ad.creative = ad.creative || {};
+      ad.creative.ai_copy_variants = [{
+        id: generateId('cpv'),
+        text: improved,
+        source: 'improve',
+        generated_at: new Date().toISOString()
+      }];
+      ad.updated = new Date().toISOString();
+      buildMaps(); syncToTextarea(); render();
+      logActivity('content_generated', 'ad', adId, ad.name, 'AI improved primary text');
+      toast('Improved copy ready — compare in the Copy tab', 'success');
     }, function(err) { toast('AI error: ' + err, 'error'); },
        'ai-improve-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
   }

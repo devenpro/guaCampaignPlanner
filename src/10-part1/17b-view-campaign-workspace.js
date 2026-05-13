@@ -416,12 +416,53 @@
 
     var html = '';
     html += _renderAdOverviewConfig(ad);
+    html += _renderAdOverviewHeadlineDestination(ad);
     html += _renderAdSummaryHook(ad);
-    html += _renderAdSummaryCopy(ad);
     html += _renderAdSummaryMedia(ad, ctype);
     html += _renderAdOverviewAssignment(ad);
     html += _renderAdSummaryReview(ad);
     html += _renderAdOverviewFooter(ad);
+    return html;
+  }
+
+  // Editable supporting copy fields. These used to live in the Copy tab but
+  // the Copy tab is now scoped to the primary text only — headline,
+  // description, CTA, destination URL, display link, and tracking params live
+  // here in Overview where they sit alongside the other ad configuration.
+  function _renderAdOverviewHeadlineDestination(ad) {
+    var c = ad.creative || {};
+    var html = '<div class="cp-inspector-section cp-inspector-config">';
+    html += '<div class="cp-inspector-section-title">' + icon('link') + ' Headline &amp; destination</div>';
+
+    html += '<div class="cp-form-row">';
+    html += '<div class="cp-form-half"><label>Headline <span class="cp-text-muted" style="font-weight:400;font-size:11px">27 chars</span></label>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.headline" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" maxlength="60" value="' + esc(c.headline || '') + '">';
+    html += '</div>';
+    html += '<div class="cp-form-half"><label>Description <span class="cp-text-muted" style="font-weight:400;font-size:11px">27 chars</span></label>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.description" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" maxlength="60" value="' + esc(c.description || '') + '">';
+    html += '</div></div>';
+
+    html += '<div class="cp-form-row" style="margin-top:var(--cp-space-2)">';
+    html += '<div class="cp-form-third"><label>CTA</label>';
+    html += '<select class="cp-select cp-v2-inline-field" data-field="creative.cta_type" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
+    for (var ctk in META_CTA_TYPES) {
+      var ctSel = (c.cta_type === ctk) ? ' selected' : '';
+      html += '<option value="' + ctk + '"' + ctSel + '>' + esc(META_CTA_TYPES[ctk].label) + '</option>';
+    }
+    html += '</select></div>';
+    html += '<div class="cp-form-grow"><label>Destination URL</label>';
+    html += '<input type="url" class="cp-input cp-v2-inline-field" data-field="creative.cta_link" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.cta_link || '') + '" placeholder="https://example.com">';
+    html += '</div></div>';
+
+    html += '<div class="cp-form-row" style="margin-top:var(--cp-space-2)">';
+    html += '<div class="cp-form-half"><label>Display link <span class="cp-text-muted" style="font-weight:400;font-size:11px">optional</span></label>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.display_link" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.display_link || '') + '" placeholder="example.com/landing">';
+    html += '</div>';
+    html += '<div class="cp-form-half"><label>Tracking params <span class="cp-text-muted" style="font-weight:400;font-size:11px">UTM query string</span></label>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.tracking_params" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.tracking_params || '') + '" placeholder="utm_source=meta&amp;utm_medium=...">';
+    html += '</div></div>';
+
+    html += '</div>';
     return html;
   }
 
@@ -485,35 +526,6 @@
       : '<div class="cp-text-muted">No hook yet. Open the Hook tab to add one.</div>';
 
     return _renderAdSummaryCard('anchor', 'Hook', 'hook', pill, body);
-  }
-
-  function _renderAdSummaryCopy(ad) {
-    var c = ad.creative || {};
-    var cta = metaCTA(c.cta_type);
-    var fieldsFilled = (c.primary_text ? 1 : 0) + (c.headline ? 1 : 0) + (c.description ? 1 : 0) + (c.cta_type ? 1 : 0) + (c.cta_link ? 1 : 0);
-    var pill;
-    if (fieldsFilled === 0) pill = '<span class="cp-inspector-status-pill cp-inspector-status-pill-empty">' + icon('circle') + ' Not set</span>';
-    else if (fieldsFilled < 4) pill = '<span class="cp-inspector-status-pill cp-inspector-status-pill-partial">' + icon('circle-half-stroke') + ' Partial</span>';
-    else pill = '<span class="cp-inspector-status-pill cp-inspector-status-pill-filled">' + icon('circle-check') + ' Filled</span>';
-
-    var body = '';
-    if (fieldsFilled === 0) {
-      body = '<div class="cp-text-muted">No copy yet. Open the Copy tab to add primary text, headline, description, and CTA.</div>';
-    } else {
-      body += '<div class="cp-inspector-grid cp-inspector-grid-1">';
-      if (c.primary_text) body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Primary text</div><div class="cp-inspector-field-value">' + esc(truncate(c.primary_text, 200)) + '</div></div>';
-      if (c.headline)     body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Headline</div><div class="cp-inspector-field-value">' + esc(c.headline) + '</div></div>';
-      if (c.description)  body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Description</div><div class="cp-inspector-field-value">' + esc(c.description) + '</div></div>';
-      if (c.cta_type || c.cta_link) {
-        var ctaVal = (cta ? cta.label : (c.cta_type || '')) + (c.cta_link ? ' → ' + truncate(c.cta_link, 80) : '');
-        body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">CTA</div><div class="cp-inspector-field-value">' + esc(ctaVal) + '</div></div>';
-      }
-      if (c.display_link)     body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Display link</div><div class="cp-inspector-field-value">' + esc(c.display_link) + '</div></div>';
-      if (c.tracking_params)  body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Tracking</div><div class="cp-inspector-field-value">' + esc(truncate(c.tracking_params, 120)) + '</div></div>';
-      body += '</div>';
-    }
-
-    return _renderAdSummaryCard('pen-fancy', 'Copy', 'copy', pill, body);
   }
 
   function _renderAdSummaryMedia(ad, ctype) {
