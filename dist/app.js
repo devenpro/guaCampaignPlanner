@@ -1,6 +1,6 @@
-/* Campaign Planner v1.0.1 · built 2026-05-13T11:32:58.656Z · 83 source files (see src/) */
+/* Campaign Planner v1.0.1 · built 2026-05-13T12:16:47.376Z · 83 source files (see src/) */
 window.CP_VERSION = "1.0.1";
-window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
+window.CP_BUILD_TIME = "2026-05-13T12:16:47.376Z";
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -2012,7 +2012,6 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
     html += '<div class="cp-view-header"><div class="cp-view-header-left"><h1>' + icon('chart-pie') + ' Dashboard</h1></div>';
     html += '<div class="cp-view-header-right">';
     html += '<button class="cp-btn cp-btn-ai" data-action="new-campaign-v2">' + icon('wand-magic') + ' New Campaign</button>';
-    html += '<button class="cp-btn cp-btn-outline" data-action="ai-generate-campaign-tree">' + icon('sparkles') + ' Quick draft from brief</button>';
     html += '<button class="cp-btn cp-btn-outline" data-action="go-view" data-view="research">' + icon('flask') + ' Research Lab</button>';
     html += '</div></div>';
 
@@ -2342,7 +2341,7 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
     html += '<h2>' + icon('bullhorn') + ' Meta Campaigns</h2>';
     html += '<div style="display:flex;gap:6px">';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="go-view" data-view="meta_campaigns">View all</button>';
-    html += '<button class="cp-btn cp-btn-ai cp-btn-sm" data-action="ai-generate-campaign-tree">' + icon('wand-magic') + ' Generate</button>';
+    html += '<button class="cp-btn cp-btn-ai cp-btn-sm" data-action="new-campaign-v2">' + icon('wand-magic') + ' New Campaign</button>';
     html += '</div></div>';
 
     // Top stats row
@@ -2403,10 +2402,9 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
     // Empty state CTA
     if (camps.length === 0) {
       html += '<div class="cp-dash-v2-empty">';
-      html += '<p>No Meta Campaigns yet. Get started with an AI-generated tree from a brief, or build manually.</p>';
+      html += '<p>No Meta Campaigns yet. The New Campaign wizard takes a brief and drafts Ad Sets and Ads with AI — step by step.</p>';
       html += '<div style="display:flex;gap:8px;margin-top:var(--cp-space-2)">';
-      html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-campaign-tree">' + icon('wand-magic') + ' Generate from brief</button>';
-      html += '<button class="cp-btn cp-btn-primary" data-action="new-campaign-v2">' + icon('plus') + ' New Campaign</button>';
+      html += '<button class="cp-btn cp-btn-ai" data-action="new-campaign-v2">' + icon('wand-magic') + ' New Campaign</button>';
       html += '</div></div>';
     }
 
@@ -3255,9 +3253,8 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
     html += '<h1>' + icon('bullhorn') + ' Campaigns</h1>';
     html += '<span class="cp-view-subtitle">' + filtered.length + ' campaign' + (filtered.length !== 1 ? 's' : '') + ' · Meta-native structure</span>';
     html += '</div><div class="cp-view-header-right">';
-    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-campaign-tree">' + icon('wand-magic') + ' Generate from brief</button>';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-export-open">' + icon('download') + ' Export all</button>';
-    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-campaign-v2">' + icon('plus') + ' New Campaign</button>';
+    html += '<button class="cp-btn cp-btn-ai cp-btn-sm" data-action="new-campaign-v2">' + icon('wand-magic') + ' New Campaign</button>';
     html += '</div></div>';
 
     // Toolbar
@@ -3280,10 +3277,9 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
       html += '<div class="cp-empty-state-icon">' + icon('bullhorn') + '</div>';
       if (camps.length === 0) {
         html += '<div class="cp-empty-state-title">No campaigns yet</div>';
-        html += '<div class="cp-empty-state-text">Start with the AI brief-to-tree generator, or create one manually.</div>';
+        html += '<div class="cp-empty-state-text">Open the New Campaign wizard — write a brief, let AI draft the basics, then select Ad Sets and Ads.</div>';
         html += '<div style="display:flex;gap:var(--cp-space-2);justify-content:center;margin-top:var(--cp-space-3)">';
-        html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-campaign-tree">' + icon('wand-magic') + ' Generate from brief</button>';
-        html += '<button class="cp-btn cp-btn-primary" data-action="new-campaign-v2">' + icon('plus') + ' New Campaign</button>';
+        html += '<button class="cp-btn cp-btn-ai" data-action="new-campaign-v2">' + icon('wand-magic') + ' New Campaign</button>';
         html += '</div>';
       } else {
         html += '<div class="cp-empty-state-title">No campaigns match</div>';
@@ -9860,7 +9856,7 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
       },
       ad_sets: [],
       _adsContext: {},        // { setIdx: contextString }
-      stepGenerated: { 2: false, 3: {} },
+      stepGenerated: { 1: false, 2: false, 3: {} },
       created: { campaignV2Id: '', adSetIds: [], adIds: [] }
     };
   }
@@ -9977,14 +9973,45 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
 
   // ----- Step 1: Basics -----
   function _ncwRenderStep1() {
-    var cam = ncwState.campaign || {};
+    var st = ncwState;
+    var cam = st.campaign || {};
     var C = Constants;
-    var html = _ncwHeader('Campaign Basics', 'Name your campaign, choose the Meta objective and budget mode, and provide a brief that AI will use to draft Ad Sets.');
+    var html = _ncwHeader('Campaign Basics', 'Write a brief and let AI draft the basics, or fill the fields manually. The brief carries forward to Step 2 (Ad Sets) and Step 3 (Ads).');
+
+    html += _ncwErrorBanner();
 
     html += '<div class="cp-ncw-form">';
 
+    html += '<div class="cp-field"><label class="cp-field-label">Brief <span class="cp-text-muted">— context for AI</span></label>';
+    html += '<textarea class="cp-textarea" data-ncw-field="campaign.brief" rows="4" placeholder="Describe what you\'re selling, who you\'re targeting, what success looks like, any constraints...">';
+    html += esc(cam.brief || '');
+    html += '</textarea></div>';
+
+    html += '<div class="cp-ncw-gen-bar">';
+    html += '<button class="cp-btn cp-btn-ai"' + (st.aiLoading ? ' disabled' : '') + ' data-action="ncw-ai-draft-campaign">';
+    html += icon('sparkles') + ' ' + (st.stepGenerated[1] ? 'Redraft with AI' : 'Draft with AI');
+    html += '</button>';
+    if (st.aiLoading) {
+      html += '<button class="cp-btn cp-btn-ghost" data-action="ncw-ai-cancel">' + icon('x') + ' Cancel</button>';
+    }
+    html += '<span class="cp-text-muted cp-ncw-gen-hint">AI fills name, objective, budget mode and bid strategy from your brief. You can edit anything below.</span>';
+    html += '</div>';
+
+    if (st.aiLoading) {
+      html += '<div class="cp-sw-skeleton-card" style="margin-top:var(--cp-space-3)">';
+      html += '<div class="cp-sw-skeleton-line cp-sw-skeleton-line--title"></div>';
+      html += '<div class="cp-sw-skeleton-line"></div><div class="cp-sw-skeleton-line"></div>';
+      html += '<div class="cp-sw-skeleton-line cp-sw-skeleton-line--short"></div>';
+      html += '</div>';
+      html += '</div>';
+      return html;
+    }
+
     html += '<div class="cp-field"><label class="cp-field-label">Campaign Name <span class="cp-required">*</span></label>';
     html += '<input type="text" class="cp-input" data-ncw-field="campaign.name" value="' + esc(cam.name || '') + '" placeholder="e.g., Q3 SaaS Lead Gen" autocomplete="off"></div>';
+
+    html += '<div class="cp-field"><label class="cp-field-label">Description</label>';
+    html += '<input type="text" class="cp-input" data-ncw-field="campaign.description" value="' + esc(cam.description || '') + '" placeholder="One-line description of the campaign goal"></div>';
 
     html += '<div class="cp-ncw-field-row">';
     html += '<div class="cp-field"><label class="cp-field-label">Objective</label>';
@@ -10009,11 +10036,6 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
     html += '<div class="cp-field"><label class="cp-field-label">End date</label>';
     html += '<input type="date" class="cp-input" data-ncw-field="campaign.stop_time" value="' + esc(cam.stop_time || '') + '"></div>';
     html += '</div>';
-
-    html += '<div class="cp-field"><label class="cp-field-label">Brief <span class="cp-text-muted">— context for AI</span></label>';
-    html += '<textarea class="cp-textarea" data-ncw-field="campaign.brief" rows="4" placeholder="Describe what you\'re selling, who you\'re targeting, what success looks like, any constraints...">';
-    html += esc(cam.brief || '');
-    html += '</textarea></div>';
 
     html += '</div>';
     return html;
@@ -11000,6 +11022,11 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
       ncwState.aiLoading = false; ncwState.aiActionId = ''; ncwState.aiError = 'Generation cancelled.';
       refreshNCW();
     });
+    $(document).off('click.ncw-draft-camp').on('click.ncw-draft-camp', '[data-action="ncw-ai-draft-campaign"]', function(e) {
+      e.preventDefault();
+      var R = window._cpRenderers || {};
+      if (typeof R.ncwAIDraftCampaign === 'function') R.ncwAIDraftCampaign();
+    });
     $(document).off('click.ncw-suggest-sets').on('click.ncw-suggest-sets', '[data-action="ncw-ai-suggest-sets"]', function(e) {
       e.preventDefault();
       var R = window._cpRenderers || {};
@@ -11857,6 +11884,7 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
     // Setup Wizard finalize
     R.finalizeSetupWizard        = finalizeSetupWizard;
     // New Campaign Wizard AI + finalize
+    R.ncwAIDraftCampaign         = ncwAIDraftCampaign;
     R.ncwAISuggestAdSets         = ncwAISuggestAdSets;
     R.ncwAISuggestAds            = ncwAISuggestAds;
     R.finalizeNewCampaignWizard  = finalizeNewCampaignWizard;
@@ -12973,211 +13001,12 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
     return lines.join('\n');
   }
 
-  // --- 1. Generate Campaign Tree (flagship: brief → full Campaign/AdSets/Ads) ---
-
-  function aiGenerateCampaignTree() {
-    if (!aiV2_assertConfigured()) return;
-    openCampaignTreeBriefModal();
-  }
-
-  function openCampaignTreeBriefModal() {
-    var html = '<div class="cp-editor-form">';
-    html += '<p>Describe the campaign you want — what you\'re selling, who you want to reach, what success looks like, any constraints.</p>';
-    html += '<textarea class="cp-textarea" id="cpV2TreeBrief" rows="6" placeholder="e.g., Lead-gen campaign for our project management SaaS targeting growth marketers in India. Budget ~₹2L/month. Push the &quot;ship in days, not weeks&quot; angle. Avoid corporate-stock imagery."></textarea>';
-    html += '<div class="cp-form-help">AI will draft 1 Campaign, 2-3 Ad Sets, and 2-3 Ads per Ad Set. You can edit before accepting.</div>';
-    html += '</div>';
-
-    openModal('Generate Campaign tree from brief', html, {
-      titleIcon: 'wand-magic', size: 'md', saveLabel: icon('sparkles') + ' Generate',
-      onSave: function() {
-        var brief = ($('#cpV2TreeBrief').val() || '').trim();
-        if (!brief) { toast('Write a brief first', 'warning'); return; }
-        closeModal();
-        aiV2_runCampaignTree(brief);
-      }
-    });
-  }
-
-  function aiV2_runCampaignTree(brief) {
-    var availablePersonas = (S.data.personas || []).map(function(p) { return { id: p.id, name: p.name, description: truncate(p.description || '', 100) }; });
-    var availableMessages = (S.data.messages || []).map(function(m) { return { id: m.id, title: m.title }; });
-
-    var objList = Object.keys(Constants.META_OBJECTIVES).map(function(k) { return k + ' (' + Constants.META_OBJECTIVES[k].label + ')'; }).join(', ');
-    var goalList = Object.keys(Constants.META_OPTIMIZATION_GOALS).join(', ');
-    var ctaList = Object.keys(Constants.META_CTA_TYPES).slice(0, 12).join(', ');
-
-    var prompt = 'You are a Meta Ads strategist. Generate a complete campaign tree from this brief.\n\n';
-    prompt += 'Brief:\n' + brief + '\n\n';
-
-    prompt += 'Available Meta Objectives: ' + objList + '\n';
-    prompt += 'Available Optimization Goals: ' + goalList + '\n';
-    prompt += 'Available CTAs: ' + ctaList + '\n\n';
-
-    if (availablePersonas.length) {
-      prompt += 'Existing Personas in library (use their id if matching):\n';
-      prompt += availablePersonas.slice(0, 20).map(function(p) { return '- ' + p.id + ': ' + p.name + (p.description ? ' (' + p.description + ')' : ''); }).join('\n') + '\n\n';
-    }
-
-    prompt += brandSnippet('research');
-
-    prompt += '\n\nRules:\n';
-    prompt += '- Pick exactly ONE objective for the Campaign.\n';
-    prompt += '- Generate 2-3 Ad Sets, each targeting a distinct angle/audience cut.\n';
-    prompt += '- For each Ad Set, set persona_id to a matching library persona id if there\'s a strong match; otherwise leave empty.\n';
-    prompt += '- Optimization goal must be valid under the chosen Objective.\n';
-    prompt += '- Generate 2-3 Ads per Ad Set, each with a distinct hook angle.\n';
-    prompt += '- Primary text: 90-140 chars. Headline: ≤27 chars. Description: ≤27 chars.\n';
-    prompt += '- Output strict JSON ONLY, no preamble:\n';
-    prompt += '{"campaign":{"name":"","description":"","objective":"OUTCOME_...","budget_mode":"CBO|ABO","bid_strategy":"LOWEST_COST_WITHOUT_CAP|...","daily_budget":NUMBER_OR_NULL,"brief":""},';
-    prompt += '"ad_sets":[{"name":"","persona_id":"","audience_overrides":"","optimization_goal":"...","billing_event":"IMPRESSIONS","attribution_setting":"7d_click",';
-    prompt += '"brief":{"creative_direction":"","hook_angles":["","",""],"ai_notes":""},';
-    prompt += '"ads":[{"name":"","creative_type":"single_image|single_video|carousel","hook":{"text":"","type":"question|bold|story|data|direct|curiosity|challenge"},';
-    prompt += '"creative":{"primary_text":"","headline":"","description":"","cta_type":"LEARN_MORE","cta_link":""},';
-    prompt += '"media":{"image_brief":"","image_prompt":"","video_concept":""}}]}]}';
-
-    toast('AI drafting your Campaign tree (15-30s)...', 'info', 5000);
-
-    callAIWithRetry(prompt, function(parsed) {
-      if (!parsed || !parsed.campaign || !Array.isArray(parsed.ad_sets)) {
-        toast('AI returned an invalid tree', 'error'); return;
-      }
-      openCampaignTreePreviewModal(parsed);
-    }, function(err) { toast('AI error: ' + err, 'error'); },
-       'ai-generate-campaign-tree', BrandService.getSystemPrompt('research'), parseJSON);
-  }
-
-  // Preview the proposed tree with checkboxes; accept the user's selection.
-  function openCampaignTreePreviewModal(tree) {
-    var camp = tree.campaign;
-    var sets = tree.ad_sets || [];
-
-    var html = '<div class="cp-tree-preview">';
-
-    // Campaign
-    var objLabel = (Constants.META_OBJECTIVES[camp.objective] || {}).label || camp.objective;
-    html += '<div class="cp-tree-preview-campaign">';
-    html += '<label class="cp-tree-preview-row"><input type="checkbox" class="cp-tp-camp-check" checked>';
-    html += '<div><div class="cp-tree-preview-title">' + icon('bullhorn') + ' ' + esc(camp.name || 'Untitled') + '</div>';
-    html += '<div class="cp-tree-preview-meta">' + esc(objLabel || '') + ' · ' + esc(camp.budget_mode || '') + (camp.daily_budget ? ' · ' + camp.daily_budget + '/d' : '') + '</div>';
-    if (camp.description) html += '<div class="cp-tree-preview-desc">' + esc(camp.description) + '</div>';
-    html += '</div></label>';
-    html += '</div>';
-
-    // Ad sets + ads
-    for (var i = 0; i < sets.length; i++) {
-      var s = sets[i];
-      var ads = s.ads || [];
-      var personaName = s.persona_id ? ((S.personaMap[s.persona_id] || {}).name || 'unknown') : '(no persona)';
-      var goalLabel = (Constants.META_OPTIMIZATION_GOALS[s.optimization_goal] || {}).label || s.optimization_goal;
-      html += '<div class="cp-tree-preview-ad-set">';
-      html += '<label class="cp-tree-preview-row"><input type="checkbox" class="cp-tp-set-check" data-set-idx="' + i + '" checked>';
-      html += '<div><div class="cp-tree-preview-title">' + icon('crosshairs') + ' ' + esc(s.name || 'Ad Set ' + (i+1)) + '</div>';
-      html += '<div class="cp-tree-preview-meta">' + icon('user') + ' ' + esc(personaName) + ' · ' + esc(goalLabel || '') + '</div>';
-      if (s.brief && s.brief.creative_direction) html += '<div class="cp-tree-preview-desc">' + esc(s.brief.creative_direction) + '</div>';
-      html += '</div></label>';
-
-      for (var j = 0; j < ads.length; j++) {
-        var a = ads[j];
-        html += '<label class="cp-tree-preview-row cp-tree-preview-row-ad">';
-        html += '<input type="checkbox" class="cp-tp-ad-check" data-set-idx="' + i + '" data-ad-idx="' + j + '" checked>';
-        var ctype = (Constants.META_AD_CREATIVE_TYPES[a.creative_type] || { icon: 'rectangle-ad', label: 'Ad' });
-        html += '<div><div class="cp-tree-preview-title">' + icon(ctype.icon) + ' ' + esc(a.name || 'Ad ' + (j+1)) + '</div>';
-        if (a.hook && a.hook.text) html += '<div class="cp-tree-preview-hook">"' + esc(a.hook.text) + '"</div>';
-        if (a.creative && a.creative.primary_text) html += '<div class="cp-tree-preview-desc">' + esc(truncate(a.creative.primary_text, 140)) + '</div>';
-        html += '</div></label>';
-      }
-      html += '</div>';
-    }
-
-    html += '</div>';
-
-    openModal('AI Campaign Tree — review & accept', html, {
-      titleIcon: 'sparkles', size: 'xl', saveLabel: icon('check') + ' Create selected',
-      onSave: function() {
-        if (!$('.cp-tp-camp-check').is(':checked')) { toast('Campaign must be selected to create the tree', 'warning'); return; }
-        closeModal();
-        applyCampaignTree(tree);
-      }
-    });
-  }
-
-  function applyCampaignTree(tree) {
-    snapshot('AI Campaign tree');
-    var camp = createEntity('campaign_v2', $.extend({}, Constants.META_CAMPAIGN_DEFAULTS, {
-      name: tree.campaign.name || 'Untitled',
-      description: tree.campaign.description || '',
-      objective: tree.campaign.objective || Constants.META_CAMPAIGN_DEFAULTS.objective,
-      budget_mode: tree.campaign.budget_mode || 'CBO',
-      bid_strategy: tree.campaign.bid_strategy || 'LOWEST_COST_WITHOUT_CAP',
-      daily_budget: tree.campaign.daily_budget || null,
-      brief: tree.campaign.brief || ''
-    }));
-    if (!camp) { toast('Failed to create Campaign', 'error'); return; }
-
-    var counts = { sets: 0, ads: 0 };
-    // Collect ALL selected indices upfront — createEntity below triggers
-    // renderCurrentView, which can detach the checkboxes from the DOM.
-    var setSelections = []; // [{ setIdx, adIdxs: [] }]
-    $('.cp-tp-set-check:checked').each(function() {
-      var setIdx = parseInt(this.getAttribute('data-set-idx'), 10);
-      if (isNaN(setIdx)) return;
-      var adIdxs = [];
-      $('.cp-tp-ad-check[data-set-idx="' + setIdx + '"]:checked').each(function() {
-        var ai = parseInt(this.getAttribute('data-ad-idx'), 10);
-        if (!isNaN(ai)) adIdxs.push(ai);
-      });
-      setSelections.push({ setIdx: setIdx, adIdxs: adIdxs });
-    });
-
-    setSelections.forEach(function(sel) {
-      var idx = sel.setIdx;
-      var sData = (tree.ad_sets || [])[idx]; if (!sData) return;
-
-      var persona = sData.persona_id ? getPersona(sData.persona_id) : null;
-      var personaSnap = persona ? buildPersonaSnapshot(persona) : null;
-
-      var set = createEntity('ad_set', {
-        campaign_id: camp.id,
-        name: sData.name || 'Ad Set ' + (idx + 1),
-        persona_id: persona ? persona.id : '',
-        persona_snapshot: personaSnap,
-        audience_overrides: sData.audience_overrides || '',
-        optimization_goal: sData.optimization_goal || Constants.META_AD_SET_DEFAULTS.optimization_goal,
-        billing_event: sData.billing_event || 'IMPRESSIONS',
-        attribution_setting: sData.attribution_setting || '7d_click',
-        brief: $.extend({ creative_direction: '', message_ids: [], style_ids: [], format_ids: [], hook_angles: [], ai_notes: '' }, sData.brief || {})
-      });
-      if (!set) return;
-      counts.sets++;
-
-      // Ads under this Ad Set — iterate the captured indices array
-      sel.adIdxs.forEach(function(adIdx) {
-        var aData = (sData.ads || [])[adIdx]; if (!aData) return;
-        var ad = createEntity('ad', {
-          ad_set_id: set.id,
-          name: aData.name || 'Ad ' + (adIdx + 1),
-          creative_type: aData.creative_type || 'single_image',
-          hook: { text: (aData.hook && aData.hook.text) || '', type: (aData.hook && aData.hook.type) || 'direct', source_message_id: '', selected_hook_id: '' },
-          creative: $.extend({ primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' }, aData.creative || {}),
-          media: {
-            image: { asset_id: '', prompt: (aData.media && (aData.media.image_prompt || aData.media.image_brief)) || '', aspect_ratio: '1:1', reference_image_ids: [] },
-            video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: (aData.media && aData.media.video_concept) || '', script: { sections: [] } },
-            carousel_cards: []
-          }
-        });
-        if (ad) { counts.ads++; if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI tree'); }
-      });
-    });
-
-    logActivity('campaign_tree_generated', 'campaign_v2', camp.id, camp.name, 'AI tree: ' + counts.sets + ' Ad Set(s), ' + counts.ads + ' Ad(s)');
-    toast('Created Campaign + ' + counts.sets + ' Ad Sets + ' + counts.ads + ' Ads', 'success', 5000);
-
-    // Jump to the new campaign in the workspace
-    S.selectedCampaignV2Id = camp.id; S.selectedAdSetId = null; S.selectedAdId = null;
-    navigate('campaign_workspace', { hash: 'campaign/' + camp.id });
-  }
-
-  // --- 2. Suggest Ad Sets for an existing Campaign ---
+  // --- 1. Suggest Ad Sets for an existing Campaign ---
+  // Note: brief-to-tree generation now lives entirely inside the New Campaign
+  // Wizard (Part 2A `16a-new-campaign-wizard.js` + Part 2B
+  // `17b-ai-new-campaign-wizard.js`). The flagship one-shot mega-prompt was
+  // removed in favour of staged AI calls — see ncwAIDraftCampaign,
+  // ncwAISuggestAdSets, and ncwAISuggestAds.
 
   function aiSuggestAdSets(campaignId) {
     if (!aiV2_assertConfigured()) return;
@@ -13635,6 +13464,64 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
   function _ncwEndOk(state)   { state.aiLoading = false; state.aiActionId = ''; state.aiError = ''; }
   function _ncwEndErr(state, err) { state.aiLoading = false; state.aiActionId = ''; state.aiError = String(err || 'AI failed').substring(0, 240); }
 
+  // ----- Draft Campaign basics from a brief -----
+  // Reads state.campaign.brief, asks AI to fill name/description/objective/
+  // budget_mode/bid_strategy/daily_budget. Overwrites the campaign fields on
+  // success so the user sees the AI draft and can edit before moving on.
+  function ncwAIDraftCampaign() {
+    var state = _ncwState(); if (!state) return;
+    if (state.aiLoading) return;
+    if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — open Settings → AI.'; _ncwRefresh(); return; }
+
+    // Pull the latest brief from the DOM in case the user hasn't tabbed out.
+    var $brief = $('#cpNCW [data-ncw-field="campaign.brief"]');
+    if ($brief.length) state.campaign.brief = ($brief.val() || '').trim();
+    var brief = (state.campaign.brief || '').trim();
+    if (!brief) { state.aiError = 'Write a brief first — describe what you\'re selling, who you\'re targeting, and what success looks like.'; _ncwRefresh(); return; }
+
+    _ncwBegin(state);
+
+    var objectives = Object.keys(Constants.META_OBJECTIVES).map(function(k) {
+      return '- ' + k + ': ' + Constants.META_OBJECTIVES[k].label + ' — ' + Constants.META_OBJECTIVES[k].description;
+    }).join('\n');
+    var bidStrategies = Object.keys(Constants.META_BID_STRATEGIES).map(function(k) {
+      return '- ' + k + ': ' + Constants.META_BID_STRATEGIES[k].label;
+    }).join('\n');
+
+    var prompt = 'You are a Meta Ads strategist. Draft the top-level Campaign settings from the brief below.\n\n';
+    prompt += 'Brief:\n' + brief + '\n\n';
+    prompt += 'Valid objectives (pick exactly ONE by key):\n' + objectives + '\n\n';
+    prompt += 'Valid bid strategies (pick exactly ONE by key):\n' + bidStrategies + '\n\n';
+    prompt += 'Budget modes: CBO (Meta allocates across Ad Sets — default for most cases), ABO (per-Ad-Set budgets — pick when ad sets need fixed splits).\n';
+    prompt += brandSnippet('research');
+    prompt += '\n\nRules:\n';
+    prompt += '- name: ≤60 chars, specific and product-oriented (no generic "Q3 Campaign").\n';
+    prompt += '- description: ≤200 chars, plain prose explaining the goal.\n';
+    prompt += '- objective: must be a key from the list above.\n';
+    prompt += '- bid_strategy: must be a key from the list above (default LOWEST_COST_WITHOUT_CAP).\n';
+    prompt += '- daily_budget: integer in the brief\'s currency if a budget is stated or strongly implied; otherwise null. Do NOT invent budgets.\n';
+    prompt += '- Output strict JSON only, no preamble, no markdown:\n';
+    prompt += '{"name":"","description":"","objective":"OUTCOME_...","budget_mode":"CBO|ABO","bid_strategy":"LOWEST_COST_WITHOUT_CAP","daily_budget":NUMBER_OR_NULL}';
+
+    callAIWithRetry(prompt, function(parsed) {
+      if (!parsed || typeof parsed !== 'object') { _ncwEndErr(state, 'AI returned no campaign basics'); _ncwRefresh(); return; }
+      var cam = state.campaign;
+      cam.name        = String(parsed.name || '').trim().substring(0, 80) || cam.name;
+      cam.description = String(parsed.description || '').trim().substring(0, 240);
+      cam.objective   = Constants.META_OBJECTIVES[parsed.objective] ? parsed.objective : (cam.objective || 'OUTCOME_LEADS');
+      cam.budget_mode = parsed.budget_mode === 'ABO' ? 'ABO' : 'CBO';
+      cam.bid_strategy = Constants.META_BID_STRATEGIES[parsed.bid_strategy] ? parsed.bid_strategy : 'LOWEST_COST_WITHOUT_CAP';
+      var db = parsed.daily_budget;
+      cam.daily_budget = (db != null && db !== '' && !isNaN(Number(db)) && Number(db) > 0) ? Number(db) : (cam.daily_budget || '');
+      state.stepGenerated[1] = true;
+      _ncwEndOk(state);
+      _ncwRefresh();
+    }, function(err) {
+      _ncwEndErr(state, err);
+      _ncwRefresh();
+    }, 'ncw-ai', BrandService.getSystemPrompt('research'), parseJSON);
+  }
+
   // ----- Suggest Ad Sets from the Campaign brief -----
   function ncwAISuggestAdSets() {
     var state = _ncwState(); if (!state) return;
@@ -13652,26 +13539,27 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
 
     var prompt = 'You are a Meta Ads strategist. Suggest 3 distinct Ad Sets for this Campaign.\n\n';
     prompt += 'Campaign: ' + (cam.name || '(untitled)') + '\n';
+    if (cam.description) prompt += 'Description: ' + cam.description + '\n';
     if (cam.objective) prompt += 'Objective: ' + cam.objective + '\n';
     if (cam.budget_mode) prompt += 'Budget mode: ' + cam.budget_mode + '\n';
     if (cam.daily_budget) prompt += 'Daily budget: ' + cam.daily_budget + '\n';
     if (cam.brief) prompt += '\nBrief: ' + cam.brief + '\n';
     if (personas.length) {
-      prompt += '\nAvailable personas (use persona_id if a match):\n';
+      prompt += '\nAvailable personas (use persona_id if a match — exact id, otherwise empty string):\n';
       prompt += personas.map(function(p) { return '- ' + p.id + ': ' + p.name + (p.description ? ' — ' + p.description : ''); }).join('\n') + '\n';
     }
     prompt += brandSnippet('research');
-    prompt += '\n\nValid optimization goals: ' + goalList + '\nValid objectives: ' + objList;
-    prompt += '\n\nRules: Each Ad Set targets a DIFFERENT angle / audience cut. Optimization goal must be valid for the campaign objective.';
-    prompt += '\nReturn ONLY this JSON:\n';
-    prompt += '{ "ad_sets": [{\n';
-    prompt += '  "name": "Ad Set name",\n';
-    prompt += '  "persona_id": "library id or empty",\n';
-    prompt += '  "audience_overrides": "",\n';
-    prompt += '  "optimization_goal": "...",\n';
-    prompt += '  "brief": { "creative_direction": "", "hook_angles": ["","",""], "ai_notes": "" }\n';
-    prompt += '}] }';
-    prompt += '\n\nNo markdown, no preamble.';
+    prompt += '\n\nValid optimization goals (pick one key per Ad Set): ' + goalList;
+    prompt += '\nValid objectives: ' + objList;
+    prompt += '\n\nRules:';
+    prompt += '\n- Generate exactly 3 Ad Sets. Each targets a DIFFERENT angle / audience cut (e.g. pain-point split, life-stage split, intent level).';
+    prompt += '\n- Ad Set name ≤60 chars, descriptive (e.g. "Founders — Time-poor"), not generic.';
+    prompt += '\n- optimization_goal must be valid for the campaign objective (e.g. OFFSITE_CONVERSIONS for OUTCOME_LEADS/SALES, LINK_CLICKS for OUTCOME_TRAFFIC).';
+    prompt += '\n- creative_direction: 1-2 sentences describing the angle and tone for this Ad Set.';
+    prompt += '\n- hook_angles: 3 short, distinct hook angles (e.g. "regret of waiting", "shipping speed", "social proof"). 2-6 words each.';
+    prompt += '\n- ai_notes: short steer for the ad-writer (constraints, do/don\'ts). Empty string if nothing to add.';
+    prompt += '\n- Output strict JSON only, no preamble, no markdown:\n';
+    prompt += '{"ad_sets":[{"name":"","persona_id":"","audience_overrides":"","optimization_goal":"","brief":{"creative_direction":"","hook_angles":["","",""],"ai_notes":""}}]}';
 
     callAIWithRetry(prompt, function(parsed) {
       var sets = (parsed && Array.isArray(parsed.ad_sets)) ? parsed.ad_sets : [];
@@ -13722,6 +13610,8 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
     _ncwBegin(state);
 
     var persona = adSet.persona_id ? S.personaMap[adSet.persona_id] : null;
+    var ctaList = Object.keys(Constants.META_CTA_TYPES).slice(0, 16).join(', ');
+
     var prompt = 'You are a Meta Ads creative director. Generate 3 distinct Ads for the Ad Set below.\n\n';
     prompt += 'Campaign: ' + (cam.name || '(untitled)') + '\n';
     if (cam.objective) prompt += 'Objective: ' + cam.objective + '\n';
@@ -13731,17 +13621,22 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
     var brief = adSet.brief || {};
     if (brief.creative_direction) prompt += 'Creative direction: ' + brief.creative_direction + '\n';
     if (brief.hook_angles && brief.hook_angles.length) prompt += 'Hook angles to consider: ' + brief.hook_angles.join(' | ') + '\n';
+    if (brief.ai_notes) prompt += 'Writer notes: ' + brief.ai_notes + '\n';
     if (state._adsContext[setIdx]) prompt += '\nAdditional ad direction: ' + state._adsContext[setIdx] + '\n';
     prompt += brandSnippet('content');
-    prompt += '\n\nRules: each Ad uses a DIFFERENT hook angle. Primary text 90-140 chars. Headline ≤27. Description ≤27.';
-    prompt += '\nReturn ONLY this JSON:\n';
-    prompt += '{ "ads": [{\n';
-    prompt += '  "name": "",\n';
-    prompt += '  "creative_type": "single_image|single_video|carousel",\n';
-    prompt += '  "hook": { "text": "", "type": "question|bold|story|data|direct|curiosity|challenge" },\n';
-    prompt += '  "creative": { "primary_text": "", "headline": "", "description": "", "cta_type": "LEARN_MORE|SHOP_NOW|...", "cta_link": "" }\n';
-    prompt += '}] }';
-    prompt += '\n\nNo markdown, no preamble.';
+    prompt += '\n\nValid CTA keys: ' + ctaList;
+    prompt += '\n\nRules:';
+    prompt += '\n- Generate exactly 3 Ads. Each uses a DIFFERENT hook angle and hook type — no two Ads should feel interchangeable.';
+    prompt += '\n- name ≤60 chars, descriptive (e.g. "Regret hook — testimonial").';
+    prompt += '\n- hook.text: the opening line/headline that makes someone stop scrolling. ≤90 chars.';
+    prompt += '\n- hook.type: one of question|bold|story|data|direct|curiosity|challenge.';
+    prompt += '\n- primary_text: 90-140 chars, conversational, expands on the hook with a single concrete payoff.';
+    prompt += '\n- headline: ≤27 chars. description: ≤27 chars. Both must be specific, not generic.';
+    prompt += '\n- cta_type: pick from the CTA keys above that fits the objective.';
+    prompt += '\n- cta_link: empty string (user fills landing URL later).';
+    prompt += '\n- creative_type: pick single_image, single_video, or carousel based on what the hook needs.';
+    prompt += '\n- Output strict JSON only, no preamble, no markdown:\n';
+    prompt += '{"ads":[{"name":"","creative_type":"single_image","hook":{"text":"","type":"direct"},"creative":{"primary_text":"","headline":"","description":"","cta_type":"LEARN_MORE","cta_link":""}}]}';
 
     callAIWithRetry(prompt, function(parsed) {
       var ads = (parsed && Array.isArray(parsed.ads)) ? parsed.ads : [];
@@ -16106,9 +16001,6 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
       triggerImageUpload();
     });
     // --- Stage 4: Meta v2 AI buttons (replace Stage 1/2 stubs) ---
-    $(document).off('click.cp2b-ai-tree').on('click.cp2b-ai-tree', '[data-action="ai-generate-campaign-tree"]', function(e) {
-      e.preventDefault(); aiGenerateCampaignTree();
-    });
     $(document).off('click.cp2b-ai-sug-sets').on('click.cp2b-ai-sug-sets', '[data-action="ai-suggest-ad-sets"]', function(e) {
       e.preventDefault(); aiSuggestAdSets($(this).data('campaign-id'));
     });
@@ -16286,7 +16178,6 @@ window.CP_BUILD_TIME = "2026-05-13T11:32:58.656Z";
     openMediaBriefPreview: openMediaBriefPreview,
 
     // Meta v2 AI
-    aiGenerateCampaignTree: aiGenerateCampaignTree,
     aiSuggestAdSets: aiSuggestAdSets, aiSuggestAds: aiSuggestAds,
     aiGenerateAdSetBrief: aiGenerateAdSetBrief,
     aiGenerateAdHooks: aiGenerateAdHooks,

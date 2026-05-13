@@ -53,7 +53,6 @@
     html += '<div class="cp-view-header"><div class="cp-view-header-left"><h1>' + icon('chart-pie') + ' Dashboard</h1></div>';
     html += '<div class="cp-view-header-right">';
     html += '<button class="cp-btn cp-btn-ai" data-action="new-campaign-v2">' + icon('wand-magic') + ' New Campaign</button>';
-    html += '<button class="cp-btn cp-btn-outline" data-action="ai-generate-campaign-tree">' + icon('sparkles') + ' Quick draft from brief</button>';
     html += '<button class="cp-btn cp-btn-outline" data-action="go-view" data-view="research">' + icon('flask') + ' Research Lab</button>';
     html += '</div></div>';
 

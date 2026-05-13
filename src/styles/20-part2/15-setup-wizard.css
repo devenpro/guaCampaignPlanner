@@ -513,10 +513,11 @@
 .cp-ncw-footer-center { flex: 1; text-align: center; }
 .cp-ncw-step-counter { font-size: var(--cp-font-size-xs); color: var(--cp-text-muted); }
 .cp-ncw-gen-bar {
-  display: flex; gap: var(--cp-space-2); align-items: flex-start;
+  display: flex; gap: var(--cp-space-2); align-items: center; flex-wrap: wrap;
   margin: var(--cp-space-3) 0;
 }
 .cp-ncw-gen-bar .cp-textarea { flex: 1; }
+.cp-ncw-gen-hint { font-size: var(--cp-font-size-xs); flex: 1 1 200px; }
 .cp-ncw-empty {
   display: flex; flex-direction: column; align-items: center;
   padding: var(--cp-space-6); color: var(--cp-text-muted);

@@ -116,6 +116,7 @@
     // Setup Wizard finalize
     R.finalizeSetupWizard        = finalizeSetupWizard;
     // New Campaign Wizard AI + finalize
+    R.ncwAIDraftCampaign         = ncwAIDraftCampaign;
     R.ncwAISuggestAdSets         = ncwAISuggestAdSets;
     R.ncwAISuggestAds            = ncwAISuggestAds;
     R.finalizeNewCampaignWizard  = finalizeNewCampaignWizard;

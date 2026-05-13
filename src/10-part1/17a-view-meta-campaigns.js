@@ -26,9 +26,8 @@
     html += '<h1>' + icon('bullhorn') + ' Campaigns</h1>';
     html += '<span class="cp-view-subtitle">' + filtered.length + ' campaign' + (filtered.length !== 1 ? 's' : '') + ' · Meta-native structure</span>';
     html += '</div><div class="cp-view-header-right">';
-    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-campaign-tree">' + icon('wand-magic') + ' Generate from brief</button>';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-export-open">' + icon('download') + ' Export all</button>';
-    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-campaign-v2">' + icon('plus') + ' New Campaign</button>';
+    html += '<button class="cp-btn cp-btn-ai cp-btn-sm" data-action="new-campaign-v2">' + icon('wand-magic') + ' New Campaign</button>';
     html += '</div></div>';
 
     // Toolbar
@@ -51,10 +50,9 @@
       html += '<div class="cp-empty-state-icon">' + icon('bullhorn') + '</div>';
       if (camps.length === 0) {
         html += '<div class="cp-empty-state-title">No campaigns yet</div>';
-        html += '<div class="cp-empty-state-text">Start with the AI brief-to-tree generator, or create one manually.</div>';
+        html += '<div class="cp-empty-state-text">Open the New Campaign wizard — write a brief, let AI draft the basics, then select Ad Sets and Ads.</div>';
         html += '<div style="display:flex;gap:var(--cp-space-2);justify-content:center;margin-top:var(--cp-space-3)">';
-        html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-campaign-tree">' + icon('wand-magic') + ' Generate from brief</button>';
-        html += '<button class="cp-btn cp-btn-primary" data-action="new-campaign-v2">' + icon('plus') + ' New Campaign</button>';
+        html += '<button class="cp-btn cp-btn-ai" data-action="new-campaign-v2">' + icon('wand-magic') + ' New Campaign</button>';
         html += '</div>';
       } else {
         html += '<div class="cp-empty-state-title">No campaigns match</div>';

@@ -1,4 +1,4 @@
-/* Campaign Planner v1.0.1 · built 2026-05-13T11:32:58.656Z · 44 source files (see src/) */
+/* Campaign Planner v1.0.1 · built 2026-05-13T12:16:47.376Z · 44 source files (see src/) */
 
 /* ===== src/styles/10-part1/00-header.css ===== */
 /**
@@ -3600,10 +3600,11 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 .cp-ncw-footer-center { flex: 1; text-align: center; }
 .cp-ncw-step-counter { font-size: var(--cp-font-size-xs); color: var(--cp-text-muted); }
 .cp-ncw-gen-bar {
-  display: flex; gap: var(--cp-space-2); align-items: flex-start;
+  display: flex; gap: var(--cp-space-2); align-items: center; flex-wrap: wrap;
   margin: var(--cp-space-3) 0;
 }
 .cp-ncw-gen-bar .cp-textarea { flex: 1; }
+.cp-ncw-gen-hint { font-size: var(--cp-font-size-xs); flex: 1 1 200px; }
 .cp-ncw-empty {
   display: flex; flex-direction: column; align-items: center;
   padding: var(--cp-space-6); color: var(--cp-text-muted);

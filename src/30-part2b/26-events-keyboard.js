@@ -173,9 +173,6 @@
       triggerImageUpload();
     });
     // --- Stage 4: Meta v2 AI buttons (replace Stage 1/2 stubs) ---
-    $(document).off('click.cp2b-ai-tree').on('click.cp2b-ai-tree', '[data-action="ai-generate-campaign-tree"]', function(e) {
-      e.preventDefault(); aiGenerateCampaignTree();
-    });
     $(document).off('click.cp2b-ai-sug-sets').on('click.cp2b-ai-sug-sets', '[data-action="ai-suggest-ad-sets"]', function(e) {
       e.preventDefault(); aiSuggestAdSets($(this).data('campaign-id'));
     });
