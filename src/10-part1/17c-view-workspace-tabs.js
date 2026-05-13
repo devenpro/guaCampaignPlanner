@@ -357,15 +357,16 @@
 
   function renderAdMediaImage(ad) {
     var img = (ad.media && ad.media.image) || {};
+    // Single prompt field. Falls back to legacy ai_prompt / brief so existing
+    // ads keep displaying their content; new edits write to `prompt`.
+    var promptValue = img.prompt || img.ai_prompt || img.brief || '';
+
     var html = '';
     html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('image') + ' Image brief</div>';
-    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="media.image.brief" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="3" placeholder="What should the image show? Subject, composition, mood, lighting.">' + esc(img.brief || '') + '</textarea>';
+    html += '<div class="cp-inspector-section-title">' + icon('image') + ' Image prompt';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">Plain description or a production-grade generator prompt — used in the exported brief.</span>';
     html += '</div>';
-
-    html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('wand-magic') + ' AI image prompt</div>';
-    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="media.image.ai_prompt" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="3" placeholder="Production-grade prompt for Midjourney / SDXL / Imagen.">' + esc(img.ai_prompt || '') + '</textarea>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="media.image.prompt" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="5" placeholder="Describe the image you want, or paste a generator prompt. Hand off via Copy JSON / MCP brief / Download below.">' + esc(promptValue) + '</textarea>';
     html += '<div class="cp-form-row" style="margin-top:var(--cp-space-2)">';
     html += '<div class="cp-form-third"><label>Aspect ratio</label>';
     html += '<select class="cp-select cp-v2-inline-field" data-field="media.image.aspect_ratio" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
@@ -374,14 +375,11 @@
       var sel = (img.aspect_ratio === aspects[i]) ? ' selected' : '';
       html += '<option value="' + aspects[i] + '"' + sel + '>' + aspects[i] + '</option>';
     }
-    html += '</select></div>';
-    html += '<div class="cp-form-grow"><label>Negative prompt</label>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="media.image.negative_prompt" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(img.negative_prompt || '') + '" placeholder="things to avoid">';
-    html += '</div></div>';
+    html += '</select></div></div>';
     html += '</div>';
 
     html += '<div class="cp-inspector-actions">';
-    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-ad-image-prompt" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate prompt from brief</button>';
+    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-ad-image-prompt" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate prompt from ad data</button>';
     html += '</div>';
     return html;
   }
@@ -673,7 +671,8 @@
     var media = ad.media || {};
     if (ad.creative_type === 'single_image') {
       var img = media.image || {};
-      return !!(img.asset_id || (img.ai_prompt && img.ai_prompt.length > 10) || (img.brief && img.brief.length > 20));
+      var p = (img.prompt || img.ai_prompt || img.brief || '').trim();
+      return !!(img.asset_id || p.length > 10);
     } else if (ad.creative_type === 'single_video') {
       var vid = media.video || {};
       return !!(vid.asset_id || vid.concept || (vid.script && vid.script.rows && vid.script.rows.length) || (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length));
@@ -696,7 +695,7 @@
     if (!ad) return true;
     var m = ad.media || {};
     var img = m.image || {};
-    if ((img.brief || '').trim() || (img.ai_prompt || '').trim() || img.asset_id || (img.negative_prompt || '').trim()) return false;
+    if ((img.prompt || '').trim() || (img.ai_prompt || '').trim() || (img.brief || '').trim() || img.asset_id || (img.negative_prompt || '').trim()) return false;
     var vid = m.video || {};
     if ((vid.concept || '').trim() || vid.asset_id) return false;
     if (vid.script && vid.script.rows && vid.script.rows.length) return false;

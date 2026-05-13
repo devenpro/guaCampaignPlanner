@@ -248,7 +248,7 @@
             display_link: '', tracking_params: ''
           },
           media: {
-            image: { asset_id: '', ai_prompt: m.image_prompt || '', brief: m.image_brief || '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] },
+            image: { asset_id: '', prompt: m.image_prompt || m.image_brief || '', aspect_ratio: '1:1', reference_image_ids: [] },
             video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: m.video_concept || '', blueprint: { scenes: [] }, script: { rows: [] } },
             carousel_cards: []
           }

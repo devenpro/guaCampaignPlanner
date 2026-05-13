@@ -3884,17 +3884,16 @@
 
     if (ad.creative_type === 'single_image') {
       var img = media.image || {};
-      var imgFilled = !!(img.brief || img.ai_prompt);
+      var imgPrompt = img.prompt || img.ai_prompt || img.brief || '';
+      var imgFilled = !!imgPrompt;
       pill = imgFilled
         ? '<span class="cp-inspector-status-pill cp-inspector-status-pill-filled">' + icon('circle-check') + ' Filled</span>'
         : '<span class="cp-inspector-status-pill cp-inspector-status-pill-empty">' + icon('circle') + ' Not set</span>';
       if (imgFilled) {
-        body = '';
-        if (img.brief)     body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Brief</div><div class="cp-inspector-field-value">' + esc(truncate(img.brief, 200)) + '</div></div>';
-        if (img.ai_prompt) body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">AI prompt</div><div class="cp-inspector-field-value">' + esc(truncate(img.ai_prompt, 200)) + '</div></div>';
-        body += '<div class="cp-text-muted" style="font-size:11px;margin-top:4px">Aspect: ' + esc(img.aspect_ratio || '1:1') + (img.negative_prompt ? ' · Neg: ' + esc(truncate(img.negative_prompt, 60)) : '') + '</div>';
+        body = '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Prompt</div><div class="cp-inspector-field-value">' + esc(truncate(imgPrompt, 240)) + '</div></div>';
+        body += '<div class="cp-text-muted" style="font-size:11px;margin-top:4px">Aspect: ' + esc(img.aspect_ratio || '1:1') + '</div>';
       } else {
-        body = '<div class="cp-text-muted">No image brief yet. Open the Media tab to fill it in.</div>';
+        body = '<div class="cp-text-muted">No image prompt yet. Open the Media tab to add one.</div>';
       }
     } else if (ad.creative_type === 'single_video') {
       var vid = media.video || {};
@@ -4375,15 +4374,16 @@
 
   function renderAdMediaImage(ad) {
     var img = (ad.media && ad.media.image) || {};
+    // Single prompt field. Falls back to legacy ai_prompt / brief so existing
+    // ads keep displaying their content; new edits write to `prompt`.
+    var promptValue = img.prompt || img.ai_prompt || img.brief || '';
+
     var html = '';
     html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('image') + ' Image brief</div>';
-    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="media.image.brief" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="3" placeholder="What should the image show? Subject, composition, mood, lighting.">' + esc(img.brief || '') + '</textarea>';
+    html += '<div class="cp-inspector-section-title">' + icon('image') + ' Image prompt';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">Plain description or a production-grade generator prompt — used in the exported brief.</span>';
     html += '</div>';
-
-    html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('wand-magic') + ' AI image prompt</div>';
-    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="media.image.ai_prompt" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="3" placeholder="Production-grade prompt for Midjourney / SDXL / Imagen.">' + esc(img.ai_prompt || '') + '</textarea>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="media.image.prompt" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="5" placeholder="Describe the image you want, or paste a generator prompt. Hand off via Copy JSON / MCP brief / Download below.">' + esc(promptValue) + '</textarea>';
     html += '<div class="cp-form-row" style="margin-top:var(--cp-space-2)">';
     html += '<div class="cp-form-third"><label>Aspect ratio</label>';
     html += '<select class="cp-select cp-v2-inline-field" data-field="media.image.aspect_ratio" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
@@ -4392,14 +4392,11 @@
       var sel = (img.aspect_ratio === aspects[i]) ? ' selected' : '';
       html += '<option value="' + aspects[i] + '"' + sel + '>' + aspects[i] + '</option>';
     }
-    html += '</select></div>';
-    html += '<div class="cp-form-grow"><label>Negative prompt</label>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="media.image.negative_prompt" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(img.negative_prompt || '') + '" placeholder="things to avoid">';
-    html += '</div></div>';
+    html += '</select></div></div>';
     html += '</div>';
 
     html += '<div class="cp-inspector-actions">';
-    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-ad-image-prompt" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate prompt from brief</button>';
+    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-ad-image-prompt" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate prompt from ad data</button>';
     html += '</div>';
     return html;
   }
@@ -4691,7 +4688,8 @@
     var media = ad.media || {};
     if (ad.creative_type === 'single_image') {
       var img = media.image || {};
-      return !!(img.asset_id || (img.ai_prompt && img.ai_prompt.length > 10) || (img.brief && img.brief.length > 20));
+      var p = (img.prompt || img.ai_prompt || img.brief || '').trim();
+      return !!(img.asset_id || p.length > 10);
     } else if (ad.creative_type === 'single_video') {
       var vid = media.video || {};
       return !!(vid.asset_id || vid.concept || (vid.script && vid.script.rows && vid.script.rows.length) || (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length));
@@ -4714,7 +4712,7 @@
     if (!ad) return true;
     var m = ad.media || {};
     var img = m.image || {};
-    if ((img.brief || '').trim() || (img.ai_prompt || '').trim() || img.asset_id || (img.negative_prompt || '').trim()) return false;
+    if ((img.prompt || '').trim() || (img.ai_prompt || '').trim() || (img.brief || '').trim() || img.asset_id || (img.negative_prompt || '').trim()) return false;
     var vid = m.video || {};
     if ((vid.concept || '').trim() || vid.asset_id) return false;
     if (vid.script && vid.script.rows && vid.script.rows.length) return false;
@@ -5720,7 +5718,7 @@
           creative: { primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' },
           hook: { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' },
           media: {
-            image: { asset_id: '', ai_prompt: '', brief: '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] },
+            image: { asset_id: '', prompt: '', aspect_ratio: '1:1', reference_image_ids: [] },
             video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', blueprint: { scenes: [] }, script: { rows: [] } },
             carousel_cards: []
           },
@@ -7752,10 +7750,8 @@
 
     // Single image fields
     html += '<div class="cp-v2-media-image" data-show-for="single_image">';
-    html += '<div class="cp-form-group"><label>Image brief</label>';
-    html += '<textarea class="cp-textarea" data-field="media.image.brief" rows="2" placeholder="What should the image show? Mood, subject, composition...">' + esc(img.brief || '') + '</textarea></div>';
-    html += '<div class="cp-form-row"><div class="cp-form-grow"><label>AI image prompt</label>';
-    html += '<textarea class="cp-textarea" data-field="media.image.ai_prompt" rows="2" placeholder="Auto-generated or hand-crafted Midjourney / SDXL / Imagen prompt.">' + esc(img.ai_prompt || '') + '</textarea>';
+    html += '<div class="cp-form-row"><div class="cp-form-grow"><label>Image prompt</label>';
+    html += '<textarea class="cp-textarea" data-field="media.image.prompt" rows="3" placeholder="Describe the image you want, or paste a generator prompt — hand off via the media brief export.">' + esc(img.prompt || img.ai_prompt || img.brief || '') + '</textarea>';
     html += '</div><div class="cp-form-third"><label>Aspect ratio</label>';
     html += '<select class="cp-select" data-field="media.image.aspect_ratio">';
     var imgAspects = ['1:1','4:5','9:16','16:9'];
@@ -7836,8 +7832,7 @@
           },
           media: {
             image: $.extend({}, img, {
-              brief: fields['media.image.brief'] || '',
-              ai_prompt: fields['media.image.ai_prompt'] || '',
+              prompt: fields['media.image.prompt'] || '',
               aspect_ratio: fields['media.image.aspect_ratio'] || '1:1'
             }),
             video: $.extend({}, vid, {
@@ -12807,7 +12802,7 @@
           hook: { text: (aData.hook && aData.hook.text) || '', type: (aData.hook && aData.hook.type) || 'direct', source_message_id: '', selected_hook_id: '' },
           creative: $.extend({ primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' }, aData.creative || {}),
           media: {
-            image: { asset_id: '', ai_prompt: (aData.media && aData.media.image_prompt) || '', brief: (aData.media && aData.media.image_brief) || '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] },
+            image: { asset_id: '', prompt: (aData.media && (aData.media.image_prompt || aData.media.image_brief)) || '', aspect_ratio: '1:1', reference_image_ids: [] },
             video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: (aData.media && aData.media.video_concept) || '', blueprint: { scenes: [] }, script: { rows: [] } },
             carousel_cards: []
           }
@@ -13103,17 +13098,17 @@
     if (camp) prompt += aiV2_campaignContext(camp) + '\n';
     if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
     if (ad.creative && ad.creative.primary_text) prompt += 'Ad copy: ' + ad.creative.primary_text + '\n';
-    if (img.brief) prompt += 'Image brief: ' + img.brief + '\n';
+    var existingImagePrompt = img.prompt || img.ai_prompt || img.brief;
+    if (existingImagePrompt) prompt += 'Existing image direction (refine this): ' + existingImagePrompt + '\n';
     prompt += '\n' + BrandService.getBrandDesignPrompt();
-    prompt += '\n\nReturn JSON only: {"prompt":"","negative_prompt":""}';
+    prompt += '\n\nReturn JSON only: {"prompt":""}';
 
     toast('AI generating prompt...', 'info');
     callAIWithRetry(prompt, function(parsed) {
       if (!parsed || !parsed.prompt) { toast('AI returned no prompt', 'warning'); return; }
       snapshot('AI image prompt');
       ad.media = ad.media || {}; ad.media.image = ad.media.image || {};
-      ad.media.image.ai_prompt = parsed.prompt;
-      if (parsed.negative_prompt) ad.media.image.negative_prompt = parsed.negative_prompt;
+      ad.media.image.prompt = parsed.prompt;
       ad.updated = new Date().toISOString();
       if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'image prompt');
       buildMaps(); syncToTextarea(); render();
@@ -13440,7 +13435,7 @@
             display_link: '', tracking_params: ''
           },
           media: {
-            image: { asset_id: '', ai_prompt: m.image_prompt || '', brief: m.image_brief || '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] },
+            image: { asset_id: '', prompt: m.image_prompt || m.image_brief || '', aspect_ratio: '1:1', reference_image_ids: [] },
             video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: m.video_concept || '', blueprint: { scenes: [] }, script: { rows: [] } },
             carousel_cards: []
           }
@@ -14750,7 +14745,7 @@
           else if (!/^https?:\/\//i.test(cr.cta_link)) errors.push('Ad "' + a.name + '" cta_link is not a valid URL');
           if (a.creative_type === 'single_image') {
             var img = (a.media && a.media.image) || {};
-            if (!img.asset_id && !img.ai_prompt && !img.brief) warnings.push('Ad "' + a.name + '" (single_image) has no image asset or brief');
+            if (!img.asset_id && !img.prompt && !img.ai_prompt && !img.brief) warnings.push('Ad "' + a.name + '" (single_image) has no image asset or prompt');
           }
           if (a.creative_type === 'carousel') {
             var cards = (a.media && a.media.carousel_cards) || [];
@@ -14883,8 +14878,7 @@
           'Hook Type': (a.hook && a.hook.type) || '',
           'Image Asset ID': (m.image && m.image.asset_id) || '',
           'Image Aspect Ratio': (m.image && m.image.aspect_ratio) || '',
-          'Image Brief': (m.image && m.image.brief) || '',
-          'AI Image Prompt': (m.image && m.image.ai_prompt) || '',
+          'Image Prompt': (m.image && (m.image.prompt || m.image.ai_prompt || m.image.brief)) || '',
           'Video Asset ID': (m.video && m.video.asset_id) || '',
           'Video Duration (s)': (m.video && m.video.duration_seconds) || '',
           'Video Aspect Ratio': (m.video && m.video.aspect_ratio) || '',
@@ -14992,7 +14986,7 @@
   // and the media direction (image brief + AI prompt, video scenes +
   // script, or carousel cards) in one self-contained document.
 
-  var MEDIA_BRIEF_SCHEMA_VERSION = '1.0';
+  var MEDIA_BRIEF_SCHEMA_VERSION = '1.1';
 
   function buildAdMediaBrief(adId, opts) {
     opts = opts || {};
@@ -15096,10 +15090,8 @@
       return {
         type: 'image',
         image: {
-          brief: img.brief || '',
-          ai_prompt: img.ai_prompt || '',
+          prompt: img.prompt || img.ai_prompt || img.brief || '',
           aspect_ratio: img.aspect_ratio || '1:1',
-          negative_prompt: img.negative_prompt || '',
           reference_image_ids: img.reference_image_ids || []
         }
       };
@@ -15183,7 +15175,7 @@
   function _mcpInstructions(ctype) {
     var common = 'This is a Meta Ads creative brief. Use the fields under `ad` (hook, copy, audience, brand) as creative direction. The `media` block tells you what kind of asset to produce and how. Match brand voice from `ad.brand.voice` and design tokens from `ad.brand.design`. Aim for the aspect_ratio and duration specified. Keep dialogue/headlines under the character limits the brief implies.';
     if (ctype === 'single_image') {
-      return common + ' For image: pass `media.image.ai_prompt` to your image-generation tool, applying `media.image.negative_prompt` if your tool supports it. Aspect ratio is in `media.image.aspect_ratio`.';
+      return common + ' For image: pass `media.image.prompt` to your image-generation tool. Aspect ratio is in `media.image.aspect_ratio`.';
     }
     if (ctype === 'single_video') {
       return common + ' For video: each entry in `media.video.scenes` is one storyboard beat — generate one clip per scene at the implied duration, then concat. Use `media.video.script` for time-coded dialogue/voiceover and on-screen visuals. Aspect ratio is in `media.video.aspect_ratio`.';

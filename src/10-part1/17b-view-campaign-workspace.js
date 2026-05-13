@@ -524,17 +524,16 @@
 
     if (ad.creative_type === 'single_image') {
       var img = media.image || {};
-      var imgFilled = !!(img.brief || img.ai_prompt);
+      var imgPrompt = img.prompt || img.ai_prompt || img.brief || '';
+      var imgFilled = !!imgPrompt;
       pill = imgFilled
         ? '<span class="cp-inspector-status-pill cp-inspector-status-pill-filled">' + icon('circle-check') + ' Filled</span>'
         : '<span class="cp-inspector-status-pill cp-inspector-status-pill-empty">' + icon('circle') + ' Not set</span>';
       if (imgFilled) {
-        body = '';
-        if (img.brief)     body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Brief</div><div class="cp-inspector-field-value">' + esc(truncate(img.brief, 200)) + '</div></div>';
-        if (img.ai_prompt) body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">AI prompt</div><div class="cp-inspector-field-value">' + esc(truncate(img.ai_prompt, 200)) + '</div></div>';
-        body += '<div class="cp-text-muted" style="font-size:11px;margin-top:4px">Aspect: ' + esc(img.aspect_ratio || '1:1') + (img.negative_prompt ? ' · Neg: ' + esc(truncate(img.negative_prompt, 60)) : '') + '</div>';
+        body = '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Prompt</div><div class="cp-inspector-field-value">' + esc(truncate(imgPrompt, 240)) + '</div></div>';
+        body += '<div class="cp-text-muted" style="font-size:11px;margin-top:4px">Aspect: ' + esc(img.aspect_ratio || '1:1') + '</div>';
       } else {
-        body = '<div class="cp-text-muted">No image brief yet. Open the Media tab to fill it in.</div>';
+        body = '<div class="cp-text-muted">No image prompt yet. Open the Media tab to add one.</div>';
       }
     } else if (ad.creative_type === 'single_video') {
       var vid = media.video || {};

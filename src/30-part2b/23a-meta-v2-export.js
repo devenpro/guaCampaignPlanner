@@ -110,7 +110,7 @@
           else if (!/^https?:\/\//i.test(cr.cta_link)) errors.push('Ad "' + a.name + '" cta_link is not a valid URL');
           if (a.creative_type === 'single_image') {
             var img = (a.media && a.media.image) || {};
-            if (!img.asset_id && !img.ai_prompt && !img.brief) warnings.push('Ad "' + a.name + '" (single_image) has no image asset or brief');
+            if (!img.asset_id && !img.prompt && !img.ai_prompt && !img.brief) warnings.push('Ad "' + a.name + '" (single_image) has no image asset or prompt');
           }
           if (a.creative_type === 'carousel') {
             var cards = (a.media && a.media.carousel_cards) || [];
@@ -243,8 +243,7 @@
           'Hook Type': (a.hook && a.hook.type) || '',
           'Image Asset ID': (m.image && m.image.asset_id) || '',
           'Image Aspect Ratio': (m.image && m.image.aspect_ratio) || '',
-          'Image Brief': (m.image && m.image.brief) || '',
-          'AI Image Prompt': (m.image && m.image.ai_prompt) || '',
+          'Image Prompt': (m.image && (m.image.prompt || m.image.ai_prompt || m.image.brief)) || '',
           'Video Asset ID': (m.video && m.video.asset_id) || '',
           'Video Duration (s)': (m.video && m.video.duration_seconds) || '',
           'Video Aspect Ratio': (m.video && m.video.aspect_ratio) || '',

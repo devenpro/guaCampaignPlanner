@@ -240,7 +240,7 @@
           hook: { text: (aData.hook && aData.hook.text) || '', type: (aData.hook && aData.hook.type) || 'direct', source_message_id: '', selected_hook_id: '' },
           creative: $.extend({ primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' }, aData.creative || {}),
           media: {
-            image: { asset_id: '', ai_prompt: (aData.media && aData.media.image_prompt) || '', brief: (aData.media && aData.media.image_brief) || '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] },
+            image: { asset_id: '', prompt: (aData.media && (aData.media.image_prompt || aData.media.image_brief)) || '', aspect_ratio: '1:1', reference_image_ids: [] },
             video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: (aData.media && aData.media.video_concept) || '', blueprint: { scenes: [] }, script: { rows: [] } },
             carousel_cards: []
           }
@@ -536,17 +536,17 @@
     if (camp) prompt += aiV2_campaignContext(camp) + '\n';
     if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
     if (ad.creative && ad.creative.primary_text) prompt += 'Ad copy: ' + ad.creative.primary_text + '\n';
-    if (img.brief) prompt += 'Image brief: ' + img.brief + '\n';
+    var existingImagePrompt = img.prompt || img.ai_prompt || img.brief;
+    if (existingImagePrompt) prompt += 'Existing image direction (refine this): ' + existingImagePrompt + '\n';
     prompt += '\n' + BrandService.getBrandDesignPrompt();
-    prompt += '\n\nReturn JSON only: {"prompt":"","negative_prompt":""}';
+    prompt += '\n\nReturn JSON only: {"prompt":""}';
 
     toast('AI generating prompt...', 'info');
     callAIWithRetry(prompt, function(parsed) {
       if (!parsed || !parsed.prompt) { toast('AI returned no prompt', 'warning'); return; }
       snapshot('AI image prompt');
       ad.media = ad.media || {}; ad.media.image = ad.media.image || {};
-      ad.media.image.ai_prompt = parsed.prompt;
-      if (parsed.negative_prompt) ad.media.image.negative_prompt = parsed.negative_prompt;
+      ad.media.image.prompt = parsed.prompt;
       ad.updated = new Date().toISOString();
       if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'image prompt');
       buildMaps(); syncToTextarea(); render();

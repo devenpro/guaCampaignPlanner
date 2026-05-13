@@ -12,7 +12,7 @@
   // and the media direction (image brief + AI prompt, video scenes +
   // script, or carousel cards) in one self-contained document.
 
-  var MEDIA_BRIEF_SCHEMA_VERSION = '1.0';
+  var MEDIA_BRIEF_SCHEMA_VERSION = '1.1';
 
   function buildAdMediaBrief(adId, opts) {
     opts = opts || {};
@@ -116,10 +116,8 @@
       return {
         type: 'image',
         image: {
-          brief: img.brief || '',
-          ai_prompt: img.ai_prompt || '',
+          prompt: img.prompt || img.ai_prompt || img.brief || '',
           aspect_ratio: img.aspect_ratio || '1:1',
-          negative_prompt: img.negative_prompt || '',
           reference_image_ids: img.reference_image_ids || []
         }
       };
@@ -203,7 +201,7 @@
   function _mcpInstructions(ctype) {
     var common = 'This is a Meta Ads creative brief. Use the fields under `ad` (hook, copy, audience, brand) as creative direction. The `media` block tells you what kind of asset to produce and how. Match brand voice from `ad.brand.voice` and design tokens from `ad.brand.design`. Aim for the aspect_ratio and duration specified. Keep dialogue/headlines under the character limits the brief implies.';
     if (ctype === 'single_image') {
-      return common + ' For image: pass `media.image.ai_prompt` to your image-generation tool, applying `media.image.negative_prompt` if your tool supports it. Aspect ratio is in `media.image.aspect_ratio`.';
+      return common + ' For image: pass `media.image.prompt` to your image-generation tool. Aspect ratio is in `media.image.aspect_ratio`.';
     }
     if (ctype === 'single_video') {
       return common + ' For video: each entry in `media.video.scenes` is one storyboard beat — generate one clip per scene at the implied duration, then concat. Use `media.video.script` for time-coded dialogue/voiceover and on-screen visuals. Aspect ratio is in `media.video.aspect_ratio`.';

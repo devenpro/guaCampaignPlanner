@@ -135,7 +135,7 @@
           creative: { primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' },
           hook: { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' },
           media: {
-            image: { asset_id: '', ai_prompt: '', brief: '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] },
+            image: { asset_id: '', prompt: '', aspect_ratio: '1:1', reference_image_ids: [] },
             video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', blueprint: { scenes: [] }, script: { rows: [] } },
             carousel_cards: []
           },
