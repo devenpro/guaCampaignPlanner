@@ -1,4 +1,6 @@
-/* Campaign Planner — built from 83 source files (see src/) */
+/* Campaign Planner v1.0.0 · built 2026-05-13T10:59:38.473Z · 83 source files (see src/) */
+window.CP_VERSION = "1.0.0";
+window.CP_BUILD_TIME = "2026-05-13T10:59:38.473Z";
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -622,6 +624,7 @@
 
   function isCpPage() { return $('body').hasClass('node--type-campaign-planner'); }
 
+  console.log('%c[CP] Campaign Planner v' + (window.CP_VERSION || 'dev') + ' · built ' + (window.CP_BUILD_TIME || 'local'), 'font-weight:bold;color:#1a73e8');
   console.log('[CP] Part 1 script loaded. Page check: isCpPage=' + isCpPage() + ', body classes: ' + ($('body').attr('class') || '').substring(0, 120));
 
   Drupal.behaviors = Drupal.behaviors || {};
@@ -1857,6 +1860,12 @@
     html += '<div class="cp-sidebar-footer-label">Workspace</div>';
     html += '<div class="cp-sidebar-footer-name">' + esc(ws.name || 'Meta Campaign Planner') + '</div>';
     html += '<div class="cp-sidebar-footer-meta">Meta Ads' + (setup.setup_complete ? ' · Setup ✓' : '') + (setup.meta_v2 ? ' · v2' : '') + '</div>';
+    var v = window.CP_VERSION || '';
+    var bt = window.CP_BUILD_TIME || '';
+    var chipHref = v
+      ? 'https://github.com/devenpro/guaCampaignPlanner/releases/tag/v' + esc(v)
+      : 'https://github.com/devenpro/guaCampaignPlanner';
+    html += '<a class="cp-version-chip" href="' + chipHref + '" target="_blank" rel="noopener" title="' + esc(bt ? 'Built ' + bt : 'dev build') + '">v' + esc(v || 'dev') + '</a>';
     html += '</div>';
 
     html += '</div></div>';

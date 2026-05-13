@@ -4,6 +4,7 @@
 
   function isCpPage() { return $('body').hasClass('node--type-campaign-planner'); }
 
+  console.log('%c[CP] Campaign Planner v' + (window.CP_VERSION || 'dev') + ' · built ' + (window.CP_BUILD_TIME || 'local'), 'font-weight:bold;color:#1a73e8');
   console.log('[CP] Part 1 script loaded. Page check: isCpPage=' + isCpPage() + ', body classes: ' + ($('body').attr('class') || '').substring(0, 120));
 
   Drupal.behaviors = Drupal.behaviors || {};

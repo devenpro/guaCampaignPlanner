@@ -8,6 +8,10 @@
 import { readdirSync, readFileSync, writeFileSync, statSync, mkdirSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
+const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+const version = pkg.version || 'dev';
+const buildTime = new Date().toISOString();
+
 const targets = [
   { src: 'src',        out: 'dist/app.js',  ext: '.js',  skipDir: 'styles' },
   { src: 'src/styles', out: 'dist/app.css', ext: '.css' },
@@ -26,10 +30,15 @@ mkdirSync('dist', { recursive: true });
 
 for (const { src, out, ext, skipDir } of targets) {
   const files = walk(src, ext, skipDir);
-  const banner = `/* Campaign Planner — built from ${files.length} source files (see src/) */\n`;
+  const banner = `/* Campaign Planner v${version} · built ${buildTime} · ${files.length} source files (see src/) */\n`;
+  // JS bundle gets a global-scope prologue so any IIFE can read the version
+  // off `window`. CSS bundle just gets the banner comment.
+  const prologue = ext === '.js'
+    ? `window.CP_VERSION = ${JSON.stringify(version)};\nwindow.CP_BUILD_TIME = ${JSON.stringify(buildTime)};\n`
+    : '';
   const body = files.map(f =>
     `\n/* ===== ${relative('.', f).replace(/\\/g, '/')} ===== */\n` + readFileSync(f, 'utf8')
   ).join('');
-  writeFileSync(out, banner + body);
-  console.log(`✓ ${out}  ←  ${files.length} files  (${(banner + body).length} bytes)`);
+  writeFileSync(out, banner + prologue + body);
+  console.log(`✓ ${out}  ←  ${files.length} files  (${(banner + prologue + body).length} bytes)`);
 }

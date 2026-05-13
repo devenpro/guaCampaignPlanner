@@ -1,4 +1,4 @@
-/* Campaign Planner — built from 44 source files (see src/) */
+/* Campaign Planner v1.0.0 · built 2026-05-13T10:59:38.473Z · 44 source files (see src/) */
 
 /* ===== src/styles/10-part1/00-header.css ===== */
 /**
@@ -122,6 +122,8 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 .cp-sidebar-footer-label { font-size: 9px; font-weight: 600; color: var(--cp-text-muted); text-transform: uppercase; }
 .cp-sidebar-footer-name { font-size: var(--cp-font-size-sm); font-weight: 700; color: var(--cp-text-primary); }
 .cp-sidebar-footer-meta { font-size: var(--cp-font-size-xs); color: var(--cp-text-muted); }
+.cp-version-chip { display: inline-block; margin-top: var(--cp-space-2); font-size: 10px; font-weight: 600; color: var(--cp-text-muted); text-decoration: none; opacity: 0.7; letter-spacing: 0.02em; }
+.cp-version-chip:hover { opacity: 1; color: var(--cp-primary); text-decoration: underline; }
 
 
 /* ===== src/styles/10-part1/06-main-content.css ===== */

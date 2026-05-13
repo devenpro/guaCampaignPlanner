@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: ${{ !startsWith(github.event.head_commit.message, '[release]') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Configure git
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump patch version
+        id: bump
+        run: |
+          new_version=$(npm version patch --no-git-tag-version | tr -d 'v')
+          echo "version=$new_version" >> "$GITHUB_OUTPUT"
+          echo "tag=v$new_version"    >> "$GITHUB_OUTPUT"
+
+      - name: Build bundle
+        run: node scripts/build.mjs
+
+      - name: Commit, tag, push
+        env:
+          TAG: ${{ steps.bump.outputs.tag }}
+        run: |
+          git add package.json dist/app.js dist/app.css
+          git commit -m "[release] $TAG"
+          git tag -a "$TAG" -m "$TAG"
+          git push origin HEAD:main
+          git push origin "$TAG"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.bump.outputs.tag }}
+        run: |
+          # Notes: commits between previous tag and HEAD~1 (skip our own release commit).
+          prev=$(git describe --tags --abbrev=0 "$TAG^" 2>/dev/null || true)
+          if [ -n "$prev" ]; then
+            notes=$(git log --pretty='- %s (%h)' "$prev..HEAD~1")
+          else
+            notes=$(git log --pretty='- %s (%h)' HEAD~1)
+          fi
+          [ -z "$notes" ] && notes="Routine release."
+          gh release create "$TAG" --title "$TAG" --notes "$notes"

@@ -93,6 +93,12 @@
     html += '<div class="cp-sidebar-footer-label">Workspace</div>';
     html += '<div class="cp-sidebar-footer-name">' + esc(ws.name || 'Meta Campaign Planner') + '</div>';
     html += '<div class="cp-sidebar-footer-meta">Meta Ads' + (setup.setup_complete ? ' · Setup ✓' : '') + (setup.meta_v2 ? ' · v2' : '') + '</div>';
+    var v = window.CP_VERSION || '';
+    var bt = window.CP_BUILD_TIME || '';
+    var chipHref = v
+      ? 'https://github.com/devenpro/guaCampaignPlanner/releases/tag/v' + esc(v)
+      : 'https://github.com/devenpro/guaCampaignPlanner';
+    html += '<a class="cp-version-chip" href="' + chipHref + '" target="_blank" rel="noopener" title="' + esc(bt ? 'Built ' + bt : 'dev build') + '">v' + esc(v || 'dev') + '</a>';
     html += '</div>';
 
     html += '</div></div>';
