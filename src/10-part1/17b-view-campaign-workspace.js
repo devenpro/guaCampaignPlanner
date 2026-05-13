@@ -414,10 +414,6 @@
 
     var html = '';
     html += _renderAdOverviewIdentity(ad, camp, adSet, ctype);
-    // Pipeline progress strip — visual stepper, clicking a step jumps to that tab.
-    if (typeof renderAdPipelineProgress === 'function') {
-      html += '<div class="cp-inspector-pipeline-strip">' + renderAdPipelineProgress(ad) + '</div>';
-    }
     html += _renderAdOverviewConfig(ad);
     html += _renderAdSummaryHook(ad);
     html += _renderAdSummaryCopy(ad);

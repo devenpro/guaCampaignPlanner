@@ -3774,10 +3774,6 @@
 
     var html = '';
     html += _renderAdOverviewIdentity(ad, camp, adSet, ctype);
-    // Pipeline progress strip — visual stepper, clicking a step jumps to that tab.
-    if (typeof renderAdPipelineProgress === 'function') {
-      html += '<div class="cp-inspector-pipeline-strip">' + renderAdPipelineProgress(ad) + '</div>';
-    }
     html += _renderAdOverviewConfig(ad);
     html += _renderAdSummaryHook(ad);
     html += _renderAdSummaryCopy(ad);
@@ -4216,13 +4212,7 @@
     if (validTabs.indexOf(tab) === -1) tab = 'overview';
 
     var html = '';
-    html += renderInspectorTabs([
-      { key: 'overview', label: 'Overview', icon: 'eye' },
-      { key: 'hook',     label: 'Hook',     icon: 'anchor' },
-      { key: 'copy',     label: 'Copy',     icon: 'pen-fancy' },
-      { key: 'media',    label: 'Media',    icon: 'wand-magic' },
-      { key: 'review',   label: 'Review',   icon: 'circle-check' }
-    ], tab);
+    html += renderAdWorkflowTabs(ad, tab);
 
     html += '<div class="cp-workspace-inspector-tab-body">';
     if (tab === 'overview')    html += renderInspectorForAd(ad);
@@ -4241,9 +4231,6 @@
     var hookAngles = (adSet && adSet.brief && adSet.brief.hook_angles) || [];
 
     var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
-
-    // Pipeline status indicator
-    html += renderAdPipelineProgress(ad);
 
     // Brief context (read from parent Ad Set)
     if (hookAngles.length || briefMsgs.length) {
@@ -4305,7 +4292,6 @@
   function renderAdCopyStep(ad) {
     var c = ad.creative || {};
     var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
-    html += renderAdPipelineProgress(ad);
 
     html += '<div class="cp-inspector-section">';
     html += '<div class="cp-inspector-section-title">' + icon('pen-fancy') + ' Primary text';
@@ -4363,7 +4349,6 @@
   function renderAdMediaStep(ad) {
     var media = ad.media || {};
     var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
-    html += renderAdPipelineProgress(ad);
 
     // Creative type selector at top
     var C = Constants;
@@ -4544,7 +4529,6 @@
 
   function renderAdReviewStep(ad) {
     var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
-    html += renderAdPipelineProgress(ad);
 
     // Status snapshot — change is in Overview tab's Configuration card.
     var C = Constants;
@@ -4574,42 +4558,92 @@
     return html;
   }
 
-  // --- Pipeline progress strip ---
+  // --- Ad workflow tabs (Overview pill + Hook→Copy→Media→Review stepper) ---
+  //
+  // Replaces the old separate "tab bar + pipeline progress strip" duplication:
+  // the tab strip itself now visualizes pipeline progress. Completed steps
+  // show a green check marker, the active tab is highlighted, todo steps are
+  // dimmed. Connectors between markers reinforce the workflow direction.
 
-  function renderAdPipelineProgress(ad) {
-    var C = Constants;
-    var steps = C.META_AD_PIPELINE_STEPS;
-    var currentIdx = pipelineStepIndexForStatus(ad.pipeline_status);
-    var html = '<div class="cp-pipeline-progress">';
+  function renderAdWorkflowTabs(ad, activeTab) {
+    var steps = Constants.META_AD_PIPELINE_STEPS;
+    var done = {
+      hook:   isAdHookDone(ad),
+      copy:   isAdCopyDone(ad),
+      media:  isAdMediaDone(ad),
+      review: isAdReviewDone(ad)
+    };
+
+    var html = '<div class="cp-ad-workflow-tabs">';
+
+    var overviewCls = 'cp-ad-workflow-overview' + (activeTab === 'overview' ? ' cp-ad-workflow-overview-active' : '');
+    html += '<button class="' + overviewCls + '" data-action="set-inspector-tab" data-tab="overview" role="tab" aria-selected="' + (activeTab === 'overview' ? 'true' : 'false') + '">';
+    html += icon('eye') + '<span class="cp-ad-workflow-overview-label">Overview</span>';
+    html += '</button>';
+
+    html += '<div class="cp-ad-workflow-divider" aria-hidden="true"></div>';
+
+    html += '<div class="cp-ad-workflow-steps" role="tablist">';
     for (var i = 0; i < steps.length; i++) {
-      var st = steps[i];
-      var cls = '';
-      if (i < currentIdx) cls = ' cp-pipeline-step-done';
-      else if (i === currentIdx) cls = ' cp-pipeline-step-active';
-      html += '<div class="cp-pipeline-step' + cls + '" data-action="set-inspector-tab" data-tab="' + st.key + '">';
-      html += '<div class="cp-pipeline-step-icon">' + icon(i < currentIdx ? 'circle-check' : st.icon) + '</div>';
-      html += '<div class="cp-pipeline-step-label">' + esc(st.label) + '</div>';
-      html += '</div>';
-      if (i < steps.length - 1) html += '<div class="cp-pipeline-connector' + (i < currentIdx ? ' cp-pipeline-connector-done' : '') + '"></div>';
+      var step = steps[i];
+      var isActive = (activeTab === step.key);
+      var isDone = !!done[step.key];
+      var cls = 'cp-ad-workflow-step';
+      if (isDone) cls += ' cp-ad-workflow-step-done';
+      if (isActive) cls += ' cp-ad-workflow-step-active';
+
+      html += '<button class="' + cls + '" data-action="set-inspector-tab" data-tab="' + step.key + '" role="tab" aria-selected="' + (isActive ? 'true' : 'false') + '">';
+      html += '<span class="cp-ad-workflow-step-marker">' + icon(isDone ? 'circle-check' : step.icon) + '</span>';
+      html += '<span class="cp-ad-workflow-step-label">' + esc(step.label) + '</span>';
+      html += '</button>';
+
+      if (i < steps.length - 1) {
+        html += '<div class="cp-ad-workflow-connector' + (isDone ? ' cp-ad-workflow-connector-done' : '') + '" aria-hidden="true"></div>';
+      }
     }
+    html += '</div>';
+
     html += '</div>';
     return html;
   }
 
-  // Map an ad pipeline_status to its step index. live/paused/archived map
-  // to the review step (the rightmost meaningful step for the editor).
-  function pipelineStepIndexForStatus(status) {
-    switch (status) {
-      case 'hook_ready':  return 0;
-      case 'copy_ready':  return 1;
-      case 'media_ready': return 2;
-      case 'in_review':
-      case 'approved':
-      case 'live':
-      case 'paused':
-      case 'archived':    return 3;
-      default:            return 0;
+  // --- Per-step completion helpers (single source of truth) ---
+  //
+  // Used by renderAdWorkflowTabs for the visual stepper and by
+  // evaluateAdAutoStatus for promoting pipeline_status. Keep these in lockstep.
+
+  function isAdHookDone(ad) {
+    var t = (ad && ad.hook && ad.hook.text) || '';
+    return t.trim().length >= 3;
+  }
+
+  function isAdCopyDone(ad) {
+    var c = (ad && ad.creative) || {};
+    var hasBody = (c.primary_text || '').trim().length >= 20;
+    var hasHeadline = !!(((c.headline || '').trim()) || ((c.description || '').trim()));
+    var hasLink = (c.cta_link || '').trim().length > 0;
+    return hasBody && hasHeadline && hasLink;
+  }
+
+  function isAdMediaDone(ad) {
+    if (!ad) return false;
+    var media = ad.media || {};
+    if (ad.creative_type === 'single_image') {
+      var img = media.image || {};
+      return !!(img.asset_id || (img.ai_prompt && img.ai_prompt.length > 10) || (img.brief && img.brief.length > 20));
+    } else if (ad.creative_type === 'single_video') {
+      var vid = media.video || {};
+      return !!(vid.asset_id || vid.concept || (vid.script && vid.script.rows && vid.script.rows.length) || (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length));
+    } else if (ad.creative_type === 'carousel') {
+      return !!(media.carousel_cards && media.carousel_cards.length >= 2);
     }
+    return false;
+  }
+
+  function isAdReviewDone(ad) {
+    if (!ad) return false;
+    var s = ad.pipeline_status;
+    return s === 'in_review' || s === 'approved' || s === 'live' || s === 'paused' || s === 'archived';
   }
 
   // --- Inspector tab bar (shared) ---
@@ -4662,9 +4696,6 @@
     if (currentIdx < 0) return null;
 
     var suggested = ad.pipeline_status;
-    var hook = ad.hook || {};
-    var creative = ad.creative || {};
-    var media = ad.media || {};
 
     function bump(target) {
       var ti = order.indexOf(target);
@@ -4672,27 +4703,9 @@
       if (ti > si) suggested = target;
     }
 
-    // hook_ready: any hook.text
-    if (hook.text && hook.text.trim().length >= 3) bump('hook_ready');
-
-    // copy_ready: primary_text + (headline OR description) + cta_link
-    var hasCopy = (creative.primary_text || '').trim().length >= 20 &&
-                  ((creative.headline || '').trim() || (creative.description || '').trim());
-    var hasLink = (creative.cta_link || '').trim().length > 0;
-    if (hasCopy && hasLink) bump('copy_ready');
-
-    // media_ready: type-specific
-    var hasMedia = false;
-    if (ad.creative_type === 'single_image') {
-      var img = media.image || {};
-      hasMedia = !!(img.asset_id || (img.ai_prompt && img.ai_prompt.length > 10) || (img.brief && img.brief.length > 20));
-    } else if (ad.creative_type === 'single_video') {
-      var vid = media.video || {};
-      hasMedia = !!(vid.asset_id || vid.concept || (vid.script && vid.script.rows && vid.script.rows.length) || (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length));
-    } else if (ad.creative_type === 'carousel') {
-      hasMedia = !!(media.carousel_cards && media.carousel_cards.length >= 2);
-    }
-    if (hasMedia) bump('media_ready');
+    if (isAdHookDone(ad))  bump('hook_ready');
+    if (isAdCopyDone(ad))  bump('copy_ready');
+    if (isAdMediaDone(ad)) bump('media_ready');
 
     return suggested === ad.pipeline_status ? null : suggested;
   }
