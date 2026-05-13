@@ -3749,86 +3749,271 @@
     return html;
   }
 
+  // --- Ad Overview tab ---
+  //
+  // Layout intent: this Overview is a CONFIGURATION + WALKTHROUGH panel
+  // for the ad's production pipeline. It is NOT a static read-only dump.
+  //
+  // Inline-editable here:
+  //   - name, creative_type, pipeline_status, assigned_to, due_date, tags
+  // Read-only "summary card" here, edited in the matching tab:
+  //   - Hook content (→ Hook tab)
+  //   - Copy content (→ Copy tab)
+  //   - Media direction (→ Media tab)
+  //   - Review notes / production notes (→ Review tab)
+  //
+  // Each summary card carries a status pill (filled / partial / empty)
+  // and a CTA that switches the inspector to the matching tab via
+  // data-action="set-inspector-tab" data-tab="<key>" (existing handler
+  // at src/20-part2a/27-event-handlers.js:723-727).
+
   function renderInspectorForAd(ad) {
     var adSet = S.adSetMap[ad.ad_set_id];
     var camp = adSet ? S.campaignV2Map[adSet.campaign_id] : null;
-    var status = metaAdStatus(ad.pipeline_status);
     var ctype = META_AD_CREATIVE_TYPES[ad.creative_type] || { label: 'Ad', icon: 'rectangle-ad' };
-    var cta = metaCTA((ad.creative || {}).cta_type);
 
     var html = '';
-    html += '<div class="cp-inspector-header"><div style="flex:1">';
+    html += _renderAdOverviewIdentity(ad, camp, adSet, ctype);
+    // Pipeline progress strip — visual stepper, clicking a step jumps to that tab.
+    if (typeof renderAdPipelineProgress === 'function') {
+      html += '<div class="cp-inspector-pipeline-strip">' + renderAdPipelineProgress(ad) + '</div>';
+    }
+    html += _renderAdOverviewConfig(ad);
+    html += _renderAdSummaryHook(ad);
+    html += _renderAdSummaryCopy(ad);
+    html += _renderAdSummaryMedia(ad, ctype);
+    html += _renderAdOverviewAssignment(ad);
+    html += _renderAdSummaryReview(ad);
+    html += _renderAdOverviewFooter(ad);
+    return html;
+  }
+
+  // --- Ad overview helpers ---
+
+  function _renderAdOverviewIdentity(ad, camp, adSet, ctype) {
+    var status = metaAdStatus(ad.pipeline_status);
     var crumb = (camp ? esc(camp.name) + ' · ' : '') + (adSet ? esc(adSet.name) : '');
+
+    var html = '<div class="cp-inspector-header"><div style="flex:1">';
     html += '<div class="cp-inspector-eyebrow">' + icon(ctype.icon) + ' ' + esc(ctype.label) + (crumb ? ' · ' + crumb : '') + '</div>';
-    // Inline-editable ad name (was a static <h2>). Blur saves via the
-    // generic cp-v2-inline-field handler in 27-event-handlers.js.
-    html += '<input type="text" class="cp-inspector-title-input cp-v2-inline-field" data-field="name" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.name || '') + '" placeholder="Ad name" style="font-size:var(--cp-font-size-2xl,1.6rem);font-weight:700;border:1px solid transparent;background:transparent;width:100%;padding:2px 4px;margin:-2px -4px">';
-    html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap;margin-top:6px;align-items:center">';
+    // Inline-editable name — large, transparent border, hover/focus indicate editability.
+    html += '<input type="text" class="cp-inspector-title-input cp-v2-inline-field" data-field="name" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.name || '') + '" placeholder="Ad name">';
+    html += '<div class="cp-inspector-header-meta">';
     html += '<span class="cp-badge" style="background:' + status.color + '15;color:' + status.color + '">' + icon(status.icon) + ' ' + esc(status.label) + '</span>';
-    html += '<span class="cp-text-muted" style="font-size:11px">Status set from the Review tab</span>';
+    html += '<span class="cp-text-muted" style="font-size:11px">Change status in Configuration below</span>';
     html += '</div></div><div class="cp-inspector-header-actions">';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-copy-ad-field" data-id="' + esc(ad.id) + '" data-field="all" title="Copy all ad fields">' + icon('copy') + '</button>';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-ad" data-id="' + esc(ad.id) + '">' + icon('trash') + '</button>';
     html += '</div></div>';
+    return html;
+  }
 
-    // Hook
-    var hook = ad.hook || {};
-    if (hook.text) {
-      html += '<div class="cp-inspector-section">';
-      html += '<div class="cp-inspector-section-title">' + icon('anchor') + ' Hook</div>';
-      html += '<blockquote class="cp-ad-hook">' + esc(hook.text) + '</blockquote>';
-      html += '</div>';
+  function _renderAdOverviewConfig(ad) {
+    var html = '<div class="cp-inspector-section cp-inspector-config">';
+    html += '<div class="cp-inspector-section-title">' + icon('gear') + ' Configuration</div>';
+
+    // Creative type segmented (drives which Media tab variant renders).
+    html += '<div class="cp-config-row">';
+    html += '<div class="cp-config-label">Creative type</div>';
+    html += '<div class="cp-segmented">';
+    for (var ctk in META_AD_CREATIVE_TYPES) {
+      var ct = META_AD_CREATIVE_TYPES[ctk];
+      var ctSel = (ad.creative_type === ctk) ? ' cp-segmented-active' : '';
+      html += '<label class="cp-segmented-option' + ctSel + '">';
+      html += '<input type="radio" name="cp-ov-ad-ct-' + esc(ad.id) + '" class="cp-v2-media-type-switch" data-entity-id="' + esc(ad.id) + '" value="' + ctk + '"' + (ctSel ? ' checked' : '') + ' style="display:none">';
+      html += icon(ct.icon) + ' ' + esc(ct.label);
+      html += '</label>';
     }
-
-    // Creative — primary text / headline / description / CTA / link (with per-field copy buttons)
-    var creative = ad.creative || {};
-    html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('pen-fancy') + ' Creative</div>';
-    html += '<div class="cp-inspector-grid cp-inspector-grid-1">';
-    html += inspectorFieldCopy('Primary text', creative.primary_text || '—', ad.id, 'primary_text', true);
-    html += inspectorFieldCopy('Headline',     creative.headline     || '—', ad.id, 'headline');
-    html += inspectorFieldCopy('Description',  creative.description  || '—', ad.id, 'description');
-    html += inspectorFieldCopy('CTA',          cta ? cta.label : (creative.cta_type || '—'), ad.id, 'cta_type');
-    html += inspectorFieldCopy('Link',         creative.cta_link     || '—', ad.id, 'cta_link');
-    html += inspectorField('Display link',     creative.display_link || '—');
     html += '</div></div>';
 
-    // Media (preview only — full editor in Stage 2)
-    html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('image') + ' Media';
-    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">' + esc(ctype.label) + '</span>';
+    // Pipeline status segmented (same handler as the old Review-tab buttons).
+    html += '<div class="cp-config-row">';
+    html += '<div class="cp-config-label">Pipeline status</div>';
+    html += '<div class="cp-status-buttons cp-status-buttons-overview">';
+    for (var sk in META_AD_STATUSES) {
+      var st = META_AD_STATUSES[sk];
+      var isActive = ad.pipeline_status === sk;
+      html += '<button class="cp-status-button' + (isActive ? ' cp-status-button-active' : '') + '" data-action="ws-set-ad-status" data-id="' + esc(ad.id) + '" data-status="' + sk + '" style="' + (isActive ? '--btn-color:' + st.color + ';' : '') + '">';
+      html += icon(st.icon) + ' ' + esc(st.label);
+      html += '</button>';
+    }
+    html += '</div></div>';
+
+    // Tags (uses the Part 2A renderTagInput component if loaded).
+    html += '<div class="cp-config-row">';
+    html += '<div class="cp-config-label">Tags</div>';
+    var R = window._cpRenderers || {};
+    if (typeof R.tagInput === 'function') {
+      html += '<div class="cp-config-control">' + R.tagInput(ad.tags || [], 'ad', ad.id) + '</div>';
+    } else {
+      html += '<div class="cp-config-control"><span class="cp-text-muted">Tags loading…</span></div>';
+    }
     html += '</div>';
+
+    html += '</div>';
+    return html;
+  }
+
+  function _renderAdSummaryHook(ad) {
+    var hook = ad.hook || {};
+    var hasHook = !!(hook.text && hook.text.trim());
+    var pill = hasHook
+      ? '<span class="cp-inspector-status-pill cp-inspector-status-pill-filled">' + icon('circle-check') + ' Filled</span>'
+      : '<span class="cp-inspector-status-pill cp-inspector-status-pill-empty">' + icon('circle') + ' Not set</span>';
+
+    var body = hasHook
+      ? '<blockquote class="cp-ad-hook">' + esc(truncate(hook.text, 220)) + '</blockquote>' +
+        (hook.type ? '<div class="cp-text-muted" style="font-size:11px;margin-top:4px">Type: <strong>' + esc(hook.type) + '</strong></div>' : '')
+      : '<div class="cp-text-muted">No hook yet. Open the Hook tab to add one.</div>';
+
+    return _renderAdSummaryCard('anchor', 'Hook', 'hook', pill, body);
+  }
+
+  function _renderAdSummaryCopy(ad) {
+    var c = ad.creative || {};
+    var cta = metaCTA(c.cta_type);
+    var fieldsFilled = (c.primary_text ? 1 : 0) + (c.headline ? 1 : 0) + (c.description ? 1 : 0) + (c.cta_type ? 1 : 0) + (c.cta_link ? 1 : 0);
+    var pill;
+    if (fieldsFilled === 0) pill = '<span class="cp-inspector-status-pill cp-inspector-status-pill-empty">' + icon('circle') + ' Not set</span>';
+    else if (fieldsFilled < 4) pill = '<span class="cp-inspector-status-pill cp-inspector-status-pill-partial">' + icon('circle-half-stroke') + ' Partial</span>';
+    else pill = '<span class="cp-inspector-status-pill cp-inspector-status-pill-filled">' + icon('circle-check') + ' Filled</span>';
+
+    var body = '';
+    if (fieldsFilled === 0) {
+      body = '<div class="cp-text-muted">No copy yet. Open the Copy tab to add primary text, headline, description, and CTA.</div>';
+    } else {
+      body += '<div class="cp-inspector-grid cp-inspector-grid-1">';
+      if (c.primary_text) body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Primary text</div><div class="cp-inspector-field-value">' + esc(truncate(c.primary_text, 200)) + '</div></div>';
+      if (c.headline)     body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Headline</div><div class="cp-inspector-field-value">' + esc(c.headline) + '</div></div>';
+      if (c.description)  body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Description</div><div class="cp-inspector-field-value">' + esc(c.description) + '</div></div>';
+      if (c.cta_type || c.cta_link) {
+        var ctaVal = (cta ? cta.label : (c.cta_type || '')) + (c.cta_link ? ' → ' + truncate(c.cta_link, 80) : '');
+        body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">CTA</div><div class="cp-inspector-field-value">' + esc(ctaVal) + '</div></div>';
+      }
+      if (c.display_link)     body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Display link</div><div class="cp-inspector-field-value">' + esc(c.display_link) + '</div></div>';
+      if (c.tracking_params)  body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Tracking</div><div class="cp-inspector-field-value">' + esc(truncate(c.tracking_params, 120)) + '</div></div>';
+      body += '</div>';
+    }
+
+    return _renderAdSummaryCard('pen-fancy', 'Copy', 'copy', pill, body);
+  }
+
+  function _renderAdSummaryMedia(ad, ctype) {
     var media = ad.media || {};
+    var pill;
+    var body;
+    var title = 'Media · ' + (ctype.label || 'Ad');
+
     if (ad.creative_type === 'single_image') {
-      if (media.image && (media.image.brief || media.image.ai_prompt)) {
-        if (media.image.brief)     html += '<p><strong>Brief:</strong> ' + esc(media.image.brief) + '</p>';
-        if (media.image.ai_prompt) html += '<p><strong>Prompt:</strong> ' + esc(media.image.ai_prompt) + '</p>';
-      } else html += '<div class="cp-text-muted">No image brief yet.</div>';
+      var img = media.image || {};
+      var imgFilled = !!(img.brief || img.ai_prompt);
+      pill = imgFilled
+        ? '<span class="cp-inspector-status-pill cp-inspector-status-pill-filled">' + icon('circle-check') + ' Filled</span>'
+        : '<span class="cp-inspector-status-pill cp-inspector-status-pill-empty">' + icon('circle') + ' Not set</span>';
+      if (imgFilled) {
+        body = '';
+        if (img.brief)     body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Brief</div><div class="cp-inspector-field-value">' + esc(truncate(img.brief, 200)) + '</div></div>';
+        if (img.ai_prompt) body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">AI prompt</div><div class="cp-inspector-field-value">' + esc(truncate(img.ai_prompt, 200)) + '</div></div>';
+        body += '<div class="cp-text-muted" style="font-size:11px;margin-top:4px">Aspect: ' + esc(img.aspect_ratio || '1:1') + (img.negative_prompt ? ' · Neg: ' + esc(truncate(img.negative_prompt, 60)) : '') + '</div>';
+      } else {
+        body = '<div class="cp-text-muted">No image brief yet. Open the Media tab to fill it in.</div>';
+      }
     } else if (ad.creative_type === 'single_video') {
-      if (media.video && (media.video.concept || (media.video.script && media.video.script.rows && media.video.script.rows.length))) {
-        if (media.video.concept) html += '<p><strong>Concept:</strong> ' + esc(media.video.concept) + '</p>';
-        if (media.video.script && media.video.script.rows && media.video.script.rows.length) {
-          html += '<p>' + media.video.script.rows.length + ' script rows · ' + (media.video.duration_seconds || '?') + 's · ' + (media.video.aspect_ratio || '') + '</p>';
-        }
-      } else html += '<div class="cp-text-muted">No video brief yet.</div>';
+      var vid = media.video || {};
+      var scenes = (vid.blueprint && vid.blueprint.scenes) || [];
+      var rows   = (vid.script && vid.script.rows) || [];
+      var vidFilled = !!(vid.concept || scenes.length || rows.length);
+      pill = vidFilled
+        ? '<span class="cp-inspector-status-pill cp-inspector-status-pill-filled">' + icon('circle-check') + ' Filled</span>'
+        : '<span class="cp-inspector-status-pill cp-inspector-status-pill-empty">' + icon('circle') + ' Not set</span>';
+      if (vidFilled) {
+        body = '';
+        if (vid.concept) body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Concept</div><div class="cp-inspector-field-value">' + esc(truncate(vid.concept, 200)) + '</div></div>';
+        body += '<div class="cp-text-muted" style="font-size:11px;margin-top:4px">' + (vid.duration_seconds || '?') + 's · ' + esc(vid.aspect_ratio || '9:16') + ' · ' + scenes.length + ' scene' + (scenes.length !== 1 ? 's' : '') + ' · ' + rows.length + ' script row' + (rows.length !== 1 ? 's' : '') + '</div>';
+      } else {
+        body = '<div class="cp-text-muted">No video brief yet. Open the Media tab to add concept, scenes, and script.</div>';
+      }
     } else if (ad.creative_type === 'carousel') {
       var cards = media.carousel_cards || [];
-      html += '<div>' + cards.length + ' card' + (cards.length !== 1 ? 's' : '') + '</div>';
+      pill = cards.length >= 2
+        ? '<span class="cp-inspector-status-pill cp-inspector-status-pill-filled">' + icon('circle-check') + ' ' + cards.length + ' cards</span>'
+        : (cards.length === 1
+            ? '<span class="cp-inspector-status-pill cp-inspector-status-pill-partial">' + icon('circle-half-stroke') + ' Needs 2+ cards</span>'
+            : '<span class="cp-inspector-status-pill cp-inspector-status-pill-empty">' + icon('circle') + ' No cards yet</span>');
+      if (cards.length) {
+        body = '<div class="cp-text-muted">' + cards.length + ' card' + (cards.length !== 1 ? 's' : '') + ' · Open Media tab to edit.</div>';
+      } else {
+        body = '<div class="cp-text-muted">No carousel cards yet. Open the Media tab to add them.</div>';
+      }
+    } else {
+      pill = '<span class="cp-inspector-status-pill cp-inspector-status-pill-empty">' + icon('circle') + ' —</span>';
+      body = '<div class="cp-text-muted">Pick a creative type above.</div>';
     }
+
+    return _renderAdSummaryCard('wand-magic', title, 'media', pill, body);
+  }
+
+  function _renderAdOverviewAssignment(ad) {
+    var html = '<div class="cp-inspector-section cp-inspector-config">';
+    html += '<div class="cp-inspector-section-title">' + icon('user-clock') + ' Production &amp; assignment</div>';
+    html += '<div class="cp-form-row">';
+    html += '<div class="cp-form-half">';
+    html += '<label class="cp-config-label">Assigned to</label>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="assigned_to" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.assigned_to || '') + '" placeholder="Teammate name or email">';
     html += '</div>';
+    html += '<div class="cp-form-half">';
+    html += '<label class="cp-config-label">Due date</label>';
+    html += '<input type="date" class="cp-input cp-v2-inline-field" data-field="due_date" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.due_date || '') + '">';
+    html += '</div></div>';
+    html += '</div>';
+    return html;
+  }
 
-    // Review/production
-    if (ad.review_notes || ad.production_notes || ad.assigned_to || ad.due_date) {
-      html += '<div class="cp-inspector-section">';
-      html += '<div class="cp-inspector-section-title">' + icon('clipboard-list') + ' Review & production</div>';
-      html += '<div class="cp-inspector-grid">';
-      html += inspectorField('Assigned to',     ad.assigned_to     || '—');
-      html += inspectorField('Due date',        ad.due_date        || '—');
-      html += inspectorField('Review notes',    ad.review_notes    || '—');
-      html += inspectorField('Production notes',ad.production_notes|| '—');
-      html += '</div></div>';
+  function _renderAdSummaryReview(ad) {
+    var hasNotes = !!(ad.review_notes || ad.production_notes);
+    var pill = hasNotes
+      ? '<span class="cp-inspector-status-pill cp-inspector-status-pill-filled">' + icon('circle-check') + ' Notes added</span>'
+      : '<span class="cp-inspector-status-pill cp-inspector-status-pill-empty">' + icon('circle') + ' No notes</span>';
+
+    var body = '';
+    if (hasNotes) {
+      body += '<div class="cp-inspector-grid cp-inspector-grid-1">';
+      if (ad.production_notes) body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Production</div><div class="cp-inspector-field-value">' + esc(truncate(ad.production_notes, 200)) + '</div></div>';
+      if (ad.review_notes)     body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Review</div><div class="cp-inspector-field-value">' + esc(truncate(ad.review_notes, 200)) + '</div></div>';
+      body += '</div>';
+    } else {
+      body = '<div class="cp-text-muted">No notes yet. Open the Review tab to add production or review notes.</div>';
     }
 
+    return _renderAdSummaryCard('clipboard-list', 'Review notes', 'review', pill, body);
+  }
+
+  function _renderAdOverviewFooter(ad) {
+    var html = '<div class="cp-inspector-footer cp-text-muted" style="margin-top:var(--cp-space-3);font-size:11px;padding-top:var(--cp-space-3);border-top:1px solid var(--cp-border-light)">';
+    var parts = [];
+    if (ad.created) parts.push('Created ' + formatDate(ad.created));
+    if (ad.updated) parts.push('Updated ' + formatRelativeTime(ad.updated));
+    if (ad.created_by) parts.push('by ' + esc(ad.created_by));
+    html += parts.join(' · ');
+    html += '</div>';
+    return html;
+  }
+
+  // Shared shell for the read-only summary cards. Card header has icon,
+  // title, status pill on the right, then an "Open <tab> tab" CTA. The
+  // explicit button is the click target — keeps activation predictable
+  // (the whole-card click would otherwise also fire on the button via
+  // bubble and double-trigger render()).
+  function _renderAdSummaryCard(iconName, title, tabKey, pillHtml, bodyHtml) {
+    var html = '<div class="cp-inspector-summary-card">';
+    html += '<div class="cp-inspector-summary-card-header">';
+    html += '<span class="cp-inspector-summary-card-icon">' + icon(iconName) + '</span>';
+    html += '<span class="cp-inspector-summary-card-title">' + esc(title) + '</span>';
+    html += pillHtml;
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm cp-inspector-summary-card-open" data-action="set-inspector-tab" data-tab="' + esc(tabKey) + '">' + icon('arrow-right') + ' Open tab</button>';
+    html += '</div>';
+    html += '<div class="cp-inspector-summary-card-body">' + bodyHtml + '</div>';
+    html += '</div>';
     return html;
   }
 
@@ -4154,6 +4339,16 @@
     html += '<div class="cp-form-grow"><label>Destination URL</label>';
     html += '<input type="url" class="cp-input cp-v2-inline-field" data-field="creative.cta_link" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.cta_link || '') + '" placeholder="https://example.com">';
     html += '</div></div>';
+
+    // Display link + tracking params — orphaned fields from the old modal,
+    // both relate to destination so they live in the Copy tab now.
+    html += '<div class="cp-form-row" style="margin-top:var(--cp-space-2)">';
+    html += '<div class="cp-form-half"><label>Display link <span class="cp-text-muted" style="font-weight:400;font-size:11px">optional — shown to viewers if set</span></label>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.display_link" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.display_link || '') + '" placeholder="example.com/landing">';
+    html += '</div>';
+    html += '<div class="cp-form-half"><label>Tracking params <span class="cp-text-muted" style="font-weight:400;font-size:11px">UTM query string</span></label>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.tracking_params" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.tracking_params || '') + '" placeholder="utm_source=meta&amp;utm_medium=...">';
+    html += '</div></div>';
     html += '</div>';
 
     html += '<div class="cp-inspector-actions">';
@@ -4351,38 +4546,31 @@
     var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
     html += renderAdPipelineProgress(ad);
 
+    // Status snapshot — change is in Overview tab's Configuration card.
     var C = Constants;
-    html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('circle-check') + ' Pipeline status</div>';
-    html += '<div class="cp-status-buttons">';
-    for (var sk in C.META_AD_STATUSES) {
-      var st = C.META_AD_STATUSES[sk];
-      var isActive = ad.pipeline_status === sk;
-      html += '<button class="cp-status-button' + (isActive ? ' cp-status-button-active' : '') + '" data-action="ws-set-ad-status" data-id="' + esc(ad.id) + '" data-status="' + sk + '" style="' + (isActive ? '--btn-color:' + st.color + ';' : '') + '">';
-      html += icon(st.icon) + ' ' + esc(st.label);
-      html += '</button>';
-    }
+    var st = C.META_AD_STATUSES[ad.pipeline_status] || { label: ad.pipeline_status || '—', color: '#80868b', icon: 'circle' };
+    html += '<div class="cp-inspector-section cp-inspector-section-compact">';
+    html += '<div class="cp-inspector-section-title">' + icon('circle-check') + ' Current status</div>';
+    html += '<div style="display:flex;align-items:center;gap:var(--cp-space-3);flex-wrap:wrap">';
+    html += '<span class="cp-badge" style="background:' + st.color + '15;color:' + st.color + ';font-size:var(--cp-font-size-sm);padding:6px 12px">' + icon(st.icon) + ' ' + esc(st.label) + '</span>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="set-inspector-tab" data-tab="overview">' + icon('arrow-left') + ' Change in Overview</button>';
     html += '</div></div>';
 
-    html += '<div class="cp-form-row">';
-    html += '<div class="cp-form-half">';
-    html += '<div class="cp-inspector-section-title">' + icon('user') + ' Assigned to</div>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="assigned_to" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.assigned_to || '') + '" placeholder="Teammate name">';
-    html += '</div>';
-    html += '<div class="cp-form-half">';
-    html += '<div class="cp-inspector-section-title">' + icon('calendar') + ' Due date</div>';
-    html += '<input type="date" class="cp-input cp-v2-inline-field" data-field="due_date" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.due_date || '') + '">';
-    html += '</div></div>';
-
+    // Production notes + review notes are the primary purpose of this tab.
     html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('note-sticky') + ' Production notes</div>';
-    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="production_notes" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="2" placeholder="Where assets live, who is shooting, etc.">' + esc(ad.production_notes || '') + '</textarea>';
+    html += '<div class="cp-inspector-section-title">' + icon('note-sticky') + ' Production notes';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">where assets live, who is shooting, asset URLs, etc.</span>';
+    html += '</div>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="production_notes" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="4" placeholder="Where assets live, who is shooting, etc.">' + esc(ad.production_notes || '') + '</textarea>';
     html += '</div>';
 
     html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('comments') + ' Review notes</div>';
-    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="review_notes" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="3" placeholder="Feedback from reviewers...">' + esc(ad.review_notes || '') + '</textarea>';
+    html += '<div class="cp-inspector-section-title">' + icon('comments') + ' Review notes';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">feedback from reviewers, change requests, approval comments</span>';
     html += '</div>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="review_notes" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="5" placeholder="Feedback from reviewers...">' + esc(ad.review_notes || '') + '</textarea>';
+    html += '</div>';
+
     return html;
   }
 
