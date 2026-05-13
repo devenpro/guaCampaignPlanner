@@ -310,7 +310,7 @@
       case 'cta_link':     value = (ad.creative || {}).cta_link || ''; break;
       case 'cta_type':     value = (ad.creative || {}).cta_type || ''; break;
       case 'hook':         value = (ad.hook || {}).text || ''; break;
-      case 'image_prompt': value = ((ad.media || {}).image || {}).ai_prompt || ''; break;
+      case 'image_prompt': var img = ((ad.media || {}).image || {}); value = img.prompt || img.ai_prompt || img.brief || ''; break;
       case 'all':
         var c = ad.creative || {};
         value = 'Primary text:\n' + (c.primary_text || '') + '\n\nHeadline:\n' + (c.headline || '') + '\n\nDescription:\n' + (c.description || '') + '\n\nCTA: ' + (c.cta_type || '') + '\nLink: ' + (c.cta_link || '');

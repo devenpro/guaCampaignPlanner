@@ -323,7 +323,7 @@
     html += '<div class="cp-inspector-section cp-inspector-section-compact">';
     html += '<div class="cp-creative-type-locked">';
     html += icon('lock') + ' Editing as <strong>' + esc(ctype.label) + '</strong>';
-    html += '<button class="cp-btn cp-btn-text cp-btn-sm" data-action="set-inspector-tab" data-tab="overview">' + icon('arrow-left') + ' Change in Overview</button>';
+    html += '<button class="cp-btn-link" data-action="set-inspector-tab" data-tab="overview">' + icon('arrow-left') + ' Change in Overview</button>';
     html += '</div>';
     html += '</div>';
 

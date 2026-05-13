@@ -4340,7 +4340,7 @@
     html += '<div class="cp-inspector-section cp-inspector-section-compact">';
     html += '<div class="cp-creative-type-locked">';
     html += icon('lock') + ' Editing as <strong>' + esc(ctype.label) + '</strong>';
-    html += '<button class="cp-btn cp-btn-text cp-btn-sm" data-action="set-inspector-tab" data-tab="overview">' + icon('arrow-left') + ' Change in Overview</button>';
+    html += '<button class="cp-btn-link" data-action="set-inspector-tab" data-tab="overview">' + icon('arrow-left') + ' Change in Overview</button>';
     html += '</div>';
     html += '</div>';
 
@@ -11198,14 +11198,18 @@
       var id = $(this).data('id');
       openConfirmDialog({
         title: 'Reset creative type',
-        message: 'This clears all media work on this ad (image brief, video script and scenes, carousel cards) so you can switch creative type. Continue?',
+        message: 'This clears all media work on this ad (image prompt, video script, carousel cards) so you can switch creative type. Continue?',
         confirmLabel: 'Clear media',
         danger: true,
         onConfirm: function() {
           var ad = getAd(id); if (!ad) return;
+          var prevType = ad.creative_type;
           snapshot('Reset creative type');
           ad.media = {};
           saveEntityField('ad', id, 'media', {});
+          if (typeof logActivity === 'function') {
+            logActivity('media_reset', 'ad', id, ad.name, 'Cleared media for ' + (prevType || 'ad') + ' to switch creative type');
+          }
         }
       });
     });
@@ -14927,7 +14931,7 @@
       case 'cta_link':     value = (ad.creative || {}).cta_link || ''; break;
       case 'cta_type':     value = (ad.creative || {}).cta_type || ''; break;
       case 'hook':         value = (ad.hook || {}).text || ''; break;
-      case 'image_prompt': value = ((ad.media || {}).image || {}).ai_prompt || ''; break;
+      case 'image_prompt': var img = ((ad.media || {}).image || {}); value = img.prompt || img.ai_prompt || img.brief || ''; break;
       case 'all':
         var c = ad.creative || {};
         value = 'Primary text:\n' + (c.primary_text || '') + '\n\nHeadline:\n' + (c.headline || '') + '\n\nDescription:\n' + (c.description || '') + '\n\nCTA: ' + (c.cta_type || '') + '\nLink: ' + (c.cta_link || '');

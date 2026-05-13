@@ -870,14 +870,18 @@
       var id = $(this).data('id');
       openConfirmDialog({
         title: 'Reset creative type',
-        message: 'This clears all media work on this ad (image brief, video script and scenes, carousel cards) so you can switch creative type. Continue?',
+        message: 'This clears all media work on this ad (image prompt, video script, carousel cards) so you can switch creative type. Continue?',
         confirmLabel: 'Clear media',
         danger: true,
         onConfirm: function() {
           var ad = getAd(id); if (!ad) return;
+          var prevType = ad.creative_type;
           snapshot('Reset creative type');
           ad.media = {};
           saveEntityField('ad', id, 'media', {});
+          if (typeof logActivity === 'function') {
+            logActivity('media_reset', 'ad', id, ad.name, 'Cleared media for ' + (prevType || 'ad') + ' to switch creative type');
+          }
         }
       });
     });
