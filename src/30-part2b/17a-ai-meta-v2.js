@@ -421,31 +421,57 @@
     var adSet = getAdSet(ad.ad_set_id);
     var camp = adSet ? getCampaignV2(adSet.campaign_id) : null;
 
-    var prompt = 'Write 3 distinct hook options for this Ad. Each should be 1 sentence, max 100 chars, with a different angle.\n\n';
+    var prompt = 'Write 3 distinct hook options for this Meta Ad. Each should be 1 sentence, max 100 chars, with a different angle. For each, also rate it on three 0-100 scores and explain the psychology.\n\n';
     if (camp) prompt += aiV2_campaignContext(camp) + '\n';
     if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
     if (ad.creative && ad.creative.primary_text) prompt += 'Current primary text: ' + ad.creative.primary_text + '\n';
     prompt += '\n' + brandSnippet('content');
     prompt += '\n\nHook types: question, bold, story, data, direct, curiosity, challenge.\n';
-    prompt += 'Respond JSON only: {"hooks":[{"text":"","type":""}]}';
+    prompt += 'scores.conversion = how likely this hook moves a cold viewer toward the CTA (0-100).\n';
+    prompt += 'scores.readability = how easy it is to read at a glance — short words, low cognitive load (0-100).\n';
+    prompt += 'scores.connection = how strongly it speaks to the audience\'s pain / desire (0-100).\n';
+    prompt += 'psychology = 1-2 sentences explaining why this hook works for this audience.\n';
+    prompt += 'Respond JSON only: {"hooks":[{"text":"","type":"","scores":{"conversion":0,"readability":0,"connection":0},"psychology":""}]}';
 
     toast('AI writing hooks...', 'info');
     callAIWithRetry(prompt, function(parsed) {
-      var hooks = parsed.hooks || [];
+      var hooks = (parsed && parsed.hooks) || [];
       if (hooks.length === 0) { toast('AI returned no hooks', 'warning'); return; }
-      showAIPreview('Pick a hook', hooks.map(function(h, i) { return { label: 'Option ' + (i+1) + ' (' + (h.type || 'direct') + ')', content: h.text, _hook: h }; }), function(selected) {
-        snapshot('AI hook');
-        ad.hook = ad.hook || {};
-        ad.hook.text = selected.content;
-        ad.hook.type = selected._hook.type || 'direct';
-        ad.updated = new Date().toISOString();
-        if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI hook');
-        buildMaps(); syncToTextarea(); render();
-        logActivity('hook_generated', 'ad', adId, ad.name, 'AI hook selected');
-        toast('Hook applied', 'success');
-      }, { formatItem: function(opt) { return '<blockquote class="cp-ad-hook">' + esc(opt.content) + '</blockquote>'; } });
+      var ideas = hooks.map(function(h) {
+        var s = h.scores || {};
+        return {
+          id: generateId('hki'),
+          text: String(h.text || '').trim(),
+          type: String(h.type || 'direct').trim(),
+          scores: {
+            conversion:  clamp100(s.conversion),
+            readability: clamp100(s.readability),
+            connection:  clamp100(s.connection)
+          },
+          psychology: String(h.psychology || '').trim(),
+          generated_at: new Date().toISOString()
+        };
+      }).filter(function(i) { return i.text; });
+      if (ideas.length === 0) { toast('AI returned no usable hooks', 'warning'); return; }
+
+      snapshot('AI hook ideas');
+      ad.hook = ad.hook || { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' };
+      ad.hook.ai_ideas = ideas;
+      ad.hook.active_idea_id = '';
+      ad.updated = new Date().toISOString();
+      buildMaps(); syncToTextarea(); render();
+      logActivity('hook_generated', 'ad', adId, ad.name, 'AI generated ' + ideas.length + ' hook ideas');
+      toast('Got ' + ideas.length + ' hook ideas — pick one in the Hook tab', 'success');
     }, function(err) { toast('AI error: ' + err, 'error'); },
        'ai-generate-ad-hooks', BrandService.getSystemPrompt('content'), parseJSON);
+  }
+
+  function clamp100(n) {
+    n = Number(n);
+    if (!isFinite(n)) return 0;
+    if (n < 0) return 0;
+    if (n > 100) return 100;
+    return Math.round(n);
   }
 
   // --- 6. Write Ad Copy (alternatives bundle: primary text + headline + description) ---

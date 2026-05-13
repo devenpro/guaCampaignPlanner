@@ -219,6 +219,10 @@
     html += '</select></div></div>';
     html += '</div>';
 
+    // Inline AI hook ideas (scored, with psychology) — replaces the old AI
+    // preview modal so options stay around until the user picks one.
+    html += renderAdHookIdeas(ad);
+
     // Pull from parent Ad Set's library messages
     if (briefMsgs.length) {
       html += '<div class="cp-inspector-section">';
@@ -250,6 +254,111 @@
     html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-ad-hooks" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate hooks</button>';
     html += '</div>';
 
+    html += '</div>';
+    return html;
+  }
+
+  // --- AI hook ideas — inline scored options on the Hook tab ---
+  //
+  // Replaces the old preview modal. After "Generate hooks" runs, options live
+  // on `ad.hook.ai_ideas`. The active selection is tracked by
+  // `ad.hook.active_idea_id`: that card pins to the top, others collapse to
+  // a one-line summary the user can re-expand. Each option exposes three
+  // 0–100 scores (conversion / readability / connection) and a psychology
+  // blurb explaining why it works.
+
+  function renderAdHookIdeas(ad) {
+    var hook = ad.hook || {};
+    var ideas = hook.ai_ideas || [];
+    if (!ideas.length) return '';
+
+    var activeId = hook.active_idea_id || '';
+    var ordered = ideas.slice();
+    if (activeId) {
+      var i = -1;
+      for (var k = 0; k < ordered.length; k++) { if (ordered[k].id === activeId) { i = k; break; } }
+      if (i > 0) {
+        var pinned = ordered.splice(i, 1)[0];
+        ordered.unshift(pinned);
+      }
+    }
+
+    var html = '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('sparkles') + ' AI hook ideas';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">' + ideas.length + ' option' + (ideas.length !== 1 ? 's' : '') + ' · scored 0–100</span>';
+    html += '<div class="cp-hook-ideas-actions" style="margin-left:auto;display:inline-flex;gap:6px">';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ai-generate-ad-hooks" data-id="' + esc(ad.id) + '" title="Regenerate (replaces these ideas)">' + icon('rotate') + ' Regenerate</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-clear-ad-hook-ideas" data-id="' + esc(ad.id) + '" title="Clear all ideas">' + icon('trash') + '</button>';
+    html += '</div>';
+    html += '</div>';
+
+    html += '<div class="cp-hook-ideas">';
+    for (var n = 0; n < ordered.length; n++) {
+      var idea = ordered[n];
+      var origIdx = -1;
+      for (var m = 0; m < ideas.length; m++) { if (ideas[m].id === idea.id) { origIdx = m; break; } }
+      var isActive = activeId && idea.id === activeId;
+      var collapsed = !!activeId && !isActive;
+      html += renderAdHookIdeaCard(ad, idea, origIdx, isActive, collapsed);
+    }
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdHookIdeaCard(ad, idea, idx, isActive, collapsed) {
+    var scores = idea.scores || {};
+    var cls = 'cp-hook-idea-card';
+    if (isActive) cls += ' cp-hook-idea-card-active';
+    if (collapsed) cls += ' cp-hook-idea-card-collapsed';
+
+    var html = '<div class="' + cls + '" data-idea-id="' + esc(idea.id) + '">';
+
+    // Header row — always visible
+    html += '<div class="cp-hook-idea-head">';
+    html += '<span class="cp-pullable-hook-type">' + esc(idea.type || 'direct') + '</span>';
+    if (isActive) html += '<span class="cp-hook-idea-active-badge">' + icon('circle-check') + ' Active</span>';
+    html += '<div class="cp-hook-idea-text' + (collapsed ? ' cp-hook-idea-text-clamp' : '') + '">' + esc(idea.text) + '</div>';
+    if (collapsed) {
+      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-toggle-hook-idea-expanded" data-id="' + esc(ad.id) + '" data-idea-id="' + esc(idea.id) + '" title="Expand">' + icon('chevron-down') + '</button>';
+    }
+    html += '</div>';
+
+    if (!collapsed) {
+      // Score bars
+      html += '<div class="cp-hook-idea-scores">';
+      html += renderAdHookScoreRow('Conversion',  scores.conversion);
+      html += renderAdHookScoreRow('Readability', scores.readability);
+      html += renderAdHookScoreRow('Connection',  scores.connection);
+      html += '</div>';
+
+      // Psychology
+      if (idea.psychology) {
+        html += '<div class="cp-hook-idea-psychology">' + icon('lightbulb') + ' <em>' + esc(idea.psychology) + '</em></div>';
+      }
+
+      // Actions
+      html += '<div class="cp-hook-idea-actions">';
+      if (isActive) {
+        html += '<span class="cp-text-muted" style="font-size:11px;flex:1">This hook is applied to the ad.</span>';
+      } else {
+        html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="ws-use-ad-hook-idea" data-id="' + esc(ad.id) + '" data-idx="' + idx + '">' + icon('check') + ' Use this hook</button>';
+      }
+      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-remove-ad-hook-idea" data-id="' + esc(ad.id) + '" data-idx="' + idx + '" title="Discard">' + icon('trash') + '</button>';
+      html += '</div>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdHookScoreRow(label, raw) {
+    var score = Math.max(0, Math.min(100, Math.round(Number(raw) || 0)));
+    var tone = score >= 75 ? 'good' : (score >= 50 ? 'ok' : 'low');
+    var html = '<div class="cp-hook-score-row cp-hook-score-' + tone + '">';
+    html += '<span class="cp-hook-score-label">' + esc(label) + '</span>';
+    html += '<span class="cp-hook-score-bar"><span class="cp-hook-score-fill" style="width:' + score + '%"></span></span>';
+    html += '<span class="cp-hook-score-value">' + score + '</span>';
     html += '</div>';
     return html;
   }

@@ -4236,6 +4236,10 @@
     html += '</select></div></div>';
     html += '</div>';
 
+    // Inline AI hook ideas (scored, with psychology) — replaces the old AI
+    // preview modal so options stay around until the user picks one.
+    html += renderAdHookIdeas(ad);
+
     // Pull from parent Ad Set's library messages
     if (briefMsgs.length) {
       html += '<div class="cp-inspector-section">';
@@ -4267,6 +4271,111 @@
     html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-ad-hooks" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate hooks</button>';
     html += '</div>';
 
+    html += '</div>';
+    return html;
+  }
+
+  // --- AI hook ideas — inline scored options on the Hook tab ---
+  //
+  // Replaces the old preview modal. After "Generate hooks" runs, options live
+  // on `ad.hook.ai_ideas`. The active selection is tracked by
+  // `ad.hook.active_idea_id`: that card pins to the top, others collapse to
+  // a one-line summary the user can re-expand. Each option exposes three
+  // 0–100 scores (conversion / readability / connection) and a psychology
+  // blurb explaining why it works.
+
+  function renderAdHookIdeas(ad) {
+    var hook = ad.hook || {};
+    var ideas = hook.ai_ideas || [];
+    if (!ideas.length) return '';
+
+    var activeId = hook.active_idea_id || '';
+    var ordered = ideas.slice();
+    if (activeId) {
+      var i = -1;
+      for (var k = 0; k < ordered.length; k++) { if (ordered[k].id === activeId) { i = k; break; } }
+      if (i > 0) {
+        var pinned = ordered.splice(i, 1)[0];
+        ordered.unshift(pinned);
+      }
+    }
+
+    var html = '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('sparkles') + ' AI hook ideas';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">' + ideas.length + ' option' + (ideas.length !== 1 ? 's' : '') + ' · scored 0–100</span>';
+    html += '<div class="cp-hook-ideas-actions" style="margin-left:auto;display:inline-flex;gap:6px">';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ai-generate-ad-hooks" data-id="' + esc(ad.id) + '" title="Regenerate (replaces these ideas)">' + icon('rotate') + ' Regenerate</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-clear-ad-hook-ideas" data-id="' + esc(ad.id) + '" title="Clear all ideas">' + icon('trash') + '</button>';
+    html += '</div>';
+    html += '</div>';
+
+    html += '<div class="cp-hook-ideas">';
+    for (var n = 0; n < ordered.length; n++) {
+      var idea = ordered[n];
+      var origIdx = -1;
+      for (var m = 0; m < ideas.length; m++) { if (ideas[m].id === idea.id) { origIdx = m; break; } }
+      var isActive = activeId && idea.id === activeId;
+      var collapsed = !!activeId && !isActive;
+      html += renderAdHookIdeaCard(ad, idea, origIdx, isActive, collapsed);
+    }
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdHookIdeaCard(ad, idea, idx, isActive, collapsed) {
+    var scores = idea.scores || {};
+    var cls = 'cp-hook-idea-card';
+    if (isActive) cls += ' cp-hook-idea-card-active';
+    if (collapsed) cls += ' cp-hook-idea-card-collapsed';
+
+    var html = '<div class="' + cls + '" data-idea-id="' + esc(idea.id) + '">';
+
+    // Header row — always visible
+    html += '<div class="cp-hook-idea-head">';
+    html += '<span class="cp-pullable-hook-type">' + esc(idea.type || 'direct') + '</span>';
+    if (isActive) html += '<span class="cp-hook-idea-active-badge">' + icon('circle-check') + ' Active</span>';
+    html += '<div class="cp-hook-idea-text' + (collapsed ? ' cp-hook-idea-text-clamp' : '') + '">' + esc(idea.text) + '</div>';
+    if (collapsed) {
+      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-toggle-hook-idea-expanded" data-id="' + esc(ad.id) + '" data-idea-id="' + esc(idea.id) + '" title="Expand">' + icon('chevron-down') + '</button>';
+    }
+    html += '</div>';
+
+    if (!collapsed) {
+      // Score bars
+      html += '<div class="cp-hook-idea-scores">';
+      html += renderAdHookScoreRow('Conversion',  scores.conversion);
+      html += renderAdHookScoreRow('Readability', scores.readability);
+      html += renderAdHookScoreRow('Connection',  scores.connection);
+      html += '</div>';
+
+      // Psychology
+      if (idea.psychology) {
+        html += '<div class="cp-hook-idea-psychology">' + icon('lightbulb') + ' <em>' + esc(idea.psychology) + '</em></div>';
+      }
+
+      // Actions
+      html += '<div class="cp-hook-idea-actions">';
+      if (isActive) {
+        html += '<span class="cp-text-muted" style="font-size:11px;flex:1">This hook is applied to the ad.</span>';
+      } else {
+        html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="ws-use-ad-hook-idea" data-id="' + esc(ad.id) + '" data-idx="' + idx + '">' + icon('check') + ' Use this hook</button>';
+      }
+      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-remove-ad-hook-idea" data-id="' + esc(ad.id) + '" data-idx="' + idx + '" title="Discard">' + icon('trash') + '</button>';
+      html += '</div>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdHookScoreRow(label, raw) {
+    var score = Math.max(0, Math.min(100, Math.round(Number(raw) || 0)));
+    var tone = score >= 75 ? 'good' : (score >= 50 ? 'ok' : 'low');
+    var html = '<div class="cp-hook-score-row cp-hook-score-' + tone + '">';
+    html += '<span class="cp-hook-score-label">' + esc(label) + '</span>';
+    html += '<span class="cp-hook-score-bar"><span class="cp-hook-score-fill" style="width:' + score + '%"></span></span>';
+    html += '<span class="cp-hook-score-value">' + score + '</span>';
     html += '</div>';
     return html;
   }
@@ -11134,6 +11243,64 @@
       saveEntityField('ad_set', id, 'brief.hook_angles', angles);
     });
 
+    // AI hook ideas — pick / discard / clear / expand. Lives on
+    // `ad.hook.ai_ideas` and is populated by `aiGenerateAdHooks`. Active
+    // selection tracked by `ad.hook.active_idea_id`.
+    $(document).off('click.cpv2-use-hook-idea').on('click.cpv2-use-hook-idea', '[data-action="ws-use-ad-hook-idea"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var idx = parseInt($(this).data('idx'), 10);
+      var ad = getAd(id); if (!ad || !ad.hook) return;
+      var ideas = ad.hook.ai_ideas || [];
+      var idea = ideas[idx]; if (!idea) return;
+      snapshot('Use AI hook idea');
+      ad.hook.text = idea.text;
+      ad.hook.type = idea.type || 'direct';
+      ad.hook.active_idea_id = idea.id;
+      ad.hook.source_message_id = '';
+      ad.hook.selected_hook_id = '';
+      ad.updated = new Date().toISOString();
+      saveEntityField('ad', id, 'hook', ad.hook);
+      if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI hook idea');
+      logActivity('hook_selected', 'ad', id, ad.name, 'Applied AI hook idea (' + (idea.type || 'direct') + ')');
+      toast('Hook applied', 'success');
+    });
+
+    $(document).off('click.cpv2-rm-hook-idea').on('click.cpv2-rm-hook-idea', '[data-action="ws-remove-ad-hook-idea"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var idx = parseInt($(this).data('idx'), 10);
+      var ad = getAd(id); if (!ad || !ad.hook) return;
+      var ideas = ad.hook.ai_ideas || [];
+      var removed = ideas[idx]; if (!removed) return;
+      ideas.splice(idx, 1);
+      if (ad.hook.active_idea_id === removed.id) ad.hook.active_idea_id = '';
+      snapshot('Discard hook idea');
+      saveEntityField('ad', id, 'hook', ad.hook);
+    });
+
+    $(document).off('click.cpv2-clear-hook-ideas').on('click.cpv2-clear-hook-ideas', '[data-action="ws-clear-ad-hook-ideas"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = getAd(id); if (!ad || !ad.hook) return;
+      if (!(ad.hook.ai_ideas && ad.hook.ai_ideas.length)) return;
+      snapshot('Clear hook ideas');
+      ad.hook.ai_ideas = [];
+      ad.hook.active_idea_id = '';
+      saveEntityField('ad', id, 'hook', ad.hook);
+    });
+
+    // Expand a collapsed hook idea card without re-rendering — same pattern
+    // as the status dropdown toggle, so adjacent inline fields keep focus.
+    $(document).off('click.cpv2-toggle-hook-idea').on('click.cpv2-toggle-hook-idea', '[data-action="ws-toggle-hook-idea-expanded"]', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var ideaId = $(this).data('idea-id');
+      var $card = $(this).closest('.cp-hook-idea-card[data-idea-id="' + ideaId + '"]');
+      if (!$card.length) return;
+      $card.removeClass('cp-hook-idea-card-collapsed');
+    });
+
     // Pull a hook from a library message into an Ad (also captures snapshot)
     $(document).off('click.cpv2-pull-hook').on('click.cpv2-pull-hook', '[data-action="ws-pull-hook"]', function(e) {
       e.preventDefault();
@@ -12997,31 +13164,57 @@
     var adSet = getAdSet(ad.ad_set_id);
     var camp = adSet ? getCampaignV2(adSet.campaign_id) : null;
 
-    var prompt = 'Write 3 distinct hook options for this Ad. Each should be 1 sentence, max 100 chars, with a different angle.\n\n';
+    var prompt = 'Write 3 distinct hook options for this Meta Ad. Each should be 1 sentence, max 100 chars, with a different angle. For each, also rate it on three 0-100 scores and explain the psychology.\n\n';
     if (camp) prompt += aiV2_campaignContext(camp) + '\n';
     if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
     if (ad.creative && ad.creative.primary_text) prompt += 'Current primary text: ' + ad.creative.primary_text + '\n';
     prompt += '\n' + brandSnippet('content');
     prompt += '\n\nHook types: question, bold, story, data, direct, curiosity, challenge.\n';
-    prompt += 'Respond JSON only: {"hooks":[{"text":"","type":""}]}';
+    prompt += 'scores.conversion = how likely this hook moves a cold viewer toward the CTA (0-100).\n';
+    prompt += 'scores.readability = how easy it is to read at a glance — short words, low cognitive load (0-100).\n';
+    prompt += 'scores.connection = how strongly it speaks to the audience\'s pain / desire (0-100).\n';
+    prompt += 'psychology = 1-2 sentences explaining why this hook works for this audience.\n';
+    prompt += 'Respond JSON only: {"hooks":[{"text":"","type":"","scores":{"conversion":0,"readability":0,"connection":0},"psychology":""}]}';
 
     toast('AI writing hooks...', 'info');
     callAIWithRetry(prompt, function(parsed) {
-      var hooks = parsed.hooks || [];
+      var hooks = (parsed && parsed.hooks) || [];
       if (hooks.length === 0) { toast('AI returned no hooks', 'warning'); return; }
-      showAIPreview('Pick a hook', hooks.map(function(h, i) { return { label: 'Option ' + (i+1) + ' (' + (h.type || 'direct') + ')', content: h.text, _hook: h }; }), function(selected) {
-        snapshot('AI hook');
-        ad.hook = ad.hook || {};
-        ad.hook.text = selected.content;
-        ad.hook.type = selected._hook.type || 'direct';
-        ad.updated = new Date().toISOString();
-        if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI hook');
-        buildMaps(); syncToTextarea(); render();
-        logActivity('hook_generated', 'ad', adId, ad.name, 'AI hook selected');
-        toast('Hook applied', 'success');
-      }, { formatItem: function(opt) { return '<blockquote class="cp-ad-hook">' + esc(opt.content) + '</blockquote>'; } });
+      var ideas = hooks.map(function(h) {
+        var s = h.scores || {};
+        return {
+          id: generateId('hki'),
+          text: String(h.text || '').trim(),
+          type: String(h.type || 'direct').trim(),
+          scores: {
+            conversion:  clamp100(s.conversion),
+            readability: clamp100(s.readability),
+            connection:  clamp100(s.connection)
+          },
+          psychology: String(h.psychology || '').trim(),
+          generated_at: new Date().toISOString()
+        };
+      }).filter(function(i) { return i.text; });
+      if (ideas.length === 0) { toast('AI returned no usable hooks', 'warning'); return; }
+
+      snapshot('AI hook ideas');
+      ad.hook = ad.hook || { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' };
+      ad.hook.ai_ideas = ideas;
+      ad.hook.active_idea_id = '';
+      ad.updated = new Date().toISOString();
+      buildMaps(); syncToTextarea(); render();
+      logActivity('hook_generated', 'ad', adId, ad.name, 'AI generated ' + ideas.length + ' hook ideas');
+      toast('Got ' + ideas.length + ' hook ideas — pick one in the Hook tab', 'success');
     }, function(err) { toast('AI error: ' + err, 'error'); },
        'ai-generate-ad-hooks', BrandService.getSystemPrompt('content'), parseJSON);
+  }
+
+  function clamp100(n) {
+    n = Number(n);
+    if (!isFinite(n)) return 0;
+    if (n < 0) return 0;
+    if (n > 100) return 100;
+    return Math.round(n);
   }
 
   // --- 6. Write Ad Copy (alternatives bundle: primary text + headline + description) ---

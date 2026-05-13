@@ -367,6 +367,132 @@
   color: var(--cp-white);
 }
 
+/* ----- AI hook ideas (scored, with psychology) ----- */
+.cp-hook-ideas {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cp-space-2);
+}
+.cp-hook-idea-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--cp-white);
+  border: 1px solid var(--cp-border-light);
+  border-radius: var(--cp-radius-md);
+  transition: border-color 120ms, box-shadow 120ms, background 120ms;
+}
+.cp-hook-idea-card:hover { border-color: var(--cp-primary); }
+.cp-hook-idea-card-active {
+  border-color: var(--cp-primary);
+  background: var(--cp-primary-subtle, #e8f0fe);
+  box-shadow: 0 0 0 1px var(--cp-primary) inset;
+}
+.cp-hook-idea-card-collapsed {
+  padding: 6px 12px;
+  background: var(--cp-gray-50);
+}
+.cp-hook-idea-card-collapsed .cp-hook-idea-head { gap: 8px; }
+.cp-hook-idea-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cp-hook-idea-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cp-primary);
+}
+.cp-hook-idea-text {
+  flex: 1 1 100%;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--cp-text-primary);
+  margin: 4px 0 0;
+}
+.cp-hook-idea-card-collapsed .cp-hook-idea-text {
+  flex: 1 1 0;
+  margin: 0;
+  font-size: 12px;
+  color: var(--cp-text-secondary);
+}
+.cp-hook-idea-text-clamp {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Score row: label · bar · value */
+.cp-hook-idea-scores {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cp-hook-score-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 36px;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--cp-text-secondary);
+}
+.cp-hook-score-label {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.cp-hook-score-bar {
+  position: relative;
+  height: 6px;
+  background: var(--cp-gray-100, #f1f3f4);
+  border-radius: var(--cp-radius-full);
+  overflow: hidden;
+}
+.cp-hook-score-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--cp-primary);
+  transition: width 200ms ease;
+}
+.cp-hook-score-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: right;
+  color: var(--cp-text-primary);
+}
+.cp-hook-score-low  .cp-hook-score-fill { background: #be123c; }
+.cp-hook-score-ok   .cp-hook-score-fill { background: #e37400; }
+.cp-hook-score-good .cp-hook-score-fill { background: #0d904f; }
+
+.cp-hook-idea-psychology {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--cp-text-secondary);
+  padding: 6px 8px;
+  background: var(--cp-gray-50);
+  border-radius: var(--cp-radius-sm);
+}
+.cp-hook-idea-psychology em { font-style: italic; }
+
+.cp-hook-idea-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
 /* ----- Pullable hooks (Hook tab) ----- */
 .cp-pullable-message {
   border: 1px solid var(--cp-border-light);

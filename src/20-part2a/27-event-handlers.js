@@ -806,6 +806,64 @@
       saveEntityField('ad_set', id, 'brief.hook_angles', angles);
     });
 
+    // AI hook ideas — pick / discard / clear / expand. Lives on
+    // `ad.hook.ai_ideas` and is populated by `aiGenerateAdHooks`. Active
+    // selection tracked by `ad.hook.active_idea_id`.
+    $(document).off('click.cpv2-use-hook-idea').on('click.cpv2-use-hook-idea', '[data-action="ws-use-ad-hook-idea"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var idx = parseInt($(this).data('idx'), 10);
+      var ad = getAd(id); if (!ad || !ad.hook) return;
+      var ideas = ad.hook.ai_ideas || [];
+      var idea = ideas[idx]; if (!idea) return;
+      snapshot('Use AI hook idea');
+      ad.hook.text = idea.text;
+      ad.hook.type = idea.type || 'direct';
+      ad.hook.active_idea_id = idea.id;
+      ad.hook.source_message_id = '';
+      ad.hook.selected_hook_id = '';
+      ad.updated = new Date().toISOString();
+      saveEntityField('ad', id, 'hook', ad.hook);
+      if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI hook idea');
+      logActivity('hook_selected', 'ad', id, ad.name, 'Applied AI hook idea (' + (idea.type || 'direct') + ')');
+      toast('Hook applied', 'success');
+    });
+
+    $(document).off('click.cpv2-rm-hook-idea').on('click.cpv2-rm-hook-idea', '[data-action="ws-remove-ad-hook-idea"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var idx = parseInt($(this).data('idx'), 10);
+      var ad = getAd(id); if (!ad || !ad.hook) return;
+      var ideas = ad.hook.ai_ideas || [];
+      var removed = ideas[idx]; if (!removed) return;
+      ideas.splice(idx, 1);
+      if (ad.hook.active_idea_id === removed.id) ad.hook.active_idea_id = '';
+      snapshot('Discard hook idea');
+      saveEntityField('ad', id, 'hook', ad.hook);
+    });
+
+    $(document).off('click.cpv2-clear-hook-ideas').on('click.cpv2-clear-hook-ideas', '[data-action="ws-clear-ad-hook-ideas"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = getAd(id); if (!ad || !ad.hook) return;
+      if (!(ad.hook.ai_ideas && ad.hook.ai_ideas.length)) return;
+      snapshot('Clear hook ideas');
+      ad.hook.ai_ideas = [];
+      ad.hook.active_idea_id = '';
+      saveEntityField('ad', id, 'hook', ad.hook);
+    });
+
+    // Expand a collapsed hook idea card without re-rendering — same pattern
+    // as the status dropdown toggle, so adjacent inline fields keep focus.
+    $(document).off('click.cpv2-toggle-hook-idea').on('click.cpv2-toggle-hook-idea', '[data-action="ws-toggle-hook-idea-expanded"]', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var ideaId = $(this).data('idea-id');
+      var $card = $(this).closest('.cp-hook-idea-card[data-idea-id="' + ideaId + '"]');
+      if (!$card.length) return;
+      $card.removeClass('cp-hook-idea-card-collapsed');
+    });
+
     // Pull a hook from a library message into an Ad (also captures snapshot)
     $(document).off('click.cpv2-pull-hook').on('click.cpv2-pull-hook', '[data-action="ws-pull-hook"]', function(e) {
       e.preventDefault();
