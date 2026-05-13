@@ -219,6 +219,10 @@
     html += '</select></div></div>';
     html += '</div>';
 
+    // Inline AI hook ideas (scored, with psychology) — replaces the old AI
+    // preview modal so options stay around until the user picks one.
+    html += renderAdHookIdeas(ad);
+
     // Pull from parent Ad Set's library messages
     if (briefMsgs.length) {
       html += '<div class="cp-inspector-section">';
@@ -254,59 +258,175 @@
     return html;
   }
 
+  // --- AI hook ideas — inline scored options on the Hook tab ---
+  //
+  // Replaces the old preview modal. After "Generate hooks" runs, options live
+  // on `ad.hook.ai_ideas`. The active selection is tracked by
+  // `ad.hook.active_idea_id`: that card pins to the top, others collapse to
+  // a one-line summary the user can re-expand. Each option exposes three
+  // 0–100 scores (conversion / readability / connection) and a psychology
+  // blurb explaining why it works.
+
+  function renderAdHookIdeas(ad) {
+    var hook = ad.hook || {};
+    var ideas = hook.ai_ideas || [];
+    if (!ideas.length) return '';
+
+    var activeId = hook.active_idea_id || '';
+    var ordered = ideas.slice();
+    if (activeId) {
+      var i = -1;
+      for (var k = 0; k < ordered.length; k++) { if (ordered[k].id === activeId) { i = k; break; } }
+      if (i > 0) {
+        var pinned = ordered.splice(i, 1)[0];
+        ordered.unshift(pinned);
+      }
+    }
+
+    var html = '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('sparkles') + ' AI hook ideas';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">' + ideas.length + ' option' + (ideas.length !== 1 ? 's' : '') + ' · scored 0–100</span>';
+    html += '<div class="cp-hook-ideas-actions" style="margin-left:auto;display:inline-flex;gap:6px">';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ai-generate-ad-hooks" data-id="' + esc(ad.id) + '" title="Regenerate (replaces these ideas)">' + icon('rotate') + ' Regenerate</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-clear-ad-hook-ideas" data-id="' + esc(ad.id) + '" title="Clear all ideas">' + icon('trash') + '</button>';
+    html += '</div>';
+    html += '</div>';
+
+    html += '<div class="cp-hook-ideas">';
+    for (var n = 0; n < ordered.length; n++) {
+      var idea = ordered[n];
+      var origIdx = -1;
+      for (var m = 0; m < ideas.length; m++) { if (ideas[m].id === idea.id) { origIdx = m; break; } }
+      var isActive = activeId && idea.id === activeId;
+      var collapsed = !!activeId && !isActive;
+      html += renderAdHookIdeaCard(ad, idea, origIdx, isActive, collapsed);
+    }
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdHookIdeaCard(ad, idea, idx, isActive, collapsed) {
+    var scores = idea.scores || {};
+    var cls = 'cp-hook-idea-card';
+    if (isActive) cls += ' cp-hook-idea-card-active';
+    if (collapsed) cls += ' cp-hook-idea-card-collapsed';
+
+    var html = '<div class="' + cls + '" data-idea-id="' + esc(idea.id) + '">';
+
+    // Header row — always visible
+    html += '<div class="cp-hook-idea-head">';
+    html += '<span class="cp-pullable-hook-type">' + esc(idea.type || 'direct') + '</span>';
+    if (isActive) html += '<span class="cp-hook-idea-active-badge">' + icon('circle-check') + ' Active</span>';
+    html += '<div class="cp-hook-idea-text' + (collapsed ? ' cp-hook-idea-text-clamp' : '') + '">' + esc(idea.text) + '</div>';
+    if (collapsed) {
+      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-toggle-hook-idea-expanded" data-id="' + esc(ad.id) + '" data-idea-id="' + esc(idea.id) + '" title="Expand">' + icon('chevron-down') + '</button>';
+    }
+    html += '</div>';
+
+    if (!collapsed) {
+      // Score bars
+      html += '<div class="cp-hook-idea-scores">';
+      html += renderAdHookScoreRow('Conversion',  scores.conversion);
+      html += renderAdHookScoreRow('Readability', scores.readability);
+      html += renderAdHookScoreRow('Connection',  scores.connection);
+      html += '</div>';
+
+      // Psychology
+      if (idea.psychology) {
+        html += '<div class="cp-hook-idea-psychology">' + icon('lightbulb') + ' <em>' + esc(idea.psychology) + '</em></div>';
+      }
+
+      // Actions
+      html += '<div class="cp-hook-idea-actions">';
+      if (isActive) {
+        html += '<span class="cp-text-muted" style="font-size:11px;flex:1">This hook is applied to the ad.</span>';
+      } else {
+        html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="ws-use-ad-hook-idea" data-id="' + esc(ad.id) + '" data-idx="' + idx + '">' + icon('check') + ' Use this hook</button>';
+      }
+      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-remove-ad-hook-idea" data-id="' + esc(ad.id) + '" data-idx="' + idx + '" title="Discard">' + icon('trash') + '</button>';
+      html += '</div>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdHookScoreRow(label, raw) {
+    var score = Math.max(0, Math.min(100, Math.round(Number(raw) || 0)));
+    var tone = score >= 75 ? 'good' : (score >= 50 ? 'ok' : 'low');
+    var html = '<div class="cp-hook-score-row cp-hook-score-' + tone + '">';
+    html += '<span class="cp-hook-score-label">' + esc(label) + '</span>';
+    html += '<span class="cp-hook-score-bar"><span class="cp-hook-score-fill" style="width:' + score + '%"></span></span>';
+    html += '<span class="cp-hook-score-value">' + score + '</span>';
+    html += '</div>';
+    return html;
+  }
+
   function renderAdCopyStep(ad) {
     var c = ad.creative || {};
     var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
 
     html += '<div class="cp-inspector-section">';
     html += '<div class="cp-inspector-section-title">' + icon('pen-fancy') + ' Primary text';
-    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">125 chars recommended · main body copy</span>';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">Body copy above the media · 125 chars recommended. Headline, description, and destination live in Overview.</span>';
     html += '</div>';
-    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="creative.primary_text" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="4" placeholder="The body copy above your media.">' + esc(c.primary_text || '') + '</textarea>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="creative.primary_text" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="6" placeholder="The body copy above your media.">' + esc(c.primary_text || '') + '</textarea>';
     html += '<div class="cp-char-counter">' + countChars(c.primary_text || '') + ' chars · ' + countWords(c.primary_text || '') + ' words</div>';
     html += '</div>';
 
-    html += '<div class="cp-form-row">';
-    html += '<div class="cp-form-half">';
-    html += '<div class="cp-inspector-section-title">' + icon('heading') + ' Headline <span class="cp-text-muted" style="font-weight:400;font-size:11px">27 chars</span></div>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.headline" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" maxlength="60" value="' + esc(c.headline || '') + '">';
-    html += '</div>';
-    html += '<div class="cp-form-half">';
-    html += '<div class="cp-inspector-section-title">' + icon('align-left') + ' Description <span class="cp-text-muted" style="font-weight:400;font-size:11px">27 chars</span></div>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.description" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" maxlength="60" value="' + esc(c.description || '') + '">';
-    html += '</div></div>';
-
-    html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('link') + ' Destination</div>';
-    html += '<div class="cp-form-row">';
-    html += '<div class="cp-form-third"><label>CTA</label>';
-    html += '<select class="cp-select cp-v2-inline-field" data-field="creative.cta_type" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
-    var C = Constants;
-    for (var ctk in C.META_CTA_TYPES) {
-      var ctSel = (c.cta_type === ctk) ? ' selected' : '';
-      html += '<option value="' + ctk + '"' + ctSel + '>' + esc(C.META_CTA_TYPES[ctk].label) + '</option>';
-    }
-    html += '</select></div>';
-    html += '<div class="cp-form-grow"><label>Destination URL</label>';
-    html += '<input type="url" class="cp-input cp-v2-inline-field" data-field="creative.cta_link" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.cta_link || '') + '" placeholder="https://example.com">';
-    html += '</div></div>';
-
-    // Display link + tracking params — orphaned fields from the old modal,
-    // both relate to destination so they live in the Copy tab now.
-    html += '<div class="cp-form-row" style="margin-top:var(--cp-space-2)">';
-    html += '<div class="cp-form-half"><label>Display link <span class="cp-text-muted" style="font-weight:400;font-size:11px">optional — shown to viewers if set</span></label>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.display_link" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.display_link || '') + '" placeholder="example.com/landing">';
-    html += '</div>';
-    html += '<div class="cp-form-half"><label>Tracking params <span class="cp-text-muted" style="font-weight:400;font-size:11px">UTM query string</span></label>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.tracking_params" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.tracking_params || '') + '" placeholder="utm_source=meta&amp;utm_medium=...">';
-    html += '</div></div>';
-    html += '</div>';
+    // Inline AI copy variants — populated by aiWriteAdCopy / aiImproveAdCopy.
+    html += renderAdCopyVariants(ad);
 
     html += '<div class="cp-inspector-actions">';
     html += '<button class="cp-btn cp-btn-ai" data-action="ai-write-ad-copy" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' AI write copy</button>';
     html += '<button class="cp-btn cp-btn-outline" data-action="ai-improve-ad-copy" data-id="' + esc(ad.id) + '">' + icon('wand-magic') + ' Improve</button>';
     html += '</div>';
 
+    html += '</div>';
+    return html;
+  }
+
+  // --- AI copy variants — inline primary_text options on the Copy tab ---
+  //
+  // Stored on `ad.creative.ai_copy_variants` as `{ id, text, source, generated_at }`.
+  // `source` is 'write' (one of three new variants) or 'improve' (a refinement
+  // of the current primary_text). User picks one to overwrite primary_text.
+
+  function renderAdCopyVariants(ad) {
+    var variants = (ad.creative && ad.creative.ai_copy_variants) || [];
+    if (!variants.length) return '';
+
+    var isImprove = variants.length === 1 && variants[0].source === 'improve';
+    var titleIcon = isImprove ? 'wand-magic' : 'sparkles';
+    var titleLabel = isImprove ? 'Improved primary text' : 'AI copy variants';
+    var subtitle = isImprove
+      ? 'Compare with what you have now.'
+      : variants.length + ' option' + (variants.length !== 1 ? 's' : '') + ' · click <strong>Use this</strong> to overwrite the textarea above.';
+
+    var html = '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon(titleIcon) + ' ' + esc(titleLabel);
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">' + subtitle + '</span>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-clear-ad-copy-variants" data-id="' + esc(ad.id) + '" style="margin-left:auto" title="Clear all variants">' + icon('trash') + '</button>';
+    html += '</div>';
+
+    html += '<div class="cp-copy-variants">';
+    for (var i = 0; i < variants.length; i++) {
+      var v = variants[i];
+      html += '<div class="cp-copy-variant-card" data-variant-id="' + esc(v.id) + '">';
+      html += '<div class="cp-copy-variant-head">';
+      html += '<span class="cp-copy-variant-num">' + (isImprove ? icon('wand-magic') : (i + 1)) + '</span>';
+      html += '<span class="cp-copy-variant-label">' + esc(isImprove ? 'AI improvement' : 'Variant ' + (i + 1)) + '</span>';
+      html += '<span class="cp-text-muted" style="font-size:11px;margin-left:auto">' + countChars(v.text || '') + ' chars</span>';
+      html += '</div>';
+      html += '<div class="cp-copy-variant-text">' + esc(v.text || '') + '</div>';
+      html += '<div class="cp-copy-variant-actions">';
+      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="ws-use-ad-copy-variant" data-id="' + esc(ad.id) + '" data-idx="' + i + '">' + icon('check') + ' Use this</button>';
+      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-remove-ad-copy-variant" data-id="' + esc(ad.id) + '" data-idx="' + i + '" title="Discard">' + icon('trash') + '</button>';
+      html += '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
     html += '</div>';
     return html;
   }
@@ -663,11 +783,10 @@
   }
 
   function isAdCopyDone(ad) {
+    // Copy step now scopes to primary_text only — headline / description /
+    // destination live in Overview and are validated at export time.
     var c = (ad && ad.creative) || {};
-    var hasBody = (c.primary_text || '').trim().length >= 20;
-    var hasHeadline = !!(((c.headline || '').trim()) || ((c.description || '').trim()));
-    var hasLink = (c.cta_link || '').trim().length > 0;
-    return hasBody && hasHeadline && hasLink;
+    return (c.primary_text || '').trim().length >= 20;
   }
 
   function isAdMediaDone(ad) {

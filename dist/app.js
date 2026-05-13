@@ -3775,12 +3775,53 @@
 
     var html = '';
     html += _renderAdOverviewConfig(ad);
+    html += _renderAdOverviewHeadlineDestination(ad);
     html += _renderAdSummaryHook(ad);
-    html += _renderAdSummaryCopy(ad);
     html += _renderAdSummaryMedia(ad, ctype);
     html += _renderAdOverviewAssignment(ad);
     html += _renderAdSummaryReview(ad);
     html += _renderAdOverviewFooter(ad);
+    return html;
+  }
+
+  // Editable supporting copy fields. These used to live in the Copy tab but
+  // the Copy tab is now scoped to the primary text only — headline,
+  // description, CTA, destination URL, display link, and tracking params live
+  // here in Overview where they sit alongside the other ad configuration.
+  function _renderAdOverviewHeadlineDestination(ad) {
+    var c = ad.creative || {};
+    var html = '<div class="cp-inspector-section cp-inspector-config">';
+    html += '<div class="cp-inspector-section-title">' + icon('link') + ' Headline &amp; destination</div>';
+
+    html += '<div class="cp-form-row">';
+    html += '<div class="cp-form-half"><label>Headline <span class="cp-text-muted" style="font-weight:400;font-size:11px">27 chars</span></label>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.headline" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" maxlength="60" value="' + esc(c.headline || '') + '">';
+    html += '</div>';
+    html += '<div class="cp-form-half"><label>Description <span class="cp-text-muted" style="font-weight:400;font-size:11px">27 chars</span></label>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.description" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" maxlength="60" value="' + esc(c.description || '') + '">';
+    html += '</div></div>';
+
+    html += '<div class="cp-form-row" style="margin-top:var(--cp-space-2)">';
+    html += '<div class="cp-form-third"><label>CTA</label>';
+    html += '<select class="cp-select cp-v2-inline-field" data-field="creative.cta_type" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
+    for (var ctk in META_CTA_TYPES) {
+      var ctSel = (c.cta_type === ctk) ? ' selected' : '';
+      html += '<option value="' + ctk + '"' + ctSel + '>' + esc(META_CTA_TYPES[ctk].label) + '</option>';
+    }
+    html += '</select></div>';
+    html += '<div class="cp-form-grow"><label>Destination URL</label>';
+    html += '<input type="url" class="cp-input cp-v2-inline-field" data-field="creative.cta_link" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.cta_link || '') + '" placeholder="https://example.com">';
+    html += '</div></div>';
+
+    html += '<div class="cp-form-row" style="margin-top:var(--cp-space-2)">';
+    html += '<div class="cp-form-half"><label>Display link <span class="cp-text-muted" style="font-weight:400;font-size:11px">optional</span></label>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.display_link" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.display_link || '') + '" placeholder="example.com/landing">';
+    html += '</div>';
+    html += '<div class="cp-form-half"><label>Tracking params <span class="cp-text-muted" style="font-weight:400;font-size:11px">UTM query string</span></label>';
+    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.tracking_params" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.tracking_params || '') + '" placeholder="utm_source=meta&amp;utm_medium=...">';
+    html += '</div></div>';
+
+    html += '</div>';
     return html;
   }
 
@@ -3844,35 +3885,6 @@
       : '<div class="cp-text-muted">No hook yet. Open the Hook tab to add one.</div>';
 
     return _renderAdSummaryCard('anchor', 'Hook', 'hook', pill, body);
-  }
-
-  function _renderAdSummaryCopy(ad) {
-    var c = ad.creative || {};
-    var cta = metaCTA(c.cta_type);
-    var fieldsFilled = (c.primary_text ? 1 : 0) + (c.headline ? 1 : 0) + (c.description ? 1 : 0) + (c.cta_type ? 1 : 0) + (c.cta_link ? 1 : 0);
-    var pill;
-    if (fieldsFilled === 0) pill = '<span class="cp-inspector-status-pill cp-inspector-status-pill-empty">' + icon('circle') + ' Not set</span>';
-    else if (fieldsFilled < 4) pill = '<span class="cp-inspector-status-pill cp-inspector-status-pill-partial">' + icon('circle-half-stroke') + ' Partial</span>';
-    else pill = '<span class="cp-inspector-status-pill cp-inspector-status-pill-filled">' + icon('circle-check') + ' Filled</span>';
-
-    var body = '';
-    if (fieldsFilled === 0) {
-      body = '<div class="cp-text-muted">No copy yet. Open the Copy tab to add primary text, headline, description, and CTA.</div>';
-    } else {
-      body += '<div class="cp-inspector-grid cp-inspector-grid-1">';
-      if (c.primary_text) body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Primary text</div><div class="cp-inspector-field-value">' + esc(truncate(c.primary_text, 200)) + '</div></div>';
-      if (c.headline)     body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Headline</div><div class="cp-inspector-field-value">' + esc(c.headline) + '</div></div>';
-      if (c.description)  body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Description</div><div class="cp-inspector-field-value">' + esc(c.description) + '</div></div>';
-      if (c.cta_type || c.cta_link) {
-        var ctaVal = (cta ? cta.label : (c.cta_type || '')) + (c.cta_link ? ' → ' + truncate(c.cta_link, 80) : '');
-        body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">CTA</div><div class="cp-inspector-field-value">' + esc(ctaVal) + '</div></div>';
-      }
-      if (c.display_link)     body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Display link</div><div class="cp-inspector-field-value">' + esc(c.display_link) + '</div></div>';
-      if (c.tracking_params)  body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Tracking</div><div class="cp-inspector-field-value">' + esc(truncate(c.tracking_params, 120)) + '</div></div>';
-      body += '</div>';
-    }
-
-    return _renderAdSummaryCard('pen-fancy', 'Copy', 'copy', pill, body);
   }
 
   function _renderAdSummaryMedia(ad, ctype) {
@@ -4236,6 +4248,10 @@
     html += '</select></div></div>';
     html += '</div>';
 
+    // Inline AI hook ideas (scored, with psychology) — replaces the old AI
+    // preview modal so options stay around until the user picks one.
+    html += renderAdHookIdeas(ad);
+
     // Pull from parent Ad Set's library messages
     if (briefMsgs.length) {
       html += '<div class="cp-inspector-section">';
@@ -4271,59 +4287,175 @@
     return html;
   }
 
+  // --- AI hook ideas — inline scored options on the Hook tab ---
+  //
+  // Replaces the old preview modal. After "Generate hooks" runs, options live
+  // on `ad.hook.ai_ideas`. The active selection is tracked by
+  // `ad.hook.active_idea_id`: that card pins to the top, others collapse to
+  // a one-line summary the user can re-expand. Each option exposes three
+  // 0–100 scores (conversion / readability / connection) and a psychology
+  // blurb explaining why it works.
+
+  function renderAdHookIdeas(ad) {
+    var hook = ad.hook || {};
+    var ideas = hook.ai_ideas || [];
+    if (!ideas.length) return '';
+
+    var activeId = hook.active_idea_id || '';
+    var ordered = ideas.slice();
+    if (activeId) {
+      var i = -1;
+      for (var k = 0; k < ordered.length; k++) { if (ordered[k].id === activeId) { i = k; break; } }
+      if (i > 0) {
+        var pinned = ordered.splice(i, 1)[0];
+        ordered.unshift(pinned);
+      }
+    }
+
+    var html = '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon('sparkles') + ' AI hook ideas';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">' + ideas.length + ' option' + (ideas.length !== 1 ? 's' : '') + ' · scored 0–100</span>';
+    html += '<div class="cp-hook-ideas-actions" style="margin-left:auto;display:inline-flex;gap:6px">';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ai-generate-ad-hooks" data-id="' + esc(ad.id) + '" title="Regenerate (replaces these ideas)">' + icon('rotate') + ' Regenerate</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-clear-ad-hook-ideas" data-id="' + esc(ad.id) + '" title="Clear all ideas">' + icon('trash') + '</button>';
+    html += '</div>';
+    html += '</div>';
+
+    html += '<div class="cp-hook-ideas">';
+    for (var n = 0; n < ordered.length; n++) {
+      var idea = ordered[n];
+      var origIdx = -1;
+      for (var m = 0; m < ideas.length; m++) { if (ideas[m].id === idea.id) { origIdx = m; break; } }
+      var isActive = activeId && idea.id === activeId;
+      var collapsed = !!activeId && !isActive;
+      html += renderAdHookIdeaCard(ad, idea, origIdx, isActive, collapsed);
+    }
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdHookIdeaCard(ad, idea, idx, isActive, collapsed) {
+    var scores = idea.scores || {};
+    var cls = 'cp-hook-idea-card';
+    if (isActive) cls += ' cp-hook-idea-card-active';
+    if (collapsed) cls += ' cp-hook-idea-card-collapsed';
+
+    var html = '<div class="' + cls + '" data-idea-id="' + esc(idea.id) + '">';
+
+    // Header row — always visible
+    html += '<div class="cp-hook-idea-head">';
+    html += '<span class="cp-pullable-hook-type">' + esc(idea.type || 'direct') + '</span>';
+    if (isActive) html += '<span class="cp-hook-idea-active-badge">' + icon('circle-check') + ' Active</span>';
+    html += '<div class="cp-hook-idea-text' + (collapsed ? ' cp-hook-idea-text-clamp' : '') + '">' + esc(idea.text) + '</div>';
+    if (collapsed) {
+      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-toggle-hook-idea-expanded" data-id="' + esc(ad.id) + '" data-idea-id="' + esc(idea.id) + '" title="Expand">' + icon('chevron-down') + '</button>';
+    }
+    html += '</div>';
+
+    if (!collapsed) {
+      // Score bars
+      html += '<div class="cp-hook-idea-scores">';
+      html += renderAdHookScoreRow('Conversion',  scores.conversion);
+      html += renderAdHookScoreRow('Readability', scores.readability);
+      html += renderAdHookScoreRow('Connection',  scores.connection);
+      html += '</div>';
+
+      // Psychology
+      if (idea.psychology) {
+        html += '<div class="cp-hook-idea-psychology">' + icon('lightbulb') + ' <em>' + esc(idea.psychology) + '</em></div>';
+      }
+
+      // Actions
+      html += '<div class="cp-hook-idea-actions">';
+      if (isActive) {
+        html += '<span class="cp-text-muted" style="font-size:11px;flex:1">This hook is applied to the ad.</span>';
+      } else {
+        html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="ws-use-ad-hook-idea" data-id="' + esc(ad.id) + '" data-idx="' + idx + '">' + icon('check') + ' Use this hook</button>';
+      }
+      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-remove-ad-hook-idea" data-id="' + esc(ad.id) + '" data-idx="' + idx + '" title="Discard">' + icon('trash') + '</button>';
+      html += '</div>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdHookScoreRow(label, raw) {
+    var score = Math.max(0, Math.min(100, Math.round(Number(raw) || 0)));
+    var tone = score >= 75 ? 'good' : (score >= 50 ? 'ok' : 'low');
+    var html = '<div class="cp-hook-score-row cp-hook-score-' + tone + '">';
+    html += '<span class="cp-hook-score-label">' + esc(label) + '</span>';
+    html += '<span class="cp-hook-score-bar"><span class="cp-hook-score-fill" style="width:' + score + '%"></span></span>';
+    html += '<span class="cp-hook-score-value">' + score + '</span>';
+    html += '</div>';
+    return html;
+  }
+
   function renderAdCopyStep(ad) {
     var c = ad.creative || {};
     var html = '<div class="cp-inspector-editor" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
 
     html += '<div class="cp-inspector-section">';
     html += '<div class="cp-inspector-section-title">' + icon('pen-fancy') + ' Primary text';
-    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">125 chars recommended · main body copy</span>';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">Body copy above the media · 125 chars recommended. Headline, description, and destination live in Overview.</span>';
     html += '</div>';
-    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="creative.primary_text" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="4" placeholder="The body copy above your media.">' + esc(c.primary_text || '') + '</textarea>';
+    html += '<textarea class="cp-textarea cp-v2-inline-field" data-field="creative.primary_text" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" rows="6" placeholder="The body copy above your media.">' + esc(c.primary_text || '') + '</textarea>';
     html += '<div class="cp-char-counter">' + countChars(c.primary_text || '') + ' chars · ' + countWords(c.primary_text || '') + ' words</div>';
     html += '</div>';
 
-    html += '<div class="cp-form-row">';
-    html += '<div class="cp-form-half">';
-    html += '<div class="cp-inspector-section-title">' + icon('heading') + ' Headline <span class="cp-text-muted" style="font-weight:400;font-size:11px">27 chars</span></div>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.headline" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" maxlength="60" value="' + esc(c.headline || '') + '">';
-    html += '</div>';
-    html += '<div class="cp-form-half">';
-    html += '<div class="cp-inspector-section-title">' + icon('align-left') + ' Description <span class="cp-text-muted" style="font-weight:400;font-size:11px">27 chars</span></div>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.description" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" maxlength="60" value="' + esc(c.description || '') + '">';
-    html += '</div></div>';
-
-    html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('link') + ' Destination</div>';
-    html += '<div class="cp-form-row">';
-    html += '<div class="cp-form-third"><label>CTA</label>';
-    html += '<select class="cp-select cp-v2-inline-field" data-field="creative.cta_type" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '">';
-    var C = Constants;
-    for (var ctk in C.META_CTA_TYPES) {
-      var ctSel = (c.cta_type === ctk) ? ' selected' : '';
-      html += '<option value="' + ctk + '"' + ctSel + '>' + esc(C.META_CTA_TYPES[ctk].label) + '</option>';
-    }
-    html += '</select></div>';
-    html += '<div class="cp-form-grow"><label>Destination URL</label>';
-    html += '<input type="url" class="cp-input cp-v2-inline-field" data-field="creative.cta_link" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.cta_link || '') + '" placeholder="https://example.com">';
-    html += '</div></div>';
-
-    // Display link + tracking params — orphaned fields from the old modal,
-    // both relate to destination so they live in the Copy tab now.
-    html += '<div class="cp-form-row" style="margin-top:var(--cp-space-2)">';
-    html += '<div class="cp-form-half"><label>Display link <span class="cp-text-muted" style="font-weight:400;font-size:11px">optional — shown to viewers if set</span></label>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.display_link" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.display_link || '') + '" placeholder="example.com/landing">';
-    html += '</div>';
-    html += '<div class="cp-form-half"><label>Tracking params <span class="cp-text-muted" style="font-weight:400;font-size:11px">UTM query string</span></label>';
-    html += '<input type="text" class="cp-input cp-v2-inline-field" data-field="creative.tracking_params" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(c.tracking_params || '') + '" placeholder="utm_source=meta&amp;utm_medium=...">';
-    html += '</div></div>';
-    html += '</div>';
+    // Inline AI copy variants — populated by aiWriteAdCopy / aiImproveAdCopy.
+    html += renderAdCopyVariants(ad);
 
     html += '<div class="cp-inspector-actions">';
     html += '<button class="cp-btn cp-btn-ai" data-action="ai-write-ad-copy" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' AI write copy</button>';
     html += '<button class="cp-btn cp-btn-outline" data-action="ai-improve-ad-copy" data-id="' + esc(ad.id) + '">' + icon('wand-magic') + ' Improve</button>';
     html += '</div>';
 
+    html += '</div>';
+    return html;
+  }
+
+  // --- AI copy variants — inline primary_text options on the Copy tab ---
+  //
+  // Stored on `ad.creative.ai_copy_variants` as `{ id, text, source, generated_at }`.
+  // `source` is 'write' (one of three new variants) or 'improve' (a refinement
+  // of the current primary_text). User picks one to overwrite primary_text.
+
+  function renderAdCopyVariants(ad) {
+    var variants = (ad.creative && ad.creative.ai_copy_variants) || [];
+    if (!variants.length) return '';
+
+    var isImprove = variants.length === 1 && variants[0].source === 'improve';
+    var titleIcon = isImprove ? 'wand-magic' : 'sparkles';
+    var titleLabel = isImprove ? 'Improved primary text' : 'AI copy variants';
+    var subtitle = isImprove
+      ? 'Compare with what you have now.'
+      : variants.length + ' option' + (variants.length !== 1 ? 's' : '') + ' · click <strong>Use this</strong> to overwrite the textarea above.';
+
+    var html = '<div class="cp-inspector-section">';
+    html += '<div class="cp-inspector-section-title">' + icon(titleIcon) + ' ' + esc(titleLabel);
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">' + subtitle + '</span>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-clear-ad-copy-variants" data-id="' + esc(ad.id) + '" style="margin-left:auto" title="Clear all variants">' + icon('trash') + '</button>';
+    html += '</div>';
+
+    html += '<div class="cp-copy-variants">';
+    for (var i = 0; i < variants.length; i++) {
+      var v = variants[i];
+      html += '<div class="cp-copy-variant-card" data-variant-id="' + esc(v.id) + '">';
+      html += '<div class="cp-copy-variant-head">';
+      html += '<span class="cp-copy-variant-num">' + (isImprove ? icon('wand-magic') : (i + 1)) + '</span>';
+      html += '<span class="cp-copy-variant-label">' + esc(isImprove ? 'AI improvement' : 'Variant ' + (i + 1)) + '</span>';
+      html += '<span class="cp-text-muted" style="font-size:11px;margin-left:auto">' + countChars(v.text || '') + ' chars</span>';
+      html += '</div>';
+      html += '<div class="cp-copy-variant-text">' + esc(v.text || '') + '</div>';
+      html += '<div class="cp-copy-variant-actions">';
+      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="ws-use-ad-copy-variant" data-id="' + esc(ad.id) + '" data-idx="' + i + '">' + icon('check') + ' Use this</button>';
+      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-remove-ad-copy-variant" data-id="' + esc(ad.id) + '" data-idx="' + i + '" title="Discard">' + icon('trash') + '</button>';
+      html += '</div>';
+      html += '</div>';
+    }
+    html += '</div>';
     html += '</div>';
     return html;
   }
@@ -4680,11 +4812,10 @@
   }
 
   function isAdCopyDone(ad) {
+    // Copy step now scopes to primary_text only — headline / description /
+    // destination live in Overview and are validated at export time.
     var c = (ad && ad.creative) || {};
-    var hasBody = (c.primary_text || '').trim().length >= 20;
-    var hasHeadline = !!(((c.headline || '').trim()) || ((c.description || '').trim()));
-    var hasLink = (c.cta_link || '').trim().length > 0;
-    return hasBody && hasHeadline && hasLink;
+    return (c.primary_text || '').trim().length >= 20;
   }
 
   function isAdMediaDone(ad) {
@@ -11134,6 +11265,106 @@
       saveEntityField('ad_set', id, 'brief.hook_angles', angles);
     });
 
+    // AI hook ideas — pick / discard / clear / expand. Lives on
+    // `ad.hook.ai_ideas` and is populated by `aiGenerateAdHooks`. Active
+    // selection tracked by `ad.hook.active_idea_id`.
+    $(document).off('click.cpv2-use-hook-idea').on('click.cpv2-use-hook-idea', '[data-action="ws-use-ad-hook-idea"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var idx = parseInt($(this).data('idx'), 10);
+      var ad = getAd(id); if (!ad || !ad.hook) return;
+      var ideas = ad.hook.ai_ideas || [];
+      var idea = ideas[idx]; if (!idea) return;
+      snapshot('Use AI hook idea');
+      ad.hook.text = idea.text;
+      ad.hook.type = idea.type || 'direct';
+      ad.hook.active_idea_id = idea.id;
+      ad.hook.source_message_id = '';
+      ad.hook.selected_hook_id = '';
+      ad.updated = new Date().toISOString();
+      saveEntityField('ad', id, 'hook', ad.hook);
+      if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI hook idea');
+      logActivity('hook_selected', 'ad', id, ad.name, 'Applied AI hook idea (' + (idea.type || 'direct') + ')');
+      toast('Hook applied', 'success');
+    });
+
+    $(document).off('click.cpv2-rm-hook-idea').on('click.cpv2-rm-hook-idea', '[data-action="ws-remove-ad-hook-idea"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var idx = parseInt($(this).data('idx'), 10);
+      var ad = getAd(id); if (!ad || !ad.hook) return;
+      var ideas = ad.hook.ai_ideas || [];
+      var removed = ideas[idx]; if (!removed) return;
+      ideas.splice(idx, 1);
+      if (ad.hook.active_idea_id === removed.id) ad.hook.active_idea_id = '';
+      snapshot('Discard hook idea');
+      saveEntityField('ad', id, 'hook', ad.hook);
+    });
+
+    $(document).off('click.cpv2-clear-hook-ideas').on('click.cpv2-clear-hook-ideas', '[data-action="ws-clear-ad-hook-ideas"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = getAd(id); if (!ad || !ad.hook) return;
+      if (!(ad.hook.ai_ideas && ad.hook.ai_ideas.length)) return;
+      snapshot('Clear hook ideas');
+      ad.hook.ai_ideas = [];
+      ad.hook.active_idea_id = '';
+      saveEntityField('ad', id, 'hook', ad.hook);
+    });
+
+    // Expand a collapsed hook idea card without re-rendering — same pattern
+    // as the status dropdown toggle, so adjacent inline fields keep focus.
+    $(document).off('click.cpv2-toggle-hook-idea').on('click.cpv2-toggle-hook-idea', '[data-action="ws-toggle-hook-idea-expanded"]', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      var ideaId = $(this).data('idea-id');
+      var $card = $(this).closest('.cp-hook-idea-card[data-idea-id="' + ideaId + '"]');
+      if (!$card.length) return;
+      $card.removeClass('cp-hook-idea-card-collapsed');
+    });
+
+    // AI copy variants — pick / discard / clear. Stored on
+    // `ad.creative.ai_copy_variants`; populated by `aiWriteAdCopy`
+    // (three options) or `aiImproveAdCopy` (one refinement).
+    $(document).off('click.cpv2-use-copy-variant').on('click.cpv2-use-copy-variant', '[data-action="ws-use-ad-copy-variant"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var idx = parseInt($(this).data('idx'), 10);
+      var ad = getAd(id); if (!ad || !ad.creative) return;
+      var variants = ad.creative.ai_copy_variants || [];
+      var v = variants[idx]; if (!v) return;
+      snapshot('Apply AI copy variant');
+      ad.creative.primary_text = v.text;
+      ad.creative.ai_copy_variants = [];
+      ad.updated = new Date().toISOString();
+      saveEntityField('ad', id, 'creative', ad.creative);
+      if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI copy variant');
+      logActivity('content_applied', 'ad', id, ad.name, 'Applied AI ' + (v.source || 'write') + ' variant to primary text');
+      toast('Copy applied', 'success');
+    });
+
+    $(document).off('click.cpv2-rm-copy-variant').on('click.cpv2-rm-copy-variant', '[data-action="ws-remove-ad-copy-variant"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var idx = parseInt($(this).data('idx'), 10);
+      var ad = getAd(id); if (!ad || !ad.creative) return;
+      var variants = ad.creative.ai_copy_variants || [];
+      if (idx < 0 || idx >= variants.length) return;
+      variants.splice(idx, 1);
+      snapshot('Discard copy variant');
+      saveEntityField('ad', id, 'creative', ad.creative);
+    });
+
+    $(document).off('click.cpv2-clear-copy-variants').on('click.cpv2-clear-copy-variants', '[data-action="ws-clear-ad-copy-variants"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id');
+      var ad = getAd(id); if (!ad || !ad.creative) return;
+      if (!(ad.creative.ai_copy_variants && ad.creative.ai_copy_variants.length)) return;
+      snapshot('Clear copy variants');
+      ad.creative.ai_copy_variants = [];
+      saveEntityField('ad', id, 'creative', ad.creative);
+    });
+
     // Pull a hook from a library message into an Ad (also captures snapshot)
     $(document).off('click.cpv2-pull-hook').on('click.cpv2-pull-hook', '[data-action="ws-pull-hook"]', function(e) {
       e.preventDefault();
@@ -12582,9 +12813,10 @@
   //   callAIWithRetry(prompt, onSuccess, onError, actionId, systemPrompt, parseJSON)
   // and use BrandService.getSystemPrompt + brandSnippet for brand context.
   //
-  // For alternatives-style outputs (hooks, copy variants) we surface them
-  // through showAIPreview. For single-result outputs (image prompt, video
-  // script) we save directly and toast.
+  // For alternatives-style outputs (hook ideas, copy variants) we save the
+  // options directly onto the ad (ad.hook.ai_ideas, ad.creative.ai_copy_variants)
+  // and let the inspector tabs render them inline. For single-result outputs
+  // (image prompt, video script) we save directly and toast.
 
   // --- Small helpers ---
 
@@ -12997,31 +13229,57 @@
     var adSet = getAdSet(ad.ad_set_id);
     var camp = adSet ? getCampaignV2(adSet.campaign_id) : null;
 
-    var prompt = 'Write 3 distinct hook options for this Ad. Each should be 1 sentence, max 100 chars, with a different angle.\n\n';
+    var prompt = 'Write 3 distinct hook options for this Meta Ad. Each should be 1 sentence, max 100 chars, with a different angle. For each, also rate it on three 0-100 scores and explain the psychology.\n\n';
     if (camp) prompt += aiV2_campaignContext(camp) + '\n';
     if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
     if (ad.creative && ad.creative.primary_text) prompt += 'Current primary text: ' + ad.creative.primary_text + '\n';
     prompt += '\n' + brandSnippet('content');
     prompt += '\n\nHook types: question, bold, story, data, direct, curiosity, challenge.\n';
-    prompt += 'Respond JSON only: {"hooks":[{"text":"","type":""}]}';
+    prompt += 'scores.conversion = how likely this hook moves a cold viewer toward the CTA (0-100).\n';
+    prompt += 'scores.readability = how easy it is to read at a glance — short words, low cognitive load (0-100).\n';
+    prompt += 'scores.connection = how strongly it speaks to the audience\'s pain / desire (0-100).\n';
+    prompt += 'psychology = 1-2 sentences explaining why this hook works for this audience.\n';
+    prompt += 'Respond JSON only: {"hooks":[{"text":"","type":"","scores":{"conversion":0,"readability":0,"connection":0},"psychology":""}]}';
 
     toast('AI writing hooks...', 'info');
     callAIWithRetry(prompt, function(parsed) {
-      var hooks = parsed.hooks || [];
+      var hooks = (parsed && parsed.hooks) || [];
       if (hooks.length === 0) { toast('AI returned no hooks', 'warning'); return; }
-      showAIPreview('Pick a hook', hooks.map(function(h, i) { return { label: 'Option ' + (i+1) + ' (' + (h.type || 'direct') + ')', content: h.text, _hook: h }; }), function(selected) {
-        snapshot('AI hook');
-        ad.hook = ad.hook || {};
-        ad.hook.text = selected.content;
-        ad.hook.type = selected._hook.type || 'direct';
-        ad.updated = new Date().toISOString();
-        if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI hook');
-        buildMaps(); syncToTextarea(); render();
-        logActivity('hook_generated', 'ad', adId, ad.name, 'AI hook selected');
-        toast('Hook applied', 'success');
-      }, { formatItem: function(opt) { return '<blockquote class="cp-ad-hook">' + esc(opt.content) + '</blockquote>'; } });
+      var ideas = hooks.map(function(h) {
+        var s = h.scores || {};
+        return {
+          id: generateId('hki'),
+          text: String(h.text || '').trim(),
+          type: String(h.type || 'direct').trim(),
+          scores: {
+            conversion:  clamp100(s.conversion),
+            readability: clamp100(s.readability),
+            connection:  clamp100(s.connection)
+          },
+          psychology: String(h.psychology || '').trim(),
+          generated_at: new Date().toISOString()
+        };
+      }).filter(function(i) { return i.text; });
+      if (ideas.length === 0) { toast('AI returned no usable hooks', 'warning'); return; }
+
+      snapshot('AI hook ideas');
+      ad.hook = ad.hook || { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' };
+      ad.hook.ai_ideas = ideas;
+      ad.hook.active_idea_id = '';
+      ad.updated = new Date().toISOString();
+      buildMaps(); syncToTextarea(); render();
+      logActivity('hook_generated', 'ad', adId, ad.name, 'AI generated ' + ideas.length + ' hook ideas');
+      toast('Got ' + ideas.length + ' hook ideas — pick one in the Hook tab', 'success');
     }, function(err) { toast('AI error: ' + err, 'error'); },
        'ai-generate-ad-hooks', BrandService.getSystemPrompt('content'), parseJSON);
+  }
+
+  function clamp100(n) {
+    n = Number(n);
+    if (!isFinite(n)) return 0;
+    if (n < 0) return 0;
+    if (n > 100) return 100;
+    return Math.round(n);
   }
 
   // --- 6. Write Ad Copy (alternatives bundle: primary text + headline + description) ---
@@ -13031,69 +13289,68 @@
     var ad = getAd(adId); if (!ad) return;
     var adSet = getAdSet(ad.ad_set_id);
     var camp = adSet ? getCampaignV2(adSet.campaign_id) : null;
+    var activeHook = (ad.hook && ad.hook.text) || '';
 
-    var prompt = 'Write 3 distinct copy options for this Ad. Each option = {primary_text, headline, description}.\n';
-    prompt += 'Primary text 90-140 chars. Headline ≤27 chars (sales-y, scroll-stopping). Description ≤27 chars (supports the headline).\n\n';
+    var prompt = 'Write 3 distinct primary-text options for this Meta Ad. Each is the body copy that sits above the media — 90-140 chars, scroll-stopping, written in the brand voice. Use three different angles (e.g., problem framing, social proof, outcome promise). Headline and description are out of scope here; only return primary_text.\n\n';
     if (camp) prompt += aiV2_campaignContext(camp) + '\n';
     if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
-    if (ad.hook && ad.hook.text) prompt += 'Hook: ' + ad.hook.text + '\n';
+    if (activeHook) prompt += 'Selected hook (extend this thought into the body — do not repeat it verbatim): ' + activeHook + '\n';
     prompt += '\n' + brandSnippet('content');
-    prompt += '\nRespond JSON only: {"options":[{"primary_text":"","headline":"","description":""}]}';
+    prompt += '\nRespond JSON only: {"options":[{"primary_text":""}]}';
 
     toast('AI writing copy...', 'info');
     callAIWithRetry(prompt, function(parsed) {
-      var options = parsed.options || [];
-      if (options.length === 0) { toast('AI returned no copy', 'warning'); return; }
-      showAIPreview('Pick a copy variant', options.map(function(o, i) { return { label: 'Variant ' + (i+1), content: o.primary_text, _copy: o }; }), function(selected) {
-        snapshot('AI copy');
-        ad.creative = ad.creative || {};
-        ad.creative.primary_text = selected._copy.primary_text || ad.creative.primary_text;
-        ad.creative.headline     = selected._copy.headline     || ad.creative.headline;
-        ad.creative.description  = selected._copy.description  || ad.creative.description;
-        ad.updated = new Date().toISOString();
-        if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI copy');
-        buildMaps(); syncToTextarea(); render();
-        logActivity('content_generated', 'ad', adId, ad.name, 'AI wrote copy');
-        toast('Copy applied', 'success');
-      }, { formatItem: function(opt) {
-        return '<div><p><strong>' + esc(opt._copy.headline) + '</strong></p><p>' + esc(opt.content) + '</p><p class="cp-text-muted">' + esc(opt._copy.description) + '</p></div>';
-      } });
+      var options = (parsed && parsed.options) || [];
+      var variants = options.map(function(o) {
+        return {
+          id: generateId('cpv'),
+          text: String((o && o.primary_text) || '').trim(),
+          source: 'write',
+          generated_at: new Date().toISOString()
+        };
+      }).filter(function(v) { return v.text; });
+      if (variants.length === 0) { toast('AI returned no copy', 'warning'); return; }
+      snapshot('AI copy variants');
+      ad.creative = ad.creative || {};
+      ad.creative.ai_copy_variants = variants;
+      ad.updated = new Date().toISOString();
+      buildMaps(); syncToTextarea(); render();
+      logActivity('content_generated', 'ad', adId, ad.name, 'AI wrote ' + variants.length + ' primary-text variants');
+      toast('Got ' + variants.length + ' copy variants — pick one in the Copy tab', 'success');
     }, function(err) { toast('AI error: ' + err, 'error'); },
        'ai-write-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
-  // --- 7. Improve Ad Copy (refinement) ---
+  // --- 7. Improve Ad Copy (refinement on primary_text) ---
 
   function aiImproveAdCopy(adId) {
     if (!aiV2_assertConfigured()) return;
     var ad = getAd(adId); if (!ad) return;
     var c = ad.creative || {};
-    if (!(c.primary_text || c.headline)) { toast('Write some copy first, then AI can improve it', 'info'); return; }
+    if (!(c.primary_text || '').trim()) { toast('Write some primary text first, then AI can improve it', 'info'); return; }
 
-    var prompt = 'Improve this Meta Ad copy. Make it more specific, more emotional, more scroll-stopping. Keep same intent.\n\n';
-    prompt += 'Current copy:\nPrimary text: ' + (c.primary_text || '') + '\nHeadline: ' + (c.headline || '') + '\nDescription: ' + (c.description || '') + '\n\n';
+    var prompt = 'Rewrite this Meta Ad primary text. Sharpen it: more specific, more emotional, more scroll-stopping. Keep the same intent and approximate length. Only return primary_text.\n\n';
+    prompt += 'Current primary text:\n' + c.primary_text + '\n\n';
+    if (ad.hook && ad.hook.text) prompt += 'Selected hook context: ' + ad.hook.text + '\n\n';
     prompt += brandSnippet('content');
-    prompt += '\n\nRespond JSON only: {"primary_text":"","headline":"","description":""}';
+    prompt += '\n\nRespond JSON only: {"primary_text":""}';
 
     toast('AI improving copy...', 'info');
     callAIWithRetry(prompt, function(parsed) {
-      if (!parsed) { toast('AI returned nothing', 'warning'); return; }
-      showAIPreview('Compare improved copy', [
-        { label: 'Original',  content: c.primary_text, _copy: { primary_text: c.primary_text, headline: c.headline, description: c.description } },
-        { label: 'Improved',  content: parsed.primary_text, _copy: parsed }
-      ], function(selected) {
-        snapshot('AI improved copy');
-        ad.creative = ad.creative || {};
-        ad.creative.primary_text = selected._copy.primary_text || ad.creative.primary_text;
-        ad.creative.headline     = selected._copy.headline     || ad.creative.headline;
-        ad.creative.description  = selected._copy.description  || ad.creative.description;
-        ad.updated = new Date().toISOString();
-        if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI improved');
-        buildMaps(); syncToTextarea(); render();
-        toast('Applied', 'success');
-      }, { formatItem: function(opt) {
-        return '<div><p><strong>' + esc(opt._copy.headline) + '</strong></p><p>' + esc(opt.content) + '</p><p class="cp-text-muted">' + esc(opt._copy.description) + '</p></div>';
-      } });
+      var improved = String((parsed && parsed.primary_text) || '').trim();
+      if (!improved) { toast('AI returned nothing', 'warning'); return; }
+      snapshot('AI improved copy');
+      ad.creative = ad.creative || {};
+      ad.creative.ai_copy_variants = [{
+        id: generateId('cpv'),
+        text: improved,
+        source: 'improve',
+        generated_at: new Date().toISOString()
+      }];
+      ad.updated = new Date().toISOString();
+      buildMaps(); syncToTextarea(); render();
+      logActivity('content_generated', 'ad', adId, ad.name, 'AI improved primary text');
+      toast('Improved copy ready — compare in the Copy tab', 'success');
     }, function(err) { toast('AI error: ' + err, 'error'); },
        'ai-improve-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
   }
