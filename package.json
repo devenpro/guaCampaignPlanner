@@ -1,6 +1,6 @@
 {
   "name": "campaign-planner",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "type": "module",
   "description": "Drupal 11 add-on: campaign planner with personas, messages, recipes, and AI assist. Vanilla JS/CSS, concatenated build, served via jsDelivr.",
