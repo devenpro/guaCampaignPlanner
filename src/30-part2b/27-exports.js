@@ -27,6 +27,11 @@
     exportV2JSON: exportV2JSON, exportV2CSV: exportV2CSV,
     validateForExport: validateForExport,
     copyAdField: copyAdField,
+    // Per-ad media brief (structured JSON for downstream tools / MCP)
+    buildAdMediaBrief: buildAdMediaBrief,
+    exportAdMediaBriefJSON: exportAdMediaBriefJSON,
+    copyAdMediaBriefJSON: copyAdMediaBriefJSON,
+    openMediaBriefPreview: openMediaBriefPreview,
 
     // Meta v2 AI
     aiGenerateCampaignTree: aiGenerateCampaignTree,

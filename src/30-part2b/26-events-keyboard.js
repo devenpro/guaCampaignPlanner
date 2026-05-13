@@ -217,6 +217,24 @@
       copyAdField($(this).data('id'), $(this).data('field'));
     });
 
+    // --- Stage 7b: Per-ad structured media brief (Phase 5 of the audit) ---
+    $(document).off('click.cp2b-brief-preview').on('click.cp2b-brief-preview', '[data-action="preview-media-brief"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      openMediaBriefPreview($(this).data('id'));
+    });
+    $(document).off('click.cp2b-brief-copy').on('click.cp2b-brief-copy', '[data-action="copy-media-brief"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      copyAdMediaBriefJSON($(this).data('id'));
+    });
+    $(document).off('click.cp2b-brief-copy-mcp').on('click.cp2b-brief-copy-mcp', '[data-action="copy-media-brief-mcp"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      copyAdMediaBriefJSON($(this).data('id'), { mcp: true });
+    });
+    $(document).off('click.cp2b-brief-dl').on('click.cp2b-brief-dl', '[data-action="download-media-brief"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      exportAdMediaBriefJSON($(this).data('id'));
+    });
+
     console.log('[CP] Part 2B event handlers ready');
   }
 
