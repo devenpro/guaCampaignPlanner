@@ -4482,6 +4482,7 @@
     var html = '';
     html += '<div class="cp-inspector-section">';
     html += '<div class="cp-inspector-section-title">' + icon('images') + ' Carousel cards (' + cards.length + ')';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">One image prompt + caption per card. Hand off the brief to your media app to produce the images.</span>';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ad-add-card" data-id="' + esc(ad.id) + '" style="margin-left:auto">' + icon('plus') + ' Add card</button>';
     html += '</div>';
     if (cards.length === 0) {
@@ -4490,11 +4491,12 @@
       html += '<div class="cp-v2-carousel-cards">';
       for (var i = 0; i < cards.length; i++) {
         var card = cards[i];
+        var cardPrompt = card.prompt || card.headline || '';
+        var cardCaption = card.caption || card.description || '';
         html += '<div class="cp-v2-carousel-card"><div class="cp-v2-carousel-card-num">' + (i + 1) + '</div>';
         html += '<div class="cp-v2-carousel-card-fields">';
-        html += '<input type="text" class="cp-input cp-v2-card-field" data-entity-id="' + esc(ad.id) + '" data-index="' + i + '" data-key="headline" value="' + esc(card.headline || '') + '" placeholder="Card headline">';
-        html += '<input type="text" class="cp-input cp-v2-card-field" data-entity-id="' + esc(ad.id) + '" data-index="' + i + '" data-key="description" value="' + esc(card.description || '') + '" placeholder="Card description">';
-        html += '<input type="url" class="cp-input cp-v2-card-field" data-entity-id="' + esc(ad.id) + '" data-index="' + i + '" data-key="link" value="' + esc(card.link || '') + '" placeholder="https://...">';
+        html += '<textarea class="cp-textarea cp-v2-card-field" data-entity-id="' + esc(ad.id) + '" data-index="' + i + '" data-key="prompt" rows="3" placeholder="Image prompt for this card — describe what should be shown.">' + esc(cardPrompt) + '</textarea>';
+        html += '<input type="text" class="cp-input cp-v2-card-field" data-entity-id="' + esc(ad.id) + '" data-index="' + i + '" data-key="caption" value="' + esc(cardCaption) + '" placeholder="Card caption / on-image text">';
         html += '</div>';
         html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-remove-card" data-id="' + esc(ad.id) + '" data-index="' + i + '">' + icon('trash') + '</button>';
         html += '</div>';
@@ -11354,7 +11356,7 @@
       var ad = getAd(id); if (!ad) return;
       ad.media = ad.media || {};
       ad.media.carousel_cards = ad.media.carousel_cards || [];
-      ad.media.carousel_cards.push({ image_asset_id: '', headline: '', description: '', link: '' });
+      ad.media.carousel_cards.push({ image_asset_id: '', prompt: '', caption: '' });
       snapshot('Add carousel card');
       saveEntityField('ad', id, 'media.carousel_cards', ad.media.carousel_cards);
     });
@@ -15112,12 +15114,10 @@
           cards: (media.carousel_cards || []).map(function(c, i) {
             return {
               index: i,
-              headline: c.headline || '',
-              description: c.description || '',
-              link: c.link || ''
+              prompt:  c.prompt  || c.headline    || '',
+              caption: c.caption || c.description || ''
             };
-          }),
-          sequence_narrative: ''
+          })
         }
       };
     }
@@ -15155,7 +15155,7 @@
       return common + ' For video: `media.video.script.sections` is the script broken into labelled beats (Hook, Setup, Payoff, CTA, etc.) — write one shot or clip per section that delivers the script for that beat at the implied duration, then concat. Visual direction is intentionally out of scope here; treat the script and brand voice as the source of truth. Aspect ratio is in `media.video.aspect_ratio`.';
     }
     if (ctype === 'carousel') {
-      return common + ' For carousel: generate one image per entry in `media.carousel.cards`. Keep visual style consistent across cards; the `headline` and `description` describe what each card communicates.';
+      return common + ' For carousel: generate one image per entry in `media.carousel.cards` using its `prompt`. The `caption` is the on-image / under-image text the user will see. Keep visual style consistent across cards.';
     }
     return common;
   }

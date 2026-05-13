@@ -1028,7 +1028,7 @@
       var ad = getAd(id); if (!ad) return;
       ad.media = ad.media || {};
       ad.media.carousel_cards = ad.media.carousel_cards || [];
-      ad.media.carousel_cards.push({ image_asset_id: '', headline: '', description: '', link: '' });
+      ad.media.carousel_cards.push({ image_asset_id: '', prompt: '', caption: '' });
       snapshot('Add carousel card');
       saveEntityField('ad', id, 'media.carousel_cards', ad.media.carousel_cards);
     });

@@ -158,12 +158,10 @@
           cards: (media.carousel_cards || []).map(function(c, i) {
             return {
               index: i,
-              headline: c.headline || '',
-              description: c.description || '',
-              link: c.link || ''
+              prompt:  c.prompt  || c.headline    || '',
+              caption: c.caption || c.description || ''
             };
-          }),
-          sequence_narrative: ''
+          })
         }
       };
     }
@@ -201,7 +199,7 @@
       return common + ' For video: `media.video.script.sections` is the script broken into labelled beats (Hook, Setup, Payoff, CTA, etc.) — write one shot or clip per section that delivers the script for that beat at the implied duration, then concat. Visual direction is intentionally out of scope here; treat the script and brand voice as the source of truth. Aspect ratio is in `media.video.aspect_ratio`.';
     }
     if (ctype === 'carousel') {
-      return common + ' For carousel: generate one image per entry in `media.carousel.cards`. Keep visual style consistent across cards; the `headline` and `description` describe what each card communicates.';
+      return common + ' For carousel: generate one image per entry in `media.carousel.cards` using its `prompt`. The `caption` is the on-image / under-image text the user will see. Keep visual style consistent across cards.';
     }
     return common;
   }
