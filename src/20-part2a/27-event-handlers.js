@@ -2,9 +2,20 @@
   // SECTION 19: EVENT HANDLERS
   // ============================================================
 
+  // Wraps a block of handler registrations so an error in one block
+  // doesn't suppress the rest. Use for each logical "island" of handlers.
+  function _safeHandlerBlock(label, fn) {
+    try { fn(); }
+    catch (e) {
+      console.error('[CP] Handler block "' + label + '" failed:', e);
+      if (typeof toast === 'function') toast('Some controls in "' + label + '" may not work — see console.', 'warning', 5000);
+    }
+  }
+
   function setupPart2AEvents() {
     console.log('[CP] Setting up Part 2A event handlers...');
 
+    _safeHandlerBlock('Part 2A: core', function() {
     // --- Modal events ---
     $(document).off('click.cp2a-modal-close').on('click.cp2a-modal-close', '[data-action="close-modal"]', function(e) {
       e.preventDefault(); closeModal();
@@ -482,9 +493,10 @@
         if (!$(e.target).is('input, textarea, [contenteditable]')) { e.preventDefault(); redo(); }
       }
     });
+    });  // _safeHandlerBlock('Part 2A: core')
 
     // --- Meta v2 actions (Campaign Workspace, Meta Campaigns list, modals) ---
-    setupMetaV2EventHandlers();
+    _safeHandlerBlock('Part 2A: Meta v2', function() { setupMetaV2EventHandlers(); });
 
     console.log('[CP] Part 2A event handlers ready');
   }

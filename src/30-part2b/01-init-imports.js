@@ -120,8 +120,9 @@
     R.ncwAISuggestAds            = ncwAISuggestAds;
     R.finalizeNewCampaignWizard  = finalizeNewCampaignWizard;
 
-    setupPart2BEvents(); setupKeyboardShortcuts();
-    LLMService.init();
+    try { setupPart2BEvents(); } catch(e) { console.error('[CP] setupPart2BEvents crashed:', e); }
+    try { setupKeyboardShortcuts(); } catch(e) { console.error('[CP] setupKeyboardShortcuts crashed:', e); }
+    try { LLMService.init(); } catch(e) { console.error('[CP] LLMService.init crashed:', e); }
     try { BrandService.init(); BrandService.autoPopulateBrandDesign(); } catch(e) { console.error('[CP] BrandService init error:', e); }
 
     // Replace AI picker loading placeholders (uses Part 2A helper if available).
