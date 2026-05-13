@@ -2477,6 +2477,35 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 .cp-inspector-title-input:hover { border-color: var(--cp-border-light) !important; background: var(--cp-gray-50, #f8f9fa) !important; }
 .cp-inspector-title-input:focus { border-color: var(--cp-primary) !important; background: #fff !important; outline: none; }
 
+/* Phase 7c: Inspector tab bar — pin above any overlapping content so the
+   Hook / Copy / Media / Review buttons always receive clicks. */
+.cp-inspector-tabs {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: var(--cp-space-2) 0;
+  border-bottom: 1px solid var(--cp-border-light);
+  margin-bottom: var(--cp-space-3);
+}
+.cp-inspector-tab {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--cp-radius-sm);
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: var(--cp-font-size-sm);
+  color: var(--cp-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background var(--cp-transition-fast), color var(--cp-transition-fast), border-color var(--cp-transition-fast);
+}
+.cp-inspector-tab:hover { background: var(--cp-gray-50, #f8f9fa); color: var(--cp-text-primary); }
+.cp-inspector-tab-active { background: var(--cp-primary-subtle, #e8f0fe); color: var(--cp-primary); border-color: var(--cp-primary); font-weight: 600; }
+.cp-workspace-inspector-tab-body { position: relative; z-index: 1; }
+
 /* Phase 5: Structured media brief — export section */
 .cp-media-brief-actions { border: 1px solid var(--cp-border-light); }
 .cp-media-brief-preview { background: var(--cp-gray-50, #f8f9fa); color: var(--cp-text-primary); border: 1px solid var(--cp-border-light); }
