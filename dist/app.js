@@ -11492,7 +11492,19 @@
     function getDefault() {
       var provs = getActiveProviders(); if (!provs.length) return null;
       var appDef = S && S.meta && S.meta.aiPreferences && S.meta.aiPreferences.appDefault;
-      if (appDef && appDef.provider && appDef.model) { var ma = _getModelObj(appDef.provider, appDef.model); if (ma) return _buildSel(appDef.provider, ma); }
+      if (appDef && appDef.provider && appDef.model) {
+        var ma = _getModelObj(appDef.provider, appDef.model);
+        if (ma) return _buildSel(appDef.provider, ma);
+        // Graceful degradation: user picked a provider but the exact model is no
+        // longer active (renamed / deactivated). Keep the provider, fall back
+        // to its first active model — don't silently jump to a different provider.
+        var pSame = _providerMap[appDef.provider];
+        if (pSame && pSame.activeModels.length) {
+          console.warn('[CP] LLMService: saved default model "' + appDef.model + '" is not active for provider "' + appDef.provider + '". Using first active model for that provider.');
+          return _buildSel(appDef.provider, pSame.activeModels[0]);
+        }
+        console.warn('[CP] LLMService: saved default provider "' + appDef.provider + '" is no longer active. Using config or first provider.');
+      }
       if (_config && _config.default_provider && _config.default_model) { var m = _getModelObj(_config.default_provider, _config.default_model); if (m) return _buildSel(_config.default_provider, m); }
       var p = provs[0]; var defM = null;
       for (var i = 0; i < p.activeModels.length; i++) { if (p.activeModels[i].is_default) { defM = p.activeModels[i]; break; } }
@@ -12547,10 +12559,22 @@
     if (!camp) { toast('Failed to create Campaign', 'error'); return; }
 
     var counts = { sets: 0, ads: 0 };
-    var setsToCreate = [];
-    $('.cp-tp-set-check:checked').each(function() { setsToCreate.push(parseInt($(this).data('set-idx'), 10)); });
+    // Collect ALL selected indices upfront — createEntity below triggers
+    // renderCurrentView, which can detach the checkboxes from the DOM.
+    var setSelections = []; // [{ setIdx, adIdxs: [] }]
+    $('.cp-tp-set-check:checked').each(function() {
+      var setIdx = parseInt(this.getAttribute('data-set-idx'), 10);
+      if (isNaN(setIdx)) return;
+      var adIdxs = [];
+      $('.cp-tp-ad-check[data-set-idx="' + setIdx + '"]:checked').each(function() {
+        var ai = parseInt(this.getAttribute('data-ad-idx'), 10);
+        if (!isNaN(ai)) adIdxs.push(ai);
+      });
+      setSelections.push({ setIdx: setIdx, adIdxs: adIdxs });
+    });
 
-    setsToCreate.forEach(function(idx) {
+    setSelections.forEach(function(sel) {
+      var idx = sel.setIdx;
       var sData = (tree.ad_sets || [])[idx]; if (!sData) return;
 
       var persona = sData.persona_id ? getPersona(sData.persona_id) : null;
@@ -12570,9 +12594,8 @@
       if (!set) return;
       counts.sets++;
 
-      // Ads under this Ad Set
-      $('.cp-tp-ad-check[data-set-idx="' + idx + '"]:checked').each(function() {
-        var adIdx = parseInt($(this).data('ad-idx'), 10);
+      // Ads under this Ad Set — iterate the captured indices array
+      sel.adIdxs.forEach(function(adIdx) {
         var aData = (sData.ads || [])[adIdx]; if (!aData) return;
         var ad = createEntity('ad', {
           ad_set_id: set.id,
@@ -12632,11 +12655,19 @@
       openModal('AI suggested Ad Sets — review', html, {
         titleIcon: 'sparkles', size: 'lg', saveLabel: icon('plus') + ' Create selected',
         onSave: function() {
+          // Snapshot selected indices BEFORE createEntity triggers any re-render
+          // (createEntity → renderCurrentView can detach jQuery refs mid-loop).
+          var selectedIdx = [];
+          $('.cp-tp-set-check:checked').each(function() {
+            var i = parseInt(this.getAttribute('data-set-idx'), 10);
+            if (!isNaN(i)) selectedIdx.push(i);
+          });
+          if (selectedIdx.length === 0) { closeModal(); return; }
+          closeModal();
           snapshot('AI suggest Ad Sets');
           var created = 0;
-          $('.cp-tp-set-check:checked').each(function() {
-            var idx = parseInt($(this).data('set-idx'), 10);
-            var sData = sets[idx]; if (!sData) return;
+          for (var k = 0; k < selectedIdx.length; k++) {
+            var sData = sets[selectedIdx[k]]; if (!sData) continue;
             var persona = sData.persona_id ? getPersona(sData.persona_id) : null;
             createEntity('ad_set', {
               campaign_id: campaignId,
@@ -12648,8 +12679,7 @@
               brief: $.extend({ creative_direction: '', message_ids: [], style_ids: [], format_ids: [], hook_angles: [], ai_notes: '' }, sData.brief || {})
             });
             created++;
-          });
-          closeModal();
+          }
           toast('Created ' + created + ' Ad Set' + (created !== 1 ? 's' : ''), 'success');
         }
       });
@@ -12689,11 +12719,20 @@
       openModal('AI suggested Ads — review', html, {
         titleIcon: 'sparkles', size: 'lg', saveLabel: icon('plus') + ' Create selected',
         onSave: function() {
+          // Snapshot selected indices BEFORE createEntity triggers any re-render.
+          // jQuery refs to checkboxes can be detached mid-loop if the surrounding
+          // view re-renders, which made only the first selection actually persist.
+          var selectedIdx = [];
+          $('.cp-tp-ad-check:checked').each(function() {
+            var i = parseInt(this.getAttribute('data-ad-idx'), 10);
+            if (!isNaN(i)) selectedIdx.push(i);
+          });
+          if (selectedIdx.length === 0) { closeModal(); return; }
+          closeModal();
           snapshot('AI suggest Ads');
           var created = 0;
-          $('.cp-tp-ad-check:checked').each(function() {
-            var idx = parseInt($(this).data('ad-idx'), 10);
-            var aData = ads[idx]; if (!aData) return;
+          for (var k = 0; k < selectedIdx.length; k++) {
+            var aData = ads[selectedIdx[k]]; if (!aData) continue;
             var ad = createEntity('ad', {
               ad_set_id: adSetId,
               name: aData.name || 'Ad',
@@ -12702,8 +12741,7 @@
               creative: $.extend({ primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' }, aData.creative || {})
             });
             if (ad) { created++; if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI suggested'); }
-          });
-          closeModal();
+          }
           toast('Created ' + created + ' Ad' + (created !== 1 ? 's' : ''), 'success');
         }
       });
@@ -14260,6 +14298,16 @@
       html += icon('circle-check') + ' <strong>' + provs.length + ' provider' + (provs.length > 1 ? 's' : '') + ' active</strong>';
       if (def) html += ' — Default: ' + esc(def.provider) + ' / ' + esc(def.model);
       html += '</div>';
+      // Surface a hint when the saved app-default doesn't resolve cleanly
+      // (provider deactivated or model no longer active). Helps the user
+      // understand why the displayed default may differ from what they saved.
+      var savedDef = prefs.appDefault;
+      if (def && savedDef && savedDef.provider && savedDef.model &&
+          (savedDef.provider !== def.provider || savedDef.model !== def.model)) {
+        html += '<div class="cp-ai-status-warning" style="margin-top:var(--cp-space-2);padding:var(--cp-space-2) var(--cp-space-3);background:var(--cp-warning-light,#fff8e1);color:var(--cp-warning,#946200);border:1px solid rgba(180,144,0,0.2);border-radius:var(--cp-radius-sm);font-size:var(--cp-font-size-sm)">';
+        html += icon('warning') + ' Your saved default <strong>' + esc(savedDef.provider) + ' / ' + esc(savedDef.model) + '</strong> isn\'t active. Falling back to <strong>' + esc(def.provider) + ' / ' + esc(def.model) + '</strong>. Pick a new default below and save.';
+        html += '</div>';
+      }
       html += '<div style="margin-top:var(--cp-space-3)"><button class="cp-btn cp-btn-outline cp-btn-sm" data-action="test-ai-connection">' + icon('bolt') + ' Test Connection</button></div>';
     } else {
       html += '<div class="cp-ai-status-summary" style="background:var(--cp-error-light);color:var(--cp-error);border:1px solid rgba(217,48,37,0.2)">';
@@ -14423,6 +14471,8 @@
     }
     logActivity('settings_changed', '', '', 'Settings updated');
     snapshot('Save settings'); syncToTextarea(); render();
+    // Refresh the header AI badge so it reflects the new default immediately
+    if (typeof updateAIStatusIndicator === 'function') updateAIStatusIndicator();
     toast('Settings saved', 'success');
   }
 

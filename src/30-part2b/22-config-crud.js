@@ -27,6 +27,8 @@
     }
     logActivity('settings_changed', '', '', 'Settings updated');
     snapshot('Save settings'); syncToTextarea(); render();
+    // Refresh the header AI badge so it reflects the new default immediately
+    if (typeof updateAIStatusIndicator === 'function') updateAIStatusIndicator();
     toast('Settings saved', 'success');
   }
 

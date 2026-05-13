@@ -59,7 +59,19 @@
     function getDefault() {
       var provs = getActiveProviders(); if (!provs.length) return null;
       var appDef = S && S.meta && S.meta.aiPreferences && S.meta.aiPreferences.appDefault;
-      if (appDef && appDef.provider && appDef.model) { var ma = _getModelObj(appDef.provider, appDef.model); if (ma) return _buildSel(appDef.provider, ma); }
+      if (appDef && appDef.provider && appDef.model) {
+        var ma = _getModelObj(appDef.provider, appDef.model);
+        if (ma) return _buildSel(appDef.provider, ma);
+        // Graceful degradation: user picked a provider but the exact model is no
+        // longer active (renamed / deactivated). Keep the provider, fall back
+        // to its first active model — don't silently jump to a different provider.
+        var pSame = _providerMap[appDef.provider];
+        if (pSame && pSame.activeModels.length) {
+          console.warn('[CP] LLMService: saved default model "' + appDef.model + '" is not active for provider "' + appDef.provider + '". Using first active model for that provider.');
+          return _buildSel(appDef.provider, pSame.activeModels[0]);
+        }
+        console.warn('[CP] LLMService: saved default provider "' + appDef.provider + '" is no longer active. Using config or first provider.');
+      }
       if (_config && _config.default_provider && _config.default_model) { var m = _getModelObj(_config.default_provider, _config.default_model); if (m) return _buildSel(_config.default_provider, m); }
       var p = provs[0]; var defM = null;
       for (var i = 0; i < p.activeModels.length; i++) { if (p.activeModels[i].is_default) { defM = p.activeModels[i]; break; } }
