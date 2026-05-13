@@ -14,6 +14,64 @@
   function _ncwEndOk(state)   { state.aiLoading = false; state.aiActionId = ''; state.aiError = ''; }
   function _ncwEndErr(state, err) { state.aiLoading = false; state.aiActionId = ''; state.aiError = String(err || 'AI failed').substring(0, 240); }
 
+  // ----- Draft Campaign basics from a brief -----
+  // Reads state.campaign.brief, asks AI to fill name/description/objective/
+  // budget_mode/bid_strategy/daily_budget. Overwrites the campaign fields on
+  // success so the user sees the AI draft and can edit before moving on.
+  function ncwAIDraftCampaign() {
+    var state = _ncwState(); if (!state) return;
+    if (state.aiLoading) return;
+    if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — open Settings → AI.'; _ncwRefresh(); return; }
+
+    // Pull the latest brief from the DOM in case the user hasn't tabbed out.
+    var $brief = $('#cpNCW [data-ncw-field="campaign.brief"]');
+    if ($brief.length) state.campaign.brief = ($brief.val() || '').trim();
+    var brief = (state.campaign.brief || '').trim();
+    if (!brief) { state.aiError = 'Write a brief first — describe what you\'re selling, who you\'re targeting, and what success looks like.'; _ncwRefresh(); return; }
+
+    _ncwBegin(state);
+
+    var objectives = Object.keys(Constants.META_OBJECTIVES).map(function(k) {
+      return '- ' + k + ': ' + Constants.META_OBJECTIVES[k].label + ' — ' + Constants.META_OBJECTIVES[k].description;
+    }).join('\n');
+    var bidStrategies = Object.keys(Constants.META_BID_STRATEGIES).map(function(k) {
+      return '- ' + k + ': ' + Constants.META_BID_STRATEGIES[k].label;
+    }).join('\n');
+
+    var prompt = 'You are a Meta Ads strategist. Draft the top-level Campaign settings from the brief below.\n\n';
+    prompt += 'Brief:\n' + brief + '\n\n';
+    prompt += 'Valid objectives (pick exactly ONE by key):\n' + objectives + '\n\n';
+    prompt += 'Valid bid strategies (pick exactly ONE by key):\n' + bidStrategies + '\n\n';
+    prompt += 'Budget modes: CBO (Meta allocates across Ad Sets — default for most cases), ABO (per-Ad-Set budgets — pick when ad sets need fixed splits).\n';
+    prompt += brandSnippet('research');
+    prompt += '\n\nRules:\n';
+    prompt += '- name: ≤60 chars, specific and product-oriented (no generic "Q3 Campaign").\n';
+    prompt += '- description: ≤200 chars, plain prose explaining the goal.\n';
+    prompt += '- objective: must be a key from the list above.\n';
+    prompt += '- bid_strategy: must be a key from the list above (default LOWEST_COST_WITHOUT_CAP).\n';
+    prompt += '- daily_budget: integer in the brief\'s currency if a budget is stated or strongly implied; otherwise null. Do NOT invent budgets.\n';
+    prompt += '- Output strict JSON only, no preamble, no markdown:\n';
+    prompt += '{"name":"","description":"","objective":"OUTCOME_...","budget_mode":"CBO|ABO","bid_strategy":"LOWEST_COST_WITHOUT_CAP","daily_budget":NUMBER_OR_NULL}';
+
+    callAIWithRetry(prompt, function(parsed) {
+      if (!parsed || typeof parsed !== 'object') { _ncwEndErr(state, 'AI returned no campaign basics'); _ncwRefresh(); return; }
+      var cam = state.campaign;
+      cam.name        = String(parsed.name || '').trim().substring(0, 80) || cam.name;
+      cam.description = String(parsed.description || '').trim().substring(0, 240);
+      cam.objective   = Constants.META_OBJECTIVES[parsed.objective] ? parsed.objective : (cam.objective || 'OUTCOME_LEADS');
+      cam.budget_mode = parsed.budget_mode === 'ABO' ? 'ABO' : 'CBO';
+      cam.bid_strategy = Constants.META_BID_STRATEGIES[parsed.bid_strategy] ? parsed.bid_strategy : 'LOWEST_COST_WITHOUT_CAP';
+      var db = parsed.daily_budget;
+      cam.daily_budget = (db != null && db !== '' && !isNaN(Number(db)) && Number(db) > 0) ? Number(db) : (cam.daily_budget || '');
+      state.stepGenerated[1] = true;
+      _ncwEndOk(state);
+      _ncwRefresh();
+    }, function(err) {
+      _ncwEndErr(state, err);
+      _ncwRefresh();
+    }, 'ncw-ai', BrandService.getSystemPrompt('research'), parseJSON);
+  }
+
   // ----- Suggest Ad Sets from the Campaign brief -----
   function ncwAISuggestAdSets() {
     var state = _ncwState(); if (!state) return;
@@ -31,26 +89,27 @@
 
     var prompt = 'You are a Meta Ads strategist. Suggest 3 distinct Ad Sets for this Campaign.\n\n';
     prompt += 'Campaign: ' + (cam.name || '(untitled)') + '\n';
+    if (cam.description) prompt += 'Description: ' + cam.description + '\n';
     if (cam.objective) prompt += 'Objective: ' + cam.objective + '\n';
     if (cam.budget_mode) prompt += 'Budget mode: ' + cam.budget_mode + '\n';
     if (cam.daily_budget) prompt += 'Daily budget: ' + cam.daily_budget + '\n';
     if (cam.brief) prompt += '\nBrief: ' + cam.brief + '\n';
     if (personas.length) {
-      prompt += '\nAvailable personas (use persona_id if a match):\n';
+      prompt += '\nAvailable personas (use persona_id if a match — exact id, otherwise empty string):\n';
       prompt += personas.map(function(p) { return '- ' + p.id + ': ' + p.name + (p.description ? ' — ' + p.description : ''); }).join('\n') + '\n';
     }
     prompt += brandSnippet('research');
-    prompt += '\n\nValid optimization goals: ' + goalList + '\nValid objectives: ' + objList;
-    prompt += '\n\nRules: Each Ad Set targets a DIFFERENT angle / audience cut. Optimization goal must be valid for the campaign objective.';
-    prompt += '\nReturn ONLY this JSON:\n';
-    prompt += '{ "ad_sets": [{\n';
-    prompt += '  "name": "Ad Set name",\n';
-    prompt += '  "persona_id": "library id or empty",\n';
-    prompt += '  "audience_overrides": "",\n';
-    prompt += '  "optimization_goal": "...",\n';
-    prompt += '  "brief": { "creative_direction": "", "hook_angles": ["","",""], "ai_notes": "" }\n';
-    prompt += '}] }';
-    prompt += '\n\nNo markdown, no preamble.';
+    prompt += '\n\nValid optimization goals (pick one key per Ad Set): ' + goalList;
+    prompt += '\nValid objectives: ' + objList;
+    prompt += '\n\nRules:';
+    prompt += '\n- Generate exactly 3 Ad Sets. Each targets a DIFFERENT angle / audience cut (e.g. pain-point split, life-stage split, intent level).';
+    prompt += '\n- Ad Set name ≤60 chars, descriptive (e.g. "Founders — Time-poor"), not generic.';
+    prompt += '\n- optimization_goal must be valid for the campaign objective (e.g. OFFSITE_CONVERSIONS for OUTCOME_LEADS/SALES, LINK_CLICKS for OUTCOME_TRAFFIC).';
+    prompt += '\n- creative_direction: 1-2 sentences describing the angle and tone for this Ad Set.';
+    prompt += '\n- hook_angles: 3 short, distinct hook angles (e.g. "regret of waiting", "shipping speed", "social proof"). 2-6 words each.';
+    prompt += '\n- ai_notes: short steer for the ad-writer (constraints, do/don\'ts). Empty string if nothing to add.';
+    prompt += '\n- Output strict JSON only, no preamble, no markdown:\n';
+    prompt += '{"ad_sets":[{"name":"","persona_id":"","audience_overrides":"","optimization_goal":"","brief":{"creative_direction":"","hook_angles":["","",""],"ai_notes":""}}]}';
 
     callAIWithRetry(prompt, function(parsed) {
       var sets = (parsed && Array.isArray(parsed.ad_sets)) ? parsed.ad_sets : [];
@@ -101,6 +160,8 @@
     _ncwBegin(state);
 
     var persona = adSet.persona_id ? S.personaMap[adSet.persona_id] : null;
+    var ctaList = Object.keys(Constants.META_CTA_TYPES).slice(0, 16).join(', ');
+
     var prompt = 'You are a Meta Ads creative director. Generate 3 distinct Ads for the Ad Set below.\n\n';
     prompt += 'Campaign: ' + (cam.name || '(untitled)') + '\n';
     if (cam.objective) prompt += 'Objective: ' + cam.objective + '\n';
@@ -110,17 +171,22 @@
     var brief = adSet.brief || {};
     if (brief.creative_direction) prompt += 'Creative direction: ' + brief.creative_direction + '\n';
     if (brief.hook_angles && brief.hook_angles.length) prompt += 'Hook angles to consider: ' + brief.hook_angles.join(' | ') + '\n';
+    if (brief.ai_notes) prompt += 'Writer notes: ' + brief.ai_notes + '\n';
     if (state._adsContext[setIdx]) prompt += '\nAdditional ad direction: ' + state._adsContext[setIdx] + '\n';
     prompt += brandSnippet('content');
-    prompt += '\n\nRules: each Ad uses a DIFFERENT hook angle. Primary text 90-140 chars. Headline ≤27. Description ≤27.';
-    prompt += '\nReturn ONLY this JSON:\n';
-    prompt += '{ "ads": [{\n';
-    prompt += '  "name": "",\n';
-    prompt += '  "creative_type": "single_image|single_video|carousel",\n';
-    prompt += '  "hook": { "text": "", "type": "question|bold|story|data|direct|curiosity|challenge" },\n';
-    prompt += '  "creative": { "primary_text": "", "headline": "", "description": "", "cta_type": "LEARN_MORE|SHOP_NOW|...", "cta_link": "" }\n';
-    prompt += '}] }';
-    prompt += '\n\nNo markdown, no preamble.';
+    prompt += '\n\nValid CTA keys: ' + ctaList;
+    prompt += '\n\nRules:';
+    prompt += '\n- Generate exactly 3 Ads. Each uses a DIFFERENT hook angle and hook type — no two Ads should feel interchangeable.';
+    prompt += '\n- name ≤60 chars, descriptive (e.g. "Regret hook — testimonial").';
+    prompt += '\n- hook.text: the opening line/headline that makes someone stop scrolling. ≤90 chars.';
+    prompt += '\n- hook.type: one of question|bold|story|data|direct|curiosity|challenge.';
+    prompt += '\n- primary_text: 90-140 chars, conversational, expands on the hook with a single concrete payoff.';
+    prompt += '\n- headline: ≤27 chars. description: ≤27 chars. Both must be specific, not generic.';
+    prompt += '\n- cta_type: pick from the CTA keys above that fits the objective.';
+    prompt += '\n- cta_link: empty string (user fills landing URL later).';
+    prompt += '\n- creative_type: pick single_image, single_video, or carousel based on what the hook needs.';
+    prompt += '\n- Output strict JSON only, no preamble, no markdown:\n';
+    prompt += '{"ads":[{"name":"","creative_type":"single_image","hook":{"text":"","type":"direct"},"creative":{"primary_text":"","headline":"","description":"","cta_type":"LEARN_MORE","cta_link":""}}]}';
 
     callAIWithRetry(prompt, function(parsed) {
       var ads = (parsed && Array.isArray(parsed.ads)) ? parsed.ads : [];

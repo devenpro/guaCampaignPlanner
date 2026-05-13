@@ -41,7 +41,7 @@
     html += '<h2>' + icon('bullhorn') + ' Meta Campaigns</h2>';
     html += '<div style="display:flex;gap:6px">';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="go-view" data-view="meta_campaigns">View all</button>';
-    html += '<button class="cp-btn cp-btn-ai cp-btn-sm" data-action="ai-generate-campaign-tree">' + icon('wand-magic') + ' Generate</button>';
+    html += '<button class="cp-btn cp-btn-ai cp-btn-sm" data-action="new-campaign-v2">' + icon('wand-magic') + ' New Campaign</button>';
     html += '</div></div>';
 
     // Top stats row
@@ -102,10 +102,9 @@
     // Empty state CTA
     if (camps.length === 0) {
       html += '<div class="cp-dash-v2-empty">';
-      html += '<p>No Meta Campaigns yet. Get started with an AI-generated tree from a brief, or build manually.</p>';
+      html += '<p>No Meta Campaigns yet. The New Campaign wizard takes a brief and drafts Ad Sets and Ads with AI — step by step.</p>';
       html += '<div style="display:flex;gap:8px;margin-top:var(--cp-space-2)">';
-      html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-campaign-tree">' + icon('wand-magic') + ' Generate from brief</button>';
-      html += '<button class="cp-btn cp-btn-primary" data-action="new-campaign-v2">' + icon('plus') + ' New Campaign</button>';
+      html += '<button class="cp-btn cp-btn-ai" data-action="new-campaign-v2">' + icon('wand-magic') + ' New Campaign</button>';
       html += '</div></div>';
     }
 

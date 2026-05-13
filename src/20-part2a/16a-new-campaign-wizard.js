@@ -42,7 +42,7 @@
       },
       ad_sets: [],
       _adsContext: {},        // { setIdx: contextString }
-      stepGenerated: { 2: false, 3: {} },
+      stepGenerated: { 1: false, 2: false, 3: {} },
       created: { campaignV2Id: '', adSetIds: [], adIds: [] }
     };
   }
@@ -159,14 +159,45 @@
 
   // ----- Step 1: Basics -----
   function _ncwRenderStep1() {
-    var cam = ncwState.campaign || {};
+    var st = ncwState;
+    var cam = st.campaign || {};
     var C = Constants;
-    var html = _ncwHeader('Campaign Basics', 'Name your campaign, choose the Meta objective and budget mode, and provide a brief that AI will use to draft Ad Sets.');
+    var html = _ncwHeader('Campaign Basics', 'Write a brief and let AI draft the basics, or fill the fields manually. The brief carries forward to Step 2 (Ad Sets) and Step 3 (Ads).');
+
+    html += _ncwErrorBanner();
 
     html += '<div class="cp-ncw-form">';
 
+    html += '<div class="cp-field"><label class="cp-field-label">Brief <span class="cp-text-muted">— context for AI</span></label>';
+    html += '<textarea class="cp-textarea" data-ncw-field="campaign.brief" rows="4" placeholder="Describe what you\'re selling, who you\'re targeting, what success looks like, any constraints...">';
+    html += esc(cam.brief || '');
+    html += '</textarea></div>';
+
+    html += '<div class="cp-ncw-gen-bar">';
+    html += '<button class="cp-btn cp-btn-ai"' + (st.aiLoading ? ' disabled' : '') + ' data-action="ncw-ai-draft-campaign">';
+    html += icon('sparkles') + ' ' + (st.stepGenerated[1] ? 'Redraft with AI' : 'Draft with AI');
+    html += '</button>';
+    if (st.aiLoading) {
+      html += '<button class="cp-btn cp-btn-ghost" data-action="ncw-ai-cancel">' + icon('x') + ' Cancel</button>';
+    }
+    html += '<span class="cp-text-muted cp-ncw-gen-hint">AI fills name, objective, budget mode and bid strategy from your brief. You can edit anything below.</span>';
+    html += '</div>';
+
+    if (st.aiLoading) {
+      html += '<div class="cp-sw-skeleton-card" style="margin-top:var(--cp-space-3)">';
+      html += '<div class="cp-sw-skeleton-line cp-sw-skeleton-line--title"></div>';
+      html += '<div class="cp-sw-skeleton-line"></div><div class="cp-sw-skeleton-line"></div>';
+      html += '<div class="cp-sw-skeleton-line cp-sw-skeleton-line--short"></div>';
+      html += '</div>';
+      html += '</div>';
+      return html;
+    }
+
     html += '<div class="cp-field"><label class="cp-field-label">Campaign Name <span class="cp-required">*</span></label>';
     html += '<input type="text" class="cp-input" data-ncw-field="campaign.name" value="' + esc(cam.name || '') + '" placeholder="e.g., Q3 SaaS Lead Gen" autocomplete="off"></div>';
+
+    html += '<div class="cp-field"><label class="cp-field-label">Description</label>';
+    html += '<input type="text" class="cp-input" data-ncw-field="campaign.description" value="' + esc(cam.description || '') + '" placeholder="One-line description of the campaign goal"></div>';
 
     html += '<div class="cp-ncw-field-row">';
     html += '<div class="cp-field"><label class="cp-field-label">Objective</label>';
@@ -191,11 +222,6 @@
     html += '<div class="cp-field"><label class="cp-field-label">End date</label>';
     html += '<input type="date" class="cp-input" data-ncw-field="campaign.stop_time" value="' + esc(cam.stop_time || '') + '"></div>';
     html += '</div>';
-
-    html += '<div class="cp-field"><label class="cp-field-label">Brief <span class="cp-text-muted">— context for AI</span></label>';
-    html += '<textarea class="cp-textarea" data-ncw-field="campaign.brief" rows="4" placeholder="Describe what you\'re selling, who you\'re targeting, what success looks like, any constraints...">';
-    html += esc(cam.brief || '');
-    html += '</textarea></div>';
 
     html += '</div>';
     return html;

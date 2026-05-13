@@ -34,7 +34,6 @@
     openMediaBriefPreview: openMediaBriefPreview,
 
     // Meta v2 AI
-    aiGenerateCampaignTree: aiGenerateCampaignTree,
     aiSuggestAdSets: aiSuggestAdSets, aiSuggestAds: aiSuggestAds,
     aiGenerateAdSetBrief: aiGenerateAdSetBrief,
     aiGenerateAdHooks: aiGenerateAdHooks,

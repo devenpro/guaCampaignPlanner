@@ -530,6 +530,11 @@
       ncwState.aiLoading = false; ncwState.aiActionId = ''; ncwState.aiError = 'Generation cancelled.';
       refreshNCW();
     });
+    $(document).off('click.ncw-draft-camp').on('click.ncw-draft-camp', '[data-action="ncw-ai-draft-campaign"]', function(e) {
+      e.preventDefault();
+      var R = window._cpRenderers || {};
+      if (typeof R.ncwAIDraftCampaign === 'function') R.ncwAIDraftCampaign();
+    });
     $(document).off('click.ncw-suggest-sets').on('click.ncw-suggest-sets', '[data-action="ncw-ai-suggest-sets"]', function(e) {
       e.preventDefault();
       var R = window._cpRenderers || {};
