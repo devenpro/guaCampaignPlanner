@@ -8,6 +8,7 @@
   var badge, priorityBadge;
   var funnelBadge, dimensionBadge, mediaTypeBadge, hookTypeBadge, progressBar;
   var logActivity;
+  var debounce;
   var createEntity, deleteEntity, saveEntityField, duplicateEntity;
   var getAllPersonas, getAllMessages, getAllStyles, getAllFormats;
   var getAllCategories, getAllPainPoints, getAllTags;
@@ -63,6 +64,7 @@
     hookTypeBadge = window._cpHookTypeBadge;
     progressBar = window._cpProgressBar;
     logActivity = window._cpLogActivity;
+    debounce = window._cpDebounce;
     createEntity = window._cpCreateEntity; deleteEntity = window._cpDeleteEntity;
     saveEntityField = window._cpSaveEntityField; duplicateEntity = window._cpDuplicateEntity;
     getAllPersonas = window._cpGetAllPersonas; getAllMessages = window._cpGetAllMessages;
