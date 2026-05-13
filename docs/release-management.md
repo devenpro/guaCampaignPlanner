@@ -16,7 +16,39 @@ section is the short version; this doc is the long one.
 * To roll back, change Asset Injector URLs from `@latest` to a previous
   `@vX.Y.Z` tag and clear Drupal cache. ~30 seconds.
 
-## 1. Branch model
+## 1. Mental model: what `@latest` tracks
+
+This is the single most important thing to internalise about the
+release flow.
+
+`@latest` is a **jsDelivr semver resolver** — it always points at the
+highest `vX.Y.Z` tag in the repo. Nothing else.
+
+* `main` is *not* automatically "latest". `main` becomes a particular
+  `vX.Y.Z` only when CI cuts a tag from it. The tag — not the branch —
+  is what `@latest` follows.
+* Creating a new branch never affects `@latest`. Pushing commits to any
+  branch never affects `@latest`. Only **publishing a new tag with a
+  higher semver** moves `@latest` forward.
+* `@main` is a *separate, mutable alias* for the tip of `main`. After
+  CI tags, `@main` and `@latest` happen to point at the same commit,
+  but only because they were independently updated to it. They're not
+  the same URL.
+* `@<branch-name>` (any branch) resolves to that branch's tip and
+  bypasses `@latest` entirely.
+
+| URL              | Resolves to              | Changes when…                  |
+| ---              | ---                      | ---                            |
+| `@latest`        | Highest `vX.Y.Z` tag     | CI publishes a new tag         |
+| `@vX.Y.Z`        | That exact commit        | Never (immutable)              |
+| `@main`          | Tip of `main`            | `main` is pushed               |
+| `@<branch-name>` | Tip of that branch       | The branch is pushed           |
+
+Production uses `@latest`. Rollback pins to `@vX.Y.Z`. Previews and
+hotfix testing use `@<branch-name>`. The rest of this doc says when to
+switch between them.
+
+## 2. Branch model
 
 * **`main`** is the trunk. Every merge to `main` triggers an auto-release.
   Treat `main` as "what's live (or about to be live)".
@@ -24,13 +56,13 @@ section is the short version; this doc is the long one.
   `claude/hook-copy-ai-modal-bugfix`, `claude/observable-versioned-delivery`).
   Short-lived; deleted after the PR merges.
 * **No long-lived `release/*` branches.** Tags `vX.Y.Z` are the release
-  pointers; there's nothing else to maintain.
+  pointers; there's nothing else to maintain. See §4 for why.
 * **`dist/` is committed.** jsDelivr serves it directly out of the repo,
   so the bundle has to be in git. Rebuild locally
   (`node scripts/build.mjs`) before opening a PR so the bundle diff is
   visible to reviewers.
 
-## 2. Release lifecycle
+## 3. Release lifecycle
 
 Defined in `.github/workflows/release.yml`.
 
@@ -70,7 +102,50 @@ uses the built-in `GITHUB_TOKEN`. No PATs, no secrets to rotate.
 * On the live Drupal page, the console banner and the sidebar version
   chip confirm the new bundle is actually being served.
 
-## 3. Versioning policy
+## 4. Working on multiple branches in parallel
+
+The default flow is trunk-based — one `main`, many short-lived feature
+branches, one tag per merge. Multi-branch work is just standard git on
+top of that. No special process.
+
+### Two features in flight
+
+Two PRs from two `claude/<…>` branches. They don't coordinate.
+
+```
+Day 1   Open PR A (feature-X)  and  PR B (feature-Y)
+Day 2   Merge PR A             → CI tags v1.0.5  → @latest = v1.0.5
+Day 3   Merge PR B             → CI tags v1.0.6  → @latest = v1.0.6
+```
+
+Whichever PR merges first gets the next tag; the other gets the one
+after that. The version chip and console banner climb monotonically.
+If PR B's branch needs to absorb PR A's merged changes before merging,
+rebase on `main` like any other git workflow.
+
+### Previewing one branch on the live page (without merging)
+
+Already covered in §7 ("Test a feature branch on the live page"). The
+mental-model anchor: pointing Asset Injector at `@<branch>` does **not**
+make that branch "latest" — it bypasses `@latest` entirely (see §1).
+Switch back to `@latest` to return to released code.
+
+### What this repo deliberately doesn't do: release branches
+
+This app has one production line (one Drupal site). The trunk-based
+flow is sufficient. If the team ever needed to support two production
+lines simultaneously (e.g. `v1.x` patched for an older Drupal site
+while `v2.x` is in development for a newer one), you'd need release
+branches (`release/1.x`, `release/2.x`) plus changes to
+`.github/workflows/release.yml` — the workflow currently only triggers
+on `push` to `main`, so a release branch would publish nothing without
+a parallel workflow keyed to it. Out of scope today; flagged here so a
+future reader knows the gap exists.
+
+## 5. Versioning policy
+
+`main` is not automatically `@latest`; CI publishing a new tag is what
+moves `@latest` forward. See §1 for the underlying rule.
 
 SemVer: `MAJOR.MINOR.PATCH`.
 
@@ -89,7 +164,7 @@ SemVer: `MAJOR.MINOR.PATCH`.
 * **Pre-release / RC tags** (`v1.1.0-rc.1`): out of scope for the current
   workflow. Cut by hand if needed.
 
-## 4. Asset Injector configuration
+## 6. Asset Injector configuration
 
 Drupal admin path: **Configuration → Development → Asset Injector**.
 
@@ -124,10 +199,10 @@ GitHub release.
 | --- | --- |
 | Day-to-day production | `@latest` — picks up new releases as they ship |
 | Frozen during incident response | `@vX.Y.Z` — immutable, never changes |
-| Testing an unreleased feature branch | `@<branch-name>` — mutable like `@main`, useful for previews |
-| jsDelivr unreachable | `/sites/default/files/…` — self-hosted, see §6 |
+| Testing an unreleased feature branch | `@<branch-name>` — mutable, useful for previews; does **not** affect `@latest` (see §1) |
+| jsDelivr unreachable | `/sites/default/files/…` — self-hosted, see §7 "Hotfix when the CDN is unavailable" |
 
-## 5. Day-to-day recipes
+## 7. Day-to-day recipes
 
 ### Ship a small fix
 
@@ -145,7 +220,7 @@ GitHub release.
 2. Confirm `[CP] Campaign Planner v<expected>` matches the latest tag at
    https://github.com/devenpro/guaCampaignPlanner/releases.
 3. Confirm the sidebar version chip matches.
-4. If either shows an older version, see §7 "Gotchas — caches".
+4. If either shows an older version, see §8 "Gotchas — caches".
 
 ### Roll back to the previous tag
 
@@ -192,7 +267,7 @@ When jsDelivr itself is the problem (rare):
 5. Clear all Drupal caches.
 6. To revert to the CDN, flip the URLs back to `@latest`.
 
-## 6. Gotchas
+## 8. Gotchas
 
 * **`@latest` resolution lag.** jsDelivr resolves `@latest` to the newest
   semver tag in the repo. New tags become visible to `@latest` within
@@ -217,7 +292,7 @@ When jsDelivr itself is the problem (rare):
   will be `v1.0.1` (current `package.json` is `1.0.0` and the workflow
   PR doesn't bump it). Subsequent pushes climb from there.
 
-## 7. Where things live
+## 9. Where things live
 
 | Concern | Path |
 | --- | --- |
