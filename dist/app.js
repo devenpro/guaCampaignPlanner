@@ -4410,53 +4410,53 @@
     html += renderAdCopyVariants(ad);
 
     html += '<div class="cp-inspector-actions">';
-    html += '<button class="cp-btn cp-btn-ai" data-action="ai-write-ad-copy" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' AI write copy</button>';
-    html += '<button class="cp-btn cp-btn-outline" data-action="ai-improve-ad-copy" data-id="' + esc(ad.id) + '">' + icon('wand-magic') + ' Improve</button>';
+    html += '<button class="cp-btn cp-btn-ai" data-action="ws-open-copy-write-modal" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' AI write copy</button>';
+    html += '<button class="cp-btn cp-btn-outline" data-action="ws-open-copy-improve-modal" data-id="' + esc(ad.id) + '">' + icon('wand-magic') + ' Improve</button>';
     html += '</div>';
 
     html += '</div>';
     return html;
   }
 
-  // --- AI copy variants — inline primary_text options on the Copy tab ---
+  // --- AI copy variants — single inline draft on the Copy tab ---
   //
-  // Stored on `ad.creative.ai_copy_variants` as `{ id, text, source, generated_at }`.
-  // `source` is 'write' (one of three new variants) or 'improve' (a refinement
-  // of the current primary_text). User picks one to overwrite primary_text.
+  // Stored on `ad.creative.ai_copy_variants`. The list usually holds one
+  // record: the most recent AI Write or AI Improve output. The user picks
+  // **Use this** to overwrite `creative.primary_text`, or **Discard** to
+  // throw it away. Each record: `{ id, text, source, instruction,
+  // generated_at }`.
 
   function renderAdCopyVariants(ad) {
     var variants = (ad.creative && ad.creative.ai_copy_variants) || [];
     if (!variants.length) return '';
 
-    var isImprove = variants.length === 1 && variants[0].source === 'improve';
-    var titleIcon = isImprove ? 'wand-magic' : 'sparkles';
-    var titleLabel = isImprove ? 'Improved primary text' : 'AI copy variants';
-    var subtitle = isImprove
-      ? 'Compare with what you have now.'
-      : variants.length + ' option' + (variants.length !== 1 ? 's' : '') + ' · click <strong>Use this</strong> to overwrite the textarea above.';
-
     var html = '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon(titleIcon) + ' ' + esc(titleLabel);
-    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">' + subtitle + '</span>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-clear-ad-copy-variants" data-id="' + esc(ad.id) + '" style="margin-left:auto" title="Clear all variants">' + icon('trash') + '</button>';
-    html += '</div>';
-
     html += '<div class="cp-copy-variants">';
     for (var i = 0; i < variants.length; i++) {
-      var v = variants[i];
-      html += '<div class="cp-copy-variant-card" data-variant-id="' + esc(v.id) + '">';
-      html += '<div class="cp-copy-variant-head">';
-      html += '<span class="cp-copy-variant-num">' + (isImprove ? icon('wand-magic') : (i + 1)) + '</span>';
-      html += '<span class="cp-copy-variant-label">' + esc(isImprove ? 'AI improvement' : 'Variant ' + (i + 1)) + '</span>';
-      html += '<span class="cp-text-muted" style="font-size:11px;margin-left:auto">' + countChars(v.text || '') + ' chars</span>';
-      html += '</div>';
-      html += '<div class="cp-copy-variant-text">' + esc(v.text || '') + '</div>';
-      html += '<div class="cp-copy-variant-actions">';
-      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="ws-use-ad-copy-variant" data-id="' + esc(ad.id) + '" data-idx="' + i + '">' + icon('check') + ' Use this</button>';
-      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-remove-ad-copy-variant" data-id="' + esc(ad.id) + '" data-idx="' + i + '" title="Discard">' + icon('trash') + '</button>';
-      html += '</div>';
-      html += '</div>';
+      html += renderAdCopyVariantCard(ad, variants[i], i);
     }
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdCopyVariantCard(ad, v, idx) {
+    var isImprove = (v.source === 'improve');
+    var sourceLabel = isImprove ? 'AI improvement' : 'AI draft';
+    var sourceIcon  = isImprove ? 'wand-magic' : 'sparkles';
+
+    var html = '<div class="cp-copy-variant-card" data-variant-id="' + esc(v.id) + '">';
+    html += '<div class="cp-copy-variant-head">';
+    html += '<span class="cp-copy-variant-source">' + icon(sourceIcon) + ' ' + esc(sourceLabel) + '</span>';
+    html += '<span class="cp-text-muted cp-copy-variant-meta">' + countChars(v.text || '') + ' chars · ' + countWords(v.text || '') + ' words</span>';
+    html += '</div>';
+    if (v.instruction) {
+      html += '<div class="cp-copy-variant-instruction">' + icon('quote-left') + ' <em>' + esc(v.instruction) + '</em></div>';
+    }
+    html += '<div class="cp-copy-variant-text">' + esc(v.text || '') + '</div>';
+    html += '<div class="cp-copy-variant-actions">';
+    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="ws-use-ad-copy-variant" data-id="' + esc(ad.id) + '" data-idx="' + idx + '">' + icon('check') + ' Use this' + (isImprove ? ' improvement' : ' draft') + '</button>';
+    html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-remove-ad-copy-variant" data-id="' + esc(ad.id) + '" data-idx="' + idx + '" title="Discard">' + icon('trash') + '</button>';
     html += '</div>';
     html += '</div>';
     return html;
@@ -11335,9 +11335,12 @@
       $card.removeClass('cp-hook-idea-card-collapsed');
     });
 
-    // AI copy variants — pick / discard / clear. Stored on
-    // `ad.creative.ai_copy_variants`; populated by `aiWriteAdCopy`
-    // (three options) or `aiImproveAdCopy` (one refinement).
+    // AI copy variants — pick / discard. Stored on
+    // `ad.creative.ai_copy_variants`; populated by `aiWriteAdCopy` (single
+    // draft) or `aiImproveAdCopy` (single refinement). Same bug as the
+    // hook handlers: passing `ad.creative` to `saveEntityField` was a
+    // no-op because of the identity short-circuit, so the primary_text
+    // textarea never refreshed after Use. Mutate + sync + render.
     $(document).off('click.cpv2-use-copy-variant').on('click.cpv2-use-copy-variant', '[data-action="ws-use-ad-copy-variant"]', function(e) {
       e.preventDefault();
       var id = $(this).data('id');
@@ -11349,7 +11352,7 @@
       ad.creative.primary_text = v.text;
       ad.creative.ai_copy_variants = [];
       ad.updated = new Date().toISOString();
-      saveEntityField('ad', id, 'creative', ad.creative);
+      buildMaps(); syncToTextarea(); render();
       if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI copy variant');
       logActivity('content_applied', 'ad', id, ad.name, 'Applied AI ' + (v.source || 'write') + ' variant to primary text');
       toast('Copy applied', 'success');
@@ -11363,18 +11366,9 @@
       var variants = ad.creative.ai_copy_variants || [];
       if (idx < 0 || idx >= variants.length) return;
       variants.splice(idx, 1);
+      ad.updated = new Date().toISOString();
       snapshot('Discard copy variant');
-      saveEntityField('ad', id, 'creative', ad.creative);
-    });
-
-    $(document).off('click.cpv2-clear-copy-variants').on('click.cpv2-clear-copy-variants', '[data-action="ws-clear-ad-copy-variants"]', function(e) {
-      e.preventDefault();
-      var id = $(this).data('id');
-      var ad = getAd(id); if (!ad || !ad.creative) return;
-      if (!(ad.creative.ai_copy_variants && ad.creative.ai_copy_variants.length)) return;
-      snapshot('Clear copy variants');
-      ad.creative.ai_copy_variants = [];
-      saveEntityField('ad', id, 'creative', ad.creative);
+      buildMaps(); syncToTextarea(); render();
     });
 
     // Pull a hook from a library message into an Ad (also captures snapshot)
@@ -13415,54 +13409,105 @@
     return Math.round(n);
   }
 
-  // --- 6. Write Ad Copy (alternatives bundle: primary text + headline + description) ---
+  // --- 6. Write Ad Copy — single primary_text variant + AI runner modal ---
 
-  function aiWriteAdCopy(adId) {
+  function openCopyWriteModal(adId) {
     if (!aiV2_assertConfigured()) return;
     var ad = getAd(adId); if (!ad) return;
+    var lastInstruction = (ad.creative && ad.creative.last_write_instruction) || '';
+    openAiRunnerModal({
+      title: 'AI write copy',
+      subtitle: 'Drafts one primary-text variant for this ad. You can compare it before applying.',
+      actionId: 'ai-write-ad-copy',
+      instructionLabel: 'Angle or notes',
+      instructionPlaceholder: 'e.g. lean on social proof · emphasise outcome · keep it under 100 chars',
+      instructionInitial: lastInstruction,
+      instructionRequired: false,
+      confirmLabel: 'Write',
+      busyLabel: 'Writing…',
+      onConfirm: function(ctx, done) {
+        aiWriteAdCopy(adId, ctx.instruction, function(err) { done(err); });
+      }
+    });
+  }
+
+  function aiWriteAdCopy(adId, instruction, onDone) {
+    if (!aiV2_assertConfigured()) { if (onDone) onDone('not configured'); return; }
+    var ad = getAd(adId); if (!ad) { if (onDone) onDone('ad not found'); return; }
     var adSet = getAdSet(ad.ad_set_id);
     var camp = adSet ? getCampaignV2(adSet.campaign_id) : null;
     var activeHook = (ad.hook && ad.hook.text) || '';
+    instruction = (instruction || '').trim();
 
-    var prompt = 'Write 3 distinct primary-text options for this Meta Ad. Each is the body copy that sits above the media — 90-140 chars, scroll-stopping, written in the brand voice. Use three different angles (e.g., problem framing, social proof, outcome promise). Headline and description are out of scope here; only return primary_text.\n\n';
+    var prompt = 'Write ONE primary-text option for this Meta Ad — the body copy that sits above the media. Aim for 90-140 chars, scroll-stopping, written in the brand voice. Headline and description are out of scope; return primary_text only.\n\n';
+    if (instruction) prompt += 'Extra steer from the user: ' + instruction + '\n\n';
     if (camp) prompt += aiV2_campaignContext(camp) + '\n';
     if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
-    if (activeHook) prompt += 'Selected hook (extend this thought into the body — do not repeat it verbatim): ' + activeHook + '\n';
+    if (activeHook) prompt += 'Selected hook (extend this thought — do not repeat verbatim): ' + activeHook + '\n';
     prompt += '\n' + brandSnippet('content');
-    prompt += '\nRespond JSON only: {"options":[{"primary_text":""}]}';
+    prompt += '\nRespond JSON only: {"primary_text":""}';
 
     toast('AI writing copy...', 'info');
     callAIWithRetry(prompt, function(parsed) {
-      var options = (parsed && parsed.options) || [];
-      var variants = options.map(function(o) {
-        return {
-          id: generateId('cpv'),
-          text: String((o && o.primary_text) || '').trim(),
-          source: 'write',
-          generated_at: new Date().toISOString()
-        };
-      }).filter(function(v) { return v.text; });
-      if (variants.length === 0) { toast('AI returned no copy', 'warning'); return; }
-      snapshot('AI copy variants');
+      var text = String((parsed && parsed.primary_text) || '').trim();
+      if (!text) { toast('AI returned no copy', 'warning'); if (onDone) onDone('empty'); return; }
+      snapshot('AI copy variant');
       ad.creative = ad.creative || {};
-      ad.creative.ai_copy_variants = variants;
+      ad.creative.ai_copy_variants = [{
+        id: generateId('cpv'),
+        text: text,
+        source: 'write',
+        instruction: instruction,
+        generated_at: new Date().toISOString()
+      }];
+      ad.creative.last_write_instruction = instruction;
       ad.updated = new Date().toISOString();
       buildMaps(); syncToTextarea(); render();
-      logActivity('content_generated', 'ad', adId, ad.name, 'AI wrote ' + variants.length + ' primary-text variants');
-      toast('Got ' + variants.length + ' copy variants — pick one in the Copy tab', 'success');
-    }, function(err) { toast('AI error: ' + err, 'error'); },
-       'ai-write-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
+      logActivity('content_generated', 'ad', adId, ad.name, 'AI wrote primary text' + (instruction ? ' (with steer)' : ''));
+      toast('Copy draft ready — compare in the Copy tab', 'success');
+      if (onDone) onDone();
+    }, function(err) {
+      toast('AI error: ' + err, 'error');
+      if (onDone) onDone(err);
+    }, 'ai-write-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
-  // --- 7. Improve Ad Copy (refinement on primary_text) ---
+  // --- 7. Improve Ad Copy — required instruction + AI runner modal ---
 
-  function aiImproveAdCopy(adId) {
+  function openCopyImproveModal(adId) {
     if (!aiV2_assertConfigured()) return;
     var ad = getAd(adId); if (!ad) return;
     var c = ad.creative || {};
     if (!(c.primary_text || '').trim()) { toast('Write some primary text first, then AI can improve it', 'info'); return; }
+    openAiRunnerModal({
+      title: 'Improve primary text',
+      subtitle: 'Tell the AI what to change. The original stays in the textarea until you apply the improvement.',
+      actionId: 'ai-improve-ad-copy',
+      instructionLabel: 'What should change?',
+      instructionPlaceholder: 'e.g. shorter · more emotional · remove jargon · swap "we" for "you"',
+      instructionInitial: '',
+      instructionRequired: true,
+      confirmLabel: 'Improve',
+      busyLabel: 'Improving…',
+      onConfirm: function(ctx, done) {
+        aiImproveAdCopy(adId, ctx.instruction, function(err) { done(err); });
+      }
+    });
+  }
 
-    var prompt = 'Rewrite this Meta Ad primary text. Sharpen it: more specific, more emotional, more scroll-stopping. Keep the same intent and approximate length. Only return primary_text.\n\n';
+  function aiImproveAdCopy(adId, instruction, onDone) {
+    if (!aiV2_assertConfigured()) { if (onDone) onDone('not configured'); return; }
+    var ad = getAd(adId); if (!ad) { if (onDone) onDone('ad not found'); return; }
+    var c = ad.creative || {};
+    if (!(c.primary_text || '').trim()) {
+      toast('Write some primary text first, then AI can improve it', 'info');
+      if (onDone) onDone('empty source');
+      return;
+    }
+    instruction = (instruction || '').trim();
+
+    var prompt = 'Rewrite this Meta Ad primary text per the user\'s instruction. Keep the same intent and approximate length unless the instruction asks otherwise. Return primary_text only.\n\n';
+    prompt += 'User instruction: ' + (instruction || '(make it sharper)') + '\n\n';
     prompt += 'Current primary text:\n' + c.primary_text + '\n\n';
     if (ad.hook && ad.hook.text) prompt += 'Selected hook context: ' + ad.hook.text + '\n\n';
     prompt += brandSnippet('content');
@@ -13471,21 +13516,25 @@
     toast('AI improving copy...', 'info');
     callAIWithRetry(prompt, function(parsed) {
       var improved = String((parsed && parsed.primary_text) || '').trim();
-      if (!improved) { toast('AI returned nothing', 'warning'); return; }
+      if (!improved) { toast('AI returned nothing', 'warning'); if (onDone) onDone('empty'); return; }
       snapshot('AI improved copy');
       ad.creative = ad.creative || {};
       ad.creative.ai_copy_variants = [{
         id: generateId('cpv'),
         text: improved,
         source: 'improve',
+        instruction: instruction,
         generated_at: new Date().toISOString()
       }];
       ad.updated = new Date().toISOString();
       buildMaps(); syncToTextarea(); render();
-      logActivity('content_generated', 'ad', adId, ad.name, 'AI improved primary text');
+      logActivity('content_generated', 'ad', adId, ad.name, 'AI improved primary text: ' + (instruction || '(no steer)'));
       toast('Improved copy ready — compare in the Copy tab', 'success');
-    }, function(err) { toast('AI error: ' + err, 'error'); },
-       'ai-improve-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
+      if (onDone) onDone();
+    }, function(err) {
+      toast('AI error: ' + err, 'error');
+      if (onDone) onDone(err);
+    }, 'ai-improve-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
   // --- 8. Generate Image Prompt ---
@@ -16070,11 +16119,20 @@
     $(document).off('click.cp2b-ai-hooks').on('click.cp2b-ai-hooks', '[data-action="ai-generate-ad-hooks"]', function(e) {
       e.preventDefault(); openHookGenerationModal($(this).data('id'));
     });
+    // Copy tab Write / Improve — open the AI runner modal which captures the
+    // user's instructions + provider/model before running. Legacy direct
+    // actions are kept and routed through the modal too.
+    $(document).off('click.cp2b-open-copy-write').on('click.cp2b-open-copy-write', '[data-action="ws-open-copy-write-modal"]', function(e) {
+      e.preventDefault(); openCopyWriteModal($(this).data('id'));
+    });
+    $(document).off('click.cp2b-open-copy-improve').on('click.cp2b-open-copy-improve', '[data-action="ws-open-copy-improve-modal"]', function(e) {
+      e.preventDefault(); openCopyImproveModal($(this).data('id'));
+    });
     $(document).off('click.cp2b-ai-copy').on('click.cp2b-ai-copy', '[data-action="ai-write-ad-copy"]', function(e) {
-      e.preventDefault(); aiWriteAdCopy($(this).data('id'));
+      e.preventDefault(); openCopyWriteModal($(this).data('id'));
     });
     $(document).off('click.cp2b-ai-improve').on('click.cp2b-ai-improve', '[data-action="ai-improve-ad-copy"]', function(e) {
-      e.preventDefault(); aiImproveAdCopy($(this).data('id'));
+      e.preventDefault(); openCopyImproveModal($(this).data('id'));
     });
     $(document).off('click.cp2b-ai-img-prompt').on('click.cp2b-ai-img-prompt', '[data-action="ai-generate-ad-image-prompt"]', function(e) {
       e.preventDefault(); aiGenerateAdImagePrompt($(this).data('id'));
@@ -16224,6 +16282,10 @@
     aiGenerateAdSetBrief: aiGenerateAdSetBrief,
     aiGenerateAdHooks: aiGenerateAdHooks,
     aiWriteAdCopy: aiWriteAdCopy, aiImproveAdCopy: aiImproveAdCopy,
+    openHookGenerationModal: openHookGenerationModal,
+    openCopyWriteModal: openCopyWriteModal,
+    openCopyImproveModal: openCopyImproveModal,
+    openAiRunnerModal: openAiRunnerModal,
     aiGenerateAdImagePrompt: aiGenerateAdImagePrompt,
     aiGenerateVideoScript: aiGenerateVideoScript,
 

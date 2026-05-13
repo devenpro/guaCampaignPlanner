@@ -494,7 +494,7 @@
   flex-wrap: wrap;
 }
 
-/* ----- AI copy variants (Copy tab) ----- */
+/* ----- AI copy variant card (single inline draft on the Copy tab) ----- */
 .cp-copy-variants {
   display: flex;
   flex-direction: column;
@@ -503,44 +503,57 @@
 .cp-copy-variant-card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px 12px;
-  background: var(--cp-gray-50);
-  border: 1px solid var(--cp-border-light);
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--cp-primary-subtle, #e8f0fe);
+  border: 1px solid var(--cp-primary);
   border-radius: var(--cp-radius-md);
   transition: border-color 120ms;
 }
-.cp-copy-variant-card:hover { border-color: var(--cp-primary); }
 .cp-copy-variant-head {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  flex-wrap: wrap;
 }
-.cp-copy-variant-num {
-  width: 22px;
-  height: 22px;
-  background: var(--cp-primary);
-  color: var(--cp-white);
-  border-radius: 50%;
+.cp-copy-variant-source {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 11px;
-  flex-shrink: 0;
-}
-.cp-copy-variant-label {
-  font-size: 11px;
+  gap: 6px;
+  padding: 3px 10px;
+  background: var(--cp-primary);
+  color: var(--cp-white);
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  border-radius: var(--cp-radius-full);
+}
+.cp-copy-variant-meta {
+  font-size: 11px;
+  margin-left: auto;
+}
+.cp-copy-variant-instruction {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.65);
+  border-left: 3px solid var(--cp-primary);
+  border-radius: var(--cp-radius-sm);
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--cp-text-secondary);
 }
+.cp-copy-variant-instruction em { font-style: italic; }
 .cp-copy-variant-text {
-  font-size: 13px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 1.55;
   color: var(--cp-text-primary);
   white-space: pre-wrap;
+  background: var(--cp-white);
+  padding: 10px 12px;
+  border-radius: var(--cp-radius-sm);
 }
 .cp-copy-variant-actions {
   display: flex;

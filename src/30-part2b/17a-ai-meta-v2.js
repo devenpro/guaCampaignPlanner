@@ -499,54 +499,105 @@
     return Math.round(n);
   }
 
-  // --- 6. Write Ad Copy (alternatives bundle: primary text + headline + description) ---
+  // --- 6. Write Ad Copy — single primary_text variant + AI runner modal ---
 
-  function aiWriteAdCopy(adId) {
+  function openCopyWriteModal(adId) {
     if (!aiV2_assertConfigured()) return;
     var ad = getAd(adId); if (!ad) return;
+    var lastInstruction = (ad.creative && ad.creative.last_write_instruction) || '';
+    openAiRunnerModal({
+      title: 'AI write copy',
+      subtitle: 'Drafts one primary-text variant for this ad. You can compare it before applying.',
+      actionId: 'ai-write-ad-copy',
+      instructionLabel: 'Angle or notes',
+      instructionPlaceholder: 'e.g. lean on social proof · emphasise outcome · keep it under 100 chars',
+      instructionInitial: lastInstruction,
+      instructionRequired: false,
+      confirmLabel: 'Write',
+      busyLabel: 'Writing…',
+      onConfirm: function(ctx, done) {
+        aiWriteAdCopy(adId, ctx.instruction, function(err) { done(err); });
+      }
+    });
+  }
+
+  function aiWriteAdCopy(adId, instruction, onDone) {
+    if (!aiV2_assertConfigured()) { if (onDone) onDone('not configured'); return; }
+    var ad = getAd(adId); if (!ad) { if (onDone) onDone('ad not found'); return; }
     var adSet = getAdSet(ad.ad_set_id);
     var camp = adSet ? getCampaignV2(adSet.campaign_id) : null;
     var activeHook = (ad.hook && ad.hook.text) || '';
+    instruction = (instruction || '').trim();
 
-    var prompt = 'Write 3 distinct primary-text options for this Meta Ad. Each is the body copy that sits above the media — 90-140 chars, scroll-stopping, written in the brand voice. Use three different angles (e.g., problem framing, social proof, outcome promise). Headline and description are out of scope here; only return primary_text.\n\n';
+    var prompt = 'Write ONE primary-text option for this Meta Ad — the body copy that sits above the media. Aim for 90-140 chars, scroll-stopping, written in the brand voice. Headline and description are out of scope; return primary_text only.\n\n';
+    if (instruction) prompt += 'Extra steer from the user: ' + instruction + '\n\n';
     if (camp) prompt += aiV2_campaignContext(camp) + '\n';
     if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
-    if (activeHook) prompt += 'Selected hook (extend this thought into the body — do not repeat it verbatim): ' + activeHook + '\n';
+    if (activeHook) prompt += 'Selected hook (extend this thought — do not repeat verbatim): ' + activeHook + '\n';
     prompt += '\n' + brandSnippet('content');
-    prompt += '\nRespond JSON only: {"options":[{"primary_text":""}]}';
+    prompt += '\nRespond JSON only: {"primary_text":""}';
 
     toast('AI writing copy...', 'info');
     callAIWithRetry(prompt, function(parsed) {
-      var options = (parsed && parsed.options) || [];
-      var variants = options.map(function(o) {
-        return {
-          id: generateId('cpv'),
-          text: String((o && o.primary_text) || '').trim(),
-          source: 'write',
-          generated_at: new Date().toISOString()
-        };
-      }).filter(function(v) { return v.text; });
-      if (variants.length === 0) { toast('AI returned no copy', 'warning'); return; }
-      snapshot('AI copy variants');
+      var text = String((parsed && parsed.primary_text) || '').trim();
+      if (!text) { toast('AI returned no copy', 'warning'); if (onDone) onDone('empty'); return; }
+      snapshot('AI copy variant');
       ad.creative = ad.creative || {};
-      ad.creative.ai_copy_variants = variants;
+      ad.creative.ai_copy_variants = [{
+        id: generateId('cpv'),
+        text: text,
+        source: 'write',
+        instruction: instruction,
+        generated_at: new Date().toISOString()
+      }];
+      ad.creative.last_write_instruction = instruction;
       ad.updated = new Date().toISOString();
       buildMaps(); syncToTextarea(); render();
-      logActivity('content_generated', 'ad', adId, ad.name, 'AI wrote ' + variants.length + ' primary-text variants');
-      toast('Got ' + variants.length + ' copy variants — pick one in the Copy tab', 'success');
-    }, function(err) { toast('AI error: ' + err, 'error'); },
-       'ai-write-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
+      logActivity('content_generated', 'ad', adId, ad.name, 'AI wrote primary text' + (instruction ? ' (with steer)' : ''));
+      toast('Copy draft ready — compare in the Copy tab', 'success');
+      if (onDone) onDone();
+    }, function(err) {
+      toast('AI error: ' + err, 'error');
+      if (onDone) onDone(err);
+    }, 'ai-write-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
-  // --- 7. Improve Ad Copy (refinement on primary_text) ---
+  // --- 7. Improve Ad Copy — required instruction + AI runner modal ---
 
-  function aiImproveAdCopy(adId) {
+  function openCopyImproveModal(adId) {
     if (!aiV2_assertConfigured()) return;
     var ad = getAd(adId); if (!ad) return;
     var c = ad.creative || {};
     if (!(c.primary_text || '').trim()) { toast('Write some primary text first, then AI can improve it', 'info'); return; }
+    openAiRunnerModal({
+      title: 'Improve primary text',
+      subtitle: 'Tell the AI what to change. The original stays in the textarea until you apply the improvement.',
+      actionId: 'ai-improve-ad-copy',
+      instructionLabel: 'What should change?',
+      instructionPlaceholder: 'e.g. shorter · more emotional · remove jargon · swap "we" for "you"',
+      instructionInitial: '',
+      instructionRequired: true,
+      confirmLabel: 'Improve',
+      busyLabel: 'Improving…',
+      onConfirm: function(ctx, done) {
+        aiImproveAdCopy(adId, ctx.instruction, function(err) { done(err); });
+      }
+    });
+  }
 
-    var prompt = 'Rewrite this Meta Ad primary text. Sharpen it: more specific, more emotional, more scroll-stopping. Keep the same intent and approximate length. Only return primary_text.\n\n';
+  function aiImproveAdCopy(adId, instruction, onDone) {
+    if (!aiV2_assertConfigured()) { if (onDone) onDone('not configured'); return; }
+    var ad = getAd(adId); if (!ad) { if (onDone) onDone('ad not found'); return; }
+    var c = ad.creative || {};
+    if (!(c.primary_text || '').trim()) {
+      toast('Write some primary text first, then AI can improve it', 'info');
+      if (onDone) onDone('empty source');
+      return;
+    }
+    instruction = (instruction || '').trim();
+
+    var prompt = 'Rewrite this Meta Ad primary text per the user\'s instruction. Keep the same intent and approximate length unless the instruction asks otherwise. Return primary_text only.\n\n';
+    prompt += 'User instruction: ' + (instruction || '(make it sharper)') + '\n\n';
     prompt += 'Current primary text:\n' + c.primary_text + '\n\n';
     if (ad.hook && ad.hook.text) prompt += 'Selected hook context: ' + ad.hook.text + '\n\n';
     prompt += brandSnippet('content');
@@ -555,21 +606,25 @@
     toast('AI improving copy...', 'info');
     callAIWithRetry(prompt, function(parsed) {
       var improved = String((parsed && parsed.primary_text) || '').trim();
-      if (!improved) { toast('AI returned nothing', 'warning'); return; }
+      if (!improved) { toast('AI returned nothing', 'warning'); if (onDone) onDone('empty'); return; }
       snapshot('AI improved copy');
       ad.creative = ad.creative || {};
       ad.creative.ai_copy_variants = [{
         id: generateId('cpv'),
         text: improved,
         source: 'improve',
+        instruction: instruction,
         generated_at: new Date().toISOString()
       }];
       ad.updated = new Date().toISOString();
       buildMaps(); syncToTextarea(); render();
-      logActivity('content_generated', 'ad', adId, ad.name, 'AI improved primary text');
+      logActivity('content_generated', 'ad', adId, ad.name, 'AI improved primary text: ' + (instruction || '(no steer)'));
       toast('Improved copy ready — compare in the Copy tab', 'success');
-    }, function(err) { toast('AI error: ' + err, 'error'); },
-       'ai-improve-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
+      if (onDone) onDone();
+    }, function(err) {
+      toast('AI error: ' + err, 'error');
+      if (onDone) onDone(err);
+    }, 'ai-improve-ad-copy', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
   // --- 8. Generate Image Prompt ---

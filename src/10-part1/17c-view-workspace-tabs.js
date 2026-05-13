@@ -381,53 +381,53 @@
     html += renderAdCopyVariants(ad);
 
     html += '<div class="cp-inspector-actions">';
-    html += '<button class="cp-btn cp-btn-ai" data-action="ai-write-ad-copy" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' AI write copy</button>';
-    html += '<button class="cp-btn cp-btn-outline" data-action="ai-improve-ad-copy" data-id="' + esc(ad.id) + '">' + icon('wand-magic') + ' Improve</button>';
+    html += '<button class="cp-btn cp-btn-ai" data-action="ws-open-copy-write-modal" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' AI write copy</button>';
+    html += '<button class="cp-btn cp-btn-outline" data-action="ws-open-copy-improve-modal" data-id="' + esc(ad.id) + '">' + icon('wand-magic') + ' Improve</button>';
     html += '</div>';
 
     html += '</div>';
     return html;
   }
 
-  // --- AI copy variants — inline primary_text options on the Copy tab ---
+  // --- AI copy variants — single inline draft on the Copy tab ---
   //
-  // Stored on `ad.creative.ai_copy_variants` as `{ id, text, source, generated_at }`.
-  // `source` is 'write' (one of three new variants) or 'improve' (a refinement
-  // of the current primary_text). User picks one to overwrite primary_text.
+  // Stored on `ad.creative.ai_copy_variants`. The list usually holds one
+  // record: the most recent AI Write or AI Improve output. The user picks
+  // **Use this** to overwrite `creative.primary_text`, or **Discard** to
+  // throw it away. Each record: `{ id, text, source, instruction,
+  // generated_at }`.
 
   function renderAdCopyVariants(ad) {
     var variants = (ad.creative && ad.creative.ai_copy_variants) || [];
     if (!variants.length) return '';
 
-    var isImprove = variants.length === 1 && variants[0].source === 'improve';
-    var titleIcon = isImprove ? 'wand-magic' : 'sparkles';
-    var titleLabel = isImprove ? 'Improved primary text' : 'AI copy variants';
-    var subtitle = isImprove
-      ? 'Compare with what you have now.'
-      : variants.length + ' option' + (variants.length !== 1 ? 's' : '') + ' · click <strong>Use this</strong> to overwrite the textarea above.';
-
     var html = '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon(titleIcon) + ' ' + esc(titleLabel);
-    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">' + subtitle + '</span>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-clear-ad-copy-variants" data-id="' + esc(ad.id) + '" style="margin-left:auto" title="Clear all variants">' + icon('trash') + '</button>';
-    html += '</div>';
-
     html += '<div class="cp-copy-variants">';
     for (var i = 0; i < variants.length; i++) {
-      var v = variants[i];
-      html += '<div class="cp-copy-variant-card" data-variant-id="' + esc(v.id) + '">';
-      html += '<div class="cp-copy-variant-head">';
-      html += '<span class="cp-copy-variant-num">' + (isImprove ? icon('wand-magic') : (i + 1)) + '</span>';
-      html += '<span class="cp-copy-variant-label">' + esc(isImprove ? 'AI improvement' : 'Variant ' + (i + 1)) + '</span>';
-      html += '<span class="cp-text-muted" style="font-size:11px;margin-left:auto">' + countChars(v.text || '') + ' chars</span>';
-      html += '</div>';
-      html += '<div class="cp-copy-variant-text">' + esc(v.text || '') + '</div>';
-      html += '<div class="cp-copy-variant-actions">';
-      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="ws-use-ad-copy-variant" data-id="' + esc(ad.id) + '" data-idx="' + i + '">' + icon('check') + ' Use this</button>';
-      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-remove-ad-copy-variant" data-id="' + esc(ad.id) + '" data-idx="' + i + '" title="Discard">' + icon('trash') + '</button>';
-      html += '</div>';
-      html += '</div>';
+      html += renderAdCopyVariantCard(ad, variants[i], i);
     }
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderAdCopyVariantCard(ad, v, idx) {
+    var isImprove = (v.source === 'improve');
+    var sourceLabel = isImprove ? 'AI improvement' : 'AI draft';
+    var sourceIcon  = isImprove ? 'wand-magic' : 'sparkles';
+
+    var html = '<div class="cp-copy-variant-card" data-variant-id="' + esc(v.id) + '">';
+    html += '<div class="cp-copy-variant-head">';
+    html += '<span class="cp-copy-variant-source">' + icon(sourceIcon) + ' ' + esc(sourceLabel) + '</span>';
+    html += '<span class="cp-text-muted cp-copy-variant-meta">' + countChars(v.text || '') + ' chars · ' + countWords(v.text || '') + ' words</span>';
+    html += '</div>';
+    if (v.instruction) {
+      html += '<div class="cp-copy-variant-instruction">' + icon('quote-left') + ' <em>' + esc(v.instruction) + '</em></div>';
+    }
+    html += '<div class="cp-copy-variant-text">' + esc(v.text || '') + '</div>';
+    html += '<div class="cp-copy-variant-actions">';
+    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="ws-use-ad-copy-variant" data-id="' + esc(ad.id) + '" data-idx="' + idx + '">' + icon('check') + ' Use this' + (isImprove ? ' improvement' : ' draft') + '</button>';
+    html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-remove-ad-copy-variant" data-id="' + esc(ad.id) + '" data-idx="' + idx + '" title="Discard">' + icon('trash') + '</button>';
     html += '</div>';
     html += '</div>';
     return html;
