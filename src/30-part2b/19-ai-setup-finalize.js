@@ -1,10 +1,11 @@
   // ============================================================
-  // SECTION 15c: SETUP WIZARD — FINALIZE (Meta v2 only)
+  // SECTION 15c: SETUP WIZARD — FINALIZE (Meta v2, ideas only)
   // ============================================================
   //
   // Creates library entities (personas / pain points / messages / styles /
-  // formats), then a Meta v2 Campaign with its Ad Sets and Ads in one pass.
-  // No legacy v1 path — the wizard always produces Meta-native output.
+  // formats), then one DRAFT campaign_v2 per selected campaign idea.
+  // Ad Sets and Ads are NOT built here — the user runs the per-campaign
+  // wizard from inside the campaign workspace to build those out.
 
   function finalizeSetupWizard() {
     var state = _swState();
@@ -152,152 +153,70 @@
 
     buildMaps();
 
-    // ---- 7. Meta v2 Campaign ----
-    setMsg('Creating Campaign…');
-    var cam = state.campaign || {};
-    var campEnt = createEntity('campaign_v2', $.extend({}, C.META_CAMPAIGN_DEFAULTS, {
-      name:           cam.name || ws.product_name || 'My Campaign',
-      description:    cam.description || '',
-      objective:      C.META_OBJECTIVES[cam.objective] ? cam.objective : C.META_CAMPAIGN_DEFAULTS.objective,
-      budget_mode:    cam.budget_mode === 'ABO' ? 'ABO' : 'CBO',
-      daily_budget:   cam.daily_budget !== '' && cam.daily_budget != null ? Number(cam.daily_budget) : null,
-      lifetime_budget: cam.lifetime_budget !== '' && cam.lifetime_budget != null ? Number(cam.lifetime_budget) : null,
-      bid_strategy:   cam.bid_strategy || C.META_CAMPAIGN_DEFAULTS.bid_strategy,
-      start_time:     cam.start_time || '',
-      stop_time:      cam.stop_time || '',
-      brief:          cam.brief || '',
-      ai_instructions: cam.ai_instructions || '',
-      status:         'DRAFT'
-    }));
-    if (!campEnt) {
-      throw new Error('Failed to create Campaign entity.');
-    }
-    state.created.campaignV2Id = campEnt.id;
+    // ---- 7. Campaign ideas → draft campaign_v2 entities ----
+    setMsg('Creating Campaigns…');
+    var selIdeas = (state.campaign_ideas || []).filter(function(c) { return c._selected; });
+    var campaignCount = 0;
+    var firstCampaignId = '';
 
-    // ---- 8. Ad Sets + Ads ----
-    setMsg('Creating Ad Sets and Ads…');
-    var selSets = (state.ad_sets || []).filter(function(s) { return s._selected; });
-    var adSetCount = 0, adCount = 0;
-    var buildPS = (window._cpPart2A && window._cpPart2A.buildPersonaSnapshot) ? window._cpPart2A.buildPersonaSnapshot : null;
+    for (var ii = 0; ii < selIdeas.length; ii++) {
+      var idea = selIdeas[ii];
 
-    for (var asi = 0; asi < selSets.length; asi++) {
-      var as = selSets[asi];
-
-      // Resolve persona via selPersonas-relative idx → real state.personas idx → created entity id
-      var personaWizard = selPersonas[as.persona_idx];
-      var personaRealIdx = personaWizard ? (state.personas || []).indexOf(personaWizard) : -1;
-      var personaEntId = personaRealIdx >= 0 ? personaIdxToId[personaRealIdx] : '';
-      var personaEnt = personaEntId ? getPersona(personaEntId) : null;
-
-      var brief = as.brief || {};
-      var msgIds = (brief.message_idx_list || []).map(function(i) {
+      // Map wizard message indices → real entity ids
+      var ideaMsgIds = (idea.message_idx_list || []).map(function(i) {
         var realI = selMessages[i] ? (state.messages || []).indexOf(selMessages[i]) : -1;
         return realI >= 0 ? messageIdxToId[realI] : null;
       }).filter(Boolean);
-      var styleIds = (brief.style_idx_list || []).map(function(i) {
-        var realI = selStyles[i] ? (state.styles || []).indexOf(selStyles[i]) : -1;
-        return realI >= 0 ? styleIdxToId[realI] : null;
-      }).filter(Boolean);
-      var formatIds = (brief.format_idx_list || []).map(function(i) {
-        var realI = selFormats[i] ? (state.formats || []).indexOf(selFormats[i]) : -1;
-        return realI >= 0 ? formatIdxToId[realI] : null;
-      }).filter(Boolean);
 
-      var setEnt = createEntity('ad_set', {
-        campaign_id:         campEnt.id,
-        name:                as.name || 'Ad Set ' + (asi + 1),
-        persona_id:          personaEntId || '',
-        persona_snapshot:    (personaEnt && buildPS) ? buildPS(personaEnt) : null,
-        audience_overrides:  as.audience_overrides || '',
-        optimization_goal:   C.META_OPTIMIZATION_GOALS[as.optimization_goal] ? as.optimization_goal : C.META_AD_SET_DEFAULTS.optimization_goal,
-        billing_event:       as.billing_event       || C.META_AD_SET_DEFAULTS.billing_event,
-        attribution_setting: as.attribution_setting || C.META_AD_SET_DEFAULTS.attribution_setting,
-        brief: {
-          creative_direction: brief.creative_direction || '',
-          message_ids:        msgIds,
-          style_ids:          styleIds,
-          format_ids:         formatIds,
-          hook_angles:        Array.isArray(brief.hook_angles) ? brief.hook_angles : [],
-          ai_notes:           brief.ai_notes || ''
-        }
-      });
-      if (!setEnt) continue;
-      state.created.adSetIds.push(setEnt.id);
-      adSetCount++;
+      // Map persona idx → real entity id (or empty)
+      var ideaPersonaEntId = '';
+      if (idea.persona_idx != null && idea.persona_idx >= 0) {
+        var personaWizard = selPersonas[idea.persona_idx];
+        var personaRealIdx = personaWizard ? (state.personas || []).indexOf(personaWizard) : -1;
+        if (personaRealIdx >= 0) ideaPersonaEntId = personaIdxToId[personaRealIdx] || '';
+      }
 
-      var selAds = (as.ads || []).filter(function(a) { return a._selected; });
-      for (var adi = 0; adi < selAds.length; adi++) {
-        var ad = selAds[adi];
-        var hook = ad.hook || {};
-        var creative = ad.creative || {};
-        var media = ad.media || {};
-        var adEnt = createEntity('ad', {
-          ad_set_id:     setEnt.id,
-          name:          ad.name || ((setEnt.name || 'Ad Set') + ' — Ad ' + (adi + 1)),
-          creative_type: C.META_AD_CREATIVE_TYPES[ad.creative_type] ? ad.creative_type : 'single_image',
-          hook: {
-            text:               hook.text || '',
-            type:               hook.type || 'direct',
-            source_message_id:  '',
-            selected_hook_id:   ''
-          },
-          creative: {
-            primary_text: creative.primary_text || '',
-            headline:     creative.headline     || '',
-            description:  creative.description  || '',
-            cta_type:     C.META_CTA_TYPES[creative.cta_type] ? creative.cta_type : 'LEARN_MORE',
-            cta_link:     creative.cta_link     || '',
-            display_link: '',
-            tracking_params: ''
-          },
-          media: {
-            image: {
-              asset_id: '',
-              ai_prompt: media.image_prompt || '',
-              brief: media.image_brief || '',
-              aspect_ratio: '1:1',
-              negative_prompt: '',
-              reference_image_ids: []
-            },
-            video: {
-              asset_id: '',
-              duration_seconds: 30,
-              aspect_ratio: '9:16',
-              concept: media.video_concept || '',
-              blueprint: { scenes: [] },
-              script: { rows: [] }
-            },
-            carousel_cards: []
-          }
-        });
-        if (adEnt) {
-          state.created.adIds.push(adEnt.id);
-          adCount++;
-          if (typeof window._cpMaybeAdvanceAdStatus === 'function') {
-            window._cpMaybeAdvanceAdStatus(adEnt, 'setup wizard');
-          }
+      // Compose a brief that captures the linked persona so the per-campaign
+      // wizard has full context to pick up.
+      var briefText = idea.brief || '';
+      if (ideaPersonaEntId) {
+        var pEnt = getPersona(ideaPersonaEntId);
+        if (pEnt && pEnt.name) {
+          briefText = (briefText ? briefText + '\n\n' : '') + 'Target persona: ' + pEnt.name;
         }
       }
+
+      var campEnt = createEntity('campaign_v2', $.extend({}, C.META_CAMPAIGN_DEFAULTS, {
+        name:        idea.name || 'Untitled campaign',
+        description: '',
+        objective:   C.META_OBJECTIVES[idea.objective] ? idea.objective : C.META_CAMPAIGN_DEFAULTS.objective,
+        brief:       briefText,
+        ai_instructions: ideaMsgIds.length ? 'Linked message ids: ' + ideaMsgIds.join(',') : '',
+        status:      'DRAFT'
+      }));
+      if (!campEnt) continue;
+      state.created.campaignV2Ids.push(campEnt.id);
+      if (!firstCampaignId) firstCampaignId = campEnt.id;
+      campaignCount++;
     }
 
-    // ---- 9. Mark setup complete + log ----
+    // ---- 8. Mark setup complete + log ----
     setMsg('Finishing up…');
     S.meta.setup.setup_complete = true;
     logActivity(
-      'campaign_tree_generated', 'campaign_v2', campEnt.id, campEnt.name,
-      'Setup wizard: ' + adSetCount + ' Ad Set' + (adSetCount !== 1 ? 's' : '') +
-      ', ' + adCount + ' Ad' + (adCount !== 1 ? 's' : '')
+      'setup_completed', '', '', ws.name || 'Workspace',
+      'Setup wizard: created ' + campaignCount + ' Campaign idea' + (campaignCount !== 1 ? 's' : '')
     );
     buildMaps();
     syncToTextarea();
 
-    // ---- 10. Clear session & close wizard ----
+    // ---- 9. Clear session & close wizard ----
     if (window._cpPart2A && typeof window._cpPart2A.swClearSession === 'function') {
       window._cpPart2A.swClearSession();
     }
     $('.cp-setup-wizard').remove();
 
-    // ---- 11. Re-render app shell & navigate to the new Campaign Workspace ----
+    // ---- 10. Re-render app shell & navigate to Campaigns list ----
     if (window._cpRenderAppShell) {
       $('#cpApp').html(window._cpRenderAppShell());
       $('.cp-ai-picker-loading').each(function() {
@@ -306,15 +225,14 @@
       });
       updateAIStatusIndicator();
     }
-    S.selectedCampaignV2Id = campEnt.id;
+    S.selectedCampaignV2Id = null;
     S.selectedAdSetId = null;
     S.selectedAdId = null;
-    navigate('campaign_workspace', { hash: 'campaign/' + campEnt.id });
+    navigate('meta_campaigns');
 
     toast(
-      'Workspace ready! Created Campaign with ' +
-      adSetCount + ' Ad Set' + (adSetCount !== 1 ? 's' : '') + ' and ' +
-      adCount + ' Ad' + (adCount !== 1 ? 's' : '') + '.',
+      'Workspace ready! Created ' + campaignCount + ' Campaign idea' + (campaignCount !== 1 ? 's' : '') +
+      '. Open one and run "AI Setup for this Campaign" to build out Ad Sets and Ads.',
       'success', 6000
     );
   }

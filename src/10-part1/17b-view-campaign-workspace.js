@@ -191,6 +191,22 @@
     html += '<div class="cp-inspector-stat"><div class="cp-inspector-stat-value" style="color:#0891b2">' + live + '</div><div class="cp-inspector-stat-label">Live</div></div>';
     html += '</div>';
 
+    // Empty-campaign CTA — campaigns created from the setup wizard start empty
+    // (no Ad Sets, no Ads). The per-campaign wizard fills them out.
+    if (sets.length === 0) {
+      html += '<div class="cp-inspector-section cp-empty-campaign-cta" style="background:linear-gradient(135deg,#f0f7ff 0%,#fff7e6 100%);border:1px dashed var(--cp-primary,#1a73e8);border-radius:var(--cp-radius-md);padding:var(--cp-space-4);margin-top:var(--cp-space-3)">';
+      html += '<div style="display:flex;align-items:flex-start;gap:var(--cp-space-3)">';
+      html += '<div style="font-size:32px;line-height:1">' + icon('rocket') + '</div>';
+      html += '<div style="flex:1">';
+      html += '<div style="font-weight:600;font-size:var(--cp-font-size-base);margin-bottom:var(--cp-space-1)">This campaign is empty.</div>';
+      html += '<div class="cp-text-muted" style="font-size:var(--cp-font-size-sm);margin-bottom:var(--cp-space-3)">Run the AI setup for this campaign to generate Ad Sets and Ads from your brief, or add them manually.</div>';
+      html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap">';
+      html += '<button class="cp-btn cp-btn-ai" data-action="ai-suggest-ad-sets" data-campaign-id="' + esc(camp.id) + '">' + icon('sparkles') + ' AI Setup for this campaign</button>';
+      html += '<button class="cp-btn cp-btn-outline" data-action="ws-add-ad-set" data-campaign-id="' + esc(camp.id) + '">' + icon('plus') + ' Add Ad Set manually</button>';
+      html += '</div>';
+      html += '</div></div></div>';
+    }
+
     // Description
     if (camp.description) {
       html += '<div class="cp-inspector-section"><p>' + esc(camp.description) + '</p></div>';

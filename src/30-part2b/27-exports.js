@@ -41,7 +41,7 @@
     // Setup Wizard AI generators + finalize
     swAIGeneratePersonas: swAIGeneratePersonas, swAIGeneratePainPoints: swAIGeneratePainPoints,
     swAIGenerateMessages: swAIGenerateMessages, swAIGenerateStylesFormats: swAIGenerateStylesFormats,
-    swAIGenerateCampaignTree: swAIGenerateCampaignTree,
+    swAIGenerateCampaignIdeas: swAIGenerateCampaignIdeas,
     finalizeSetupWizard: finalizeSetupWizard,
 
     // New Campaign Wizard AI + finalize

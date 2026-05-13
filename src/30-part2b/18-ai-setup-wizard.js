@@ -301,9 +301,15 @@
     }, 'sw-ai-config', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
-  // ----- 5. Campaign Tree (Step 7) -----
+  // ----- 5. Campaign Ideas (Step 7) -----
+  //
+  // The setup wizard's Step 7 produces a list of campaign IDEAS (just
+  // name + objective + brief + target persona + message references).
+  // Each idea becomes a draft campaign_v2 on launch — Ad Sets and Ads
+  // are built later by the per-campaign wizard from the campaign
+  // workspace.
 
-  function swAIGenerateCampaignTree() {
+  function swAIGenerateCampaignIdeas() {
     var state = _swState();
     if (!state) return;
     if (state.aiLoading) return;
@@ -316,9 +322,7 @@
     var selPersonas   = (state.personas    || []).filter(function(p)  { return p._selected; });
     var selPainPoints = (state.pain_points || []).filter(function(pp) { return pp._selected; });
     var selMessages   = (state.messages    || []).filter(function(m)  { return m._selected; });
-    var selStyles     = (state.styles      || []).filter(function(s)  { return s._selected; });
-    var selFormats    = (state.formats     || []).filter(function(f)  { return f._selected; });
-    var extra         = state._campaignTreeContext || '';
+    var extra         = state._campaignIdeasContext || '';
 
     if (!selPersonas.length) {
       _swEndAIError(state, 7, 'No personas selected. Go back to Step 3.');
@@ -339,161 +343,57 @@
       return i + '. ' + (m.name || 'Message ' + i) + ' [' + (m.theme || '?') + '] — ' + truncate(m.description || m.body || '', 90);
     }).join('\n');
 
-    var styleLines = selStyles.map(function(s, i) {
-      return i + '. ' + (s.name || 'Style ' + i) + ' — ' + truncate(s.description || '', 90);
-    }).join('\n');
-
-    var formatLines = selFormats.map(function(f, i) {
-      return i + '. ' + (f.name || 'Format ' + i) + ' [' + (f.category || '?') + '] — ' + truncate(f.description || '', 90);
-    }).join('\n');
-
     var objList = Object.keys(Constants.META_OBJECTIVES).join(', ');
-    var goalList = Object.keys(Constants.META_OPTIMIZATION_GOALS).join(', ');
-    var ctaList = Object.keys(Constants.META_CTA_TYPES).slice(0, 14).join(', ');
 
-    var prompt = 'You are a Meta Ads strategist. Build a complete Campaign tree for the workspace below.\n\n';
+    var prompt = 'You are a Meta Ads strategist. Propose 3-5 distinct CAMPAIGN IDEAS for the workspace below.\n\n';
     prompt += _swWorkspaceBlock(ws);
-    prompt += '\nSelected personas (use persona_idx, 0-based from this list):\n' + personaLines + '\n';
-    if (ppLines)     prompt += '\nKey pain points:\n' + ppLines + '\n';
-    if (messageLines) prompt += '\nSelected messages (use message_idx_list):\n' + messageLines + '\n';
-    if (styleLines)  prompt += '\nSelected styles (use style_idx_list):\n' + styleLines + '\n';
-    if (formatLines) prompt += '\nSelected formats (use format_idx_list):\n' + formatLines + '\n';
-    if (extra)       prompt += '\nAdditional campaign direction: ' + extra + '\n';
+    prompt += '\nSelected personas (use persona_idx, 0-based from this list, or -1 for none):\n' + personaLines + '\n';
+    if (ppLines)      prompt += '\nKey pain points:\n' + ppLines + '\n';
+    if (messageLines) prompt += '\nSelected messages (use message_idx_list, 0-based):\n' + messageLines + '\n';
+    if (extra)        prompt += '\nAdditional direction for the ideas: ' + extra + '\n';
     prompt += brandSnippet('research');
-    prompt += '\n\nAvailable Meta enums:\n';
-    prompt += '- objective: ' + objList + '\n';
-    prompt += '- optimization_goal: ' + goalList + '\n';
-    prompt += '- cta_type: ' + ctaList + '\n';
+    prompt += '\n\nAvailable Meta objectives: ' + objList + '\n';
     prompt += '\nRules:\n';
-    prompt += '- 1 Campaign. 2-3 Ad Sets. 2-3 Ads per Ad Set.\n';
-    prompt += '- Each Ad Set must target a DIFFERENT persona angle / audience cut.\n';
-    prompt += '- Each Ad inside an Ad Set must use a DIFFERENT hook angle.\n';
-    prompt += '- Primary text: 90-140 chars. Headline: ≤27 chars. Description: ≤27 chars.\n';
-    prompt += '- optimization_goal must be valid for the chosen objective.\n';
-    prompt += '- persona_idx, message_idx_list, style_idx_list, format_idx_list are 0-based indices into the lists above (drop any that don\'t map).\n';
-    prompt += '\nSchema (return ONLY this JSON):\n';
+    prompt += '- Propose 3-5 campaign ideas. Each idea is ONE campaign — no ad sets or ads yet (those are built per-campaign later).\n';
+    prompt += '- Ideas must be DIFFERENT in angle or audience cut, not minor variations.\n';
+    prompt += '- Each idea targets ONE primary persona (persona_idx) or leave -1 for cross-persona.\n';
+    prompt += '- message_idx_list is a short subset (1-3 ids) of message indices that fit the campaign\'s angle.\n';
+    prompt += '- name: ≤50 chars. brief: 2-3 sentences explaining the angle, goal, and "why now".\n';
+    prompt += '\nSchema (return ONLY this JSON, no preamble):\n';
     prompt += '{\n';
-    prompt += '  "campaign": {\n';
-    prompt += '    "name": "Short campaign name (≤50 chars)",\n';
-    prompt += '    "description": "1-2 sentence rationale",\n';
+    prompt += '  "ideas": [{\n';
+    prompt += '    "name": "Campaign name (≤50 chars)",\n';
     prompt += '    "objective": "OUTCOME_*",\n';
-    prompt += '    "budget_mode": "CBO|ABO",\n';
-    prompt += '    "daily_budget": NUMBER or null,\n';
-    prompt += '    "bid_strategy": "LOWEST_COST_WITHOUT_CAP|LOWEST_COST_WITH_BID_CAP|COST_CAP|LOWEST_COST_WITH_MIN_ROAS",\n';
-    prompt += '    "brief": "2-3 sentence campaign brief"\n';
-    prompt += '  },\n';
-    prompt += '  "ad_sets": [{\n';
-    prompt += '    "name": "Ad Set name",\n';
-    prompt += '    "persona_idx": INTEGER,\n';
-    prompt += '    "audience_overrides": "free-text audience tweaks (locales, behaviours)",\n';
-    prompt += '    "optimization_goal": "...",\n';
-    prompt += '    "billing_event": "IMPRESSIONS|LINK_CLICKS|THRUPLAY|APP_INSTALLS",\n';
-    prompt += '    "attribution_setting": "1d_view|1d_click|7d_click|1d_view_1d_click|1d_view_7d_click",\n';
-    prompt += '    "brief": {\n';
-    prompt += '      "creative_direction": "2-3 sentences",\n';
-    prompt += '      "hook_angles": ["Angle 1", "Angle 2", "Angle 3"],\n';
-    prompt += '      "message_idx_list": [INTEGER, ...],\n';
-    prompt += '      "style_idx_list": [INTEGER, ...],\n';
-    prompt += '      "format_idx_list": [INTEGER, ...],\n';
-    prompt += '      "ai_notes": "production notes for the creative team"\n';
-    prompt += '    },\n';
-    prompt += '    "ads": [{\n';
-    prompt += '      "name": "Ad name",\n';
-    prompt += '      "creative_type": "single_image|single_video|carousel",\n';
-    prompt += '      "hook": { "text": "1 sentence hook", "type": "question|bold|story|data|direct|curiosity|challenge" },\n';
-    prompt += '      "creative": {\n';
-    prompt += '        "primary_text": "90-140 chars",\n';
-    prompt += '        "headline": "≤27 chars",\n';
-    prompt += '        "description": "≤27 chars",\n';
-    prompt += '        "cta_type": "LEARN_MORE|SHOP_NOW|...",\n';
-    prompt += '        "cta_link": ""\n';
-    prompt += '      },\n';
-    prompt += '      "media": {\n';
-    prompt += '        "image_brief": "1-2 sentence brief for image ads",\n';
-    prompt += '        "image_prompt": "production-ready AI image prompt for image ads",\n';
-    prompt += '        "video_concept": "1-2 sentence concept for video ads"\n';
-    prompt += '      }\n';
-    prompt += '    }]\n';
+    prompt += '    "brief": "2-3 sentence brief — angle, goal, why now",\n';
+    prompt += '    "persona_idx": INTEGER (0-based, or -1 for cross-persona),\n';
+    prompt += '    "message_idx_list": [INTEGER, ...]\n';
     prompt += '  }]\n';
     prompt += '}';
     prompt += SW_JSON_RULES;
 
     callAIWithRetry(prompt, function(parsed) {
-      if (!parsed || typeof parsed !== 'object' || !parsed.campaign || !Array.isArray(parsed.ad_sets)) {
-        _swEndAIError(state, 7, 'AI returned an invalid tree structure. Try regenerating.');
+      if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.ideas)) {
+        _swEndAIError(state, 7, 'AI returned an invalid response. Try regenerating.');
         _swRefresh();
         return;
       }
-      var c = parsed.campaign || {};
       var allowedObj = Constants.META_OBJECTIVES;
-      var allowedGoals = Constants.META_OPTIMIZATION_GOALS;
-      var allowedCTAs = Constants.META_CTA_TYPES;
-      var allowedCreative = Constants.META_AD_CREATIVE_TYPES;
-      var allowedHook = { question:1, bold:1, story:1, data:1, direct:1, curiosity:1, challenge:1 };
-
-      state.campaign = {
-        name:         String(c.name || ws.product_name + ' Launch').trim().substring(0, 80),
-        description:  String(c.description || '').trim(),
-        objective:    allowedObj[c.objective] ? c.objective : 'OUTCOME_LEADS',
-        budget_mode:  (c.budget_mode === 'ABO' || c.budget_mode === 'CBO') ? c.budget_mode : 'CBO',
-        daily_budget: (c.daily_budget == null || c.daily_budget === '') ? '' : Number(c.daily_budget),
-        lifetime_budget: '',
-        bid_strategy: c.bid_strategy || 'LOWEST_COST_WITHOUT_CAP',
-        start_time:   '',
-        stop_time:    '',
-        brief:        String(c.brief || '').trim(),
-        ai_instructions: ''
+      var clampIdxList = function(arr, maxN) {
+        return (Array.isArray(arr) ? arr : [])
+          .map(function(i) { return parseInt(i, 10); })
+          .filter(function(i) { return !isNaN(i) && i >= 0 && i < maxN; });
       };
 
-      state.ad_sets = (parsed.ad_sets || []).slice(0, 5).map(function(s) {
-        var b = s.brief || {};
-        var clampedPI = parseInt(s.persona_idx, 10);
-        if (isNaN(clampedPI) || clampedPI < 0 || clampedPI >= selPersonas.length) clampedPI = 0;
-        var clampIdxList = function(arr, maxN) {
-          return (Array.isArray(arr) ? arr : [])
-            .map(function(i) { return parseInt(i, 10); })
-            .filter(function(i) { return !isNaN(i) && i >= 0 && i < maxN; });
-        };
+      state.campaign_ideas = (parsed.ideas || []).slice(0, 8).map(function(c) {
+        var pi = parseInt(c.persona_idx, 10);
+        if (isNaN(pi) || pi < -1 || pi >= selPersonas.length) pi = -1;
         return {
-          name:               String(s.name || 'Ad Set').trim().substring(0, 80),
-          persona_idx:        clampedPI,
-          audience_overrides: String(s.audience_overrides || '').trim(),
-          optimization_goal:  allowedGoals[s.optimization_goal] ? s.optimization_goal : 'OFFSITE_CONVERSIONS',
-          billing_event:      s.billing_event || 'IMPRESSIONS',
-          attribution_setting: s.attribution_setting || '7d_click',
-          brief: {
-            creative_direction: String(b.creative_direction || '').trim(),
-            hook_angles:        Array.isArray(b.hook_angles) ? b.hook_angles.filter(Boolean).slice(0, 5) : [],
-            message_idx_list:   clampIdxList(b.message_idx_list, selMessages.length),
-            style_idx_list:     clampIdxList(b.style_idx_list,   selStyles.length),
-            format_idx_list:    clampIdxList(b.format_idx_list,  selFormats.length),
-            ai_notes:           String(b.ai_notes || '').trim()
-          },
-          ads: (s.ads || []).slice(0, 4).map(function(a) {
-            var h = a.hook || {}; var cr = a.creative || {}; var md = a.media || {};
-            return {
-              name:          String(a.name || 'Ad').trim().substring(0, 80),
-              creative_type: allowedCreative[a.creative_type] ? a.creative_type : 'single_image',
-              hook: {
-                text: String(h.text || '').trim(),
-                type: allowedHook[h.type] ? h.type : 'direct'
-              },
-              creative: {
-                primary_text: String(cr.primary_text || '').trim(),
-                headline:     String(cr.headline     || '').trim(),
-                description:  String(cr.description  || '').trim(),
-                cta_type:     allowedCTAs[cr.cta_type] ? cr.cta_type : 'LEARN_MORE',
-                cta_link:     String(cr.cta_link     || '').trim()
-              },
-              media: {
-                image_brief:   String(md.image_brief   || '').trim(),
-                image_prompt:  String(md.image_prompt  || '').trim(),
-                video_concept: String(md.video_concept || '').trim()
-              },
-              _selected: true
-            };
-          }),
-          _selected: true
+          name:             String(c.name || 'Untitled campaign').trim().substring(0, 80),
+          objective:        allowedObj[c.objective] ? c.objective : 'OUTCOME_LEADS',
+          brief:            String(c.brief || '').trim(),
+          persona_idx:      pi,
+          message_idx_list: clampIdxList(c.message_idx_list, selMessages.length),
+          _selected:        true
         };
       });
 

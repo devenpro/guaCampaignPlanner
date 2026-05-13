@@ -112,7 +112,7 @@
     R.swAIGeneratePainPoints     = swAIGeneratePainPoints;
     R.swAIGenerateMessages       = swAIGenerateMessages;
     R.swAIGenerateStylesFormats  = swAIGenerateStylesFormats;
-    R.swAIGenerateCampaignTree   = swAIGenerateCampaignTree;
+    R.swAIGenerateCampaignIdeas  = swAIGenerateCampaignIdeas;
     // Setup Wizard finalize
     R.finalizeSetupWizard        = finalizeSetupWizard;
     // New Campaign Wizard AI + finalize
