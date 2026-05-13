@@ -1,68 +1,7 @@
   // ============================================================
-  // SECTION 22: AUTO-STATUS ENGINE
+  // SECTION 22: PERSISTENCE + LOGGING HELPERS
   // ============================================================
 
-  function evaluateAutoStatus(recipe) {
-    if (!recipe) return null;
-    var currentIdx = STATUS_ORDER.indexOf(recipe.status);
-    if (currentIdx < 0) return null;
-    var suggested = recipe.status;
-
-    // draft → hook_ready
-    var hook = recipe.hook || {};
-    if (STATUS_ORDER.indexOf('hook_ready') > currentIdx) {
-      if (hook.selected_hook_id || (hook.custom_hook && hook.custom_hook.trim().length > 10)) {
-        suggested = 'hook_ready';
-      }
-    }
-
-    // hook_ready → content_ready
-    var sugIdx = STATUS_ORDER.indexOf(suggested);
-    var content = recipe.content || {};
-    if (STATUS_ORDER.indexOf('content_ready') > sugIdx) {
-      var adCopyText = stripHtml(content.ad_copy || '');
-      if (adCopyText.trim().length > 50) {
-        suggested = 'content_ready';
-      }
-    }
-
-    // content_ready → media_ready
-    // Media production now happens in dedicated apps (image_production,
-    // carousel_production, video_production). The recipe is considered
-    // production-ready as soon as a media type is chosen for handoff and
-    // ad copy is in place — the actual creative is built downstream.
-    // A production node attached to the recipe is the strongest possible
-    // signal and advances us regardless of intermediate state.
-    sugIdx = STATUS_ORDER.indexOf(suggested);
-    if (STATUS_ORDER.indexOf('media_ready') > sugIdx) {
-      var hasProd = typeof getRecipeProduction === 'function' && !!getRecipeProduction(recipe);
-      if (hasProd) {
-        suggested = 'media_ready';
-      } else if (recipe.media_type && suggested === 'content_ready') {
-        suggested = 'media_ready';
-      }
-    }
-
-    // in_review, approved, live are manual only
-    return suggested === recipe.status ? null : suggested;
-  }
-
-  function maybeAdvanceRecipeStatus(recipe, reason) {
-    if (!recipe) return false;
-    var suggested = evaluateAutoStatus(recipe);
-    if (!suggested) return false;
-    var currentIdx = STATUS_ORDER.indexOf(recipe.status);
-    var suggestedIdx = STATUS_ORDER.indexOf(suggested);
-    if (suggestedIdx <= currentIdx) return false;
-
-    var oldLabel = (RECIPE_STATUSES[recipe.status] || {}).label || recipe.status;
-    var newLabel = (RECIPE_STATUSES[suggested] || {}).label || suggested;
-    recipe.status = suggested;
-    recipe.updated = new Date().toISOString();
-    logActivity('recipe_status_changed', 'recipe', recipe.id, recipe.title, oldLabel + ' → ' + newLabel + (reason ? ' (' + reason + ')' : ''));
-    toast('Auto-advanced to ' + newLabel + (reason ? ' — ' + reason : ''), 'success', 4000);
-    return true;
-  }
   function syncToTextarea() {
     if (!S.$textarea || !S.$metaTextarea || !S.$activityTextarea) return;
     try {

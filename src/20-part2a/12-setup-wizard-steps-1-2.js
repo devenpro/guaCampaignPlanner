@@ -4,7 +4,8 @@
 
   function renderSWStep1() {
     var ws  = setupWizardState.workspace;
-    var objectives = Constants.CAMPAIGN_OBJECTIVES || [];
+    var objMap = Constants.META_OBJECTIVES || {};
+    var objectives = Object.keys(objMap).map(function(k) { return { id: k, name: objMap[k].label || k }; });
 
     var html = _buildSWStepHeader(
       'Workspace Setup',

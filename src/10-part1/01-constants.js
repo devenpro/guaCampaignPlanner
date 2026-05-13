@@ -9,9 +9,7 @@
     'messages':          { order: 4,  label: 'Messages',          icon: 'comments',           group: 'library', description: 'Message library' },
     'styles':            { order: 5,  label: 'Styles',            icon: 'palette',            group: 'library', description: 'Creative styles' },
     'formats':           { order: 6,  label: 'Formats',           icon: 'clapperboard',       group: 'library', description: 'Visual formats' },
-    'recipes':           { order: 99, label: 'Recipes',           icon: 'shuffle',            group: 'core',    description: 'Creative recipes (legacy)', legacy: true },
-    'campaigns':         { order: 99, label: 'Campaigns (v1)',    icon: 'bullhorn',           group: 'core',    description: 'Legacy campaigns',          legacy: true },
-    // Meta v2 — the only working surface. Always shown.
+    // Meta v2 — the only working surface.
     'meta_campaigns':    { order: 7,  label: 'Campaigns',         icon: 'bullhorn',           group: 'core',    description: 'Meta Campaigns' },
     'campaign_workspace':{ order: 8,  label: 'Campaign Workspace',icon: 'sitemap',            group: 'core',    description: 'Campaign → Ad Set → Ad',    hidden: true },
     'calendar':          { order: 9,  label: 'Calendar',          icon: 'calendar',           group: 'core',    description: 'Timeline view' },
@@ -35,41 +33,10 @@
     'format':  { key: 'format',  label: 'Visual Format', icon: 'clapperboard', color: '#0891b2' }
   };
 
-  var RECIPE_STATUSES = {
-    'draft':         { key: 'draft',         label: 'Draft',         icon: 'pencil',            color: '#80868b', order: 0 },
-    'hook_ready':    { key: 'hook_ready',    label: 'Hook Ready',    icon: 'anchor',            color: '#9334e9', order: 1 },
-    'content_ready': { key: 'content_ready', label: 'Content Ready', icon: 'pen-fancy',         color: '#1a73e8', order: 2 },
-    'media_ready':   { key: 'media_ready',   label: 'Media Ready',   icon: 'wand-magic',        color: '#7c3aed', order: 3 },
-    'in_review':     { key: 'in_review',     label: 'In Review',     icon: 'magnifying-glass',  color: '#e37400', order: 4 },
-    'approved':      { key: 'approved',      label: 'Approved',      icon: 'circle-check',      color: '#0d904f', order: 5 },
-    'live':          { key: 'live',          label: 'Live',          icon: 'signal',            color: '#0891b2', order: 6 },
-    'paused':        { key: 'paused',        label: 'Paused',        icon: 'pause',             color: '#be123c', order: 7 },
-    'archived':      { key: 'archived',      label: 'Archived',      icon: 'box-archive',       color: '#bdc1c6', order: 8 }
-  };
-
-  var STATUS_ORDER = ['draft', 'hook_ready', 'content_ready', 'media_ready', 'in_review', 'approved', 'live', 'paused', 'archived'];
-  var ACTIVE_STATUSES = ['draft', 'hook_ready', 'content_ready', 'media_ready', 'in_review', 'approved', 'live'];
-
-  var CAMPAIGN_STATUSES = {
-    'planning':  { key: 'planning',  label: 'Planning',  icon: 'clipboard-list', color: '#e37400' },
-    'active':    { key: 'active',    label: 'Active',    icon: 'bolt',           color: '#0d904f' },
-    'paused':    { key: 'paused',    label: 'Paused',    icon: 'pause',          color: '#be123c' },
-    'completed': { key: 'completed', label: 'Completed', icon: 'flag-checkered', color: '#1a73e8' },
-    'archived':  { key: 'archived',  label: 'Archived',  icon: 'box-archive',    color: '#80868b' }
-  };
-
   var FUNNEL_DEFAULTS = [
     { id: 'fs_top', name: 'Top of Funnel',    short: 'TOFU', color: '#1a73e8', order: 0, system: true },
     { id: 'fs_mid', name: 'Middle of Funnel',  short: 'MOFU', color: '#e37400', order: 1, system: true },
     { id: 'fs_bot', name: 'Bottom of Funnel',  short: 'BOFU', color: '#0d904f', order: 2, system: true }
-  ];
-
-  var PIPELINE_STEPS = [
-    { key: 'composition', label: 'Composition', icon: 'shapes',        order: 0 },
-    { key: 'hook',        label: 'Hook',        icon: 'anchor',        order: 1 },
-    { key: 'content',     label: 'Content',     icon: 'pen-fancy',     order: 2 },
-    { key: 'media',       label: 'Production',  icon: 'rocket',        order: 3 },
-    { key: 'review',      label: 'Review',      icon: 'eye',           order: 4 }
   ];
 
   var MEDIA_TYPES = {
@@ -92,14 +59,6 @@
     'high':     { key: 'high',     label: 'High',     icon: 'arrow-up',   color: '#d93025' },
     'critical': { key: 'critical', label: 'Critical', icon: 'bolt',       color: '#be123c' }
   };
-
-  var CAMPAIGN_OBJECTIVES = [
-    { id: 'obj_leads',       name: 'Lead Generation',  icon: 'user-plus' },
-    { id: 'obj_awareness',   name: 'Brand Awareness',  icon: 'eye' },
-    { id: 'obj_conversions', name: 'Conversions',      icon: 'cart-shopping' },
-    { id: 'obj_traffic',     name: 'Traffic',          icon: 'arrow-pointer' },
-    { id: 'obj_engagement',  name: 'Engagement',       icon: 'heart' }
-  ];
 
   var FORMAT_CATEGORIES = [
     { id: 'vfc_shoot',     name: 'Shoot',     icon: 'camera' },

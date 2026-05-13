@@ -31,29 +31,24 @@
       workspace: { name: '', description: '', created: new Date().toISOString() },
       setup: {
         product_name: '', objective: '', custom_instructions: '', setup_complete: false,
-        // Meta v2 is the only supported surface — always on for new workspaces.
-        meta_v2: true,
-        migrated_to_v2: false
+        // Meta v2 is the only supported surface.
+        meta_v2: true
       },
       settings: {
         timezone: 'Asia/Kolkata',
         default_view: 'dashboard',
         card_density: 'normal',
         funnel_stages: deepClone(FUNNEL_DEFAULTS),
-        campaign_objectives: deepClone(CAMPAIGN_OBJECTIVES),
         visual_format_categories: deepClone(FORMAT_CATEGORIES),
         pain_point_categories: deepClone(PAIN_POINT_CATEGORIES),
-        defaults: { priority: 'medium', funnel_stage: 'fs_top', recipe_status: 'draft', campaign_status: 'planning' },
+        defaults: { priority: 'medium', funnel_stage: 'fs_top' },
         brand_design: getDefaultBrandDesign()
       },
       aiPreferences: { appDefault: { provider: '', model: '' }, perAction: {}, lastProvider: '', lastModel: '' },
       reference_images: {},
       image_categories: getDefaultImageCategories(),
       // Meta v2 workspace-level defaults (Page, Pixel, attribution, currency etc.)
-      meta_defaults: getDefaultMetaDefaults(),
-      // Legacy backup populated by the migration importer (Stage 6) so users
-      // can recover their pre-v2 data until they explicitly discard it.
-      legacy_backup: null
+      meta_defaults: getDefaultMetaDefaults()
     };
   }
 
@@ -87,10 +82,11 @@
     d.messages = d.messages || [];
     d.styles = d.styles || [];
     d.visual_formats = d.visual_formats || [];
-    d.recipes = d.recipes || [];
-    d.campaigns = d.campaigns || [];
     d.tags = d.tags || [];
     d.research_sessions = d.research_sessions || [];
+    // Drop any legacy v1 collections silently — Meta v2 is the only path.
+    delete d.recipes;
+    delete d.campaigns;
     // Meta v2 hierarchy
     d.campaigns_v2 = d.campaigns_v2 || [];
     d.ad_sets = d.ad_sets || [];
@@ -172,71 +168,6 @@
       vf.tags = vf.tags || [];
       vf.created = vf.created || new Date().toISOString();
       vf.updated = vf.updated || vf.created;
-    }
-
-    // Ensure each recipe has all fields
-    for (var ri = 0; ri < d.recipes.length; ri++) {
-      var r = d.recipes[ri];
-      r.title = r.title || '';
-      r.status = r.status || 'draft';
-      r.priority = r.priority || 'medium';
-      r.campaign_id = r.campaign_id || '';
-      r.persona_id = r.persona_id || '';
-      r.message_id = r.message_id || '';
-      r.style_id = r.style_id || '';
-      r.visual_format_id = r.visual_format_id || '';
-      r.selected_pain_point_ids = r.selected_pain_point_ids || [];
-      r.media_type = r.media_type || 'image';
-      // Hook
-      r.hook = r.hook || { selected_hook_id: '', custom_hook: '', hook_type: '' };
-      // Content
-      r.content = r.content || { ad_copy: '', headline: '', description: '', cta: '', variants: [], notes: '' };
-      r.content.variants = r.content.variants || [];
-      // Media - image
-      r.image_brief = r.image_brief || { creative_brief: '', ai_prompt: '', prompt_params: { aspect_ratio: '1:1', visual_approach: 'photography', mood: '', negative_prompt: '' }, reference_image_ids: [] };
-      // Media - video
-      r.video = r.video || { duration_seconds: 30, format: 'Reel', aspect_ratio: '9:16', concept: '' };
-      r.video.blueprint = r.video.blueprint || { scenes: [] };
-      r.video.script = r.video.script || { rows: [] };
-      // Review
-      r.review_notes = r.review_notes || '';
-      r.production_notes = r.production_notes || '';
-      r.assigned_to = r.assigned_to || '';
-      r.due_date = r.due_date || '';
-      r.delivery_notes = r.delivery_notes || '';
-      r.creative_brief = r.creative_brief || '';
-      // Meta
-      r.tags = r.tags || [];
-      r.batch_id = r.batch_id || '';
-      r.created = r.created || new Date().toISOString();
-      r.updated = r.updated || r.created;
-      r.created_by = r.created_by || '';
-    }
-
-    // Ensure each campaign has all fields
-    for (var ci = 0; ci < d.campaigns.length; ci++) {
-      var c = d.campaigns[ci];
-      c.name = c.name || '';
-      c.description = c.description || '';
-      c.objective = c.objective || '';
-      c.funnel_stage = c.funnel_stage || '';
-      c.date_start = c.date_start || '';
-      c.date_end = c.date_end || '';
-      c.status = c.status || 'planning';
-      c.budget_notes = c.budget_notes || '';
-      c.target_audience_notes = c.target_audience_notes || '';
-      c.persona_ids = c.persona_ids || [];
-      c.message_ids = c.message_ids || [];
-      c.style_ids = c.style_ids || [];
-      c.format_ids = c.format_ids || [];
-      c.ai_instructions = c.ai_instructions || '';
-      c.phases = c.phases || [];
-      c.brief = c.brief || '';
-      c.tags = c.tags || [];
-      c.notes = c.notes || '';
-      c.created = c.created || new Date().toISOString();
-      c.updated = c.updated || c.created;
-      c.created_by = c.created_by || '';
     }
 
     // Ensure each tag has all fields
@@ -370,19 +301,17 @@
     var m = S.meta;
     m.workspace = m.workspace || { name: '', description: '', created: new Date().toISOString() };
     m.setup = m.setup || { product_name: '', objective: '', custom_instructions: '', setup_complete: false };
-    // Meta v2 is the only supported surface. Default true for new and existing
-    // workspaces. Existing v1 data is preserved but no longer visible.
-    if (m.setup.meta_v2 !== true) m.setup.meta_v2 = true;
-    if (typeof m.setup.migrated_to_v2 !== 'boolean') m.setup.migrated_to_v2 = false;
+    // Meta v2 is the only supported surface.
+    m.setup.meta_v2 = true;
+    delete m.setup.migrated_to_v2;
     m.settings = m.settings || {};
     m.settings.timezone = m.settings.timezone || 'Asia/Kolkata';
     m.settings.default_view = m.settings.default_view || 'dashboard';
     m.settings.card_density = m.settings.card_density || 'normal';
     m.settings.funnel_stages = m.settings.funnel_stages || deepClone(FUNNEL_DEFAULTS);
-    m.settings.campaign_objectives = m.settings.campaign_objectives || deepClone(CAMPAIGN_OBJECTIVES);
     m.settings.visual_format_categories = m.settings.visual_format_categories || deepClone(FORMAT_CATEGORIES);
     m.settings.pain_point_categories = m.settings.pain_point_categories || deepClone(PAIN_POINT_CATEGORIES);
-    m.settings.defaults = m.settings.defaults || { priority: 'medium', funnel_stage: 'fs_top', recipe_status: 'draft', campaign_status: 'planning' };
+    m.settings.defaults = m.settings.defaults || { priority: 'medium', funnel_stage: 'fs_top' };
     m.settings.brand_design = m.settings.brand_design || getDefaultBrandDesign();
     m.aiPreferences = m.aiPreferences || {};
     m.aiPreferences.appDefault = m.aiPreferences.appDefault || { provider: '', model: '' };
@@ -391,7 +320,6 @@
     m.aiPreferences.lastModel = m.aiPreferences.lastModel || '';
     m.reference_images = m.reference_images || {};
     m.image_categories = m.image_categories || getDefaultImageCategories();
-    m.recipe_templates = m.recipe_templates || [];
 
     // Meta v2: workspace-level Page / Pixel / attribution / currency defaults
     m.meta_defaults = m.meta_defaults || {};
@@ -399,8 +327,10 @@
     for (var dk in defaults) {
       if (m.meta_defaults[dk] === undefined) m.meta_defaults[dk] = defaults[dk];
     }
-    // Legacy backup (populated by Stage 6 importer; null until then)
-    if (m.legacy_backup === undefined) m.legacy_backup = null;
+    // Drop any leftover legacy backup payload
+    delete m.legacy_backup;
+    delete m.settings.campaign_objectives;
+    delete m.recipe_templates;
 
     S.cardDensity = m.settings.card_density;
     S.currentView = readHash();

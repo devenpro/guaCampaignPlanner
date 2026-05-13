@@ -8,7 +8,7 @@
 
     // AI utilities
     parseJSON: parseJSON, callAIWithRetry: callAIWithRetry,
-    brandSnippet: brandSnippet, recipeContextSnippet: recipeContextSnippet,
+    brandSnippet: brandSnippet,
     entityContextSnippet: entityContextSnippet,
 
     // Components
@@ -16,30 +16,19 @@
     renderInlineAIAssist: renderInlineAIAssist,
     renderInlinePicker: LLMService.renderInlinePicker,
 
-    // AI actions
+    // AI library research actions
     aiResearchPersonas: aiResearchPersonas, aiResearchPainPoints: aiResearchPainPoints,
     aiResearchMessages: aiResearchMessages, aiResearchStyles: aiResearchStyles,
     aiResearchFormats: aiResearchFormats,
-    aiGenerateHook: aiGenerateHook, aiWriteContent: aiWriteContent,
-    aiGenerateBrief: aiGenerateBrief, aiGenerateImagePrompt: aiGenerateImagePrompt,
-    aiGenerateBlueprint: aiGenerateBlueprint, aiGenerateScript: aiGenerateScript,
-    aiSuggestCampaignRecipes: aiSuggestCampaignRecipes,
-    aiGenerateCampaignBrief: aiGenerateCampaignBrief,
-    aiAnalyzeCampaignGaps: aiAnalyzeCampaignGaps,
-    aiImproveContent: aiImproveContent,
     showAIPreview: showAIPreview,
 
-    // Meta v2 — migration (Stage 6)
-    openMigrationWizard: openMigrationWizard,
-    discardLegacyBackup: discardLegacyBackup,
-
-    // Meta v2 — export (Stage 7)
+    // Meta v2 — export
     openExportModal: openExportModal,
     exportV2JSON: exportV2JSON, exportV2CSV: exportV2CSV,
     validateForExport: validateForExport,
     copyAdField: copyAdField,
 
-    // Meta v2 AI (Stage 4)
+    // Meta v2 AI
     aiGenerateCampaignTree: aiGenerateCampaignTree,
     aiSuggestAdSets: aiSuggestAdSets, aiSuggestAds: aiSuggestAds,
     aiGenerateAdSetBrief: aiGenerateAdSetBrief,

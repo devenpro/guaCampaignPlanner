@@ -26,15 +26,12 @@
     openStyleModal: openStyleModal, confirmDeleteStyle: confirmDeleteStyle,
     openFormatModal: openFormatModal, confirmDeleteFormat: confirmDeleteFormat,
 
-    // Campaign CRUD
-    openCampaignModal: openCampaignModal, confirmDeleteCampaign: confirmDeleteCampaign,
-
     // Meta v2 CRUD
     openMetaCampaignModal: openMetaCampaignModal, confirmDeleteMetaCampaign: confirmDeleteMetaCampaign,
     openMetaAdSetModal: openMetaAdSetModal, confirmDeleteMetaAdSet: confirmDeleteMetaAdSet,
     openMetaAdModal: openMetaAdModal, confirmDeleteMetaAd: confirmDeleteMetaAd,
     buildPersonaSnapshot: buildPersonaSnapshot,
-    // Stage 5: A/B testing
+    // A/B testing
     openABTestConfigModal: openABTestConfigModal,
     openCompareVariantsModal: openCompareVariantsModal,
     setABWinner: setABWinner,
@@ -42,33 +39,8 @@
     // Tag CRUD
     openTagModal: openTagModal, confirmDeleteTag: confirmDeleteTag,
 
-    // Render helpers (for Part 2B to use)
-    renderHookEditRow: renderHookEditRow,
-
-    // Pipeline step helpers
-    getEffectiveHook: getEffectiveHook,
-    buildCompletionChecks: buildCompletionChecks,
-    openDimensionPicker: openDimensionPicker,
-    autoUpdateRecipeTitle: autoUpdateRecipeTitle,
-    setRecipeStatus: setRecipeStatus,
-    addScene: addScene, deleteScene: deleteScene,
-    addScriptRow: addScriptRow,
-    addVariant: addVariant, removeVariant: removeVariant,
-    getSelectedRecipe: getSelectedRecipe,
-
-    // Mix & Match
-    openMixerModal: openMixerModal,
-    createRecipeFromMixer: createRecipeFromMixer,
-    batchGenerateRecipes: batchGenerateRecipes,
-
     // Tag Input
     renderTagInput: renderTagInput,
-
-    // AI Action Bar
-    renderRecipeAIBar: renderRecipeAIBar,
-
-    // Campaign Wizard
-    openCampaignWizard: openCampaignWizard, wizardState: wizardState,
 
     // Setup Wizard
     openSetupWizard: openSetupWizard,

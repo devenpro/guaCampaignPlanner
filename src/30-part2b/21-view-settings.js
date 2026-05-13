@@ -86,7 +86,7 @@
   function renderCategorySettings() {
     var ppCats = Constants.PAIN_POINT_CATEGORIES || [];
     var fmtCats = Constants.FORMAT_CATEGORIES || [];
-    var objectives = Constants.CAMPAIGN_OBJECTIVES || [];
+    var metaObjMap = Constants.META_OBJECTIVES || {};
     var html = '<div class="cp-settings-panel">';
     html += '<div class="cp-settings-section"><h3>' + icon('bolt') + ' Pain Point Categories</h3>';
     html += '<div class="cp-config-list">';
@@ -96,9 +96,12 @@
     html += '<div class="cp-config-list">';
     for (var fi = 0; fi < fmtCats.length; fi++) html += '<div class="cp-config-item"><span class="cp-config-item-name">' + esc(fmtCats[fi].name) + '</span><span class="cp-text-muted">' + icon(fmtCats[fi].icon) + '</span></div>';
     html += '</div></div>';
-    html += '<div class="cp-settings-section"><h3>' + icon('bullseye') + ' Campaign Objectives</h3>';
+    html += '<div class="cp-settings-section"><h3>' + icon('bullseye') + ' Meta Campaign Objectives</h3>';
     html += '<div class="cp-config-list">';
-    for (var oi = 0; oi < objectives.length; oi++) html += '<div class="cp-config-item"><span class="cp-config-item-name">' + esc(objectives[oi].name) + '</span><span class="cp-text-muted">' + icon(objectives[oi].icon) + '</span></div>';
+    for (var ok in metaObjMap) {
+      var mo = metaObjMap[ok];
+      html += '<div class="cp-config-item"><span class="cp-config-item-name">' + esc(mo.label || ok) + '</span><span class="cp-text-muted">' + esc(ok) + '</span></div>';
+    }
     html += '</div></div>';
     html += '<p class="cp-text-muted">These categories are system defaults. Custom category management will be available in a future update.</p>';
     html += '</div>';

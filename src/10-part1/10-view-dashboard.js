@@ -60,56 +60,34 @@
     // Meta v2 widget (Campaigns / Ad Sets / Ads rollups)
     html += renderDashMetaV2Widget();
 
-    // Continue working card (last edited recipe)
-    var lastRecipe = (S.data.recipes || []).slice().sort(function(a, b) { return (b.updated || '') > (a.updated || '') ? 1 : -1; })[0];
-    if (lastRecipe && lastRecipe.updated) {
-      var lastCamp = S.campaignMap[lastRecipe.campaign_id];
-      html += '<div class="cp-card cp-dash-continue" data-action="select-recipe" data-id="' + esc(lastRecipe.id) + '">';
+    // Continue working card (last edited Ad)
+    var lastAd = (S.data.ads || []).slice().sort(function(a, b) { return (b.updated || '') > (a.updated || '') ? 1 : -1; })[0];
+    if (lastAd && lastAd.updated) {
+      var lastSet = S.adSetMap[lastAd.ad_set_id];
+      var lastCamp = lastSet && S.campaignV2Map[lastSet.campaign_id];
+      var statusCfg = (typeof metaAdStatus === 'function') ? metaAdStatus(lastAd.pipeline_status) : { label: lastAd.pipeline_status || '', color: '#80868b' };
+      html += '<div class="cp-card cp-dash-continue" data-action="ws-select-ad" data-id="' + esc(lastAd.id) + '">';
       html += '<div style="display:flex;align-items:center;gap:var(--cp-space-3)">';
       html += '<div style="flex:1"><span class="cp-text-muted" style="font-size:var(--cp-font-size-xs)">Continue where you left off</span>';
-      html += '<div style="font-weight:600">' + esc(lastRecipe.title || 'Untitled Recipe') + '</div>';
-      html += '<div style="display:flex;gap:var(--cp-space-2);margin-top:4px">' + recipeStatusBadge(lastRecipe.status) + mediaTypeBadge(lastRecipe.media_type);
+      html += '<div style="font-weight:600">' + esc(lastAd.name || 'Untitled Ad') + '</div>';
+      html += '<div style="display:flex;gap:var(--cp-space-2);margin-top:4px"><span class="cp-badge" style="background:' + statusCfg.color + '15;color:' + statusCfg.color + '">' + esc(statusCfg.label) + '</span>';
       if (lastCamp) html += '<span class="cp-badge" style="background:#0891b215;color:#0891b2">' + icon('bullhorn') + ' ' + esc(truncate(lastCamp.name, 14)) + '</span>';
       html += '</div></div>';
-      html += '<span class="cp-text-muted">' + formatRelativeTime(lastRecipe.updated) + ' ' + icon('arrow-right') + '</span>';
+      html += '<span class="cp-text-muted">' + formatRelativeTime(lastAd.updated) + ' ' + icon('arrow-right') + '</span>';
       html += '</div></div>';
     }
 
     // Stat cards row
     html += renderDashStats();
 
-    // Active campaigns summary
-    var activeCamps = (S.data.campaigns || []).filter(function(c) { return c.status === 'active' || c.status === 'planning'; });
-    if (activeCamps.length > 0) {
-      html += '<div class="cp-card" style="margin-bottom:var(--cp-space-4)">';
-      html += '<div class="cp-section-header"><h3>' + icon('bullhorn') + ' Active Campaigns (' + activeCamps.length + ')</h3></div>';
-      for (var aci = 0; aci < activeCamps.length; aci++) {
-        var ac = activeCamps[aci];
-        var acRecipes = getRecipesByCampaign(ac.id);
-        var acReady = acRecipes.filter(function(r) { return r.status === 'approved' || r.status === 'live'; }).length;
-        var acPct = acRecipes.length > 0 ? Math.round((acReady / acRecipes.length) * 100) : 0;
-        var acst = CAMPAIGN_STATUSES[ac.status] || { color: '#80868b', icon: 'circle' };
-        html += '<div class="cp-dash-campaign-row" data-action="go-to-campaign" data-id="' + esc(ac.id) + '">';
-        html += '<span class="cp-badge" style="background:' + acst.color + '15;color:' + acst.color + '">' + icon(acst.icon) + '</span>';
-        html += '<span style="flex:1;font-weight:500">' + esc(truncate(ac.name, 28)) + '</span>';
-        html += '<span class="cp-text-muted" style="font-size:11px">' + acRecipes.length + ' recipes</span>';
-        html += '<div class="cp-recipe-progress-mini" style="width:60px"><div class="cp-recipe-progress-fill" style="width:' + acPct + '%;background:' + (acPct >= 80 ? 'var(--cp-success)' : acPct >= 40 ? '#e37400' : 'var(--cp-gray-300)') + '"></div></div>';
-        html += '<span style="font-size:11px;font-weight:600;color:' + (acPct >= 80 ? 'var(--cp-success)' : '#e37400') + '">' + acPct + '%</span>';
-        html += '</div>';
-      }
-      html += '</div>';
-    }
-
     // Two-column grid
     html += '<div class="cp-dash-grid">';
     html += '<div class="cp-dash-col-left">';
     html += renderDashFunnelBar();
-    html += renderDashPipeline();
-    html += renderDashDiversity();
     html += '</div>';
     html += '<div class="cp-dash-col-right">';
     html += renderDashQuickActions();
-    html += renderDashRecentRecipes();
+    html += renderDashRecentAds();
     html += renderDashActivity();
     html += '</div>';
     html += '</div>';
@@ -236,11 +214,11 @@
     }
     html += renderStatCard(icon('comments'), 'Messages', S.totalMessages, funnelSummary.join(' · ') || 'No messages yet', '#1a73e8');
 
-    // Recipes
-    html += renderStatCard(icon('bolt'), 'Recipes', S.activeRecipes, 'active of ' + S.totalRecipes + ' total', '#e37400');
+    // Campaigns (Meta v2)
+    html += renderStatCard(icon('bullhorn'), 'Campaigns', S.totalCampaignsV2, S.activeCampaignsV2 + ' active', '#0891b2');
 
-    // Campaigns
-    html += renderStatCard(icon('bullhorn'), 'Campaigns', S.totalCampaigns, S.activeCampaigns + ' active', '#0891b2');
+    // Ads (Meta v2)
+    html += renderStatCard(icon('rectangle-ad'), 'Ads', S.totalAds, S.activeAds + ' active', '#e37400');
 
     html += '</div>';
     return html;
@@ -263,7 +241,7 @@
 
     var html = '<div class="cp-section"><div class="cp-section-header"><h2>' + icon('filter') + ' Funnel Distribution</h2></div>';
     if (totalFunnel === 0) {
-      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No recipes with funnel stages yet.</p></div>';
+      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No messages tagged with funnel stages yet.</p></div>';
     } else {
       html += '<div class="cp-funnel-bar">';
       for (var i = 0; i < funnels.length; i++) {
@@ -281,94 +259,35 @@
     return html;
   }
 
-  function renderDashPipeline() {
-    var html = '<div class="cp-section"><div class="cp-section-header"><h2>' + icon('diagram-project') + ' Recipe Pipeline</h2></div>';
-    html += '<div class="cp-pipeline">';
-    for (var status in RECIPE_STATUSES) {
-      if (status === 'archived') continue;
-      var cfg = RECIPE_STATUSES[status];
-      var count = S.recipeStatusCounts[status] || 0;
-      html += '<div class="cp-pipeline-card" data-action="filter-pipeline-status" data-status="' + status + '">';
-      html += '<div class="cp-pipeline-card-bar" style="background:' + cfg.color + '"></div>';
-      html += '<div class="cp-pipeline-card-count" style="color:' + cfg.color + '">' + count + '</div>';
-      html += '<div class="cp-pipeline-card-label">' + esc(cfg.label) + '</div>';
-      html += '</div>';
-    }
-    html += '</div>';
-
-    // Pipeline progress bar
-    if (S.totalRecipes > 0) {
-      html += '<div class="cp-pipeline-bar">';
-      for (var s in RECIPE_STATUSES) {
-        var cnt = S.recipeStatusCounts[s] || 0;
-        var w = (cnt / S.totalRecipes) * 100;
-        if (w > 0) html += '<div class="cp-pipeline-segment" style="width:' + w + '%;background:' + RECIPE_STATUSES[s].color + '" title="' + esc(RECIPE_STATUSES[s].label) + ': ' + cnt + '"></div>';
-      }
-      html += '</div>';
-    }
-    html += '</div>';
-    return html;
-  }
-
-  function renderDashDiversity() {
-    var ds = calculateDiversityScore();
-    var html = '<div class="cp-section"><div class="cp-section-header"><h2>' + icon('chart-pie') + ' Diversity Score</h2></div>';
-    html += '<div class="cp-diversity">';
-    // SVG ring
-    var circumference = 2 * Math.PI * 15;
-    var dashArray = (ds.score / 100) * circumference;
-    var scoreColor = ds.score >= 70 ? '#0d904f' : ds.score >= 40 ? '#e37400' : '#d93025';
-    html += '<div class="cp-diversity-ring">';
-    html += '<svg viewBox="0 0 36 36" class="cp-diversity-svg">';
-    html += '<circle cx="18" cy="18" r="15" fill="none" stroke="var(--cp-border-light)" stroke-width="3"></circle>';
-    if (ds.score > 0) {
-      html += '<circle cx="18" cy="18" r="15" fill="none" stroke="' + scoreColor + '" stroke-width="3" stroke-dasharray="' + dashArray.toFixed(1) + ' ' + circumference.toFixed(1) + '" stroke-linecap="round" transform="rotate(-90 18 18)"></circle>';
-    }
-    html += '</svg>';
-    html += '<span class="cp-diversity-pct" style="color:' + scoreColor + '">' + ds.score + '%</span>';
-    html += '</div>';
-
-    html += '<div class="cp-diversity-info">';
-    if (ds.total === 0) {
-      html += '<p>Add personas and messages to see your diversity score.</p>';
-    } else {
-      var scoreLabel = ds.score >= 70 ? 'Great coverage' : ds.score >= 40 ? 'Good progress' : 'Room to grow';
-      html += '<div class="cp-diversity-label" style="color:' + scoreColor + '">' + scoreLabel + '</div>';
-      html += '<p>' + ds.used + ' unique persona×message pairs used out of ' + ds.total + ' possible. ' + ds.remaining + ' untapped.</p>';
-    }
-    html += '</div></div></div>';
-    return html;
-  }
-
   function renderDashQuickActions() {
     var html = '<div class="cp-section"><div class="cp-section-header"><h2>' + icon('bolt') + ' Quick Actions</h2></div>';
     html += '<div class="cp-dash-actions">';
-    html += '<button class="cp-btn cp-btn-ai cp-dash-action-btn" data-action="go-view" data-view="recipes">' + icon('bolt') + ' Create Recipe</button>';
-    html += '<button class="cp-btn cp-btn-primary cp-dash-action-btn" data-action="go-view" data-view="recipes" data-sub="batch">' + icon('shuffle') + ' Batch Generate</button>';
+    html += '<button class="cp-btn cp-btn-ai cp-dash-action-btn" data-action="new-campaign-v2">' + icon('wand-magic') + ' New Campaign</button>';
+    html += '<button class="cp-btn cp-btn-primary cp-dash-action-btn" data-action="go-view" data-view="meta_campaigns">' + icon('bullhorn') + ' Campaigns</button>';
     html += '<button class="cp-btn cp-btn-outline cp-dash-action-btn" data-action="go-view" data-view="research">' + icon('flask') + ' Research Lab</button>';
     html += '</div></div>';
     return html;
   }
 
-  function renderDashRecentRecipes() {
-    var recent = (S.data.recipes || []).slice().sort(function(a, b) {
+  function renderDashRecentAds() {
+    var recent = (S.data.ads || []).slice().sort(function(a, b) {
       return (b.updated || b.created || '') > (a.updated || a.created || '') ? 1 : -1;
     }).slice(0, 5);
 
-    var html = '<div class="cp-section"><div class="cp-section-header"><h2>' + icon('bolt') + ' Recent Recipes</h2>';
-    if (S.totalRecipes > 0) html += '<a href="#" class="cp-btn-link" data-action="go-view" data-view="recipes">View all ' + icon('arrow-right') + '</a>';
+    var html = '<div class="cp-section"><div class="cp-section-header"><h2>' + icon('rectangle-ad') + ' Recent Ads</h2>';
+    if (S.totalAds > 0) html += '<a href="#" class="cp-btn-link" data-action="go-view" data-view="meta_campaigns">View all ' + icon('arrow-right') + '</a>';
     html += '</div>';
 
     if (recent.length === 0) {
-      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No recipes yet. Create your first!</p></div>';
+      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No ads yet. Create a Campaign to get started.</p></div>';
     } else {
       html += '<div class="cp-dash-recipe-list">';
       for (var i = 0; i < recent.length; i++) {
         var r = recent[i];
-        var stCfg = RECIPE_STATUSES[r.status] || { label: r.status, color: '#80868b' };
-        html += '<div class="cp-dash-recipe-item" data-action="select-recipe" data-id="' + esc(r.id) + '">';
+        var stCfg = (typeof metaAdStatus === 'function') ? metaAdStatus(r.pipeline_status) : { label: r.pipeline_status || '', color: '#80868b' };
+        html += '<div class="cp-dash-recipe-item" data-action="ws-select-ad" data-id="' + esc(r.id) + '">';
         html += '<span class="cp-status-dot" style="background:' + stCfg.color + '"></span>';
-        html += '<span class="cp-dash-recipe-title">' + esc(truncate(r.title || 'Untitled Recipe', 45)) + '</span>';
+        html += '<span class="cp-dash-recipe-title">' + esc(truncate(r.name || 'Untitled Ad', 45)) + '</span>';
         html += '<span class="cp-badge" style="background:' + stCfg.color + '15;color:' + stCfg.color + '">' + esc(stCfg.label) + '</span>';
         html += '</div>';
       }
