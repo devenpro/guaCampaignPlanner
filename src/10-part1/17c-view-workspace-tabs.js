@@ -340,6 +340,21 @@
       html += renderAdMediaCarousel(ad);
     }
 
+    // Structured-brief export — packages hook + copy + media direction
+    // into one JSON the user can hand to an image/video tool or an
+    // MCP-connected LLM.
+    html += '<div class="cp-inspector-section cp-media-brief-actions" style="background:var(--cp-gray-50,#f8f9fa);border-radius:var(--cp-radius-md);padding:var(--cp-space-3);margin-top:var(--cp-space-4)">';
+    html += '<div class="cp-inspector-section-title">' + icon('file-code') + ' Media brief — export';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">Packages hook + copy + media direction as one structured JSON for downstream tools</span>';
+    html += '</div>';
+    html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap">';
+    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="preview-media-brief" data-id="' + esc(ad.id) + '">' + icon('eye') + ' Preview &amp; copy</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="copy-media-brief" data-id="' + esc(ad.id) + '">' + icon('copy') + ' Copy JSON</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="copy-media-brief-mcp" data-id="' + esc(ad.id) + '">' + icon('robot') + ' Copy as MCP brief</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="download-media-brief" data-id="' + esc(ad.id) + '">' + icon('download') + ' Download .json</button>';
+    html += '</div>';
+    html += '</div>';
+
     html += '</div>';
     return html;
   }

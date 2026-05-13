@@ -217,19 +217,50 @@
       copyAdField($(this).data('id'), $(this).data('field'));
     });
 
+    // --- Stage 7b: Per-ad structured media brief (Phase 5 of the audit) ---
+    $(document).off('click.cp2b-brief-preview').on('click.cp2b-brief-preview', '[data-action="preview-media-brief"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      openMediaBriefPreview($(this).data('id'));
+    });
+    $(document).off('click.cp2b-brief-copy').on('click.cp2b-brief-copy', '[data-action="copy-media-brief"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      copyAdMediaBriefJSON($(this).data('id'));
+    });
+    $(document).off('click.cp2b-brief-copy-mcp').on('click.cp2b-brief-copy-mcp', '[data-action="copy-media-brief-mcp"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      copyAdMediaBriefJSON($(this).data('id'), { mcp: true });
+    });
+    $(document).off('click.cp2b-brief-dl').on('click.cp2b-brief-dl', '[data-action="download-media-brief"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      exportAdMediaBriefJSON($(this).data('id'));
+    });
+
     console.log('[CP] Part 2B event handlers ready');
   }
 
   function setupKeyboardShortcuts() {
-    var viewKeys = { '1': 'dashboard', '2': 'personas', '3': 'pain_points', '4': 'messages', '5': 'styles', '6': 'formats', '7': 'meta_campaigns', '8': 'calendar', '9': 'research', '0': 'settings' };
+    // Key '3' (formerly Pain Points) now opens the Personas view's Pain Points tab.
+    var viewKeys = { '1': 'dashboard', '2': 'personas', '3': 'personas_pp', '4': 'messages', '5': 'styles', '6': 'formats', '7': 'meta_campaigns', '8': 'calendar', '9': 'research', '0': 'settings' };
 
     $(document).off('keydown.cp2b-shortcuts').on('keydown.cp2b-shortcuts', function(e) {
       // Skip if inside input/textarea or modal open
       if ($(e.target).is('input, textarea, select, [contenteditable]')) return;
       if ($('.cp-modal-backdrop').length || $('.cp-confirm-backdrop').length) return;
 
-      // Number keys → navigate
-      if (viewKeys[e.key]) { e.preventDefault(); navigate(viewKeys[e.key]); return; }
+      // Number keys → navigate. 'personas_pp' is a synthetic key that means
+      // "open Personas view with the Pain Points tab active".
+      if (viewKeys[e.key]) {
+        e.preventDefault();
+        var target = viewKeys[e.key];
+        if (target === 'personas_pp') {
+          S.personasTab = 'pain_points';
+          navigate('personas');
+        } else {
+          if (target === 'personas') S.personasTab = 'personas';
+          navigate(target);
+        }
+        return;
+      }
       // / → focus search
       if (e.key === '/') {
         e.preventDefault();
@@ -243,8 +274,11 @@
         var P2A = window._cpPart2A;
         if (!P2A) return;
         var view = S.currentView;
-        if (view === 'personas') P2A.openPersonaModal();
-        else if (view === 'pain_points') P2A.openPainPointModal();
+        if (view === 'personas') {
+          // Personas view has two tabs — open the matching modal
+          if (S.personasTab === 'pain_points') P2A.openPainPointModal();
+          else P2A.openPersonaModal();
+        }
         else if (view === 'messages') P2A.openMessageModal();
         else if (view === 'styles') P2A.openStyleModal();
         else if (view === 'formats') P2A.openFormatModal();

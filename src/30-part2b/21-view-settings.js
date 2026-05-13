@@ -120,6 +120,16 @@
       html += icon('circle-check') + ' <strong>' + provs.length + ' provider' + (provs.length > 1 ? 's' : '') + ' active</strong>';
       if (def) html += ' — Default: ' + esc(def.provider) + ' / ' + esc(def.model);
       html += '</div>';
+      // Surface a hint when the saved app-default doesn't resolve cleanly
+      // (provider deactivated or model no longer active). Helps the user
+      // understand why the displayed default may differ from what they saved.
+      var savedDef = prefs.appDefault;
+      if (def && savedDef && savedDef.provider && savedDef.model &&
+          (savedDef.provider !== def.provider || savedDef.model !== def.model)) {
+        html += '<div class="cp-ai-status-warning" style="margin-top:var(--cp-space-2);padding:var(--cp-space-2) var(--cp-space-3);background:var(--cp-warning-light,#fff8e1);color:var(--cp-warning,#946200);border:1px solid rgba(180,144,0,0.2);border-radius:var(--cp-radius-sm);font-size:var(--cp-font-size-sm)">';
+        html += icon('warning') + ' Your saved default <strong>' + esc(savedDef.provider) + ' / ' + esc(savedDef.model) + '</strong> isn\'t active. Falling back to <strong>' + esc(def.provider) + ' / ' + esc(def.model) + '</strong>. Pick a new default below and save.';
+        html += '</div>';
+      }
       html += '<div style="margin-top:var(--cp-space-3)"><button class="cp-btn cp-btn-outline cp-btn-sm" data-action="test-ai-connection">' + icon('bolt') + ' Test Connection</button></div>';
     } else {
       html += '<div class="cp-ai-status-summary" style="background:var(--cp-error-light);color:var(--cp-error);border:1px solid rgba(217,48,37,0.2)">';

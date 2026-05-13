@@ -195,10 +195,22 @@
     if (!camp) { toast('Failed to create Campaign', 'error'); return; }
 
     var counts = { sets: 0, ads: 0 };
-    var setsToCreate = [];
-    $('.cp-tp-set-check:checked').each(function() { setsToCreate.push(parseInt($(this).data('set-idx'), 10)); });
+    // Collect ALL selected indices upfront — createEntity below triggers
+    // renderCurrentView, which can detach the checkboxes from the DOM.
+    var setSelections = []; // [{ setIdx, adIdxs: [] }]
+    $('.cp-tp-set-check:checked').each(function() {
+      var setIdx = parseInt(this.getAttribute('data-set-idx'), 10);
+      if (isNaN(setIdx)) return;
+      var adIdxs = [];
+      $('.cp-tp-ad-check[data-set-idx="' + setIdx + '"]:checked').each(function() {
+        var ai = parseInt(this.getAttribute('data-ad-idx'), 10);
+        if (!isNaN(ai)) adIdxs.push(ai);
+      });
+      setSelections.push({ setIdx: setIdx, adIdxs: adIdxs });
+    });
 
-    setsToCreate.forEach(function(idx) {
+    setSelections.forEach(function(sel) {
+      var idx = sel.setIdx;
       var sData = (tree.ad_sets || [])[idx]; if (!sData) return;
 
       var persona = sData.persona_id ? getPersona(sData.persona_id) : null;
@@ -218,9 +230,8 @@
       if (!set) return;
       counts.sets++;
 
-      // Ads under this Ad Set
-      $('.cp-tp-ad-check[data-set-idx="' + idx + '"]:checked').each(function() {
-        var adIdx = parseInt($(this).data('ad-idx'), 10);
+      // Ads under this Ad Set — iterate the captured indices array
+      sel.adIdxs.forEach(function(adIdx) {
         var aData = (sData.ads || [])[adIdx]; if (!aData) return;
         var ad = createEntity('ad', {
           ad_set_id: set.id,
@@ -280,11 +291,19 @@
       openModal('AI suggested Ad Sets — review', html, {
         titleIcon: 'sparkles', size: 'lg', saveLabel: icon('plus') + ' Create selected',
         onSave: function() {
+          // Snapshot selected indices BEFORE createEntity triggers any re-render
+          // (createEntity → renderCurrentView can detach jQuery refs mid-loop).
+          var selectedIdx = [];
+          $('.cp-tp-set-check:checked').each(function() {
+            var i = parseInt(this.getAttribute('data-set-idx'), 10);
+            if (!isNaN(i)) selectedIdx.push(i);
+          });
+          if (selectedIdx.length === 0) { closeModal(); return; }
+          closeModal();
           snapshot('AI suggest Ad Sets');
           var created = 0;
-          $('.cp-tp-set-check:checked').each(function() {
-            var idx = parseInt($(this).data('set-idx'), 10);
-            var sData = sets[idx]; if (!sData) return;
+          for (var k = 0; k < selectedIdx.length; k++) {
+            var sData = sets[selectedIdx[k]]; if (!sData) continue;
             var persona = sData.persona_id ? getPersona(sData.persona_id) : null;
             createEntity('ad_set', {
               campaign_id: campaignId,
@@ -296,8 +315,7 @@
               brief: $.extend({ creative_direction: '', message_ids: [], style_ids: [], format_ids: [], hook_angles: [], ai_notes: '' }, sData.brief || {})
             });
             created++;
-          });
-          closeModal();
+          }
           toast('Created ' + created + ' Ad Set' + (created !== 1 ? 's' : ''), 'success');
         }
       });
@@ -337,11 +355,20 @@
       openModal('AI suggested Ads — review', html, {
         titleIcon: 'sparkles', size: 'lg', saveLabel: icon('plus') + ' Create selected',
         onSave: function() {
+          // Snapshot selected indices BEFORE createEntity triggers any re-render.
+          // jQuery refs to checkboxes can be detached mid-loop if the surrounding
+          // view re-renders, which made only the first selection actually persist.
+          var selectedIdx = [];
+          $('.cp-tp-ad-check:checked').each(function() {
+            var i = parseInt(this.getAttribute('data-ad-idx'), 10);
+            if (!isNaN(i)) selectedIdx.push(i);
+          });
+          if (selectedIdx.length === 0) { closeModal(); return; }
+          closeModal();
           snapshot('AI suggest Ads');
           var created = 0;
-          $('.cp-tp-ad-check:checked').each(function() {
-            var idx = parseInt($(this).data('ad-idx'), 10);
-            var aData = ads[idx]; if (!aData) return;
+          for (var k = 0; k < selectedIdx.length; k++) {
+            var aData = ads[selectedIdx[k]]; if (!aData) continue;
             var ad = createEntity('ad', {
               ad_set_id: adSetId,
               name: aData.name || 'Ad',
@@ -350,8 +377,7 @@
               creative: $.extend({ primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' }, aData.creative || {})
             });
             if (ad) { created++; if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI suggested'); }
-          });
-          closeModal();
+          }
           toast('Created ' + created + ' Ad' + (created !== 1 ? 's' : ''), 'success');
         }
       });

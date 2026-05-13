@@ -70,10 +70,17 @@
       return;
     }
 
+    // Legacy 'pain_points' view was merged into Personas. Redirect any
+    // bookmarks / hash routes to the Personas view with the Pain Points tab
+    // pre-selected.
+    if (S.currentView === 'pain_points') {
+      S.currentView = 'personas';
+      S.personasTab = 'pain_points';
+    }
+
     switch (S.currentView) {
       case 'dashboard':    html = renderDashboardView(); break;
       case 'personas':     html = renderPersonasView(); break;
-      case 'pain_points':  html = renderPainPointsPageView(); break;
       case 'messages':     html = renderMessagesView(); break;
       case 'styles':       html = renderStylesView(); break;
       case 'formats':      html = renderFormatsPageView(); break;

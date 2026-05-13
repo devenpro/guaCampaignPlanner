@@ -9,17 +9,17 @@
   var setupWizardState = {};
 
   var SW_STEPS = [
-    { num: 1, label: 'Workspace',        sublabel: 'Brand & product',      phase: 'a', icon: 'building' },
-    { num: 2, label: 'AI Setup',         sublabel: 'Configure provider',   phase: 'a', icon: 'robot' },
-    { num: 3, label: 'Personas',         sublabel: 'Target audiences',     phase: 'b', icon: 'users' },
-    { num: 4, label: 'Pain Points',      sublabel: 'Audience challenges',  phase: 'b', icon: 'bolt' },
-    { num: 5, label: 'Messages',         sublabel: 'Ad angles & hooks',    phase: 'b', icon: 'comment-dots' },
-    { num: 6, label: 'Styles & Formats', sublabel: 'Creative approach',    phase: 'b', icon: 'palette' },
-    { num: 7, label: 'Campaign Tree',    sublabel: 'Campaign + ad sets',   phase: 'c', icon: 'sitemap' },
-    { num: 8, label: 'Review',           sublabel: 'Launch your workspace',phase: 'c', icon: 'rocket' }
+    { num: 1, label: 'Workspace',        sublabel: 'Brand & product',       phase: 'a', icon: 'building' },
+    { num: 2, label: 'AI Setup',         sublabel: 'Configure provider',    phase: 'a', icon: 'robot' },
+    { num: 3, label: 'Personas',         sublabel: 'Target audiences',      phase: 'b', icon: 'users' },
+    { num: 4, label: 'Pain Points',      sublabel: 'Audience challenges',   phase: 'b', icon: 'bolt' },
+    { num: 5, label: 'Messages',         sublabel: 'Ad angles & hooks',     phase: 'b', icon: 'comment-dots' },
+    { num: 6, label: 'Styles & Formats', sublabel: 'Creative approach',     phase: 'b', icon: 'palette' },
+    { num: 7, label: 'Campaign Ideas',   sublabel: 'Pick campaigns to plan', phase: 'c', icon: 'lightbulb' },
+    { num: 8, label: 'Review',           sublabel: 'Launch your workspace', phase: 'c', icon: 'rocket' }
   ];
 
-  var SW_PHASE_LABELS = { a: 'Phase A — Foundation', b: 'Phase B — Library', c: 'Phase C — Campaign' };
+  var SW_PHASE_LABELS = { a: 'Phase A — Foundation', b: 'Phase B — Library', c: 'Phase C — Campaigns' };
 
   // Volatile keys excluded from session persistence (re-derived each run)
   var SW_VOLATILE_KEYS = ['aiLoading', 'aiActionId', 'aiStartedAt', 'aiError'];
@@ -99,7 +99,7 @@
       step: 1,
       aiLoading: false, aiActionId: '', aiStartedAt: 0, aiError: '',
       stepGenerated: {}, stepSkipped: {},
-      _expandedCards: {}, _ppActiveTab: 0, _step7Mode: 'ai',
+      _expandedCards: {}, _ppActiveTab: 0,
       workspace: { name: '', description: '', product_name: '', objective: '',
                    brand_voice: '', target_audience: '', custom_instructions: '' },
       aiConfig: { provider: '', model: '', tested: false },
@@ -109,21 +109,15 @@
       messages:    [],  // [{ name, description, theme, hook_type, funnel_stage, body, _selected }]
       styles:      [],  // [{ name, description, _selected }]
       formats:     [],  // [{ name, description, category, _selected }]
-      // Meta v2 Campaign tree — generated in Step 7
-      campaign: {
-        name: '', description: '',
-        objective: 'OUTCOME_LEADS',
-        budget_mode: 'CBO', bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
-        daily_budget: '', lifetime_budget: '',
-        start_time: '', stop_time: '',
-        brief: '', ai_instructions: ''
-      },
-      ad_sets: [],          // [{ name, persona_idx, audience_overrides, optimization_goal, billing_event, attribution_setting, brief:{creative_direction,hook_angles,message_idx_list,style_idx_list,format_idx_list,ai_notes}, ads:[{name,creative_type,hook:{text,type},creative:{primary_text,headline,description,cta_type,cta_link},media:{image_brief,image_prompt,video_concept},_selected}], _selected }]
-      _campaignTreeContext: '',
+      // Step 7 produces a list of named campaign ideas. Each idea becomes a
+      // draft campaign_v2 on launch. Ad Sets + Ads are built later by the
+      // per-campaign wizard from inside the campaign workspace.
+      campaign_ideas: [],   // [{ name, objective, brief, persona_idx, message_idx_list, _selected }]
+      _campaignIdeasContext: '',
       created: {
         personaIds: [], painPointIds: [], messageIds: [],
         styleIds: [], formatIds: [],
-        campaignV2Id: '', adSetIds: [], adIds: [],
+        campaignV2Ids: [],
         lastGeneratedAt: {}
       },
       finalizing: false, finalizeMsg: ''
@@ -226,8 +220,7 @@
     var ws          = setupWizardState;
     var currentStep = ws.step;
     // Count map: how many items are selected per step (for done badge)
-    var selSets = (ws.ad_sets || []).filter(function(s) { return s._selected; });
-    var step7Count = selSets.length;
+    var step7Count = (ws.campaign_ideas || []).filter(function(c) { return c._selected; }).length;
     var stepCounts = {
       3: (ws.personas    || []).filter(function(p) { return p._selected; }).length,
       4: (ws.pain_points || []).filter(function(p) { return p._selected; }).length,
@@ -394,19 +387,15 @@
       }
     }
     if (n === 7) {
-      if (!ws.campaign.name || !ws.campaign.name.trim()) {
-        return { valid: false, message: 'Please enter a campaign name.' };
+      var ideas = (ws.campaign_ideas || []).filter(function(c) { return c._selected; });
+      if (ideas.length === 0) {
+        return { valid: false, message: 'Please select at least one campaign idea to continue.' };
       }
-      var sets = (ws.ad_sets || []).filter(function(s) { return s._selected; });
-      if (sets.length === 0) {
-        return { valid: false, message: 'Please select at least one Ad Set to continue.' };
-      }
-      var anyAd = false;
-      for (var i = 0; i < sets.length; i++) {
-        if ((sets[i].ads || []).some(function(a) { return a._selected; })) { anyAd = true; break; }
-      }
-      if (!anyAd) {
-        return { valid: false, message: 'Each selected Ad Set needs at least one selected Ad.' };
+      // Each selected idea needs at least a name
+      for (var i = 0; i < ideas.length; i++) {
+        if (!(ideas[i].name && ideas[i].name.trim())) {
+          return { valid: false, message: 'Each selected campaign idea needs a name.' };
+        }
       }
     }
     return { valid: true };
@@ -487,13 +476,7 @@
     if (n === 4 && typeof R.swAIGeneratePainPoints     === 'function') R.swAIGeneratePainPoints();
     if (n === 5 && typeof R.swAIGenerateMessages       === 'function') R.swAIGenerateMessages();
     if (n === 6 && typeof R.swAIGenerateStylesFormats  === 'function') R.swAIGenerateStylesFormats();
-    if (n === 7 && typeof R.swAIGenerateCampaignTree   === 'function' && setupWizardState._step7Mode !== 'manual') {
-      // Auto-fill campaign name from product name if blank
-      if (!setupWizardState.campaign.name && setupWizardState.workspace.product_name) {
-        setupWizardState.campaign.name = setupWizardState.workspace.product_name + ' Launch';
-      }
-      R.swAIGenerateCampaignTree();
-    }
+    if (n === 7 && typeof R.swAIGenerateCampaignIdeas  === 'function') R.swAIGenerateCampaignIdeas();
   }
 
   // --- Cancel any in-flight wizard AI generation ---

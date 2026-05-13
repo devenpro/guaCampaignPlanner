@@ -47,8 +47,7 @@
 
   var APP_VIEWS = {
     'dashboard':         { order: 1,  label: 'Dashboard',         icon: 'chart-pie',          group: 'main',    description: 'Overview & stats' },
-    'personas':          { order: 2,  label: 'Personas',          icon: 'users',              group: 'library', description: 'Audience personas' },
-    'pain_points':       { order: 3,  label: 'Pain Points',       icon: 'bolt',               group: 'library', description: 'Pain points & solutions' },
+    'personas':          { order: 2,  label: 'Personas',          icon: 'users',              group: 'library', description: 'Audience personas & pain points' },
     'messages':          { order: 4,  label: 'Messages',          icon: 'comments',           group: 'library', description: 'Message library' },
     'styles':            { order: 5,  label: 'Styles',            icon: 'palette',            group: 'library', description: 'Creative styles' },
     'formats':           { order: 6,  label: 'Formats',           icon: 'clapperboard',       group: 'library', description: 'Visual formats' },
@@ -1392,10 +1391,17 @@
       return;
     }
 
+    // Legacy 'pain_points' view was merged into Personas. Redirect any
+    // bookmarks / hash routes to the Personas view with the Pain Points tab
+    // pre-selected.
+    if (S.currentView === 'pain_points') {
+      S.currentView = 'personas';
+      S.personasTab = 'pain_points';
+    }
+
     switch (S.currentView) {
       case 'dashboard':    html = renderDashboardView(); break;
       case 'personas':     html = renderPersonasView(); break;
-      case 'pain_points':  html = renderPainPointsPageView(); break;
       case 'messages':     html = renderMessagesView(); break;
       case 'styles':       html = renderStylesView(); break;
       case 'formats':      html = renderFormatsPageView(); break;
@@ -1888,15 +1894,15 @@
     var html = '<div class="cp-dash-onboarding">';
     html += '<div class="cp-dash-onboarding-header">';
     html += '<div class="cp-dash-onboarding-icon">' + icon('bullseye') + '</div>';
-    html += '<h1>Build Your First Meta Campaign</h1>';
-    html += '<p>Run the Setup Wizard to scaffold your library and your first Campaign + Ad Sets + Ads in one guided flow. Or jump straight to creating a Campaign.</p>';
+    html += '<h1>Build Your Meta Campaign Library</h1>';
+    html += '<p>Run the Setup Wizard to scaffold your creative library (personas, messages, styles, formats) and a handful of campaign ideas. You\'ll then build out Ad Sets and Ads inside each campaign\'s workspace.</p>';
     html += '</div>';
 
     // 3-step guide tuned for Meta v2
     html += '<div class="cp-dash-steps">';
     var steps = [
-      { num: '1', label: 'Run Setup Wizard',  desc: 'Personas, messages, and a starter Campaign — all from AI', action: 'open-setup-wizard',     icon: 'wand-magic',  color: '#9334e9' },
-      { num: '2', label: 'New Campaign',      desc: 'Skip setup — go straight to the Campaign Wizard',           action: 'new-campaign-v2',     icon: 'bullhorn',    color: '#1a73e8' },
+      { num: '1', label: 'Run Setup Wizard',  desc: 'AI scaffolds your library + campaign ideas',                 action: 'open-setup-wizard',     icon: 'wand-magic',  color: '#9334e9' },
+      { num: '2', label: 'New Campaign',      desc: 'Skip setup — go straight to the Campaign Wizard',            action: 'new-campaign-v2',     icon: 'bullhorn',    color: '#1a73e8' },
       { num: '3', label: 'Open Research Lab', desc: 'Browse and refine library entities individually',           action: 'go-view',             view:  'research',   icon: 'flask',       color: '#0d904f' }
     ];
     for (var i = 0; i < steps.length; i++) {
@@ -2328,37 +2334,75 @@
   // ============================================================
 
   function renderPersonasView() {
-    var html = '<div class="cp-view cp-view-personas">';
+    var isPP = S.personasTab === 'pain_points';
+    var html = '<div class="cp-view cp-view-personas' + (isPP ? ' cp-view-personas--pp' : '') + '">';
 
     // View header
     html += '<div class="cp-view-header"><div class="cp-view-header-left">';
-    html += '<h1>' + icon('users') + ' Personas</h1>';
-    html += '<span class="cp-view-subtitle">' + S.totalPersonas + ' personas in ' + (S.data.persona_categories || []).length + ' categories</span>';
+    if (isPP) {
+      var pps = getAllPainPoints();
+      html += '<h1>' + icon('bolt') + ' Pain Points</h1>';
+      html += '<span class="cp-view-subtitle">' + pps.length + ' shared pain point' + (pps.length !== 1 ? 's' : '') + ', linked to personas</span>';
+    } else {
+      html += '<h1>' + icon('users') + ' Personas</h1>';
+      html += '<span class="cp-view-subtitle">' + S.totalPersonas + ' personas in ' + (S.data.persona_categories || []).length + ' categories</span>';
+    }
     html += '</div><div class="cp-view-header-right">';
-    // Tab toggle
+    // Tab toggle — Personas / Pain Points
     html += '<div class="cp-tab-toggle">';
-    html += '<button class="cp-tab-btn' + (S.personasTab === 'personas' ? ' cp-tab-btn-active' : '') + '" data-action="set-personas-tab" data-tab="personas">' + icon('users') + ' Personas</button>';
-    html += '<button class="cp-tab-btn' + (S.personasTab === 'pain_points' ? ' cp-tab-btn-active' : '') + '" data-action="set-personas-tab" data-tab="pain_points">' + icon('bolt') + ' Pain Points</button>';
+    html += '<button class="cp-tab-btn' + (!isPP ? ' cp-tab-btn-active' : '') + '" data-action="set-personas-tab" data-tab="personas">' + icon('users') + ' Personas</button>';
+    html += '<button class="cp-tab-btn' + (isPP ? ' cp-tab-btn-active' : '') + '" data-action="set-personas-tab" data-tab="pain_points">' + icon('bolt') + ' Pain Points</button>';
     html += '</div>';
-    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-persona">' + icon('plus') + ' Add Persona</button>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="new-category">' + icon('folder-plus') + ' Category</button>';
+    if (isPP) {
+      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-pain-point">' + icon('plus') + ' Add Pain Point</button>';
+    } else {
+      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-persona">' + icon('plus') + ' Add Persona</button>';
+      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="new-category">' + icon('folder-plus') + ' Category</button>';
+    }
     html += '</div></div>';
 
-    // AI Research Panel placeholder (Part 2B will replace)
+    // AI Research Panel — switches stateKey based on tab so each tab has
+    // its own research workflow.
     html += '<div class="cp-ai-research-slot" id="cpPersonaResearchSlot">';
-    html += renderAIResearchBar('Persona', '#9334e9', 'users', 'personas');
+    if (isPP) {
+      html += renderAIResearchBar('Pain Point', '#d93025', 'bolt', 'pain_points');
+    } else {
+      html += renderAIResearchBar('Persona', '#9334e9', 'users', 'personas');
+    }
     html += '</div>';
+
+    if (isPP) {
+      // Pain Points tab — full toolbar + grouped list + dedicated detail pane.
+      var ppFilter = S.painPointFilter || {};
+      html += '<div class="cp-view-toolbar cp-pp-toolbar">';
+      html += '<div class="cp-search-wrapper">' + icon('search') + '<input type="text" class="cp-input" id="cpPainPointPageSearch" placeholder="Search pain points & solutions…" value="' + esc(ppFilter.search || '') + '"></div>';
+      html += '<select class="cp-select cp-select-sm" id="cpPainPointCatFilter"><option value="">All Categories</option>';
+      for (var ci = 0; ci < PAIN_POINT_CATEGORIES.length; ci++) {
+        var pcat = PAIN_POINT_CATEGORIES[ci];
+        html += '<option value="' + esc(pcat.id) + '"' + (ppFilter.category === pcat.id ? ' selected' : '') + '>' + esc(pcat.name) + '</option>';
+      }
+      html += '</select>';
+      var groupBy = ppFilter.groupBy || 'category';
+      html += '<select class="cp-select cp-select-sm" id="cpPainPointGroupBy">';
+      html += '<option value="category"' + (groupBy === 'category' ? ' selected' : '') + '>Group: Category</option>';
+      html += '<option value="flat"' + (groupBy === 'flat' ? ' selected' : '') + '>Group: None</option>';
+      html += '</select>';
+      html += '</div>';
+    }
 
     // Split pane
     html += '<div class="cp-split-pane">';
-    if (S.personasTab === 'personas') {
-      html += renderPersonasLeftPane();
+    if (isPP) {
+      html += renderPainPointsPaneLeft();
+      html += '<div class="cp-preview-pane">';
+      html += renderPainPointDetailPane();
+      html += '</div>';
     } else {
-      html += renderPainPointsLeftPane();
+      html += renderPersonasLeftPane();
+      html += '<div class="cp-preview-pane" id="cpPersonaPreview">';
+      html += renderPersonaDetailPane();
+      html += '</div>';
     }
-    html += '<div class="cp-preview-pane" id="cpPersonaPreview">';
-    html += renderPersonaDetailPane();
-    html += '</div>';
     html += '</div>';
 
     html += '</div>';
@@ -2483,38 +2527,159 @@
     return html;
   }
 
-  function renderPainPointsLeftPane() {
+  // Pain Points pane (used inside the Personas view's Pain Points tab).
+  // Mirrors the rich behaviour of the former standalone Pain Points page:
+  // search + category filter + group-by toggle, list grouped by category
+  // (collapsible) or flat, with persona count badges and inline solution
+  // previews.
+  function renderPainPointsPaneLeft() {
     var pps = getAllPainPoints();
-    var html = '<div class="cp-list-pane">';
-    html += '<div class="cp-list-toolbar"><div class="cp-list-toolbar-row">';
-    html += '<div class="cp-search-wrapper">' + icon('search') + '<input type="text" class="cp-input" id="cpPainPointSearch" placeholder="Search pain points..." value=""></div>';
-    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-pain-point">' + icon('plus') + ' Add</button>';
+    var ppFilter = S.painPointFilter || {};
+    var filtered = pps.slice();
+    if (ppFilter.search) {
+      var q = ppFilter.search.toLowerCase();
+      filtered = filtered.filter(function(pp) {
+        return (pp.pain_point || '').toLowerCase().indexOf(q) > -1 || (pp.solution || '').toLowerCase().indexOf(q) > -1;
+      });
+    }
+    if (ppFilter.category) filtered = filtered.filter(function(pp) { return pp.category === ppFilter.category; });
+    var groupBy = ppFilter.groupBy || 'category';
+
+    var html = '<div class="cp-list-pane cp-pp-list-pane">';
+    if (filtered.length === 0) {
+      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No pain points' + (ppFilter.search || ppFilter.category ? ' match your filters' : ' yet') + '.</p>';
+      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-pain-point">' + icon('plus') + ' Create First Pain Point</button></div>';
+    } else if (groupBy === 'category') {
+      html += renderPainPointListGroupedByCategory(filtered);
+    } else {
+      html += '<div class="cp-pp-list">';
+      for (var i = 0; i < filtered.length; i++) html += renderPainPointListItem(filtered[i]);
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderPainPointListGroupedByCategory(filtered) {
+    var grouped = {};
+    var uncatId = '__uncat__';
+    for (var i = 0; i < filtered.length; i++) {
+      var key = filtered[i].category || uncatId;
+      (grouped[key] = grouped[key] || []).push(filtered[i]);
+    }
+    var order = (PAIN_POINT_CATEGORIES || []).map(function(c) { return c.id; });
+    order.push(uncatId);
+
+    var html = '';
+    for (var oi = 0; oi < order.length; oi++) {
+      var catId = order[oi];
+      var items = grouped[catId];
+      if (!items || items.length === 0) continue;
+      var cat = (PAIN_POINT_CATEGORIES || []).find(function(c) { return c.id === catId; });
+      var label = cat ? cat.name : 'Uncategorized';
+      var collapsed = !!(S.collapsedGroups && S.collapsedGroups['ppcat_' + catId]);
+
+      html += '<div class="cp-pp-group">';
+      html += '<div class="cp-pp-group-header" data-action="toggle-pp-group" data-cat-id="' + esc(catId) + '">';
+      html += icon(collapsed ? 'chevron-right' : 'chevron-down');
+      html += '<span class="cp-pp-group-name">' + esc(label) + '</span>';
+      html += '<span class="cp-pp-group-count">' + items.length + '</span>';
+      html += '</div>';
+      if (!collapsed) {
+        html += '<div class="cp-pp-list">';
+        for (var k = 0; k < items.length; k++) html += renderPainPointListItem(items[k]);
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    return html;
+  }
+
+  function renderPainPointListItem(pp) {
+    var personaCount = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) > -1; }).length;
+    var sel = S.selectedPainPointId === pp.id ? ' cp-pp-item-selected' : '';
+    var hasSolution = !!(pp.solution && pp.solution.trim());
+
+    var html = '<div class="cp-pp-item' + sel + '" data-action="select-pain-point-page" data-id="' + esc(pp.id) + '">';
+    html += '<div class="cp-pp-item-main">';
+    html += '<div class="cp-pp-item-title">' + esc(truncate(pp.pain_point || '(Empty)', 90)) + '</div>';
+    if (hasSolution) {
+      html += '<div class="cp-pp-item-solution" title="Solution"><span class="cp-pp-item-solution-icon">' + icon('lightbulb') + '</span>' + esc(truncate(pp.solution, 90)) + '</div>';
+    }
+    html += '</div>';
+    html += '<div class="cp-pp-item-meta">';
+    if (personaCount > 0) html += '<span class="cp-pp-mini-stat" title="Linked personas">' + icon('users') + ' ' + personaCount + '</span>';
+    if (!hasSolution) html += '<span class="cp-pp-mini-stat cp-pp-mini-warn" title="No solution defined">' + icon('triangle-exclamation') + '</span>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderPainPointDetailPane() {
+    if (!S.selectedPainPointId || !S.painPointMap[S.selectedPainPointId]) {
+      return '<div class="cp-empty-state cp-empty-state--center">' +
+        '<div class="cp-empty-state-icon">' + icon('bolt') + '</div>' +
+        '<div class="cp-empty-state-title">Select a pain point</div>' +
+        '<div class="cp-empty-state-text">Choose from the list, or create a new one.</div>' +
+        '<button class="cp-btn cp-btn-primary" data-action="new-pain-point">' + icon('plus') + ' New Pain Point</button></div>';
+    }
+    var pp = S.painPointMap[S.selectedPainPointId];
+    var ppCats = PAIN_POINT_CATEGORIES || [];
+    var catLabel = '';
+    if (pp.category) { var ppcMatch = ppCats.find(function(c) { return c.id === pp.category; }); catLabel = ppcMatch ? ppcMatch.name : ''; }
+
+    var linkedPersonas = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) > -1; });
+    var unlinkedPersonas = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) === -1; });
+
+    var html = '<div class="cp-detail-header"><div class="cp-detail-header-left">';
+    html += '<h2>' + icon('bolt') + ' Pain Point</h2>';
+    if (catLabel) html += '<span class="cp-badge" style="background:#d9302515;color:#d93025">' + esc(catLabel) + '</span>';
+    html += '</div><div class="cp-detail-header-right">';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-pain-point" data-id="' + esc(pp.id) + '">' + icon('trash') + ' Delete</button>';
     html += '</div></div>';
 
-    html += '<div class="cp-pain-point-list" id="cpPainPointList">';
-    if (pps.length === 0) {
-      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No shared pain points yet.</p>';
-      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-pain-point">' + icon('plus') + ' Create First</button></div>';
-    } else {
-      for (var i = 0; i < pps.length; i++) {
-        var pp = pps[i];
-        // Count how many personas reference this pain point
-        var usedByCount = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) > -1; }).length;
-        var catLabel = '';
-        if (pp.category) {
-          var ppcMatch = PAIN_POINT_CATEGORIES.find(function(c) { return c.id === pp.category; });
-          catLabel = ppcMatch ? ppcMatch.name : pp.category;
-        }
+    html += '<div class="cp-card cp-pp-detail-card">';
+    html += '<div class="cp-section-header"><h3>' + icon('triangle-exclamation') + ' Pain Point</h3></div>';
+    html += '<textarea class="cp-textarea cp-pp-inline-field" data-ppfield="pain_point" rows="3">' + esc(pp.pain_point || '') + '</textarea>';
+    html += '</div>';
 
-        html += '<div class="cp-pain-point-item" data-action="select-pain-point" data-id="' + esc(pp.id) + '">';
-        html += '<div class="cp-pain-point-text">' + esc(truncate(pp.pain_point, 60)) + '</div>';
-        html += '<div class="cp-pain-point-meta">';
-        if (catLabel) html += '<span class="cp-badge" style="background:#5f636815;color:#5f6368">' + esc(catLabel) + '</span>';
-        html += '<span class="cp-text-muted">Used by ' + usedByCount + ' persona' + (usedByCount !== 1 ? 's' : '') + '</span>';
-        html += '</div></div>';
+    html += '<div class="cp-card cp-pp-detail-card cp-pp-detail-solution">';
+    html += '<div class="cp-section-header"><h3 style="color:var(--cp-success)">' + icon('lightbulb') + ' Solution</h3></div>';
+    html += '<textarea class="cp-textarea cp-pp-inline-field" data-ppfield="solution" rows="3" placeholder="How does your product solve this?">' + esc(pp.solution || '') + '</textarea>';
+    html += '</div>';
+
+    html += '<div class="cp-card cp-pp-detail-card">';
+    html += '<div class="cp-form-group"><label class="cp-field-label">Category</label>';
+    html += '<select class="cp-select cp-pp-inline-field" data-ppfield="category">';
+    html += '<option value="">None</option>';
+    for (var ci = 0; ci < ppCats.length; ci++) {
+      html += '<option value="' + esc(ppCats[ci].id) + '"' + (pp.category === ppCats[ci].id ? ' selected' : '') + '>' + esc(ppCats[ci].name) + '</option>';
+    }
+    html += '</select></div></div>';
+
+    // Linked Personas
+    html += '<div class="cp-card cp-pp-detail-card">';
+    html += '<div class="cp-section-header"><h3>' + icon('users') + ' Linked Personas (' + linkedPersonas.length + ')</h3>';
+    if (unlinkedPersonas.length > 0) html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="link-pp-to-personas" data-pp-id="' + esc(pp.id) + '">' + icon('link') + ' Link to Personas</button>';
+    html += '</div>';
+    if (linkedPersonas.length === 0) {
+      html += '<p class="cp-text-muted">Not linked to any personas yet.' + (unlinkedPersonas.length > 0 ? ' Click "Link to Personas" above.' : '') + '</p>';
+    } else {
+      for (var pi = 0; pi < linkedPersonas.length; pi++) {
+        html += '<div class="cp-list-item-inline">';
+        html += '<span style="flex:1;cursor:pointer" data-action="select-persona-from-pp" data-persona-id="' + esc(linkedPersonas[pi].id) + '">' + dimensionBadge('persona', linkedPersonas[pi].id) + '</span>';
+        html += '<button class="cp-btn-icon cp-btn-xs" data-action="unlink-pp-from-persona" data-pp-id="' + esc(pp.id) + '" data-persona-id="' + esc(linkedPersonas[pi].id) + '" title="Unlink">' + icon('link-slash') + '</button>';
+        html += '</div>';
       }
     }
-    html += '</div></div>';
+    html += '</div>';
+
+    // Workspace usage (meta_v2)
+    if (typeof renderLibraryWorkspaceUsage === 'function') {
+      html += renderLibraryWorkspaceUsage('pain_point', pp.id);
+    }
+
+    html += '<div class="cp-detail-footer"><span class="cp-text-muted">Created ' + formatDate(pp.created) + (pp.updated ? ' · Updated ' + formatRelativeTime(pp.updated) : '') + '</span></div>';
     return html;
   }
 
@@ -2933,209 +3098,6 @@
   }
 
 
-/* ===== src/10-part1/14-view-pain-points.js ===== */
-  // ============================================================
-  // SECTION 13.5: DEDICATED PAIN POINTS VIEW
-  // ============================================================
-
-  function renderPainPointsPageView() {
-    var pps = getAllPainPoints();
-    var ppFilter = S.painPointFilter || {};
-
-    // Apply filters
-    var filtered = pps.slice();
-    if (ppFilter.search) {
-      var q = ppFilter.search.toLowerCase();
-      filtered = filtered.filter(function(pp) {
-        return (pp.pain_point || '').toLowerCase().indexOf(q) > -1 || (pp.solution || '').toLowerCase().indexOf(q) > -1;
-      });
-    }
-    if (ppFilter.category) filtered = filtered.filter(function(pp) { return pp.category === ppFilter.category; });
-
-    // Group mode: 'category' (default) | 'flat'
-    var groupBy = ppFilter.groupBy || 'category';
-
-    var html = '<div class="cp-view cp-view-pain-points">';
-
-    // Header
-    html += '<div class="cp-view-header"><div class="cp-view-header-left">';
-    html += '<h1>' + icon('bolt') + ' Pain Points</h1>';
-    html += '<span class="cp-view-subtitle">' + filtered.length + ' of ' + pps.length + '</span>';
-    html += '</div><div class="cp-view-header-right">';
-    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-pain-point">' + icon('plus') + ' Add Pain Point</button>';
-    html += '</div></div>';
-
-    // AI Research Panel
-    html += '<div class="cp-ai-research-slot" id="cpPainPointResearchSlot">';
-    html += renderAIResearchBar('Pain Point', '#d93025', 'bolt', 'pain_points');
-    html += '</div>';
-
-    // Toolbar — single compact row
-    html += '<div class="cp-view-toolbar cp-pp-toolbar">';
-    html += '<div class="cp-search-wrapper">' + icon('search') + '<input type="text" class="cp-input" id="cpPainPointPageSearch" placeholder="Search pain points & solutions…" value="' + esc(ppFilter.search || '') + '"></div>';
-    html += '<select class="cp-select cp-select-sm" id="cpPainPointCatFilter"><option value="">All Categories</option>';
-    for (var ci = 0; ci < PAIN_POINT_CATEGORIES.length; ci++) {
-      var cat = PAIN_POINT_CATEGORIES[ci];
-      html += '<option value="' + esc(cat.id) + '"' + (ppFilter.category === cat.id ? ' selected' : '') + '>' + esc(cat.name) + '</option>';
-    }
-    html += '</select>';
-    html += '<select class="cp-select cp-select-sm" id="cpPainPointGroupBy">';
-    html += '<option value="category"' + (groupBy === 'category' ? ' selected' : '') + '>Group: Category</option>';
-    html += '<option value="flat"' + (groupBy === 'flat' ? ' selected' : '') + '>Group: None</option>';
-    html += '</select>';
-    html += '</div>';
-
-    // Split pane: list + detail
-    html += '<div class="cp-split-pane">';
-
-    // Left: list
-    html += '<div class="cp-list-pane cp-pp-list-pane">';
-    if (filtered.length === 0) {
-      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No pain points' + (ppFilter.search || ppFilter.category ? ' match your filters' : ' yet') + '.</p>';
-      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-pain-point">' + icon('plus') + ' Create First Pain Point</button></div>';
-    } else if (groupBy === 'category') {
-      html += renderPainPointListGroupedByCategory(filtered);
-    } else {
-      html += '<div class="cp-pp-list">';
-      for (var i = 0; i < filtered.length; i++) html += renderPainPointListItem(filtered[i]);
-      html += '</div>';
-    }
-    html += '</div>';
-
-    // Right: detail
-    html += '<div class="cp-preview-pane">';
-    html += renderPainPointDetailPane();
-    html += '</div></div>';
-
-    html += '</div>';
-    return html;
-  }
-
-  function renderPainPointListGroupedByCategory(filtered) {
-    var grouped = {};
-    var uncatId = '__uncat__';
-    for (var i = 0; i < filtered.length; i++) {
-      var key = filtered[i].category || uncatId;
-      (grouped[key] = grouped[key] || []).push(filtered[i]);
-    }
-    var order = (PAIN_POINT_CATEGORIES || []).map(function(c) { return c.id; });
-    order.push(uncatId);
-
-    var html = '';
-    for (var oi = 0; oi < order.length; oi++) {
-      var catId = order[oi];
-      var items = grouped[catId];
-      if (!items || items.length === 0) continue;
-      var cat = (PAIN_POINT_CATEGORIES || []).find(function(c) { return c.id === catId; });
-      var label = cat ? cat.name : 'Uncategorized';
-      var collapsed = !!(S.collapsedGroups && S.collapsedGroups['ppcat_' + catId]);
-
-      html += '<div class="cp-pp-group">';
-      html += '<div class="cp-pp-group-header" data-action="toggle-pp-group" data-cat-id="' + esc(catId) + '">';
-      html += icon(collapsed ? 'chevron-right' : 'chevron-down');
-      html += '<span class="cp-pp-group-name">' + esc(label) + '</span>';
-      html += '<span class="cp-pp-group-count">' + items.length + '</span>';
-      html += '</div>';
-      if (!collapsed) {
-        html += '<div class="cp-pp-list">';
-        for (var k = 0; k < items.length; k++) html += renderPainPointListItem(items[k]);
-        html += '</div>';
-      }
-      html += '</div>';
-    }
-    return html;
-  }
-
-  function renderPainPointListItem(pp) {
-    var personaCount = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) > -1; }).length;
-    var sel = S.selectedPainPointId === pp.id ? ' cp-pp-item-selected' : '';
-    var hasSolution = !!(pp.solution && pp.solution.trim());
-
-    var html = '<div class="cp-pp-item' + sel + '" data-action="select-pain-point-page" data-id="' + esc(pp.id) + '">';
-    html += '<div class="cp-pp-item-main">';
-    html += '<div class="cp-pp-item-title">' + esc(truncate(pp.pain_point || '(Empty)', 90)) + '</div>';
-    if (hasSolution) {
-      html += '<div class="cp-pp-item-solution" title="Solution"><span class="cp-pp-item-solution-icon">' + icon('lightbulb') + '</span>' + esc(truncate(pp.solution, 90)) + '</div>';
-    }
-    html += '</div>';
-    html += '<div class="cp-pp-item-meta">';
-    if (personaCount > 0) html += '<span class="cp-pp-mini-stat" title="Linked personas">' + icon('users') + ' ' + personaCount + '</span>';
-    if (!hasSolution) html += '<span class="cp-pp-mini-stat cp-pp-mini-warn" title="No solution defined">' + icon('triangle-exclamation') + '</span>';
-    html += '</div>';
-    html += '</div>';
-    return html;
-  }
-
-  function renderPainPointDetailPane() {
-    if (!S.selectedPainPointId || !S.painPointMap[S.selectedPainPointId]) {
-      return '<div class="cp-empty-state cp-empty-state--center">' +
-        '<div class="cp-empty-state-icon">' + icon('bolt') + '</div>' +
-        '<div class="cp-empty-state-title">Select a pain point</div>' +
-        '<div class="cp-empty-state-text">Choose from the list, or create a new one.</div>' +
-        '<button class="cp-btn cp-btn-primary" data-action="new-pain-point">' + icon('plus') + ' New Pain Point</button></div>';
-    }
-    var pp = S.painPointMap[S.selectedPainPointId];
-    var ppCats = PAIN_POINT_CATEGORIES || [];
-    var catLabel = '';
-    if (pp.category) { var ppcMatch = ppCats.find(function(c) { return c.id === pp.category; }); catLabel = ppcMatch ? ppcMatch.name : ''; }
-
-    // Find linked personas
-    var linkedPersonas = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) > -1; });
-    var unlinkedPersonas = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) === -1; });
-
-    var html = '<div class="cp-detail-header"><div class="cp-detail-header-left">';
-    html += '<h2>' + icon('bolt') + ' Pain Point</h2>';
-    if (catLabel) html += '<span class="cp-badge" style="background:#d9302515;color:#d93025">' + esc(catLabel) + '</span>';
-    html += '</div><div class="cp-detail-header-right">';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-pain-point" data-id="' + esc(pp.id) + '">' + icon('trash') + ' Delete</button>';
-    html += '</div></div>';
-
-    // Inline editable pain point + solution
-    html += '<div class="cp-card cp-pp-detail-card">';
-    html += '<div class="cp-section-header"><h3>' + icon('triangle-exclamation') + ' Pain Point</h3></div>';
-    html += '<textarea class="cp-textarea cp-pp-inline-field" data-ppfield="pain_point" rows="3">' + esc(pp.pain_point || '') + '</textarea>';
-    html += '</div>';
-
-    html += '<div class="cp-card cp-pp-detail-card cp-pp-detail-solution">';
-    html += '<div class="cp-section-header"><h3 style="color:var(--cp-success)">' + icon('lightbulb') + ' Solution</h3></div>';
-    html += '<textarea class="cp-textarea cp-pp-inline-field" data-ppfield="solution" rows="3" placeholder="How does your product solve this?">' + esc(pp.solution || '') + '</textarea>';
-    html += '</div>';
-
-    // Category inline selector
-    html += '<div class="cp-card cp-pp-detail-card">';
-    html += '<div class="cp-form-group"><label class="cp-field-label">Category</label>';
-    html += '<select class="cp-select cp-pp-inline-field" data-ppfield="category">';
-    html += '<option value="">None</option>';
-    for (var ci = 0; ci < ppCats.length; ci++) {
-      html += '<option value="' + esc(ppCats[ci].id) + '"' + (pp.category === ppCats[ci].id ? ' selected' : '') + '>' + esc(ppCats[ci].name) + '</option>';
-    }
-    html += '</select></div></div>';
-
-    // Linked Personas with link/unlink actions
-    html += '<div class="cp-card cp-pp-detail-card">';
-    html += '<div class="cp-section-header"><h3>' + icon('users') + ' Linked Personas (' + linkedPersonas.length + ')</h3>';
-    if (unlinkedPersonas.length > 0) html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="link-pp-to-personas" data-pp-id="' + esc(pp.id) + '">' + icon('link') + ' Link to Personas</button>';
-    html += '</div>';
-    if (linkedPersonas.length === 0) {
-      html += '<p class="cp-text-muted">Not linked to any personas yet.' + (unlinkedPersonas.length > 0 ? ' Click "Link to Personas" above.' : '') + '</p>';
-    } else {
-      for (var pi = 0; pi < linkedPersonas.length; pi++) {
-        html += '<div class="cp-list-item-inline">';
-        html += '<span style="flex:1;cursor:pointer" data-action="go-view" data-view="personas" data-select="' + esc(linkedPersonas[pi].id) + '">' + dimensionBadge('persona', linkedPersonas[pi].id) + '</span>';
-        html += '<button class="cp-btn-icon cp-btn-xs" data-action="unlink-pp-from-persona" data-pp-id="' + esc(pp.id) + '" data-persona-id="' + esc(linkedPersonas[pi].id) + '" title="Unlink">' + icon('link-slash') + '</button>';
-        html += '</div>';
-      }
-    }
-    html += '</div>';
-
-    // Workspace usage (meta_v2)
-    html += renderLibraryWorkspaceUsage('pain_point', pp.id);
-
-    html += '<div class="cp-detail-footer"><span class="cp-text-muted">Created ' + formatDate(pp.created) + (pp.updated ? ' · Updated ' + formatRelativeTime(pp.updated) : '') + '</span></div>';
-    return html;
-  }
-
-
 /* ===== src/10-part1/15-view-formats.js ===== */
   // ============================================================
   // SECTION 13.6: DEDICATED FORMATS VIEW
@@ -3528,6 +3490,22 @@
     html += '<div class="cp-inspector-stat"><div class="cp-inspector-stat-value" style="color:#0891b2">' + live + '</div><div class="cp-inspector-stat-label">Live</div></div>';
     html += '</div>';
 
+    // Empty-campaign CTA — campaigns created from the setup wizard start empty
+    // (no Ad Sets, no Ads). The per-campaign wizard fills them out.
+    if (sets.length === 0) {
+      html += '<div class="cp-inspector-section cp-empty-campaign-cta" style="background:linear-gradient(135deg,#f0f7ff 0%,#fff7e6 100%);border:1px dashed var(--cp-primary,#1a73e8);border-radius:var(--cp-radius-md);padding:var(--cp-space-4);margin-top:var(--cp-space-3)">';
+      html += '<div style="display:flex;align-items:flex-start;gap:var(--cp-space-3)">';
+      html += '<div style="font-size:32px;line-height:1">' + icon('rocket') + '</div>';
+      html += '<div style="flex:1">';
+      html += '<div style="font-weight:600;font-size:var(--cp-font-size-base);margin-bottom:var(--cp-space-1)">This campaign is empty.</div>';
+      html += '<div class="cp-text-muted" style="font-size:var(--cp-font-size-sm);margin-bottom:var(--cp-space-3)">Run the AI setup for this campaign to generate Ad Sets and Ads from your brief, or add them manually.</div>';
+      html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap">';
+      html += '<button class="cp-btn cp-btn-ai" data-action="ai-suggest-ad-sets" data-campaign-id="' + esc(camp.id) + '">' + icon('sparkles') + ' AI Setup for this campaign</button>';
+      html += '<button class="cp-btn cp-btn-outline" data-action="ws-add-ad-set" data-campaign-id="' + esc(camp.id) + '">' + icon('plus') + ' Add Ad Set manually</button>';
+      html += '</div>';
+      html += '</div></div></div>';
+    }
+
     // Description
     if (camp.description) {
       html += '<div class="cp-inspector-section"><p>' + esc(camp.description) + '</p></div>';
@@ -3718,15 +3696,17 @@
     var cta = metaCTA((ad.creative || {}).cta_type);
 
     var html = '';
-    html += '<div class="cp-inspector-header"><div>';
+    html += '<div class="cp-inspector-header"><div style="flex:1">';
     var crumb = (camp ? esc(camp.name) + ' · ' : '') + (adSet ? esc(adSet.name) : '');
     html += '<div class="cp-inspector-eyebrow">' + icon(ctype.icon) + ' ' + esc(ctype.label) + (crumb ? ' · ' + crumb : '') + '</div>';
-    html += '<h2 class="cp-inspector-title">' + esc(ad.name) + '</h2>';
-    html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap;margin-top:6px">';
+    // Inline-editable ad name (was a static <h2>). Blur saves via the
+    // generic cp-v2-inline-field handler in 27-event-handlers.js.
+    html += '<input type="text" class="cp-inspector-title-input cp-v2-inline-field" data-field="name" data-entity-type="ad" data-entity-id="' + esc(ad.id) + '" value="' + esc(ad.name || '') + '" placeholder="Ad name" style="font-size:var(--cp-font-size-2xl,1.6rem);font-weight:700;border:1px solid transparent;background:transparent;width:100%;padding:2px 4px;margin:-2px -4px">';
+    html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap;margin-top:6px;align-items:center">';
     html += '<span class="cp-badge" style="background:' + status.color + '15;color:' + status.color + '">' + icon(status.icon) + ' ' + esc(status.label) + '</span>';
+    html += '<span class="cp-text-muted" style="font-size:11px">Status set from the Review tab</span>';
     html += '</div></div><div class="cp-inspector-header-actions">';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-copy-ad-field" data-id="' + esc(ad.id) + '" data-field="all" title="Copy all ad fields">' + icon('copy') + '</button>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="edit-ad" data-id="' + esc(ad.id) + '">' + icon('edit') + ' Edit</button>';
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-ad" data-id="' + esc(ad.id) + '">' + icon('trash') + '</button>';
     html += '</div></div>';
 
@@ -4153,6 +4133,21 @@
     } else if (ad.creative_type === 'carousel') {
       html += renderAdMediaCarousel(ad);
     }
+
+    // Structured-brief export — packages hook + copy + media direction
+    // into one JSON the user can hand to an image/video tool or an
+    // MCP-connected LLM.
+    html += '<div class="cp-inspector-section cp-media-brief-actions" style="background:var(--cp-gray-50,#f8f9fa);border-radius:var(--cp-radius-md);padding:var(--cp-space-3);margin-top:var(--cp-space-4)">';
+    html += '<div class="cp-inspector-section-title">' + icon('file-code') + ' Media brief — export';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">Packages hook + copy + media direction as one structured JSON for downstream tools</span>';
+    html += '</div>';
+    html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap">';
+    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="preview-media-brief" data-id="' + esc(ad.id) + '">' + icon('eye') + ' Preview &amp; copy</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="copy-media-brief" data-id="' + esc(ad.id) + '">' + icon('copy') + ' Copy JSON</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="copy-media-brief-mcp" data-id="' + esc(ad.id) + '">' + icon('robot') + ' Copy as MCP brief</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="download-media-brief" data-id="' + esc(ad.id) + '">' + icon('download') + ' Download .json</button>';
+    html += '</div>';
+    html += '</div>';
 
     html += '</div>';
     return html;
@@ -4756,10 +4751,15 @@
     });
 
     // Go-view buttons (data-action="go-view" data-view="xxx")
+    // Optional data-tab="..." can set a sub-tab (currently only Personas
+    // view uses this — for the Pain Points tab).
     $(document).off('click.cp-go-view').on('click.cp-go-view', '[data-action="go-view"]', function(e) {
       e.preventDefault();
       var v = $(this).data('view');
-      if (v) navigate(v);
+      var tab = $(this).data('tab');
+      if (!v) return;
+      if (v === 'personas' && tab) S.personasTab = tab;
+      navigate(v);
     });
 
     // Navigate to a Meta v2 Campaign in the Workspace
@@ -4818,7 +4818,7 @@
       // Search pain points
       (S.data.pain_points || []).forEach(function(pp) {
         if ((pp.pain_point || '').toLowerCase().indexOf(q) > -1) {
-          results.push({ type: 'pain_point', icon: 'bolt', color: '#d93025', title: truncate(pp.pain_point, 40), sub: pp.category || '', id: pp.id, view: 'pain_points' });
+          results.push({ type: 'pain_point', icon: 'bolt', color: '#d93025', title: truncate(pp.pain_point, 40), sub: pp.category || '', id: pp.id, view: 'personas', tab: 'pain_points' });
         }
       });
       // Search styles
@@ -4842,7 +4842,7 @@
           rHtml += '<div class="cp-global-search-type">' + icon(r.icon) + ' ' + r.type.replace('_', ' ') + 's</div>';
           shownTypes[r.type] = true;
         }
-        rHtml += '<div class="cp-global-search-item" data-action="global-search-go" data-view="' + esc(r.view) + '" data-id="' + esc(r.id) + '" data-type="' + esc(r.type) + '">';
+        rHtml += '<div class="cp-global-search-item" data-action="global-search-go" data-view="' + esc(r.view) + '" data-id="' + esc(r.id) + '" data-type="' + esc(r.type) + '"' + (r.tab ? ' data-tab="' + esc(r.tab) + '"' : '') + '">';
         rHtml += '<span style="color:' + r.color + '">' + icon(r.icon) + '</span> ';
         rHtml += '<span style="font-weight:500">' + esc(r.title) + '</span>';
         if (r.sub) rHtml += '<span class="cp-text-muted" style="margin-left:auto;font-size:11px">' + esc(r.sub) + '</span>';
@@ -4858,10 +4858,11 @@
       var view = $(this).data('view');
       var id = $(this).data('id');
       var type = $(this).data('type');
+      var tab = $(this).data('tab');
       $('#cpGlobalSearchInput').val('');
       $('#cpGlobalSearchResults').hide();
       if (type === 'persona') S.selectedPersonaId = id;
-      else if (type === 'pain_point') S.selectedPainPointId = id;
+      else if (type === 'pain_point') { S.selectedPainPointId = id; if (view === 'personas') S.personasTab = tab || 'pain_points'; }
       else if (type === 'campaign_v2') { if (typeof window._cpNavigateToCampaignV2 === 'function') return window._cpNavigateToCampaignV2(id); }
       else if (type === 'ad') {
         var ad = S.adMap[id];
@@ -4922,6 +4923,17 @@
         S.selectedPersonaId = id;
         renderCurrentView();
       }
+    });
+
+    // From a Pain Point's "Linked personas" list — jump to that persona
+    // (switch the Personas-view tab back to "personas" too).
+    $(document).off('click.cp-sel-persona-pp').on('click.cp-sel-persona-pp', '[data-action="select-persona-from-pp"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('persona-id');
+      if (!id) return;
+      S.selectedPersonaId = id;
+      S.personasTab = 'personas';
+      renderCurrentView();
     });
 
     // Toggle category collapse
@@ -7234,24 +7246,78 @@
   // SECTION 9C: META AD CRUD
   // ============================================================
   //
-  // Modal for creating/editing an Ad. Stage 1 covers the basics (name,
-  // creative type, primary text, headline, description, CTA, link, hook).
-  // The fuller pipeline editor (Hook → Copy → Media → Review with rich
-  // editors per step) lands in Stage 2.
+  // Two flows:
+  //   * Create — quick modal asks for just name + creative_type, then
+  //     navigates to the workspace inspector where the user fills out
+  //     hook / copy / media / review inline.
+  //   * Edit — no modal at all; the edit-ad action navigates to the
+  //     workspace inspector. This function only runs as a legacy
+  //     fallback if the inspector context isn't available.
 
+  function openMetaAdQuickCreate(adSetId) {
+    var C = Constants;
+    var adSet = getAdSet(adSetId);
+    if (!adSet) { toast('Parent ad set not found', 'error'); return; }
+    var camp = getCampaignV2(adSet.campaign_id);
+    var existingCount = (getAdsByAdSet ? getAdsByAdSet(adSetId).length : 0);
+    var defaultName = adSet.name + ' — Ad ' + (existingCount + 1);
+
+    var html = '<div class="cp-editor-form">';
+    html += '<div class="cp-modal-context">';
+    if (camp) html += icon('bullhorn') + ' ' + esc(camp.name) + ' · ';
+    html += icon('crosshairs') + ' ' + esc(adSet.name) + '</div>';
+    html += '<div class="cp-form-group"><label>Ad Name <span class="cp-required">*</span></label>';
+    html += '<input type="text" class="cp-input" data-field="name" value="' + esc(defaultName) + '" autocomplete="off">';
+    html += '</div>';
+    html += '<div class="cp-form-group"><label>Creative type</label>';
+    html += '<div class="cp-segmented">';
+    for (var ctk in C.META_AD_CREATIVE_TYPES) {
+      var ct = C.META_AD_CREATIVE_TYPES[ctk];
+      var ctSel = (ctk === 'single_image') ? ' cp-segmented-active' : '';
+      html += '<label class="cp-segmented-option' + ctSel + '">';
+      html += '<input type="radio" name="cp-v2-ad-qc-creative-type" data-field="creative_type" value="' + ctk + '"' + (ctSel ? ' checked' : '') + ' style="display:none">';
+      html += icon(ct.icon) + ' ' + esc(ct.label);
+      html += '</label>';
+    }
+    html += '</div></div>';
+    html += '<p class="cp-form-help">After create, you\'ll be taken to the Ad\'s workspace where Hook, Copy, Media, and Review are inline-editable.</p>';
+    html += '</div>';
+
+    openModal('New Ad', html, {
+      titleIcon: 'rectangle-ad', size: 'sm', saveLabel: 'Create & open',
+      onSave: function() {
+        var fields = collectModalFields();
+        var name = (fields.name || '').trim();
+        if (!name) { toast('Ad name is required', 'warning'); return; }
+        var creativeType = $('input[name="cp-v2-ad-qc-creative-type"]:checked').val() || 'single_image';
+        snapshot('Create Ad');
+        var created = createEntity('ad', { ad_set_id: adSetId, name: name, creative_type: creativeType });
+        closeModal();
+        if (created) {
+          S.selectedCampaignV2Id = adSet.campaign_id;
+          S.selectedAdSetId = adSetId;
+          S.selectedAdId = created.id;
+          S.workspaceInspectorTab = 'hook';
+          navigate('campaign_workspace', { hash: 'campaign/' + adSet.campaign_id + '/ad_set/' + adSetId + '/ad/' + created.id });
+        }
+      }
+    });
+  }
+
+  // Legacy full-form edit modal — kept as a fallback only. The inline
+  // workspace inspector is the primary editing surface.
   function openMetaAdModal(adIdOrAdSetId, opts) {
     opts = opts || {};
+    // Quick-create branch
+    if (opts.create) { openMetaAdQuickCreate(adIdOrAdSetId); return; }
     var C = Constants;
-    // Two call shapes:
-    //   openMetaAdModal('ad_xxx')                     -> edit existing
-    //   openMetaAdModal('adset_xxx', { create: true }) -> create under ad set
-    var isEdit = !opts.create;
-    var ad = isEdit ? getAd(adIdOrAdSetId) : null;
-    var adSetId = isEdit ? (ad && ad.ad_set_id) : adIdOrAdSetId;
+    var ad = getAd(adIdOrAdSetId);
+    var adSetId = ad && ad.ad_set_id;
     var adSet = getAdSet(adSetId);
 
     if (!adSet) { toast('Parent ad set not found', 'error'); return; }
     var camp = getCampaignV2(adSet.campaign_id);
+    var isEdit = true;
 
     var a = ad || {};
     var creative = a.creative || {};
@@ -7833,17 +7899,17 @@
   var setupWizardState = {};
 
   var SW_STEPS = [
-    { num: 1, label: 'Workspace',        sublabel: 'Brand & product',      phase: 'a', icon: 'building' },
-    { num: 2, label: 'AI Setup',         sublabel: 'Configure provider',   phase: 'a', icon: 'robot' },
-    { num: 3, label: 'Personas',         sublabel: 'Target audiences',     phase: 'b', icon: 'users' },
-    { num: 4, label: 'Pain Points',      sublabel: 'Audience challenges',  phase: 'b', icon: 'bolt' },
-    { num: 5, label: 'Messages',         sublabel: 'Ad angles & hooks',    phase: 'b', icon: 'comment-dots' },
-    { num: 6, label: 'Styles & Formats', sublabel: 'Creative approach',    phase: 'b', icon: 'palette' },
-    { num: 7, label: 'Campaign Tree',    sublabel: 'Campaign + ad sets',   phase: 'c', icon: 'sitemap' },
-    { num: 8, label: 'Review',           sublabel: 'Launch your workspace',phase: 'c', icon: 'rocket' }
+    { num: 1, label: 'Workspace',        sublabel: 'Brand & product',       phase: 'a', icon: 'building' },
+    { num: 2, label: 'AI Setup',         sublabel: 'Configure provider',    phase: 'a', icon: 'robot' },
+    { num: 3, label: 'Personas',         sublabel: 'Target audiences',      phase: 'b', icon: 'users' },
+    { num: 4, label: 'Pain Points',      sublabel: 'Audience challenges',   phase: 'b', icon: 'bolt' },
+    { num: 5, label: 'Messages',         sublabel: 'Ad angles & hooks',     phase: 'b', icon: 'comment-dots' },
+    { num: 6, label: 'Styles & Formats', sublabel: 'Creative approach',     phase: 'b', icon: 'palette' },
+    { num: 7, label: 'Campaign Ideas',   sublabel: 'Pick campaigns to plan', phase: 'c', icon: 'lightbulb' },
+    { num: 8, label: 'Review',           sublabel: 'Launch your workspace', phase: 'c', icon: 'rocket' }
   ];
 
-  var SW_PHASE_LABELS = { a: 'Phase A — Foundation', b: 'Phase B — Library', c: 'Phase C — Campaign' };
+  var SW_PHASE_LABELS = { a: 'Phase A — Foundation', b: 'Phase B — Library', c: 'Phase C — Campaigns' };
 
   // Volatile keys excluded from session persistence (re-derived each run)
   var SW_VOLATILE_KEYS = ['aiLoading', 'aiActionId', 'aiStartedAt', 'aiError'];
@@ -7923,7 +7989,7 @@
       step: 1,
       aiLoading: false, aiActionId: '', aiStartedAt: 0, aiError: '',
       stepGenerated: {}, stepSkipped: {},
-      _expandedCards: {}, _ppActiveTab: 0, _step7Mode: 'ai',
+      _expandedCards: {}, _ppActiveTab: 0,
       workspace: { name: '', description: '', product_name: '', objective: '',
                    brand_voice: '', target_audience: '', custom_instructions: '' },
       aiConfig: { provider: '', model: '', tested: false },
@@ -7933,21 +7999,15 @@
       messages:    [],  // [{ name, description, theme, hook_type, funnel_stage, body, _selected }]
       styles:      [],  // [{ name, description, _selected }]
       formats:     [],  // [{ name, description, category, _selected }]
-      // Meta v2 Campaign tree — generated in Step 7
-      campaign: {
-        name: '', description: '',
-        objective: 'OUTCOME_LEADS',
-        budget_mode: 'CBO', bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
-        daily_budget: '', lifetime_budget: '',
-        start_time: '', stop_time: '',
-        brief: '', ai_instructions: ''
-      },
-      ad_sets: [],          // [{ name, persona_idx, audience_overrides, optimization_goal, billing_event, attribution_setting, brief:{creative_direction,hook_angles,message_idx_list,style_idx_list,format_idx_list,ai_notes}, ads:[{name,creative_type,hook:{text,type},creative:{primary_text,headline,description,cta_type,cta_link},media:{image_brief,image_prompt,video_concept},_selected}], _selected }]
-      _campaignTreeContext: '',
+      // Step 7 produces a list of named campaign ideas. Each idea becomes a
+      // draft campaign_v2 on launch. Ad Sets + Ads are built later by the
+      // per-campaign wizard from inside the campaign workspace.
+      campaign_ideas: [],   // [{ name, objective, brief, persona_idx, message_idx_list, _selected }]
+      _campaignIdeasContext: '',
       created: {
         personaIds: [], painPointIds: [], messageIds: [],
         styleIds: [], formatIds: [],
-        campaignV2Id: '', adSetIds: [], adIds: [],
+        campaignV2Ids: [],
         lastGeneratedAt: {}
       },
       finalizing: false, finalizeMsg: ''
@@ -8050,8 +8110,7 @@
     var ws          = setupWizardState;
     var currentStep = ws.step;
     // Count map: how many items are selected per step (for done badge)
-    var selSets = (ws.ad_sets || []).filter(function(s) { return s._selected; });
-    var step7Count = selSets.length;
+    var step7Count = (ws.campaign_ideas || []).filter(function(c) { return c._selected; }).length;
     var stepCounts = {
       3: (ws.personas    || []).filter(function(p) { return p._selected; }).length,
       4: (ws.pain_points || []).filter(function(p) { return p._selected; }).length,
@@ -8218,19 +8277,15 @@
       }
     }
     if (n === 7) {
-      if (!ws.campaign.name || !ws.campaign.name.trim()) {
-        return { valid: false, message: 'Please enter a campaign name.' };
+      var ideas = (ws.campaign_ideas || []).filter(function(c) { return c._selected; });
+      if (ideas.length === 0) {
+        return { valid: false, message: 'Please select at least one campaign idea to continue.' };
       }
-      var sets = (ws.ad_sets || []).filter(function(s) { return s._selected; });
-      if (sets.length === 0) {
-        return { valid: false, message: 'Please select at least one Ad Set to continue.' };
-      }
-      var anyAd = false;
-      for (var i = 0; i < sets.length; i++) {
-        if ((sets[i].ads || []).some(function(a) { return a._selected; })) { anyAd = true; break; }
-      }
-      if (!anyAd) {
-        return { valid: false, message: 'Each selected Ad Set needs at least one selected Ad.' };
+      // Each selected idea needs at least a name
+      for (var i = 0; i < ideas.length; i++) {
+        if (!(ideas[i].name && ideas[i].name.trim())) {
+          return { valid: false, message: 'Each selected campaign idea needs a name.' };
+        }
       }
     }
     return { valid: true };
@@ -8311,13 +8366,7 @@
     if (n === 4 && typeof R.swAIGeneratePainPoints     === 'function') R.swAIGeneratePainPoints();
     if (n === 5 && typeof R.swAIGenerateMessages       === 'function') R.swAIGenerateMessages();
     if (n === 6 && typeof R.swAIGenerateStylesFormats  === 'function') R.swAIGenerateStylesFormats();
-    if (n === 7 && typeof R.swAIGenerateCampaignTree   === 'function' && setupWizardState._step7Mode !== 'manual') {
-      // Auto-fill campaign name from product name if blank
-      if (!setupWizardState.campaign.name && setupWizardState.workspace.product_name) {
-        setupWizardState.campaign.name = setupWizardState.workspace.product_name + ' Launch';
-      }
-      R.swAIGenerateCampaignTree();
-    }
+    if (n === 7 && typeof R.swAIGenerateCampaignIdeas  === 'function') R.swAIGenerateCampaignIdeas();
   }
 
   // --- Cancel any in-flight wizard AI generation ---
@@ -9031,377 +9080,170 @@
 
 /* ===== src/20-part2a/15-setup-wizard-steps-7-8.js ===== */
   // ------------------------------------------------------------------
-  // SECTION 9.4d: SETUP WIZARD — STEP RENDERERS (Phase 5: Steps 7 & 8)
+  // SECTION 9.4d: SETUP WIZARD — STEP RENDERERS (Steps 7 & 8)
   // ------------------------------------------------------------------
   //
-  // Step 7 is the Meta v2 Campaign tree (Campaign → Ad Sets → Ads). It runs in
-  // two modes: 'ai' (auto-generate the tree from the wizard's selected library
-  // entities) and 'manual' (user adds Ad Sets / Ads by hand). Both produce the
-  // same state shape so the finalize step is identity-mode-agnostic.
+  // Step 7 is "Campaign Ideas" — a list of named campaign ideas the wizard
+  // proposes. The user picks which to create. Each idea becomes a draft
+  // campaign_v2 on launch. Ad Sets + Ads are built later from inside the
+  // per-campaign workspace (the "Run AI setup" CTA).
+  //
+  // Step 8 is the final review and launch.
 
-  // --- Step 7: Campaign Tree ---
+  // --- Step 7: Campaign Ideas ---
 
   function renderSWStep7() {
-    var ws       = setupWizardState;
+    var ws        = setupWizardState;
     var generated = ws.stepGenerated[7];
     var aiLoading = ws.aiLoading;
-    var mode     = ws._step7Mode || 'ai';
+    var ideas     = ws.campaign_ideas || [];
 
     var html = _buildSWStepHeader(
-      'Campaign Tree',
-      'Build the Meta-shape Campaign that ships when you launch — one Campaign, 2-3 Ad Sets, 2-3 Ads each. AI drafts a starting tree from your selected library.',
+      'Campaign Ideas',
+      'AI proposes a few campaign ideas based on your library. Pick which ones to start. Each idea becomes a draft Campaign you can build out (Ad Sets + Ads) from its workspace.',
       'c'
     );
 
     html += _swAIErrorBanner(7);
 
-    // Mode toggle
-    html += '<div class="cp-sw-mode-toggle">';
-    html += '<button class="cp-sw-mode-btn' + (mode === 'ai' ? ' cp-sw-mode-btn--active' : '') + '" data-action="sw-step7-mode" data-mode="ai">';
-    html += icon('sparkles') + ' AI Generated';
-    html += '</button>';
-    html += '<button class="cp-sw-mode-btn' + (mode === 'manual' ? ' cp-sw-mode-btn--active' : '') + '" data-action="sw-step7-mode" data-mode="manual">';
-    html += icon('pen-fancy') + ' Manual';
-    html += '</button>';
+    // Generation bar — direction textarea + generate button
+    html += '<div class="cp-sw-gen-bar">';
+    html += '<textarea class="cp-textarea" id="swCampaignIdeasContext" rows="2"';
+    html += ' placeholder="Optional: direction for the ideas (e.g. \'lean into the &quot;ship in days not weeks&quot; angle, mix lead-gen and brand campaigns, target enterprise + startup segments\')...">';
+    html += esc(ws._campaignIdeasContext || '');
+    html += '</textarea>';
+    html += _swGenButton('sw-ai-gen-campaign-ideas', generated, aiLoading);
     html += '</div>';
 
-    // Generation bar (AI mode only)
-    if (mode === 'ai') {
-      html += '<div class="cp-sw-gen-bar">';
-      html += '<textarea class="cp-textarea" id="swCampaignTreeContext" rows="2"';
-      html += ' placeholder="Optional: campaign direction (e.g., \'push the &quot;ship in days not weeks&quot; angle, target enterprise + startup segments\')...">';
-      html += esc(ws._campaignTreeContext || '');
-      html += '</textarea>';
-      html += _swGenButton('sw-ai-gen-campaign-tree', generated, aiLoading);
-      html += '</div>';
-    }
-
-    // Campaign basics form (always shown)
-    html += _buildSWStep7CampaignForm(ws);
-
     if (aiLoading) {
-      html += _buildSWTreeSkeleton();
+      html += _buildSWIdeasSkeleton();
       return html;
     }
 
-    // Ad-set tree
-    var sets = ws.ad_sets || [];
+    var selPersonas = (ws.personas || []).filter(function(p) { return p._selected; });
+    var selMessages = (ws.messages || []).filter(function(m) { return m._selected; });
 
-    if (mode === 'manual') {
-      html += _buildSWStep7ManualTree(ws, sets);
-    } else if (generated && !sets.length) {
-      html += _swAIEmptyAfterGenBanner('ad sets', ws._campaignTreeContext || '');
-    } else if (!sets.length) {
-      html += '<div class="cp-sw-empty-state">';
-      html += '<div class="cp-sw-empty-icon">' + icon('sitemap') + '</div>';
-      html += '<p>Click <strong>Generate with AI</strong> to draft your Campaign tree — 1 Campaign + 2-3 Ad Sets + 2-3 Ads each, based on your selected library.</p>';
-      html += '</div>';
-    } else {
-      html += _buildSWStep7AITree(ws, sets);
+    if (!ideas.length) {
+      if (generated) {
+        html += _swAIEmptyAfterGenBanner('campaign ideas', ws._campaignIdeasContext || '');
+      } else {
+        html += '<div class="cp-sw-empty-state">';
+        html += '<div class="cp-sw-empty-icon">' + icon('lightbulb') + '</div>';
+        html += '<p>Click <strong>Generate with AI</strong> to draft 3-5 campaign ideas from your selected library. You can edit or remove any of them before launch.</p>';
+        html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="sw-idea-add-manual" style="margin-top:var(--cp-space-3)">' + icon('plus') + ' Add manually</button>';
+        html += '</div>';
+      }
+      return html;
     }
+
+    // Counter
+    var selCount = ideas.filter(function(c) { return c._selected; }).length;
+    html += '<div class="cp-sw-card-bottom">';
+    html += '<span class="cp-sw-sel-count' + (selCount > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
+    html += 'Will create ' + selCount + ' Campaign' + (selCount !== 1 ? 's' : '');
+    html += '</span>';
+    html += _swLastGeneratedLabel(7);
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="sw-idea-add-manual" style="margin-left:auto">' + icon('plus') + ' Add idea</button>';
+    html += '</div>';
+
+    // List of idea cards
+    html += '<div class="cp-sw-ideas">';
+    for (var i = 0; i < ideas.length; i++) {
+      html += _buildSWCampaignIdeaCard(ideas[i], i, selPersonas, selMessages);
+    }
+    html += '</div>';
 
     return html;
   }
 
-  // Campaign-level form (name, objective, budget, brief)
-  function _buildSWStep7CampaignForm(ws) {
-    var cam   = ws.campaign || {};
-    var C     = Constants;
-    var html  = '<div class="cp-sw-form cp-sw-step7-form">';
-
-    html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">Campaign Name <span class="cp-required">*</span></label>';
-    html += '<input type="text" class="cp-input" data-sw-field="campaign.name"';
-    html += ' placeholder="e.g., Q3 Lead Gen" value="' + esc(cam.name || '') + '" autocomplete="off">';
-    html += '</div>';
-
-    html += '<div class="cp-sw-field-row">';
-    html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">Objective</label>';
-    html += '<select class="cp-select" data-sw-field="campaign.objective">';
-    for (var ok in C.META_OBJECTIVES) {
-      var oSel = (cam.objective === ok) ? ' selected' : (!cam.objective && ok === 'OUTCOME_LEADS' ? ' selected' : '');
-      html += '<option value="' + esc(ok) + '"' + oSel + '>' + esc(C.META_OBJECTIVES[ok].label) + '</option>';
-    }
-    html += '</select>';
-    html += '</div>';
-
-    html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">Budget mode</label>';
-    html += '<select class="cp-select" data-sw-field="campaign.budget_mode">';
-    for (var bmk in C.META_BUDGET_MODES) {
-      var bmSel = (cam.budget_mode === bmk) ? ' selected' : (!cam.budget_mode && bmk === 'CBO' ? ' selected' : '');
-      html += '<option value="' + esc(bmk) + '"' + bmSel + '>' + esc(C.META_BUDGET_MODES[bmk].label) + ' (' + esc(C.META_BUDGET_MODES[bmk].short) + ')</option>';
-    }
-    html += '</select>';
-    html += '</div>';
-    html += '</div>';
-
-    html += '<div class="cp-sw-field-row">';
-    html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">Daily budget</label>';
-    html += '<input type="number" class="cp-input" data-sw-field="campaign.daily_budget"';
-    html += ' min="0" step="1" placeholder="0" value="' + esc(cam.daily_budget != null ? cam.daily_budget : '') + '">';
-    html += '</div>';
-    html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">Start date</label>';
-    html += '<input type="date" class="cp-input" data-sw-field="campaign.start_time" value="' + esc(cam.start_time || '') + '">';
-    html += '</div>';
-    html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">End date</label>';
-    html += '<input type="date" class="cp-input" data-sw-field="campaign.stop_time" value="' + esc(cam.stop_time || '') + '">';
-    html += '</div>';
-    html += '</div>';
-
-    html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">Brief</label>';
-    html += '<textarea class="cp-textarea" data-sw-field="campaign.brief" rows="2"';
-    html += ' placeholder="2-3 sentence campaign brief — context for the creative team and AI assists.">';
-    html += esc(cam.brief || '');
-    html += '</textarea>';
-    html += '</div>';
-
-    html += '</div>';
-    return html;
-  }
-
-  // AI-mode tree skeleton (1 campaign + 2 sets + ~4 ads)
-  function _buildSWTreeSkeleton() {
+  function _buildSWIdeasSkeleton() {
     var html = '<div class="cp-sw-tree-skeleton">';
-    for (var s = 0; s < 2; s++) {
+    for (var i = 0; i < 3; i++) {
       html += '<div class="cp-sw-tree-set cp-sw-skeleton-card">';
       html += '<div class="cp-sw-skeleton-line cp-sw-skeleton-line--title"></div>';
       html += '<div class="cp-sw-skeleton-line"></div>';
-      for (var a = 0; a < 2; a++) {
-        html += '<div class="cp-sw-tree-ad cp-sw-skeleton-card">';
-        html += '<div class="cp-sw-skeleton-line"></div>';
-        html += '<div class="cp-sw-skeleton-line cp-sw-skeleton-line--short"></div>';
-        html += '</div>';
-      }
+      html += '<div class="cp-sw-skeleton-line cp-sw-skeleton-line--short"></div>';
       html += '</div>';
     }
     html += '</div>';
     return html;
   }
 
-  // AI-mode rendered tree (read-only-ish cards with selection toggles)
-  function _buildSWStep7AITree(ws, sets) {
-    var selPersonas = (ws.personas || []).filter(function(p) { return p._selected; });
-    var selMessages = (ws.messages || []).filter(function(m) { return m._selected; });
-    var totalSets = sets.filter(function(s) { return s._selected; }).length;
-    var totalAds = 0;
-    sets.forEach(function(s) { if (s._selected) totalAds += (s.ads || []).filter(function(a) { return a._selected; }).length; });
-
-    var html = '<div class="cp-sw-card-bottom">';
-    html += '<span class="cp-sw-sel-count' + (totalSets > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
-    html += 'Will create 1 Campaign · ' + totalSets + ' Ad Set' + (totalSets !== 1 ? 's' : '') + ' · ' + totalAds + ' Ad' + (totalAds !== 1 ? 's' : '');
-    html += '</span>';
-    html += _swLastGeneratedLabel(7);
-    html += '</div>';
-
-    html += '<div class="cp-sw-tree">';
-    for (var i = 0; i < sets.length; i++) {
-      html += _buildSWAdSetCard(sets[i], i, selPersonas, selMessages);
-    }
-    html += '</div>';
-
-    return html;
-  }
-
-  function _buildSWAdSetCard(adSet, idx, selPersonas, selMessages) {
-    var selected = adSet._selected;
-    var setKey = 'set_' + idx;
-    var setExpanded = setupWizardState._expandedCards[setKey];
-    var persona = (selPersonas || [])[adSet.persona_idx] || null;
-    var goal = Constants.META_OPTIMIZATION_GOALS[adSet.optimization_goal];
-    var ads = adSet.ads || [];
-    var selAds = ads.filter(function(a) { return a._selected; }).length;
-    var brief = adSet.brief || {};
+  function _buildSWCampaignIdeaCard(idea, idx, selPersonas, selMessages) {
+    var selected = idea._selected;
+    var key = 'idea_' + idx;
+    var expanded = setupWizardState._expandedCards[key];
+    var C = Constants;
+    var objLabel = (C.META_OBJECTIVES[idea.objective] || {}).label || idea.objective || '';
+    var persona = (selPersonas || [])[idea.persona_idx] || null;
 
     var html = '<div class="cp-sw-tree-set' + (selected ? ' cp-sw-tree-set--selected' : '') + '">';
 
-    // Header row
+    // Header row: toggle, editable name, persona/objective tags, expand
     html += '<div class="cp-sw-tree-set-header">';
-    html += '<button class="cp-sw-tree-check' + (selected ? ' cp-sw-tree-check--on' : '') + '" data-action="sw-tree-ad-set-toggle" data-set-idx="' + idx + '" aria-label="Toggle Ad Set">';
+    html += '<button class="cp-sw-tree-check' + (selected ? ' cp-sw-tree-check--on' : '') + '" data-action="sw-idea-toggle" data-idea-idx="' + idx + '" aria-label="Toggle Campaign idea">';
     html += selected ? icon('check') : '';
-    html += '</button>';
-    html += '<div class="cp-sw-tree-set-title">';
-    html += '<div class="cp-sw-tree-set-name">' + icon('crosshairs') + ' ' + esc(adSet.name || ('Ad Set ' + (idx + 1))) + '</div>';
-    html += '<div class="cp-sw-tree-set-meta">';
-    if (persona) html += '<span class="cp-sw-tree-set-tag">' + icon('user') + ' ' + esc(truncate(persona.name || '', 28)) + '</span>';
-    if (goal)    html += '<span class="cp-sw-tree-set-tag">' + icon('bullseye') + ' ' + esc(goal.label) + '</span>';
-    html += '<span class="cp-sw-tree-set-tag">' + selAds + '/' + ads.length + ' ads selected</span>';
-    html += '</div>';
-    html += '</div>';
-    html += '<button class="cp-sw-tree-expand" data-action="sw-tree-expand" data-key="' + setKey + '">';
-    html += icon(setExpanded ? 'chevron-up' : 'chevron-down') + ' ' + (setExpanded ? 'Hide brief' : 'Brief');
-    html += '</button>';
-    html += '</div>';
-
-    // Expanded brief
-    if (setExpanded) {
-      html += '<div class="cp-sw-tree-set-brief">';
-      if (brief.creative_direction) {
-        html += '<div class="cp-sw-tree-brief-row"><span class="cp-sw-tree-brief-label">Creative direction</span><p>' + esc(brief.creative_direction) + '</p></div>';
-      }
-      if (brief.hook_angles && brief.hook_angles.length) {
-        html += '<div class="cp-sw-tree-brief-row"><span class="cp-sw-tree-brief-label">Hook angles</span><ul>';
-        brief.hook_angles.forEach(function(h) { html += '<li>' + esc(h) + '</li>'; });
-        html += '</ul></div>';
-      }
-      if (brief.message_idx_list && brief.message_idx_list.length) {
-        html += '<div class="cp-sw-tree-brief-row"><span class="cp-sw-tree-brief-label">Messages</span><div>';
-        brief.message_idx_list.forEach(function(mi) {
-          var m = (selMessages || [])[mi];
-          if (m) html += '<span class="cp-badge cp-sw-tree-brief-badge">' + esc(m.name) + '</span>';
-        });
-        html += '</div></div>';
-      }
-      if (brief.ai_notes) {
-        html += '<div class="cp-sw-tree-brief-row"><span class="cp-sw-tree-brief-label">AI notes</span><p>' + esc(brief.ai_notes) + '</p></div>';
-      }
-      if (adSet.audience_overrides) {
-        html += '<div class="cp-sw-tree-brief-row"><span class="cp-sw-tree-brief-label">Audience overrides</span><p>' + esc(adSet.audience_overrides) + '</p></div>';
-      }
-      html += '</div>';
-    }
-
-    // Ads
-    html += '<div class="cp-sw-tree-ads">';
-    for (var j = 0; j < ads.length; j++) {
-      html += _buildSWAdCard(ads[j], idx, j);
-    }
-    html += '</div>';
-
-    html += '</div>';
-    return html;
-  }
-
-  function _buildSWAdCard(ad, setIdx, adIdx) {
-    var selected = ad._selected;
-    var adKey = 'ad_' + setIdx + '_' + adIdx;
-    var adExpanded = setupWizardState._expandedCards[adKey];
-    var creative = ad.creative || {};
-    var hook = ad.hook || {};
-    var ctype = Constants.META_AD_CREATIVE_TYPES[ad.creative_type] || { label: 'Ad', icon: 'rectangle-ad' };
-    var cta   = Constants.META_CTA_TYPES[creative.cta_type];
-
-    var html = '<div class="cp-sw-tree-ad' + (selected ? ' cp-sw-tree-ad--selected' : '') + '">';
-
-    html += '<div class="cp-sw-tree-ad-header">';
-    html += '<button class="cp-sw-tree-check cp-sw-tree-check--sm' + (selected ? ' cp-sw-tree-check--on' : '') + '" data-action="sw-tree-ad-toggle" data-set-idx="' + setIdx + '" data-ad-idx="' + adIdx + '" aria-label="Toggle Ad">';
-    html += selected ? icon('check') : '';
-    html += '</button>';
-    html += '<div class="cp-sw-tree-ad-body">';
-    html += '<div class="cp-sw-tree-ad-name">' + icon(ctype.icon) + ' ' + esc(ad.name || ('Ad ' + (adIdx + 1))) + '</div>';
-    if (hook.text) {
-      html += '<blockquote class="cp-sw-tree-ad-hook">' + esc(hook.text) + '</blockquote>';
-    }
-    if (creative.primary_text) {
-      html += '<div class="cp-sw-tree-ad-text">' + esc(truncate(creative.primary_text, 160)) + '</div>';
-    }
-    html += '<div class="cp-sw-tree-ad-meta">';
-    if (creative.headline)   html += '<span class="cp-sw-tree-ad-meta-item"><strong>H:</strong> ' + esc(creative.headline) + '</span>';
-    if (cta)                 html += '<span class="cp-sw-tree-ad-meta-item cp-sw-tree-ad-cta">' + esc(cta.label) + '</span>';
-    if (hook.type)           html += '<span class="cp-sw-tree-ad-meta-item">' + esc(hook.type) + '</span>';
-    html += '</div>';
-    html += '</div>';
-    html += '<button class="cp-sw-tree-expand cp-sw-tree-expand--sm" data-action="sw-tree-expand" data-key="' + adKey + '" aria-label="Toggle details">';
-    html += icon(adExpanded ? 'chevron-up' : 'chevron-down');
-    html += '</button>';
-    html += '</div>';
-
-    if (adExpanded) {
-      html += '<div class="cp-sw-tree-ad-detail">';
-      if (creative.description) html += '<p><strong>Description:</strong> ' + esc(creative.description) + '</p>';
-      var media = ad.media || {};
-      if (media.image_brief)   html += '<p><strong>Image brief:</strong> ' + esc(media.image_brief) + '</p>';
-      if (media.image_prompt)  html += '<p><strong>Image prompt:</strong> ' + esc(media.image_prompt) + '</p>';
-      if (media.video_concept) html += '<p><strong>Video concept:</strong> ' + esc(media.video_concept) + '</p>';
-      html += '</div>';
-    }
-
-    html += '</div>';
-    return html;
-  }
-
-  // Manual-mode tree — minimal form for each ad_set with persona dropdown + ads.
-  function _buildSWStep7ManualTree(ws, sets) {
-    var selPersonas = (ws.personas || []).filter(function(p) { return p._selected; });
-
-    var totalSets = sets.filter(function(s) { return s._selected; }).length;
-    var totalAds = 0;
-    sets.forEach(function(s) { if (s._selected) totalAds += (s.ads || []).filter(function(a) { return a._selected; }).length; });
-
-    var html = '<div class="cp-sw-card-bottom">';
-    html += '<span class="cp-sw-sel-count' + (totalSets > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
-    html += '1 Campaign · ' + totalSets + ' Ad Set' + (totalSets !== 1 ? 's' : '') + ' · ' + totalAds + ' Ad' + (totalAds !== 1 ? 's' : '');
-    html += '</span>';
-    html += '<button class="cp-btn cp-btn-sm cp-btn-primary" data-action="sw-manual-add-ad-set">' + icon('plus') + ' Add Ad Set</button>';
-    html += '</div>';
-
-    if (!sets.length) {
-      html += '<div class="cp-sw-empty-state">';
-      html += '<div class="cp-sw-empty-icon">' + icon('crosshairs') + '</div>';
-      html += '<p>Click <strong>Add Ad Set</strong> to start building your tree by hand. Each Ad Set needs at least one Ad.</p>';
-      html += '</div>';
-      return html;
-    }
-
-    html += '<div class="cp-sw-tree">';
-    for (var i = 0; i < sets.length; i++) {
-      html += _buildSWManualAdSetCard(sets[i], i, selPersonas);
-    }
-    html += '</div>';
-
-    return html;
-  }
-
-  function _buildSWManualAdSetCard(adSet, idx, selPersonas) {
-    var html = '<div class="cp-sw-tree-set cp-sw-tree-set--manual' + (adSet._selected ? ' cp-sw-tree-set--selected' : '') + '">';
-
-    // Header with toggle + delete
-    html += '<div class="cp-sw-tree-set-header">';
-    html += '<button class="cp-sw-tree-check' + (adSet._selected ? ' cp-sw-tree-check--on' : '') + '" data-action="sw-tree-ad-set-toggle" data-set-idx="' + idx + '" aria-label="Toggle Ad Set">';
-    html += adSet._selected ? icon('check') : '';
     html += '</button>';
     html += '<div class="cp-sw-tree-set-title" style="flex:1">';
-    html += '<input type="text" class="cp-input cp-input-sm" data-sw-set-field="name" data-set-idx="' + idx + '" value="' + esc(adSet.name || '') + '" placeholder="Ad Set name">';
+    html += '<input type="text" class="cp-input cp-input-sm" data-sw-idea-field="name" data-idea-idx="' + idx + '" value="' + esc(idea.name || '') + '" placeholder="Campaign name">';
+    html += '<div class="cp-sw-tree-set-meta">';
+    if (objLabel) html += '<span class="cp-sw-tree-set-tag">' + icon('bullseye') + ' ' + esc(objLabel) + '</span>';
+    if (persona)  html += '<span class="cp-sw-tree-set-tag">' + icon('user') + ' ' + esc(truncate(persona.name || '', 28)) + '</span>';
     html += '</div>';
-    html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="sw-manual-delete-ad-set" data-set-idx="' + idx + '" title="Delete Ad Set">' + icon('trash') + '</button>';
+    html += '</div>';
+    html += '<button class="cp-sw-tree-expand" data-action="sw-tree-expand" data-key="' + key + '">';
+    html += icon(expanded ? 'chevron-up' : 'chevron-down') + ' ' + (expanded ? 'Hide' : 'Details');
+    html += '</button>';
+    html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="sw-idea-delete" data-idea-idx="' + idx + '" title="Remove idea" style="margin-left:var(--cp-space-1)">' + icon('trash') + '</button>';
     html += '</div>';
 
-    // Persona + optimization goal row
-    html += '<div class="cp-sw-tree-set-fields">';
-    html += '<div class="cp-field cp-field-inline">';
-    html += '<label class="cp-field-label">Persona</label>';
-    html += '<select class="cp-select cp-select-sm" data-sw-set-field="persona_idx" data-set-idx="' + idx + '">';
-    if (!selPersonas.length) {
-      html += '<option value="0">(no personas selected)</option>';
-    } else {
-      for (var p = 0; p < selPersonas.length; p++) {
-        html += '<option value="' + p + '"' + (adSet.persona_idx === p ? ' selected' : '') + '>' + esc(selPersonas[p].name || ('Persona ' + (p + 1))) + '</option>';
+    // Expanded editor
+    if (expanded) {
+      html += '<div class="cp-sw-tree-set-brief">';
+
+      html += '<div class="cp-sw-tree-brief-row">';
+      html += '<span class="cp-sw-tree-brief-label">Objective</span>';
+      html += '<select class="cp-select cp-select-sm" data-sw-idea-field="objective" data-idea-idx="' + idx + '">';
+      for (var ok in C.META_OBJECTIVES) {
+        html += '<option value="' + esc(ok) + '"' + (idea.objective === ok ? ' selected' : '') + '>' + esc(C.META_OBJECTIVES[ok].label) + '</option>';
       }
-    }
-    html += '</select></div>';
+      html += '</select>';
+      html += '</div>';
 
-    html += '<div class="cp-field cp-field-inline">';
-    html += '<label class="cp-field-label">Optimization goal</label>';
-    html += '<select class="cp-select cp-select-sm" data-sw-set-field="optimization_goal" data-set-idx="' + idx + '">';
-    for (var gk in Constants.META_OPTIMIZATION_GOALS) {
-      html += '<option value="' + esc(gk) + '"' + (adSet.optimization_goal === gk ? ' selected' : '') + '>' + esc(Constants.META_OPTIMIZATION_GOALS[gk].label) + '</option>';
-    }
-    html += '</select></div>';
-    html += '</div>';
+      html += '<div class="cp-sw-tree-brief-row">';
+      html += '<span class="cp-sw-tree-brief-label">Target persona</span>';
+      html += '<select class="cp-select cp-select-sm" data-sw-idea-field="persona_idx" data-idea-idx="' + idx + '">';
+      html += '<option value="-1"' + (idea.persona_idx == null || idea.persona_idx < 0 ? ' selected' : '') + '>(no specific persona)</option>';
+      for (var pi = 0; pi < selPersonas.length; pi++) {
+        html += '<option value="' + pi + '"' + (idea.persona_idx === pi ? ' selected' : '') + '>' + esc(selPersonas[pi].name || ('Persona ' + (pi + 1))) + '</option>';
+      }
+      html += '</select>';
+      html += '</div>';
 
-    // Ads
-    html += '<div class="cp-sw-tree-ads">';
-    var ads = adSet.ads || [];
-    for (var j = 0; j < ads.length; j++) {
-      html += _buildSWAdCard(ads[j], idx, j);
+      html += '<div class="cp-sw-tree-brief-row">';
+      html += '<span class="cp-sw-tree-brief-label">Brief</span>';
+      html += '<textarea class="cp-textarea" data-sw-idea-field="brief" data-idea-idx="' + idx + '" rows="2" placeholder="2-3 sentence direction for this campaign — context for the creative team and the per-campaign wizard.">';
+      html += esc(idea.brief || '');
+      html += '</textarea>';
+      html += '</div>';
+
+      if (selMessages && selMessages.length) {
+        html += '<div class="cp-sw-tree-brief-row">';
+        html += '<span class="cp-sw-tree-brief-label">Key messages</span>';
+        html += '<div class="cp-sw-idea-chips">';
+        var mil = idea.message_idx_list || [];
+        for (var mi = 0; mi < selMessages.length; mi++) {
+          var active = mil.indexOf(mi) !== -1;
+          html += '<button type="button" class="cp-chip cp-chip-sm' + (active ? ' cp-chip-active' : '') + '" data-action="sw-idea-toggle-message" data-idea-idx="' + idx + '" data-msg-idx="' + mi + '">';
+          html += esc(truncate(selMessages[mi].name || '', 28));
+          html += '</button>';
+        }
+        html += '</div>';
+        html += '</div>';
+      }
+
+      html += '</div>';
     }
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm cp-sw-tree-add-ad" data-action="sw-manual-add-ad" data-set-idx="' + idx + '">' + icon('plus') + ' Add Ad</button>';
-    html += '</div>';
 
     html += '</div>';
     return html;
@@ -9416,17 +9258,14 @@
     var selMessages = (ws.messages    || []).filter(function(m) { return m._selected; });
     var selStyles   = (ws.styles      || []).filter(function(s) { return s._selected; });
     var selFormats  = (ws.formats     || []).filter(function(f) { return f._selected; });
-    var selSets     = (ws.ad_sets     || []).filter(function(s) { return s._selected; });
-    var selAds      = [];
-    selSets.forEach(function(s) { selAds = selAds.concat((s.ads || []).filter(function(a) { return a._selected; })); });
+    var selIdeas    = (ws.campaign_ideas || []).filter(function(c) { return c._selected; });
 
     var html = _buildSWStepHeader(
       'Review &amp; Launch',
-      'Final check before we create your Campaign tree. Everything below will be created on Launch.',
+      'Final check before we create your library and campaign ideas. Everything below will be created on Launch.',
       'c'
     );
 
-    // Finalizing progress state
     if (ws.finalizing) {
       html += '<div class="cp-sw-finalize-progress">';
       html += '<div class="cp-sw-finalize-spinner">' + icon('loader') + '</div>';
@@ -9435,35 +9274,26 @@
       return html;
     }
 
-    // Summary stats grid
+    // Summary grid
     html += '<div class="cp-sw-review-grid">';
     html += _buildSWReviewBox('users',         'Personas',    selPersonas.length, selPersonas.map(function(p) { return p.name; }));
     html += _buildSWReviewBox('crosshair',     'Pain Points', selPPs.length,      selPPs.map(function(p) { return p.pain_point; }));
     html += _buildSWReviewBox('message-square','Messages',    selMessages.length, selMessages.map(function(m) { return m.name; }));
     html += _buildSWReviewBox('palette',       'Styles',      selStyles.length,   selStyles.map(function(s) { return s.name; }));
     html += _buildSWReviewBox('clapperboard',  'Formats',     selFormats.length,  selFormats.map(function(f) { return f.name; }));
-    html += _buildSWReviewBox('crosshairs',    'Ad Sets',     selSets.length,     selSets.map(function(s) { return s.name; }));
-    html += _buildSWReviewBox('rectangle-ad',  'Ads',         selAds.length,      selAds.map(function(a) { return a.name; }));
+    html += _buildSWReviewBox('bullhorn',      'Campaigns',   selIdeas.length,    selIdeas.map(function(c) { return c.name; }));
     html += '</div>';
 
-    // Campaign info box
-    var cam = ws.campaign || {};
-    if (cam.name) {
-      var objLabel = (Constants.META_OBJECTIVES[cam.objective] || {}).label || cam.objective || '';
-      var bmLabel = (Constants.META_BUDGET_MODES[cam.budget_mode] || {}).short || cam.budget_mode || '';
+    // Per-campaign-idea preview
+    if (selIdeas.length) {
       html += '<div class="cp-sw-info-box cp-sw-info-box--success" style="margin-top:var(--cp-space-4)">';
-      html += icon('bullhorn') + ' <strong>' + esc(cam.name) + '</strong>';
-      if (objLabel) html += ' &nbsp;&middot;&nbsp; ' + esc(objLabel);
-      if (bmLabel)  html += ' &nbsp;&middot;&nbsp; ' + esc(bmLabel);
-      if (cam.daily_budget) html += ' &nbsp;&middot;&nbsp; ' + esc(String(cam.daily_budget)) + '/day';
-      if (cam.start_time && cam.stop_time) html += ' &nbsp;&middot;&nbsp; ' + esc(cam.start_time) + ' → ' + esc(cam.stop_time);
+      html += icon('bullhorn') + ' <strong>' + selIdeas.length + ' Campaign idea' + (selIdeas.length !== 1 ? 's' : '') + '</strong> will be created as drafts. You can build out Ad Sets and Ads from each campaign\'s workspace using the per-campaign wizard.';
       html += '</div>';
     }
 
     // Launch note
     html += '<p class="cp-sw-finalize-note" style="margin-top:var(--cp-space-5);text-align:center">';
-    html += 'Hit <strong>Launch Workspace</strong> below to create your Campaign with ' + selSets.length + ' Ad Set' + (selSets.length !== 1 ? 's' : '');
-    html += ' and ' + selAds.length + ' Ad' + (selAds.length !== 1 ? 's' : '') + '.';
+    html += 'Hit <strong>Launch Workspace</strong> below to create your library and ' + selIdeas.length + ' Campaign' + (selIdeas.length !== 1 ? 's' : '') + '.';
     html += '</p>';
 
     return html;
@@ -10444,15 +10274,14 @@
       if (typeof R.swAIGenerateStylesFormats === 'function') R.swAIGenerateStylesFormats();
       else toast('AI not ready — please wait for the page to fully load.', 'warning');
     });
-    $(document).off('click.cp2a-sw-gen-tree').on('click.cp2a-sw-gen-tree', '[data-action="sw-ai-gen-campaign-tree"]', function(e) {
+    $(document).off('click.cp2a-sw-gen-ideas').on('click.cp2a-sw-gen-ideas', '[data-action="sw-ai-gen-campaign-ideas"]', function(e) {
       e.preventDefault();
       if (setupWizardState.aiLoading) return;
-      setupWizardState._campaignTreeContext = $('#swCampaignTreeContext').val() || '';
-      // Capture any pending form values (campaign.name etc.) before re-rendering
+      setupWizardState._campaignIdeasContext = $('#swCampaignIdeasContext').val() || '';
       swCollectFields();
       setupWizardState.stepGenerated[7] = false;
       var R = window._cpRenderers || {};
-      if (typeof R.swAIGenerateCampaignTree === 'function') R.swAIGenerateCampaignTree();
+      if (typeof R.swAIGenerateCampaignIdeas === 'function') R.swAIGenerateCampaignIdeas();
       else toast('AI not ready — please wait for the page to fully load.', 'warning');
     });
     $(document).off('click.cp2a-sw-ai-cancel').on('click.cp2a-sw-ai-cancel', '[data-action="sw-ai-cancel"]', function(e) {
@@ -10469,42 +10298,7 @@
       var n = parseInt($(this).data('step'), 10);
       if (!isNaN(n)) swRetryStep(n);
     });
-    $(document).off('click.cp2a-sw-step7-mode').on('click.cp2a-sw-step7-mode', '[data-action="sw-step7-mode"]', function(e) {
-      e.preventDefault();
-      var mode = $(this).data('mode');
-      if (mode === 'ai' || mode === 'manual') {
-        setupWizardState._step7Mode = mode;
-        refreshSetupWizard();
-      }
-    });
-    // --- Step 7 tree toggle handlers ---
-    $(document).off('click.cp2a-sw-tree-set').on('click.cp2a-sw-tree-set', '[data-action="sw-tree-ad-set-toggle"]', function(e) {
-      e.preventDefault(); e.stopPropagation();
-      var i = parseInt($(this).data('set-idx'), 10);
-      var sets = setupWizardState.ad_sets || [];
-      if (isNaN(i) || !sets[i]) return;
-      var newVal = !sets[i]._selected;
-      sets[i]._selected = newVal;
-      // Cascade to children
-      if (!newVal) {
-        (sets[i].ads || []).forEach(function(a) { a._selected = false; });
-      } else {
-        // Re-enable any unselected ads when set is re-enabled
-        (sets[i].ads || []).forEach(function(a) { if (a._selected === false) a._selected = true; });
-      }
-      refreshSetupWizard();
-    });
-    $(document).off('click.cp2a-sw-tree-ad').on('click.cp2a-sw-tree-ad', '[data-action="sw-tree-ad-toggle"]', function(e) {
-      e.preventDefault(); e.stopPropagation();
-      var i = parseInt($(this).data('set-idx'), 10);
-      var j = parseInt($(this).data('ad-idx'), 10);
-      var sets = setupWizardState.ad_sets || [];
-      if (isNaN(i) || isNaN(j) || !sets[i] || !sets[i].ads || !sets[i].ads[j]) return;
-      sets[i].ads[j]._selected = !sets[i].ads[j]._selected;
-      // Re-enable parent if a child was just enabled
-      if (sets[i].ads[j]._selected && !sets[i]._selected) sets[i]._selected = true;
-      refreshSetupWizard();
-    });
+    // --- Step 7 campaign-idea handlers ---
     $(document).off('click.cp2a-sw-tree-expand').on('click.cp2a-sw-tree-expand', '[data-action="sw-tree-expand"]', function(e) {
       e.preventDefault(); e.stopPropagation();
       var key = $(this).data('key');
@@ -10512,61 +10306,56 @@
       setupWizardState._expandedCards[key] = !setupWizardState._expandedCards[key];
       refreshSetupWizard();
     });
-    // Manual-mode ad-set field updates (write directly to state.ad_sets[i].field)
-    $(document).off('change.cp2a-sw-manual-set').on('change.cp2a-sw-manual-set', '[data-sw-set-field]', function() {
-      var i = parseInt($(this).data('set-idx'), 10);
-      var field = $(this).data('sw-set-field');
-      var sets = setupWizardState.ad_sets || [];
-      if (isNaN(i) || !sets[i] || !field) return;
+    $(document).off('click.cp2a-sw-idea-toggle').on('click.cp2a-sw-idea-toggle', '[data-action="sw-idea-toggle"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var i = parseInt($(this).data('idea-idx'), 10);
+      var ideas = setupWizardState.campaign_ideas || [];
+      if (isNaN(i) || !ideas[i]) return;
+      ideas[i]._selected = !ideas[i]._selected;
+      refreshSetupWizard();
+    });
+    $(document).off('click.cp2a-sw-idea-delete').on('click.cp2a-sw-idea-delete', '[data-action="sw-idea-delete"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var i = parseInt($(this).data('idea-idx'), 10);
+      var ideas = setupWizardState.campaign_ideas || [];
+      if (isNaN(i) || !ideas[i]) return;
+      ideas.splice(i, 1);
+      refreshSetupWizard();
+    });
+    $(document).off('click.cp2a-sw-idea-add').on('click.cp2a-sw-idea-add', '[data-action="sw-idea-add-manual"]', function(e) {
+      e.preventDefault();
+      setupWizardState.campaign_ideas = setupWizardState.campaign_ideas || [];
+      var n = setupWizardState.campaign_ideas.length + 1;
+      setupWizardState.campaign_ideas.push({
+        name: 'Campaign ' + n,
+        objective: 'OUTCOME_LEADS',
+        brief: '',
+        persona_idx: -1,
+        message_idx_list: [],
+        _selected: true
+      });
+      setupWizardState._expandedCards['idea_' + (setupWizardState.campaign_ideas.length - 1)] = true;
+      refreshSetupWizard();
+    });
+    $(document).off('change.cp2a-sw-idea-field input.cp2a-sw-idea-field').on('change.cp2a-sw-idea-field input.cp2a-sw-idea-field', '[data-sw-idea-field]', function() {
+      var i = parseInt($(this).data('idea-idx'), 10);
+      var field = $(this).data('sw-idea-field');
+      var ideas = setupWizardState.campaign_ideas || [];
+      if (isNaN(i) || !ideas[i] || !field) return;
       var val = $(this).val();
       if (field === 'persona_idx') val = parseInt(val, 10);
-      sets[i][field] = val;
+      ideas[i][field] = val;
     });
-    $(document).off('click.cp2a-sw-manual-add-set').on('click.cp2a-sw-manual-add-set', '[data-action="sw-manual-add-ad-set"]', function(e) {
+    $(document).off('click.cp2a-sw-idea-msg').on('click.cp2a-sw-idea-msg', '[data-action="sw-idea-toggle-message"]', function(e) {
       e.preventDefault();
-      var state = setupWizardState;
-      state.ad_sets = state.ad_sets || [];
-      var n = state.ad_sets.length + 1;
-      state.ad_sets.push({
-        name: 'Ad Set ' + n,
-        persona_idx: 0,
-        audience_overrides: '',
-        optimization_goal: 'OFFSITE_CONVERSIONS',
-        billing_event: 'IMPRESSIONS',
-        attribution_setting: '7d_click',
-        brief: { creative_direction: '', hook_angles: [], message_idx_list: [], style_idx_list: [], format_idx_list: [], ai_notes: '' },
-        ads: [{
-          name: 'Ad 1', creative_type: 'single_image',
-          hook: { text: '', type: 'direct' },
-          creative: { primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '' },
-          media: { image_brief: '', image_prompt: '', video_concept: '' },
-          _selected: true
-        }],
-        _selected: true
-      });
-      refreshSetupWizard();
-    });
-    $(document).off('click.cp2a-sw-manual-add-ad').on('click.cp2a-sw-manual-add-ad', '[data-action="sw-manual-add-ad"]', function(e) {
-      e.preventDefault();
-      var i = parseInt($(this).data('set-idx'), 10);
-      var sets = setupWizardState.ad_sets || [];
-      if (isNaN(i) || !sets[i]) return;
-      sets[i].ads = sets[i].ads || [];
-      sets[i].ads.push({
-        name: 'Ad ' + (sets[i].ads.length + 1), creative_type: 'single_image',
-        hook: { text: '', type: 'direct' },
-        creative: { primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '' },
-        media: { image_brief: '', image_prompt: '', video_concept: '' },
-        _selected: true
-      });
-      refreshSetupWizard();
-    });
-    $(document).off('click.cp2a-sw-manual-del-set').on('click.cp2a-sw-manual-del-set', '[data-action="sw-manual-delete-ad-set"]', function(e) {
-      e.preventDefault();
-      var i = parseInt($(this).data('set-idx'), 10);
-      var sets = setupWizardState.ad_sets || [];
-      if (isNaN(i) || !sets[i]) return;
-      sets.splice(i, 1);
+      var i = parseInt($(this).data('idea-idx'), 10);
+      var mi = parseInt($(this).data('msg-idx'), 10);
+      var ideas = setupWizardState.campaign_ideas || [];
+      if (isNaN(i) || isNaN(mi) || !ideas[i]) return;
+      ideas[i].message_idx_list = ideas[i].message_idx_list || [];
+      var pos = ideas[i].message_idx_list.indexOf(mi);
+      if (pos === -1) ideas[i].message_idx_list.push(mi);
+      else ideas[i].message_idx_list.splice(pos, 1);
       refreshSetupWizard();
     });
     $(document).off('click.cp2a-sw-launch').on('click.cp2a-sw-launch', '[data-action="sw-launch"]', function(e) {
@@ -10791,8 +10580,22 @@
       var setId = $(this).data('ad-set-id') || S.selectedAdSetId;
       if (setId) openMetaAdModal(setId, { create: true });
     });
+    // "Edit ad" — open the Ad inline in the workspace inspector instead of
+    // a modal. The inspector tabs (Hook / Copy / Media / Review) are all
+    // inline-editable; the Overview tab is read-only summary.
     $(document).off('click.cpv2-edit-ad').on('click.cpv2-edit-ad', '[data-action="edit-ad"]', function(e) {
-      e.preventDefault(); e.stopPropagation(); openMetaAdModal($(this).data('id'));
+      e.preventDefault(); e.stopPropagation();
+      var adId = $(this).data('id');
+      var ad = adId ? getAd(adId) : null;
+      var setId = ad ? ad.ad_set_id : null;
+      var set = setId ? getAdSet(setId) : null;
+      if (ad && set && typeof window._cpNavigateToCampaignV2 === 'function') {
+        S.workspaceInspectorTab = 'hook';
+        window._cpNavigateToCampaignV2(set.campaign_id, set.id, ad.id);
+      } else {
+        // Fallback only if navigation context is missing
+        if (adId) openMetaAdModal(adId);
+      }
     });
     $(document).off('click.cpv2-delete-ad').on('click.cpv2-delete-ad', '[data-action="delete-ad"]', function(e) {
       e.preventDefault(); e.stopPropagation(); confirmDeleteMetaAd($(this).data('id'));
@@ -11207,7 +11010,7 @@
     // Meta v2 CRUD
     openMetaCampaignModal: openMetaCampaignModal, confirmDeleteMetaCampaign: confirmDeleteMetaCampaign,
     openMetaAdSetModal: openMetaAdSetModal, confirmDeleteMetaAdSet: confirmDeleteMetaAdSet,
-    openMetaAdModal: openMetaAdModal, confirmDeleteMetaAd: confirmDeleteMetaAd,
+    openMetaAdModal: openMetaAdModal, openMetaAdQuickCreate: openMetaAdQuickCreate, confirmDeleteMetaAd: confirmDeleteMetaAd,
     buildPersonaSnapshot: buildPersonaSnapshot,
     // A/B testing
     openABTestConfigModal: openABTestConfigModal,
@@ -11396,7 +11199,7 @@
     R.swAIGeneratePainPoints     = swAIGeneratePainPoints;
     R.swAIGenerateMessages       = swAIGenerateMessages;
     R.swAIGenerateStylesFormats  = swAIGenerateStylesFormats;
-    R.swAIGenerateCampaignTree   = swAIGenerateCampaignTree;
+    R.swAIGenerateCampaignIdeas  = swAIGenerateCampaignIdeas;
     // Setup Wizard finalize
     R.finalizeSetupWizard        = finalizeSetupWizard;
     // New Campaign Wizard AI + finalize
@@ -11492,7 +11295,19 @@
     function getDefault() {
       var provs = getActiveProviders(); if (!provs.length) return null;
       var appDef = S && S.meta && S.meta.aiPreferences && S.meta.aiPreferences.appDefault;
-      if (appDef && appDef.provider && appDef.model) { var ma = _getModelObj(appDef.provider, appDef.model); if (ma) return _buildSel(appDef.provider, ma); }
+      if (appDef && appDef.provider && appDef.model) {
+        var ma = _getModelObj(appDef.provider, appDef.model);
+        if (ma) return _buildSel(appDef.provider, ma);
+        // Graceful degradation: user picked a provider but the exact model is no
+        // longer active (renamed / deactivated). Keep the provider, fall back
+        // to its first active model — don't silently jump to a different provider.
+        var pSame = _providerMap[appDef.provider];
+        if (pSame && pSame.activeModels.length) {
+          console.warn('[CP] LLMService: saved default model "' + appDef.model + '" is not active for provider "' + appDef.provider + '". Using first active model for that provider.');
+          return _buildSel(appDef.provider, pSame.activeModels[0]);
+        }
+        console.warn('[CP] LLMService: saved default provider "' + appDef.provider + '" is no longer active. Using config or first provider.');
+      }
       if (_config && _config.default_provider && _config.default_model) { var m = _getModelObj(_config.default_provider, _config.default_model); if (m) return _buildSel(_config.default_provider, m); }
       var p = provs[0]; var defM = null;
       for (var i = 0; i < p.activeModels.length; i++) { if (p.activeModels[i].is_default) { defM = p.activeModels[i]; break; } }
@@ -12547,10 +12362,22 @@
     if (!camp) { toast('Failed to create Campaign', 'error'); return; }
 
     var counts = { sets: 0, ads: 0 };
-    var setsToCreate = [];
-    $('.cp-tp-set-check:checked').each(function() { setsToCreate.push(parseInt($(this).data('set-idx'), 10)); });
+    // Collect ALL selected indices upfront — createEntity below triggers
+    // renderCurrentView, which can detach the checkboxes from the DOM.
+    var setSelections = []; // [{ setIdx, adIdxs: [] }]
+    $('.cp-tp-set-check:checked').each(function() {
+      var setIdx = parseInt(this.getAttribute('data-set-idx'), 10);
+      if (isNaN(setIdx)) return;
+      var adIdxs = [];
+      $('.cp-tp-ad-check[data-set-idx="' + setIdx + '"]:checked').each(function() {
+        var ai = parseInt(this.getAttribute('data-ad-idx'), 10);
+        if (!isNaN(ai)) adIdxs.push(ai);
+      });
+      setSelections.push({ setIdx: setIdx, adIdxs: adIdxs });
+    });
 
-    setsToCreate.forEach(function(idx) {
+    setSelections.forEach(function(sel) {
+      var idx = sel.setIdx;
       var sData = (tree.ad_sets || [])[idx]; if (!sData) return;
 
       var persona = sData.persona_id ? getPersona(sData.persona_id) : null;
@@ -12570,9 +12397,8 @@
       if (!set) return;
       counts.sets++;
 
-      // Ads under this Ad Set
-      $('.cp-tp-ad-check[data-set-idx="' + idx + '"]:checked').each(function() {
-        var adIdx = parseInt($(this).data('ad-idx'), 10);
+      // Ads under this Ad Set — iterate the captured indices array
+      sel.adIdxs.forEach(function(adIdx) {
         var aData = (sData.ads || [])[adIdx]; if (!aData) return;
         var ad = createEntity('ad', {
           ad_set_id: set.id,
@@ -12632,11 +12458,19 @@
       openModal('AI suggested Ad Sets — review', html, {
         titleIcon: 'sparkles', size: 'lg', saveLabel: icon('plus') + ' Create selected',
         onSave: function() {
+          // Snapshot selected indices BEFORE createEntity triggers any re-render
+          // (createEntity → renderCurrentView can detach jQuery refs mid-loop).
+          var selectedIdx = [];
+          $('.cp-tp-set-check:checked').each(function() {
+            var i = parseInt(this.getAttribute('data-set-idx'), 10);
+            if (!isNaN(i)) selectedIdx.push(i);
+          });
+          if (selectedIdx.length === 0) { closeModal(); return; }
+          closeModal();
           snapshot('AI suggest Ad Sets');
           var created = 0;
-          $('.cp-tp-set-check:checked').each(function() {
-            var idx = parseInt($(this).data('set-idx'), 10);
-            var sData = sets[idx]; if (!sData) return;
+          for (var k = 0; k < selectedIdx.length; k++) {
+            var sData = sets[selectedIdx[k]]; if (!sData) continue;
             var persona = sData.persona_id ? getPersona(sData.persona_id) : null;
             createEntity('ad_set', {
               campaign_id: campaignId,
@@ -12648,8 +12482,7 @@
               brief: $.extend({ creative_direction: '', message_ids: [], style_ids: [], format_ids: [], hook_angles: [], ai_notes: '' }, sData.brief || {})
             });
             created++;
-          });
-          closeModal();
+          }
           toast('Created ' + created + ' Ad Set' + (created !== 1 ? 's' : ''), 'success');
         }
       });
@@ -12689,11 +12522,20 @@
       openModal('AI suggested Ads — review', html, {
         titleIcon: 'sparkles', size: 'lg', saveLabel: icon('plus') + ' Create selected',
         onSave: function() {
+          // Snapshot selected indices BEFORE createEntity triggers any re-render.
+          // jQuery refs to checkboxes can be detached mid-loop if the surrounding
+          // view re-renders, which made only the first selection actually persist.
+          var selectedIdx = [];
+          $('.cp-tp-ad-check:checked').each(function() {
+            var i = parseInt(this.getAttribute('data-ad-idx'), 10);
+            if (!isNaN(i)) selectedIdx.push(i);
+          });
+          if (selectedIdx.length === 0) { closeModal(); return; }
+          closeModal();
           snapshot('AI suggest Ads');
           var created = 0;
-          $('.cp-tp-ad-check:checked').each(function() {
-            var idx = parseInt($(this).data('ad-idx'), 10);
-            var aData = ads[idx]; if (!aData) return;
+          for (var k = 0; k < selectedIdx.length; k++) {
+            var aData = ads[selectedIdx[k]]; if (!aData) continue;
             var ad = createEntity('ad', {
               ad_set_id: adSetId,
               name: aData.name || 'Ad',
@@ -12702,8 +12544,7 @@
               creative: $.extend({ primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' }, aData.creative || {})
             });
             if (ad) { created++; if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'AI suggested'); }
-          });
-          closeModal();
+          }
           toast('Created ' + created + ' Ad' + (created !== 1 ? 's' : ''), 'success');
         }
       });
@@ -13535,9 +13376,15 @@
     }, 'sw-ai-config', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
-  // ----- 5. Campaign Tree (Step 7) -----
+  // ----- 5. Campaign Ideas (Step 7) -----
+  //
+  // The setup wizard's Step 7 produces a list of campaign IDEAS (just
+  // name + objective + brief + target persona + message references).
+  // Each idea becomes a draft campaign_v2 on launch — Ad Sets and Ads
+  // are built later by the per-campaign wizard from the campaign
+  // workspace.
 
-  function swAIGenerateCampaignTree() {
+  function swAIGenerateCampaignIdeas() {
     var state = _swState();
     if (!state) return;
     if (state.aiLoading) return;
@@ -13550,9 +13397,7 @@
     var selPersonas   = (state.personas    || []).filter(function(p)  { return p._selected; });
     var selPainPoints = (state.pain_points || []).filter(function(pp) { return pp._selected; });
     var selMessages   = (state.messages    || []).filter(function(m)  { return m._selected; });
-    var selStyles     = (state.styles      || []).filter(function(s)  { return s._selected; });
-    var selFormats    = (state.formats     || []).filter(function(f)  { return f._selected; });
-    var extra         = state._campaignTreeContext || '';
+    var extra         = state._campaignIdeasContext || '';
 
     if (!selPersonas.length) {
       _swEndAIError(state, 7, 'No personas selected. Go back to Step 3.');
@@ -13573,161 +13418,57 @@
       return i + '. ' + (m.name || 'Message ' + i) + ' [' + (m.theme || '?') + '] — ' + truncate(m.description || m.body || '', 90);
     }).join('\n');
 
-    var styleLines = selStyles.map(function(s, i) {
-      return i + '. ' + (s.name || 'Style ' + i) + ' — ' + truncate(s.description || '', 90);
-    }).join('\n');
-
-    var formatLines = selFormats.map(function(f, i) {
-      return i + '. ' + (f.name || 'Format ' + i) + ' [' + (f.category || '?') + '] — ' + truncate(f.description || '', 90);
-    }).join('\n');
-
     var objList = Object.keys(Constants.META_OBJECTIVES).join(', ');
-    var goalList = Object.keys(Constants.META_OPTIMIZATION_GOALS).join(', ');
-    var ctaList = Object.keys(Constants.META_CTA_TYPES).slice(0, 14).join(', ');
 
-    var prompt = 'You are a Meta Ads strategist. Build a complete Campaign tree for the workspace below.\n\n';
+    var prompt = 'You are a Meta Ads strategist. Propose 3-5 distinct CAMPAIGN IDEAS for the workspace below.\n\n';
     prompt += _swWorkspaceBlock(ws);
-    prompt += '\nSelected personas (use persona_idx, 0-based from this list):\n' + personaLines + '\n';
-    if (ppLines)     prompt += '\nKey pain points:\n' + ppLines + '\n';
-    if (messageLines) prompt += '\nSelected messages (use message_idx_list):\n' + messageLines + '\n';
-    if (styleLines)  prompt += '\nSelected styles (use style_idx_list):\n' + styleLines + '\n';
-    if (formatLines) prompt += '\nSelected formats (use format_idx_list):\n' + formatLines + '\n';
-    if (extra)       prompt += '\nAdditional campaign direction: ' + extra + '\n';
+    prompt += '\nSelected personas (use persona_idx, 0-based from this list, or -1 for none):\n' + personaLines + '\n';
+    if (ppLines)      prompt += '\nKey pain points:\n' + ppLines + '\n';
+    if (messageLines) prompt += '\nSelected messages (use message_idx_list, 0-based):\n' + messageLines + '\n';
+    if (extra)        prompt += '\nAdditional direction for the ideas: ' + extra + '\n';
     prompt += brandSnippet('research');
-    prompt += '\n\nAvailable Meta enums:\n';
-    prompt += '- objective: ' + objList + '\n';
-    prompt += '- optimization_goal: ' + goalList + '\n';
-    prompt += '- cta_type: ' + ctaList + '\n';
+    prompt += '\n\nAvailable Meta objectives: ' + objList + '\n';
     prompt += '\nRules:\n';
-    prompt += '- 1 Campaign. 2-3 Ad Sets. 2-3 Ads per Ad Set.\n';
-    prompt += '- Each Ad Set must target a DIFFERENT persona angle / audience cut.\n';
-    prompt += '- Each Ad inside an Ad Set must use a DIFFERENT hook angle.\n';
-    prompt += '- Primary text: 90-140 chars. Headline: ≤27 chars. Description: ≤27 chars.\n';
-    prompt += '- optimization_goal must be valid for the chosen objective.\n';
-    prompt += '- persona_idx, message_idx_list, style_idx_list, format_idx_list are 0-based indices into the lists above (drop any that don\'t map).\n';
-    prompt += '\nSchema (return ONLY this JSON):\n';
+    prompt += '- Propose 3-5 campaign ideas. Each idea is ONE campaign — no ad sets or ads yet (those are built per-campaign later).\n';
+    prompt += '- Ideas must be DIFFERENT in angle or audience cut, not minor variations.\n';
+    prompt += '- Each idea targets ONE primary persona (persona_idx) or leave -1 for cross-persona.\n';
+    prompt += '- message_idx_list is a short subset (1-3 ids) of message indices that fit the campaign\'s angle.\n';
+    prompt += '- name: ≤50 chars. brief: 2-3 sentences explaining the angle, goal, and "why now".\n';
+    prompt += '\nSchema (return ONLY this JSON, no preamble):\n';
     prompt += '{\n';
-    prompt += '  "campaign": {\n';
-    prompt += '    "name": "Short campaign name (≤50 chars)",\n';
-    prompt += '    "description": "1-2 sentence rationale",\n';
+    prompt += '  "ideas": [{\n';
+    prompt += '    "name": "Campaign name (≤50 chars)",\n';
     prompt += '    "objective": "OUTCOME_*",\n';
-    prompt += '    "budget_mode": "CBO|ABO",\n';
-    prompt += '    "daily_budget": NUMBER or null,\n';
-    prompt += '    "bid_strategy": "LOWEST_COST_WITHOUT_CAP|LOWEST_COST_WITH_BID_CAP|COST_CAP|LOWEST_COST_WITH_MIN_ROAS",\n';
-    prompt += '    "brief": "2-3 sentence campaign brief"\n';
-    prompt += '  },\n';
-    prompt += '  "ad_sets": [{\n';
-    prompt += '    "name": "Ad Set name",\n';
-    prompt += '    "persona_idx": INTEGER,\n';
-    prompt += '    "audience_overrides": "free-text audience tweaks (locales, behaviours)",\n';
-    prompt += '    "optimization_goal": "...",\n';
-    prompt += '    "billing_event": "IMPRESSIONS|LINK_CLICKS|THRUPLAY|APP_INSTALLS",\n';
-    prompt += '    "attribution_setting": "1d_view|1d_click|7d_click|1d_view_1d_click|1d_view_7d_click",\n';
-    prompt += '    "brief": {\n';
-    prompt += '      "creative_direction": "2-3 sentences",\n';
-    prompt += '      "hook_angles": ["Angle 1", "Angle 2", "Angle 3"],\n';
-    prompt += '      "message_idx_list": [INTEGER, ...],\n';
-    prompt += '      "style_idx_list": [INTEGER, ...],\n';
-    prompt += '      "format_idx_list": [INTEGER, ...],\n';
-    prompt += '      "ai_notes": "production notes for the creative team"\n';
-    prompt += '    },\n';
-    prompt += '    "ads": [{\n';
-    prompt += '      "name": "Ad name",\n';
-    prompt += '      "creative_type": "single_image|single_video|carousel",\n';
-    prompt += '      "hook": { "text": "1 sentence hook", "type": "question|bold|story|data|direct|curiosity|challenge" },\n';
-    prompt += '      "creative": {\n';
-    prompt += '        "primary_text": "90-140 chars",\n';
-    prompt += '        "headline": "≤27 chars",\n';
-    prompt += '        "description": "≤27 chars",\n';
-    prompt += '        "cta_type": "LEARN_MORE|SHOP_NOW|...",\n';
-    prompt += '        "cta_link": ""\n';
-    prompt += '      },\n';
-    prompt += '      "media": {\n';
-    prompt += '        "image_brief": "1-2 sentence brief for image ads",\n';
-    prompt += '        "image_prompt": "production-ready AI image prompt for image ads",\n';
-    prompt += '        "video_concept": "1-2 sentence concept for video ads"\n';
-    prompt += '      }\n';
-    prompt += '    }]\n';
+    prompt += '    "brief": "2-3 sentence brief — angle, goal, why now",\n';
+    prompt += '    "persona_idx": INTEGER (0-based, or -1 for cross-persona),\n';
+    prompt += '    "message_idx_list": [INTEGER, ...]\n';
     prompt += '  }]\n';
     prompt += '}';
     prompt += SW_JSON_RULES;
 
     callAIWithRetry(prompt, function(parsed) {
-      if (!parsed || typeof parsed !== 'object' || !parsed.campaign || !Array.isArray(parsed.ad_sets)) {
-        _swEndAIError(state, 7, 'AI returned an invalid tree structure. Try regenerating.');
+      if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.ideas)) {
+        _swEndAIError(state, 7, 'AI returned an invalid response. Try regenerating.');
         _swRefresh();
         return;
       }
-      var c = parsed.campaign || {};
       var allowedObj = Constants.META_OBJECTIVES;
-      var allowedGoals = Constants.META_OPTIMIZATION_GOALS;
-      var allowedCTAs = Constants.META_CTA_TYPES;
-      var allowedCreative = Constants.META_AD_CREATIVE_TYPES;
-      var allowedHook = { question:1, bold:1, story:1, data:1, direct:1, curiosity:1, challenge:1 };
-
-      state.campaign = {
-        name:         String(c.name || ws.product_name + ' Launch').trim().substring(0, 80),
-        description:  String(c.description || '').trim(),
-        objective:    allowedObj[c.objective] ? c.objective : 'OUTCOME_LEADS',
-        budget_mode:  (c.budget_mode === 'ABO' || c.budget_mode === 'CBO') ? c.budget_mode : 'CBO',
-        daily_budget: (c.daily_budget == null || c.daily_budget === '') ? '' : Number(c.daily_budget),
-        lifetime_budget: '',
-        bid_strategy: c.bid_strategy || 'LOWEST_COST_WITHOUT_CAP',
-        start_time:   '',
-        stop_time:    '',
-        brief:        String(c.brief || '').trim(),
-        ai_instructions: ''
+      var clampIdxList = function(arr, maxN) {
+        return (Array.isArray(arr) ? arr : [])
+          .map(function(i) { return parseInt(i, 10); })
+          .filter(function(i) { return !isNaN(i) && i >= 0 && i < maxN; });
       };
 
-      state.ad_sets = (parsed.ad_sets || []).slice(0, 5).map(function(s) {
-        var b = s.brief || {};
-        var clampedPI = parseInt(s.persona_idx, 10);
-        if (isNaN(clampedPI) || clampedPI < 0 || clampedPI >= selPersonas.length) clampedPI = 0;
-        var clampIdxList = function(arr, maxN) {
-          return (Array.isArray(arr) ? arr : [])
-            .map(function(i) { return parseInt(i, 10); })
-            .filter(function(i) { return !isNaN(i) && i >= 0 && i < maxN; });
-        };
+      state.campaign_ideas = (parsed.ideas || []).slice(0, 8).map(function(c) {
+        var pi = parseInt(c.persona_idx, 10);
+        if (isNaN(pi) || pi < -1 || pi >= selPersonas.length) pi = -1;
         return {
-          name:               String(s.name || 'Ad Set').trim().substring(0, 80),
-          persona_idx:        clampedPI,
-          audience_overrides: String(s.audience_overrides || '').trim(),
-          optimization_goal:  allowedGoals[s.optimization_goal] ? s.optimization_goal : 'OFFSITE_CONVERSIONS',
-          billing_event:      s.billing_event || 'IMPRESSIONS',
-          attribution_setting: s.attribution_setting || '7d_click',
-          brief: {
-            creative_direction: String(b.creative_direction || '').trim(),
-            hook_angles:        Array.isArray(b.hook_angles) ? b.hook_angles.filter(Boolean).slice(0, 5) : [],
-            message_idx_list:   clampIdxList(b.message_idx_list, selMessages.length),
-            style_idx_list:     clampIdxList(b.style_idx_list,   selStyles.length),
-            format_idx_list:    clampIdxList(b.format_idx_list,  selFormats.length),
-            ai_notes:           String(b.ai_notes || '').trim()
-          },
-          ads: (s.ads || []).slice(0, 4).map(function(a) {
-            var h = a.hook || {}; var cr = a.creative || {}; var md = a.media || {};
-            return {
-              name:          String(a.name || 'Ad').trim().substring(0, 80),
-              creative_type: allowedCreative[a.creative_type] ? a.creative_type : 'single_image',
-              hook: {
-                text: String(h.text || '').trim(),
-                type: allowedHook[h.type] ? h.type : 'direct'
-              },
-              creative: {
-                primary_text: String(cr.primary_text || '').trim(),
-                headline:     String(cr.headline     || '').trim(),
-                description:  String(cr.description  || '').trim(),
-                cta_type:     allowedCTAs[cr.cta_type] ? cr.cta_type : 'LEARN_MORE',
-                cta_link:     String(cr.cta_link     || '').trim()
-              },
-              media: {
-                image_brief:   String(md.image_brief   || '').trim(),
-                image_prompt:  String(md.image_prompt  || '').trim(),
-                video_concept: String(md.video_concept || '').trim()
-              },
-              _selected: true
-            };
-          }),
-          _selected: true
+          name:             String(c.name || 'Untitled campaign').trim().substring(0, 80),
+          objective:        allowedObj[c.objective] ? c.objective : 'OUTCOME_LEADS',
+          brief:            String(c.brief || '').trim(),
+          persona_idx:      pi,
+          message_idx_list: clampIdxList(c.message_idx_list, selMessages.length),
+          _selected:        true
         };
       });
 
@@ -13741,12 +13482,13 @@
 
 /* ===== src/30-part2b/19-ai-setup-finalize.js ===== */
   // ============================================================
-  // SECTION 15c: SETUP WIZARD — FINALIZE (Meta v2 only)
+  // SECTION 15c: SETUP WIZARD — FINALIZE (Meta v2, ideas only)
   // ============================================================
   //
   // Creates library entities (personas / pain points / messages / styles /
-  // formats), then a Meta v2 Campaign with its Ad Sets and Ads in one pass.
-  // No legacy v1 path — the wizard always produces Meta-native output.
+  // formats), then one DRAFT campaign_v2 per selected campaign idea.
+  // Ad Sets and Ads are NOT built here — the user runs the per-campaign
+  // wizard from inside the campaign workspace to build those out.
 
   function finalizeSetupWizard() {
     var state = _swState();
@@ -13894,152 +13636,70 @@
 
     buildMaps();
 
-    // ---- 7. Meta v2 Campaign ----
-    setMsg('Creating Campaign…');
-    var cam = state.campaign || {};
-    var campEnt = createEntity('campaign_v2', $.extend({}, C.META_CAMPAIGN_DEFAULTS, {
-      name:           cam.name || ws.product_name || 'My Campaign',
-      description:    cam.description || '',
-      objective:      C.META_OBJECTIVES[cam.objective] ? cam.objective : C.META_CAMPAIGN_DEFAULTS.objective,
-      budget_mode:    cam.budget_mode === 'ABO' ? 'ABO' : 'CBO',
-      daily_budget:   cam.daily_budget !== '' && cam.daily_budget != null ? Number(cam.daily_budget) : null,
-      lifetime_budget: cam.lifetime_budget !== '' && cam.lifetime_budget != null ? Number(cam.lifetime_budget) : null,
-      bid_strategy:   cam.bid_strategy || C.META_CAMPAIGN_DEFAULTS.bid_strategy,
-      start_time:     cam.start_time || '',
-      stop_time:      cam.stop_time || '',
-      brief:          cam.brief || '',
-      ai_instructions: cam.ai_instructions || '',
-      status:         'DRAFT'
-    }));
-    if (!campEnt) {
-      throw new Error('Failed to create Campaign entity.');
-    }
-    state.created.campaignV2Id = campEnt.id;
+    // ---- 7. Campaign ideas → draft campaign_v2 entities ----
+    setMsg('Creating Campaigns…');
+    var selIdeas = (state.campaign_ideas || []).filter(function(c) { return c._selected; });
+    var campaignCount = 0;
+    var firstCampaignId = '';
 
-    // ---- 8. Ad Sets + Ads ----
-    setMsg('Creating Ad Sets and Ads…');
-    var selSets = (state.ad_sets || []).filter(function(s) { return s._selected; });
-    var adSetCount = 0, adCount = 0;
-    var buildPS = (window._cpPart2A && window._cpPart2A.buildPersonaSnapshot) ? window._cpPart2A.buildPersonaSnapshot : null;
+    for (var ii = 0; ii < selIdeas.length; ii++) {
+      var idea = selIdeas[ii];
 
-    for (var asi = 0; asi < selSets.length; asi++) {
-      var as = selSets[asi];
-
-      // Resolve persona via selPersonas-relative idx → real state.personas idx → created entity id
-      var personaWizard = selPersonas[as.persona_idx];
-      var personaRealIdx = personaWizard ? (state.personas || []).indexOf(personaWizard) : -1;
-      var personaEntId = personaRealIdx >= 0 ? personaIdxToId[personaRealIdx] : '';
-      var personaEnt = personaEntId ? getPersona(personaEntId) : null;
-
-      var brief = as.brief || {};
-      var msgIds = (brief.message_idx_list || []).map(function(i) {
+      // Map wizard message indices → real entity ids
+      var ideaMsgIds = (idea.message_idx_list || []).map(function(i) {
         var realI = selMessages[i] ? (state.messages || []).indexOf(selMessages[i]) : -1;
         return realI >= 0 ? messageIdxToId[realI] : null;
       }).filter(Boolean);
-      var styleIds = (brief.style_idx_list || []).map(function(i) {
-        var realI = selStyles[i] ? (state.styles || []).indexOf(selStyles[i]) : -1;
-        return realI >= 0 ? styleIdxToId[realI] : null;
-      }).filter(Boolean);
-      var formatIds = (brief.format_idx_list || []).map(function(i) {
-        var realI = selFormats[i] ? (state.formats || []).indexOf(selFormats[i]) : -1;
-        return realI >= 0 ? formatIdxToId[realI] : null;
-      }).filter(Boolean);
 
-      var setEnt = createEntity('ad_set', {
-        campaign_id:         campEnt.id,
-        name:                as.name || 'Ad Set ' + (asi + 1),
-        persona_id:          personaEntId || '',
-        persona_snapshot:    (personaEnt && buildPS) ? buildPS(personaEnt) : null,
-        audience_overrides:  as.audience_overrides || '',
-        optimization_goal:   C.META_OPTIMIZATION_GOALS[as.optimization_goal] ? as.optimization_goal : C.META_AD_SET_DEFAULTS.optimization_goal,
-        billing_event:       as.billing_event       || C.META_AD_SET_DEFAULTS.billing_event,
-        attribution_setting: as.attribution_setting || C.META_AD_SET_DEFAULTS.attribution_setting,
-        brief: {
-          creative_direction: brief.creative_direction || '',
-          message_ids:        msgIds,
-          style_ids:          styleIds,
-          format_ids:         formatIds,
-          hook_angles:        Array.isArray(brief.hook_angles) ? brief.hook_angles : [],
-          ai_notes:           brief.ai_notes || ''
-        }
-      });
-      if (!setEnt) continue;
-      state.created.adSetIds.push(setEnt.id);
-      adSetCount++;
+      // Map persona idx → real entity id (or empty)
+      var ideaPersonaEntId = '';
+      if (idea.persona_idx != null && idea.persona_idx >= 0) {
+        var personaWizard = selPersonas[idea.persona_idx];
+        var personaRealIdx = personaWizard ? (state.personas || []).indexOf(personaWizard) : -1;
+        if (personaRealIdx >= 0) ideaPersonaEntId = personaIdxToId[personaRealIdx] || '';
+      }
 
-      var selAds = (as.ads || []).filter(function(a) { return a._selected; });
-      for (var adi = 0; adi < selAds.length; adi++) {
-        var ad = selAds[adi];
-        var hook = ad.hook || {};
-        var creative = ad.creative || {};
-        var media = ad.media || {};
-        var adEnt = createEntity('ad', {
-          ad_set_id:     setEnt.id,
-          name:          ad.name || ((setEnt.name || 'Ad Set') + ' — Ad ' + (adi + 1)),
-          creative_type: C.META_AD_CREATIVE_TYPES[ad.creative_type] ? ad.creative_type : 'single_image',
-          hook: {
-            text:               hook.text || '',
-            type:               hook.type || 'direct',
-            source_message_id:  '',
-            selected_hook_id:   ''
-          },
-          creative: {
-            primary_text: creative.primary_text || '',
-            headline:     creative.headline     || '',
-            description:  creative.description  || '',
-            cta_type:     C.META_CTA_TYPES[creative.cta_type] ? creative.cta_type : 'LEARN_MORE',
-            cta_link:     creative.cta_link     || '',
-            display_link: '',
-            tracking_params: ''
-          },
-          media: {
-            image: {
-              asset_id: '',
-              ai_prompt: media.image_prompt || '',
-              brief: media.image_brief || '',
-              aspect_ratio: '1:1',
-              negative_prompt: '',
-              reference_image_ids: []
-            },
-            video: {
-              asset_id: '',
-              duration_seconds: 30,
-              aspect_ratio: '9:16',
-              concept: media.video_concept || '',
-              blueprint: { scenes: [] },
-              script: { rows: [] }
-            },
-            carousel_cards: []
-          }
-        });
-        if (adEnt) {
-          state.created.adIds.push(adEnt.id);
-          adCount++;
-          if (typeof window._cpMaybeAdvanceAdStatus === 'function') {
-            window._cpMaybeAdvanceAdStatus(adEnt, 'setup wizard');
-          }
+      // Compose a brief that captures the linked persona so the per-campaign
+      // wizard has full context to pick up.
+      var briefText = idea.brief || '';
+      if (ideaPersonaEntId) {
+        var pEnt = getPersona(ideaPersonaEntId);
+        if (pEnt && pEnt.name) {
+          briefText = (briefText ? briefText + '\n\n' : '') + 'Target persona: ' + pEnt.name;
         }
       }
+
+      var campEnt = createEntity('campaign_v2', $.extend({}, C.META_CAMPAIGN_DEFAULTS, {
+        name:        idea.name || 'Untitled campaign',
+        description: '',
+        objective:   C.META_OBJECTIVES[idea.objective] ? idea.objective : C.META_CAMPAIGN_DEFAULTS.objective,
+        brief:       briefText,
+        ai_instructions: ideaMsgIds.length ? 'Linked message ids: ' + ideaMsgIds.join(',') : '',
+        status:      'DRAFT'
+      }));
+      if (!campEnt) continue;
+      state.created.campaignV2Ids.push(campEnt.id);
+      if (!firstCampaignId) firstCampaignId = campEnt.id;
+      campaignCount++;
     }
 
-    // ---- 9. Mark setup complete + log ----
+    // ---- 8. Mark setup complete + log ----
     setMsg('Finishing up…');
     S.meta.setup.setup_complete = true;
     logActivity(
-      'campaign_tree_generated', 'campaign_v2', campEnt.id, campEnt.name,
-      'Setup wizard: ' + adSetCount + ' Ad Set' + (adSetCount !== 1 ? 's' : '') +
-      ', ' + adCount + ' Ad' + (adCount !== 1 ? 's' : '')
+      'setup_completed', '', '', ws.name || 'Workspace',
+      'Setup wizard: created ' + campaignCount + ' Campaign idea' + (campaignCount !== 1 ? 's' : '')
     );
     buildMaps();
     syncToTextarea();
 
-    // ---- 10. Clear session & close wizard ----
+    // ---- 9. Clear session & close wizard ----
     if (window._cpPart2A && typeof window._cpPart2A.swClearSession === 'function') {
       window._cpPart2A.swClearSession();
     }
     $('.cp-setup-wizard').remove();
 
-    // ---- 11. Re-render app shell & navigate to the new Campaign Workspace ----
+    // ---- 10. Re-render app shell & navigate to Campaigns list ----
     if (window._cpRenderAppShell) {
       $('#cpApp').html(window._cpRenderAppShell());
       $('.cp-ai-picker-loading').each(function() {
@@ -14048,15 +13708,14 @@
       });
       updateAIStatusIndicator();
     }
-    S.selectedCampaignV2Id = campEnt.id;
+    S.selectedCampaignV2Id = null;
     S.selectedAdSetId = null;
     S.selectedAdId = null;
-    navigate('campaign_workspace', { hash: 'campaign/' + campEnt.id });
+    navigate('meta_campaigns');
 
     toast(
-      'Workspace ready! Created Campaign with ' +
-      adSetCount + ' Ad Set' + (adSetCount !== 1 ? 's' : '') + ' and ' +
-      adCount + ' Ad' + (adCount !== 1 ? 's' : '') + '.',
+      'Workspace ready! Created ' + campaignCount + ' Campaign idea' + (campaignCount !== 1 ? 's' : '') +
+      '. Open one and run "AI Setup for this Campaign" to build out Ad Sets and Ads.',
       'success', 6000
     );
   }
@@ -14260,6 +13919,16 @@
       html += icon('circle-check') + ' <strong>' + provs.length + ' provider' + (provs.length > 1 ? 's' : '') + ' active</strong>';
       if (def) html += ' — Default: ' + esc(def.provider) + ' / ' + esc(def.model);
       html += '</div>';
+      // Surface a hint when the saved app-default doesn't resolve cleanly
+      // (provider deactivated or model no longer active). Helps the user
+      // understand why the displayed default may differ from what they saved.
+      var savedDef = prefs.appDefault;
+      if (def && savedDef && savedDef.provider && savedDef.model &&
+          (savedDef.provider !== def.provider || savedDef.model !== def.model)) {
+        html += '<div class="cp-ai-status-warning" style="margin-top:var(--cp-space-2);padding:var(--cp-space-2) var(--cp-space-3);background:var(--cp-warning-light,#fff8e1);color:var(--cp-warning,#946200);border:1px solid rgba(180,144,0,0.2);border-radius:var(--cp-radius-sm);font-size:var(--cp-font-size-sm)">';
+        html += icon('warning') + ' Your saved default <strong>' + esc(savedDef.provider) + ' / ' + esc(savedDef.model) + '</strong> isn\'t active. Falling back to <strong>' + esc(def.provider) + ' / ' + esc(def.model) + '</strong>. Pick a new default below and save.';
+        html += '</div>';
+      }
       html += '<div style="margin-top:var(--cp-space-3)"><button class="cp-btn cp-btn-outline cp-btn-sm" data-action="test-ai-connection">' + icon('bolt') + ' Test Connection</button></div>';
     } else {
       html += '<div class="cp-ai-status-summary" style="background:var(--cp-error-light);color:var(--cp-error);border:1px solid rgba(217,48,37,0.2)">';
@@ -14423,6 +14092,8 @@
     }
     logActivity('settings_changed', '', '', 'Settings updated');
     snapshot('Save settings'); syncToTextarea(); render();
+    // Refresh the header AI badge so it reflects the new default immediately
+    if (typeof updateAIStatusIndicator === 'function') updateAIStatusIndicator();
     toast('Settings saved', 'success');
   }
 
@@ -14906,6 +14577,284 @@
     $ta.remove();
   }
 
+/* ===== src/30-part2b/23b-media-brief-export.js ===== */
+  // ============================================================
+  // SECTION 23B: AD MEDIA BRIEF — Structured JSON export
+  // ============================================================
+  //
+  // The Campaign Planner does NOT generate media (image/video/carousel)
+  // itself. Instead, it assembles a structured JSON brief that downstream
+  // tools (Midjourney / SDXL / Sora / Runway, or an MCP-connected LLM
+  // like Claude) can consume to produce the actual assets.
+  //
+  // The brief packages everything the downstream tool needs: full ad
+  // context (campaign + ad set + persona + brand), the hook + copy + CTA,
+  // and the media direction (image brief + AI prompt, video scenes +
+  // script, or carousel cards) in one self-contained document.
+
+  var MEDIA_BRIEF_SCHEMA_VERSION = '1.0';
+
+  function buildAdMediaBrief(adId, opts) {
+    opts = opts || {};
+    var ad = getAd(adId);
+    if (!ad) return null;
+    var adSet = getAdSet(ad.ad_set_id) || null;
+    var camp = adSet ? getCampaignV2(adSet.campaign_id) : null;
+    var persona = adSet && adSet.persona_id ? getPersona(adSet.persona_id) : null;
+    var painPoints = (persona && persona.pain_point_ids ? persona.pain_point_ids : [])
+      .map(function(ppId) { return S.painPointMap[ppId]; })
+      .filter(Boolean)
+      .slice(0, 8);
+
+    var brand = (S.brand && S.brand.identity) ? S.brand.identity : {};
+    var voice = (S.brand && S.brand.voice)    ? S.brand.voice    : {};
+    var design = (S.meta && S.meta.settings && S.meta.settings.brand_design) || {};
+
+    var creative = ad.creative || {};
+    var hook = ad.hook || {};
+    var media = ad.media || {};
+    var ctype = ad.creative_type || 'single_image';
+
+    var brief = {
+      schema_version: MEDIA_BRIEF_SCHEMA_VERSION,
+      ad: {
+        id: ad.id,
+        name: ad.name || '',
+        creative_type: ctype,
+        pipeline_status: ad.pipeline_status || '',
+        objective: camp ? (camp.objective || '') : '',
+        campaign_name: camp ? (camp.name || '') : '',
+        ad_set_name: adSet ? (adSet.name || '') : '',
+        audience: persona ? {
+          persona_id: persona.id,
+          persona_name: persona.name || '',
+          persona_description: persona.description || '',
+          demographics: persona.demographics || {},
+          psychographics: persona.psychographics || {},
+          pain_points: painPoints.map(function(pp) {
+            return { pain: pp.pain_point || '', solution: pp.solution || '', category: pp.category || '' };
+          })
+        } : null,
+        brand: {
+          name: brand.name || '',
+          tagline: brand.tagline || '',
+          description: brand.description || '',
+          voice: voice.tone || '',
+          guidelines: voice.guidelines || '',
+          design: {
+            colors: design.colors || {},
+            typography: design.typography || {}
+          }
+        },
+        hook: {
+          text: hook.text || '',
+          type: hook.type || 'direct'
+        },
+        copy: {
+          primary_text: creative.primary_text || '',
+          headline: creative.headline || '',
+          description: creative.description || '',
+          cta_type: creative.cta_type || '',
+          cta_link: creative.cta_link || '',
+          display_link: creative.display_link || ''
+        },
+        brief_context: {
+          campaign_brief: camp ? (camp.brief || '') : '',
+          ad_set_creative_direction: (adSet && adSet.brief) ? (adSet.brief.creative_direction || '') : '',
+          ad_set_hook_angles: (adSet && adSet.brief) ? (adSet.brief.hook_angles || []) : [],
+          ad_set_ai_notes: (adSet && adSet.brief) ? (adSet.brief.ai_notes || '') : ''
+        }
+      },
+      media: _buildMediaBlock(ctype, media),
+      production: {
+        deliverables: _suggestedDeliverables(ctype, media),
+        assigned_to: ad.assigned_to || '',
+        due_date: ad.due_date || '',
+        production_notes: ad.production_notes || '',
+        review_notes: ad.review_notes || ''
+      },
+      source: {
+        campaign_id: camp ? camp.id : '',
+        ad_set_id: adSet ? adSet.id : '',
+        ad_id: ad.id,
+        exported_at: new Date().toISOString(),
+        tool: 'guaCampaignPlanner',
+        format: 'media-brief'
+      }
+    };
+
+    if (opts.mcp) {
+      brief.mcp_instructions = _mcpInstructions(ctype);
+    }
+
+    return brief;
+  }
+
+  function _buildMediaBlock(ctype, media) {
+    if (ctype === 'single_image') {
+      var img = media.image || {};
+      return {
+        type: 'image',
+        image: {
+          brief: img.brief || '',
+          ai_prompt: img.ai_prompt || '',
+          aspect_ratio: img.aspect_ratio || '1:1',
+          negative_prompt: img.negative_prompt || '',
+          reference_image_ids: img.reference_image_ids || []
+        }
+      };
+    }
+    if (ctype === 'single_video') {
+      var vid = media.video || {};
+      var blueprint = vid.blueprint || { scenes: [] };
+      var script = vid.script || { rows: [] };
+      return {
+        type: 'video',
+        video: {
+          concept: vid.concept || '',
+          duration_seconds: vid.duration_seconds || 30,
+          aspect_ratio: vid.aspect_ratio || '9:16',
+          scenes: (blueprint.scenes || []).map(function(s, i) {
+            return {
+              index: i,
+              name: s.name || '',
+              description: s.description || '',
+              timestamp: s.timestamp || '',
+              duration: s.duration || null
+            };
+          }),
+          script: (script.rows || []).map(function(r, i) {
+            return {
+              index: i,
+              time: r.time || '',
+              dialogue: r.dialogue || '',
+              visual: r.visual || '',
+              camera: r.camera || '',
+              audio: r.audio || ''
+            };
+          }),
+          voiceover_notes: vid.voiceover_notes || '',
+          music_notes: vid.music_notes || '',
+          captions_notes: vid.captions_notes || ''
+        }
+      };
+    }
+    if (ctype === 'carousel') {
+      return {
+        type: 'carousel',
+        carousel: {
+          cards: (media.carousel_cards || []).map(function(c, i) {
+            return {
+              index: i,
+              headline: c.headline || '',
+              description: c.description || '',
+              link: c.link || ''
+            };
+          }),
+          sequence_narrative: ''
+        }
+      };
+    }
+    return { type: ctype };
+  }
+
+  function _suggestedDeliverables(ctype, media) {
+    if (ctype === 'single_image') {
+      var img = media.image || {};
+      var ar = img.aspect_ratio || '1:1';
+      return [ ar + ' image (JPG / PNG, sRGB, ≥1080px on the short edge)' ];
+    }
+    if (ctype === 'single_video') {
+      var vid = media.video || {};
+      var ar = vid.aspect_ratio || '9:16';
+      var dur = vid.duration_seconds || 30;
+      return [
+        ar + ' video, ' + dur + 's, MP4 H.264, ≥1080p, ≤30Mbps',
+        'Caption SRT / VTT file (sound-off optimisation)'
+      ];
+    }
+    if (ctype === 'carousel') {
+      var cards = (media.carousel_cards || []).length;
+      return [ cards + ' 1:1 (or 4:5) image' + (cards !== 1 ? 's' : '') + ', one per card' ];
+    }
+    return [];
+  }
+
+  function _mcpInstructions(ctype) {
+    var common = 'This is a Meta Ads creative brief. Use the fields under `ad` (hook, copy, audience, brand) as creative direction. The `media` block tells you what kind of asset to produce and how. Match brand voice from `ad.brand.voice` and design tokens from `ad.brand.design`. Aim for the aspect_ratio and duration specified. Keep dialogue/headlines under the character limits the brief implies.';
+    if (ctype === 'single_image') {
+      return common + ' For image: pass `media.image.ai_prompt` to your image-generation tool, applying `media.image.negative_prompt` if your tool supports it. Aspect ratio is in `media.image.aspect_ratio`.';
+    }
+    if (ctype === 'single_video') {
+      return common + ' For video: each entry in `media.video.scenes` is one storyboard beat — generate one clip per scene at the implied duration, then concat. Use `media.video.script` for time-coded dialogue/voiceover and on-screen visuals. Aspect ratio is in `media.video.aspect_ratio`.';
+    }
+    if (ctype === 'carousel') {
+      return common + ' For carousel: generate one image per entry in `media.carousel.cards`. Keep visual style consistent across cards; the `headline` and `description` describe what each card communicates.';
+    }
+    return common;
+  }
+
+  function exportAdMediaBriefJSON(adId, opts) {
+    var brief = buildAdMediaBrief(adId, opts || {});
+    if (!brief) { toast('Could not build brief — ad not found', 'error'); return; }
+    var json = JSON.stringify(brief, null, 2);
+    var ad = getAd(adId);
+    var safeName = (ad && ad.name ? ad.name : 'ad').replace(/[^a-z0-9-_]+/gi, '-').toLowerCase();
+    var blob = new Blob([json], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'media-brief-' + safeName + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 250);
+    logActivity('media_brief_exported', 'ad', adId, ad ? ad.name : '', 'Downloaded media brief JSON');
+    toast('Media brief downloaded', 'success');
+  }
+
+  function copyAdMediaBriefJSON(adId, opts) {
+    var brief = buildAdMediaBrief(adId, opts || {});
+    if (!brief) { toast('Could not build brief — ad not found', 'error'); return; }
+    var json = JSON.stringify(brief, null, 2);
+    var done = function(ok) {
+      if (ok) {
+        var ad = getAd(adId);
+        logActivity('media_brief_exported', 'ad', adId, ad ? ad.name : '', 'Copied media brief JSON to clipboard');
+        toast(opts && opts.mcp ? 'MCP-ready brief copied to clipboard' : 'Media brief copied to clipboard', 'success');
+      } else {
+        toast('Copy failed — your browser blocked clipboard access', 'error');
+      }
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(json).then(function() { done(true); }, function() { done(false); });
+    } else {
+      // Fallback for older browsers
+      var ta = document.createElement('textarea');
+      ta.value = json; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { done(document.execCommand('copy')); } catch (e) { done(false); }
+      document.body.removeChild(ta);
+    }
+  }
+
+  // Open a preview modal so the user can inspect the brief before exporting.
+  function openMediaBriefPreview(adId) {
+    var brief = buildAdMediaBrief(adId);
+    if (!brief) { toast('Could not build brief — ad not found', 'error'); return; }
+    var json = JSON.stringify(brief, null, 2);
+    var html = '';
+    html += '<div class="cp-editor-form">';
+    html += '<p class="cp-form-help">' + icon('info') + ' This JSON brief contains everything a downstream image / video / carousel tool needs to produce the creative. Copy or download to use it in Midjourney, Sora, Runway, an MCP-connected LLM, or any other production tool.</p>';
+    html += '<div style="display:flex;gap:var(--cp-space-2);margin-bottom:var(--cp-space-3);flex-wrap:wrap">';
+    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="copy-media-brief" data-id="' + esc(adId) + '">' + icon('copy') + ' Copy JSON</button>';
+    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="copy-media-brief-mcp" data-id="' + esc(adId) + '">' + icon('robot') + ' Copy as MCP brief</button>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="download-media-brief" data-id="' + esc(adId) + '">' + icon('download') + ' Download .json</button>';
+    html += '</div>';
+    html += '<pre class="cp-media-brief-preview" style="max-height:55vh;overflow:auto;background:var(--cp-gray-50,#f8f9fa);padding:var(--cp-space-3);border-radius:var(--cp-radius-md);font-size:var(--cp-font-size-xs);line-height:1.5;white-space:pre">' + esc(json) + '</pre>';
+    html += '</div>';
+    openModal('Media brief — preview', html, {
+      titleIcon: 'file-code', size: 'lg', footer: false
+    });
+  }
+
 /* ===== src/30-part2b/24-view-images.js ===== */
   // ============================================================
   // SECTION 20: IMAGES VIEW
@@ -15383,19 +15332,50 @@
       copyAdField($(this).data('id'), $(this).data('field'));
     });
 
+    // --- Stage 7b: Per-ad structured media brief (Phase 5 of the audit) ---
+    $(document).off('click.cp2b-brief-preview').on('click.cp2b-brief-preview', '[data-action="preview-media-brief"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      openMediaBriefPreview($(this).data('id'));
+    });
+    $(document).off('click.cp2b-brief-copy').on('click.cp2b-brief-copy', '[data-action="copy-media-brief"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      copyAdMediaBriefJSON($(this).data('id'));
+    });
+    $(document).off('click.cp2b-brief-copy-mcp').on('click.cp2b-brief-copy-mcp', '[data-action="copy-media-brief-mcp"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      copyAdMediaBriefJSON($(this).data('id'), { mcp: true });
+    });
+    $(document).off('click.cp2b-brief-dl').on('click.cp2b-brief-dl', '[data-action="download-media-brief"]', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      exportAdMediaBriefJSON($(this).data('id'));
+    });
+
     console.log('[CP] Part 2B event handlers ready');
   }
 
   function setupKeyboardShortcuts() {
-    var viewKeys = { '1': 'dashboard', '2': 'personas', '3': 'pain_points', '4': 'messages', '5': 'styles', '6': 'formats', '7': 'meta_campaigns', '8': 'calendar', '9': 'research', '0': 'settings' };
+    // Key '3' (formerly Pain Points) now opens the Personas view's Pain Points tab.
+    var viewKeys = { '1': 'dashboard', '2': 'personas', '3': 'personas_pp', '4': 'messages', '5': 'styles', '6': 'formats', '7': 'meta_campaigns', '8': 'calendar', '9': 'research', '0': 'settings' };
 
     $(document).off('keydown.cp2b-shortcuts').on('keydown.cp2b-shortcuts', function(e) {
       // Skip if inside input/textarea or modal open
       if ($(e.target).is('input, textarea, select, [contenteditable]')) return;
       if ($('.cp-modal-backdrop').length || $('.cp-confirm-backdrop').length) return;
 
-      // Number keys → navigate
-      if (viewKeys[e.key]) { e.preventDefault(); navigate(viewKeys[e.key]); return; }
+      // Number keys → navigate. 'personas_pp' is a synthetic key that means
+      // "open Personas view with the Pain Points tab active".
+      if (viewKeys[e.key]) {
+        e.preventDefault();
+        var target = viewKeys[e.key];
+        if (target === 'personas_pp') {
+          S.personasTab = 'pain_points';
+          navigate('personas');
+        } else {
+          if (target === 'personas') S.personasTab = 'personas';
+          navigate(target);
+        }
+        return;
+      }
       // / → focus search
       if (e.key === '/') {
         e.preventDefault();
@@ -15409,8 +15389,11 @@
         var P2A = window._cpPart2A;
         if (!P2A) return;
         var view = S.currentView;
-        if (view === 'personas') P2A.openPersonaModal();
-        else if (view === 'pain_points') P2A.openPainPointModal();
+        if (view === 'personas') {
+          // Personas view has two tabs — open the matching modal
+          if (S.personasTab === 'pain_points') P2A.openPainPointModal();
+          else P2A.openPersonaModal();
+        }
         else if (view === 'messages') P2A.openMessageModal();
         else if (view === 'styles') P2A.openStyleModal();
         else if (view === 'formats') P2A.openFormatModal();
@@ -15453,6 +15436,11 @@
     exportV2JSON: exportV2JSON, exportV2CSV: exportV2CSV,
     validateForExport: validateForExport,
     copyAdField: copyAdField,
+    // Per-ad media brief (structured JSON for downstream tools / MCP)
+    buildAdMediaBrief: buildAdMediaBrief,
+    exportAdMediaBriefJSON: exportAdMediaBriefJSON,
+    copyAdMediaBriefJSON: copyAdMediaBriefJSON,
+    openMediaBriefPreview: openMediaBriefPreview,
 
     // Meta v2 AI
     aiGenerateCampaignTree: aiGenerateCampaignTree,
@@ -15467,7 +15455,7 @@
     // Setup Wizard AI generators + finalize
     swAIGeneratePersonas: swAIGeneratePersonas, swAIGeneratePainPoints: swAIGeneratePainPoints,
     swAIGenerateMessages: swAIGenerateMessages, swAIGenerateStylesFormats: swAIGenerateStylesFormats,
-    swAIGenerateCampaignTree: swAIGenerateCampaignTree,
+    swAIGenerateCampaignIdeas: swAIGenerateCampaignIdeas,
     finalizeSetupWizard: finalizeSetupWizard,
 
     // New Campaign Wizard AI + finalize

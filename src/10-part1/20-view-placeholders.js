@@ -72,10 +72,15 @@
     });
 
     // Go-view buttons (data-action="go-view" data-view="xxx")
+    // Optional data-tab="..." can set a sub-tab (currently only Personas
+    // view uses this — for the Pain Points tab).
     $(document).off('click.cp-go-view').on('click.cp-go-view', '[data-action="go-view"]', function(e) {
       e.preventDefault();
       var v = $(this).data('view');
-      if (v) navigate(v);
+      var tab = $(this).data('tab');
+      if (!v) return;
+      if (v === 'personas' && tab) S.personasTab = tab;
+      navigate(v);
     });
 
     // Navigate to a Meta v2 Campaign in the Workspace
@@ -134,7 +139,7 @@
       // Search pain points
       (S.data.pain_points || []).forEach(function(pp) {
         if ((pp.pain_point || '').toLowerCase().indexOf(q) > -1) {
-          results.push({ type: 'pain_point', icon: 'bolt', color: '#d93025', title: truncate(pp.pain_point, 40), sub: pp.category || '', id: pp.id, view: 'pain_points' });
+          results.push({ type: 'pain_point', icon: 'bolt', color: '#d93025', title: truncate(pp.pain_point, 40), sub: pp.category || '', id: pp.id, view: 'personas', tab: 'pain_points' });
         }
       });
       // Search styles
@@ -158,7 +163,7 @@
           rHtml += '<div class="cp-global-search-type">' + icon(r.icon) + ' ' + r.type.replace('_', ' ') + 's</div>';
           shownTypes[r.type] = true;
         }
-        rHtml += '<div class="cp-global-search-item" data-action="global-search-go" data-view="' + esc(r.view) + '" data-id="' + esc(r.id) + '" data-type="' + esc(r.type) + '">';
+        rHtml += '<div class="cp-global-search-item" data-action="global-search-go" data-view="' + esc(r.view) + '" data-id="' + esc(r.id) + '" data-type="' + esc(r.type) + '"' + (r.tab ? ' data-tab="' + esc(r.tab) + '"' : '') + '">';
         rHtml += '<span style="color:' + r.color + '">' + icon(r.icon) + '</span> ';
         rHtml += '<span style="font-weight:500">' + esc(r.title) + '</span>';
         if (r.sub) rHtml += '<span class="cp-text-muted" style="margin-left:auto;font-size:11px">' + esc(r.sub) + '</span>';
@@ -174,10 +179,11 @@
       var view = $(this).data('view');
       var id = $(this).data('id');
       var type = $(this).data('type');
+      var tab = $(this).data('tab');
       $('#cpGlobalSearchInput').val('');
       $('#cpGlobalSearchResults').hide();
       if (type === 'persona') S.selectedPersonaId = id;
-      else if (type === 'pain_point') S.selectedPainPointId = id;
+      else if (type === 'pain_point') { S.selectedPainPointId = id; if (view === 'personas') S.personasTab = tab || 'pain_points'; }
       else if (type === 'campaign_v2') { if (typeof window._cpNavigateToCampaignV2 === 'function') return window._cpNavigateToCampaignV2(id); }
       else if (type === 'ad') {
         var ad = S.adMap[id];
@@ -238,6 +244,17 @@
         S.selectedPersonaId = id;
         renderCurrentView();
       }
+    });
+
+    // From a Pain Point's "Linked personas" list — jump to that persona
+    // (switch the Personas-view tab back to "personas" too).
+    $(document).off('click.cp-sel-persona-pp').on('click.cp-sel-persona-pp', '[data-action="select-persona-from-pp"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('persona-id');
+      if (!id) return;
+      S.selectedPersonaId = id;
+      S.personasTab = 'personas';
+      renderCurrentView();
     });
 
     // Toggle category collapse

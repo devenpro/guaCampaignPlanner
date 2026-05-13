@@ -2469,6 +2469,23 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 .cp-wizard-recipe-card:hover { border-color: var(--cp-primary); }
 .cp-wizard-recipe-card-selected { border-color: var(--cp-primary); background: var(--cp-primary-subtle); box-shadow: 0 0 0 2px var(--cp-primary-light); }
 
+/* Phase 4: Inline ad name editor in the workspace inspector */
+.cp-inspector-title-input {
+  border-radius: var(--cp-radius-sm);
+  transition: border-color var(--cp-transition-fast), background var(--cp-transition-fast);
+}
+.cp-inspector-title-input:hover { border-color: var(--cp-border-light) !important; background: var(--cp-gray-50, #f8f9fa) !important; }
+.cp-inspector-title-input:focus { border-color: var(--cp-primary) !important; background: #fff !important; outline: none; }
+
+/* Phase 5: Structured media brief — export section */
+.cp-media-brief-actions { border: 1px solid var(--cp-border-light); }
+.cp-media-brief-preview { background: var(--cp-gray-50, #f8f9fa); color: var(--cp-text-primary); border: 1px solid var(--cp-border-light); }
+
+/* Phase 2: Campaign idea cards in setup wizard step 7 */
+.cp-sw-ideas { display: flex; flex-direction: column; gap: var(--cp-space-3); }
+.cp-sw-idea-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.cp-sw-idea-chips .cp-chip { cursor: pointer; user-select: none; }
+
 
 /* ===== src/styles/20-part2/15-setup-wizard.css ===== */
 /* ═══ S15: SETUP WIZARD ═══ */
