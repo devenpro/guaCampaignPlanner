@@ -89,3 +89,44 @@ This means individual source files are **not** standalone-valid JS (they
 have unbalanced braces by design). Only the concatenated `dist/app.js` is
 valid. Linters run against individual source files will complain — that's
 expected; lint the build output if needed.
+
+## Troubleshooting
+
+### "I pushed a change but the live site still shows the old version"
+
+The dist file is served from jsDelivr's CDN, which caches aggressively.
+Three layers may need invalidating, in this order:
+
+1. **jsDelivr CDN** — hit the purge URLs once:
+   - `https://purge.jsdelivr.net/gh/devenpro/guaCampaignPlanner@main/dist/app.js`
+   - `https://purge.jsdelivr.net/gh/devenpro/guaCampaignPlanner@main/dist/app.css`
+2. **Browser cache** — hard-refresh the Drupal page: Ctrl+Shift+R (Windows / Linux) or Cmd+Shift+R (Mac). A regular reload is not enough.
+3. **Drupal cache** — if Asset Injector or another caching module is storing the asset URL itself, clear it: Administration → Configuration → Performance → Clear all caches.
+
+Without a purge, jsDelivr serves the previous version for up to 12 hours.
+
+### "A view opens blank"
+
+The app now renders a red diagnostic card whenever a view renderer throws
+(error boundary in `renderCurrentView`). If you see a blank page anyway:
+
+1. Open browser DevTools (F12) → Console tab.
+2. Click the broken nav item again. Look for `[CP] renderCurrentView crashed`.
+3. If the crash card appears in the content area, expand "Stack trace" and copy the contents — that's exactly what to share with the dev.
+4. If neither console error nor crash card appears, the app probably hasn't loaded the new `dist/app.js` yet — apply the cache hygiene above.
+
+### "Some buttons don't respond (e.g. AI suggest, inspector tabs)"
+
+Part 2A and Part 2B register handlers in "islands" — one island failing no
+longer disables the rest. If a console error reads
+`[CP] Handler block "<name>" failed: …`, that island's controls are dead
+but everything else still works. Copy the stack and share it.
+
+### "The app shows my data but nothing edits / saves"
+
+Check the Drupal node form — Campaign Planner saves through the host
+node's data textarea via Drupal's normal node form submit. If the Save
+button at the top-right of the planner UI says "Drupal save button not
+found", the integration with the host node has broken (the planner can't
+locate the form). Confirm the page is a `node--type-campaign-planner`
+node and that the node form is visible (even if hidden via CSS).
