@@ -78,13 +78,12 @@
       if (v) navigate(v);
     });
 
-    // Navigate to campaign from recipe badge
+    // Navigate to a Meta v2 Campaign in the Workspace
     $(document).off('click.cp-go-campaign').on('click.cp-go-campaign', '[data-action="go-to-campaign"]', function(e) {
       e.preventDefault(); e.stopPropagation();
       var campId = $(this).data('id');
-      if (campId) {
-        S.selectedCampaignId = campId;
-        navigate('campaigns');
+      if (campId && typeof window._cpNavigateToCampaignV2 === 'function') {
+        window._cpNavigateToCampaignV2(campId);
       }
     });
 
@@ -119,16 +118,17 @@
           results.push({ type: 'message', icon: 'comments', color: '#1a73e8', title: m.title, sub: m.theme || '', id: m.id, view: 'messages' });
         }
       });
-      // Search recipes
-      (S.data.recipes || []).forEach(function(r) {
-        if ((r.title || '').toLowerCase().indexOf(q) > -1) {
-          results.push({ type: 'recipe', icon: 'shuffle', color: '#e37400', title: r.title, sub: (RECIPE_STATUSES[r.status] || {}).label || '', id: r.id, view: 'recipes' });
+      // Search Meta v2 Campaigns + Ads
+      (S.data.campaigns_v2 || []).forEach(function(c) {
+        if ((c.name || '').toLowerCase().indexOf(q) > -1 || (c.objective || '').toLowerCase().indexOf(q) > -1) {
+          var st = (META_CAMPAIGN_STATUSES && META_CAMPAIGN_STATUSES[c.status]) || {};
+          results.push({ type: 'campaign_v2', icon: 'bullhorn', color: '#0891b2', title: c.name, sub: st.label || c.status || '', id: c.id, view: 'campaign_workspace' });
         }
       });
-      // Search campaigns
-      (S.data.campaigns || []).forEach(function(c) {
-        if ((c.name || '').toLowerCase().indexOf(q) > -1 || (c.description || '').toLowerCase().indexOf(q) > -1) {
-          results.push({ type: 'campaign', icon: 'bullhorn', color: '#0891b2', title: c.name, sub: (CAMPAIGN_STATUSES[c.status] || {}).label || '', id: c.id, view: 'campaigns' });
+      (S.data.ads || []).forEach(function(a) {
+        if ((a.name || '').toLowerCase().indexOf(q) > -1) {
+          var st2 = (META_AD_STATUSES && META_AD_STATUSES[a.pipeline_status]) || {};
+          results.push({ type: 'ad', icon: 'rectangle-ad', color: '#e37400', title: a.name, sub: st2.label || a.pipeline_status || '', id: a.id, view: 'campaign_workspace' });
         }
       });
       // Search pain points
@@ -176,10 +176,16 @@
       var type = $(this).data('type');
       $('#cpGlobalSearchInput').val('');
       $('#cpGlobalSearchResults').hide();
-      if (type === 'recipe') { S.selectedRecipeId = id; S.currentStep = 'composition'; }
-      else if (type === 'campaign') { S.selectedCampaignId = id; }
-      else if (type === 'persona') { S.selectedPersonaId = id; }
-      else if (type === 'pain_point') { S.selectedPainPointId = id; }
+      if (type === 'persona') S.selectedPersonaId = id;
+      else if (type === 'pain_point') S.selectedPainPointId = id;
+      else if (type === 'campaign_v2') { if (typeof window._cpNavigateToCampaignV2 === 'function') return window._cpNavigateToCampaignV2(id); }
+      else if (type === 'ad') {
+        var ad = S.adMap[id];
+        if (ad && typeof window._cpNavigateToCampaignV2 === 'function') {
+          var set = S.adSetMap[ad.ad_set_id];
+          return window._cpNavigateToCampaignV2(set ? set.campaign_id : null, ad.ad_set_id, ad.id);
+        }
+      }
       navigate(view);
     });
 
@@ -394,185 +400,6 @@
       renderCurrentView();
     });
 
-    // Select recipe
-    $(document).off('click.cp-select-recipe').on('click.cp-select-recipe', '[data-action="select-recipe"]', function(e) {
-      e.preventDefault();
-      var id = $(this).data('id');
-      if (id) {
-        S.selectedRecipeId = id;
-        S.currentStep = 'composition';
-        if (S.currentView !== 'recipes') navigate('recipes');
-        else renderCurrentView();
-      }
-    });
-
-    // Recipe search (debounced)
-    $(document).off('input.cp-recipe-search').on('input.cp-recipe-search', '#cpRecipeSearch', debounce(function() {
-      S.recipeFilter.search = $(this).val() || '';
-      renderCurrentView();
-      var $el = $('#cpRecipeSearch'); if ($el.length) { var v = $el.val(); $el.focus(); $el[0].setSelectionRange(v.length, v.length); }
-    }, 250));
-
-    // Recipe status filter
-    $(document).off('change.cp-recipe-status').on('change.cp-recipe-status', '#cpRecipeStatusFilter', function() {
-      var v = $(this).val();
-      S.recipeFilter.statuses = v ? [v] : [];
-      renderCurrentView();
-    });
-
-    // Recipe campaign filter
-    $(document).off('change.cp-recipe-camp').on('change.cp-recipe-camp', '#cpRecipeCampaignFilter', function() {
-      S.recipeFilter.campaign = $(this).val() || '';
-      renderCurrentView();
-    });
-
-    // Recipe production-presence filter (has / missing production node)
-    $(document).off('change.cp-recipe-prod').on('change.cp-recipe-prod', '#cpRecipeProductionFilter', function() {
-      S.recipeFilter.production = $(this).val() || '';
-      renderCurrentView();
-    });
-
-    // Recipe sort
-    $(document).off('change.cp-recipe-sort').on('change.cp-recipe-sort', '#cpRecipeSortBy', function() {
-      S.recipeFilter.sortBy = $(this).val() || 'updated';
-      renderCurrentView();
-    });
-
-    // Recipe sort direction toggle
-    $(document).off('click.cp-recipe-sortdir').on('click.cp-recipe-sortdir', '[data-action="toggle-recipe-sort-dir"]', function(e) {
-      e.preventDefault();
-      S.recipeFilter.sortDir = S.recipeFilter.sortDir === 'asc' ? 'desc' : 'asc';
-      renderCurrentView();
-    });
-
-    // Bulk mode toggle
-    $(document).off('click.cp-bulk-toggle').on('click.cp-bulk-toggle', '[data-action="toggle-bulk-mode"]', function(e) {
-      e.preventDefault();
-      S._bulkMode = !S._bulkMode;
-      S._bulkSelected = [];
-      renderCurrentView();
-    });
-    $(document).off('change.cp-bulk-item').on('change.cp-bulk-item', '[data-action="bulk-toggle-item"]', function(e) {
-      e.stopPropagation();
-      S._bulkSelected = S._bulkSelected || [];
-      var id = $(this).data('id');
-      var idx = S._bulkSelected.indexOf(id);
-      if (this.checked && idx === -1) S._bulkSelected.push(id);
-      else if (!this.checked && idx > -1) S._bulkSelected.splice(idx, 1);
-      renderCurrentView();
-    });
-    $(document).off('change.cp-bulk-all').on('change.cp-bulk-all', '[data-action="bulk-select-all"]', function() {
-      var recipes = getFilteredRecipes();
-      if (this.checked) {
-        S._bulkSelected = recipes.map(function(r) { return r.id; });
-      } else {
-        S._bulkSelected = [];
-      }
-      renderCurrentView();
-    });
-    $(document).off('change.cp-bulk-status').on('change.cp-bulk-status', '#cpBulkStatus', function() {
-      var newStatus = $(this).val();
-      if (!newStatus || !S._bulkSelected || S._bulkSelected.length === 0) return;
-      var count = S._bulkSelected.length;
-      snapshot('Bulk status change');
-      S._bulkSelected.forEach(function(id) { saveEntityField('recipe', id, 'status', newStatus); });
-      logActivity('recipe_batch_updated', 'recipe', '', '', 'Bulk status changed ' + count + ' recipes to ' + newStatus);
-      S._bulkSelected = [];
-      toast(count + ' recipes updated', 'success');
-    });
-    $(document).off('click.cp-bulk-assign').on('click.cp-bulk-assign', '[data-action="bulk-assign-campaign"]', function(e) {
-      e.preventDefault();
-      if (!S._bulkSelected || S._bulkSelected.length === 0) return;
-      var camps = getAllCampaigns();
-      var html = '<div class="cp-editor-form">';
-      html += '<p class="cp-text-muted">Assign ' + S._bulkSelected.length + ' selected recipe(s) to a campaign:</p>';
-      html += '<select class="cp-select" id="cpBulkCampaignSelect"><option value="">Unassigned</option>';
-      for (var ci = 0; ci < camps.length; ci++) html += '<option value="' + esc(camps[ci].id) + '">' + esc(camps[ci].name) + '</option>';
-      html += '</select></div>';
-      openModal('Bulk Assign Campaign', html, {
-        titleIcon: 'bullhorn', size: 'sm', saveLabel: 'Assign',
-        onSave: function() {
-          var campId = $('#cpBulkCampaignSelect').val() || '';
-          snapshot('Bulk assign campaign');
-          S._bulkSelected.forEach(function(id) { saveEntityField('recipe', id, 'campaign_id', campId); });
-          logActivity('recipe_batch_updated', 'recipe', '', '', 'Bulk assigned ' + S._bulkSelected.length + ' recipes to campaign');
-          S._bulkSelected = [];
-          closeModal();
-          toast('Recipes assigned', 'success');
-        }
-      });
-    });
-    $(document).off('click.cp-bulk-delete').on('click.cp-bulk-delete', '[data-action="bulk-delete"]', function(e) {
-      e.preventDefault();
-      if (!S._bulkSelected || S._bulkSelected.length === 0) return;
-      openConfirmDialog({
-        title: 'Delete ' + S._bulkSelected.length + ' Recipes',
-        message: 'Are you sure you want to delete ' + S._bulkSelected.length + ' selected recipe(s)? This cannot be undone.',
-        confirmLabel: 'Delete All', danger: true,
-        onConfirm: function() {
-          snapshot('Bulk delete');
-          S._bulkSelected.forEach(function(id) { deleteEntity('recipe', id); });
-          logActivity('recipe_batch_deleted', 'recipe', '', '', 'Bulk deleted ' + S._bulkSelected.length + ' recipes');
-          S._bulkSelected = [];
-          S._bulkMode = false;
-        }
-      });
-    });
-
-    // Pipeline step navigation
-    $(document).off('click.cp-go-step').on('click.cp-go-step', '[data-action="go-step"]', function(e) {
-      e.preventDefault();
-      var step = $(this).data('step');
-      if (step) {
-        S.currentStep = step;
-        renderCurrentView();
-      }
-    });
-
-    // Campaign search (debounced)
-    $(document).off('input.cp-campaign-search').on('input.cp-campaign-search', '#cpCampaignSearch', debounce(function() {
-      S.campaignFilter.search = $(this).val() || '';
-      renderCurrentView();
-    }, 250));
-
-    // Campaign status filter
-    $(document).off('change.cp-campaign-status').on('change.cp-campaign-status', '#cpCampaignStatusFilter', function() {
-      S.campaignFilter.status = $(this).val() || '';
-      renderCurrentView();
-    });
-
-    // Campaign detail tab switch
-    $(document).off('click.cp-campaign-tab').on('click.cp-campaign-tab', '[data-action="set-campaign-tab"]', function(e) {
-      e.preventDefault();
-      S.campaignDetailTab = $(this).data('tab') || 'overview';
-      renderCurrentView();
-    });
-
-    // Campaign brief save on blur
-    $(document).off('blur.cp-campaign-brief').on('blur.cp-campaign-brief', '.cp-campaign-brief-field', function() {
-      var campId = $(this).data('campaign-id');
-      if (campId) {
-        saveEntityField('campaign', campId, 'brief', $(this).val() || '');
-      }
-    });
-
-    // Quick-create recipe from coverage matrix
-    $(document).off('click.cp-quick-recipe').on('click.cp-quick-recipe', '[data-action="quick-create-recipe"]', function(e) {
-      e.preventDefault();
-      var personaId = $(this).data('persona-id');
-      var messageId = $(this).data('message-id');
-      var campId = $(this).data('campaign-id');
-      if (!personaId || !messageId || !campId) return;
-      snapshot('Quick create recipe');
-      var newRecipe = createEntity('recipe', {
-        persona_id: personaId, message_id: messageId, campaign_id: campId
-      });
-      if (newRecipe) {
-        buildMaps(); renderCurrentView();
-        toast('Recipe created and linked to campaign', 'success');
-      }
-    });
-
     // Calendar navigation
     $(document).off('click.cp-cal-prev').on('click.cp-cal-prev', '[data-action="cal-prev"]', function(e) {
       e.preventDefault();
@@ -623,25 +450,21 @@
       renderCurrentView();
     });
 
-    // Filter pipeline status from dashboard
-    $(document).off('click.cp-filter-pipeline').on('click.cp-filter-pipeline', '[data-action="filter-pipeline-status"]', function(e) {
-      e.preventDefault();
-      var status = $(this).data('status');
-      if (status) {
-        S.recipeFilter.statuses = [status];
-        navigate('recipes');
-      }
-    });
-
     // Select entity from activity
     $(document).off('click.cp-select-entity').on('click.cp-select-entity', '[data-action="select-entity"]', function(e) {
       e.preventDefault();
       var type = $(this).data('type');
       var id = $(this).data('id');
-      if (type === 'recipe' && id) { S.selectedRecipeId = id; navigate('recipes'); }
-      else if (type === 'persona' && id) { S.selectedPersonaId = id; navigate('personas'); }
-      else if (type === 'campaign' && id) { navigate('campaigns'); }
+      if (type === 'persona' && id) { S.selectedPersonaId = id; navigate('personas'); }
       else if (type === 'message' && id) { navigate('messages'); }
+      else if (type === 'campaign_v2' && id) { if (typeof window._cpNavigateToCampaignV2 === 'function') window._cpNavigateToCampaignV2(id); }
+      else if (type === 'ad' && id) {
+        var ad = S.adMap[id];
+        if (ad && typeof window._cpNavigateToCampaignV2 === 'function') {
+          var set = S.adSetMap[ad.ad_set_id];
+          window._cpNavigateToCampaignV2(set ? set.campaign_id : null, ad.ad_set_id, ad.id);
+        }
+      }
     });
 
     // Hash change
@@ -656,21 +479,6 @@
   function setupViewEventHandlers() {
     // Per-render hooks — called after each renderCurrentView()
     var view = S.currentView;
-
-    // Restore scroll position for list panes
-    if (view === 'recipes' && S.selectedRecipeId) {
-      var $selItem = $('.cp-recipe-item-selected');
-      if ($selItem.length) {
-        var $list = $selItem.closest('.cp-recipe-list');
-        if ($list.length) {
-          var itemTop = $selItem.position().top;
-          var listH = $list.height();
-          if (itemTop > listH - 50 || itemTop < 0) {
-            $list.scrollTop($list.scrollTop() + itemTop - listH / 3);
-          }
-        }
-      }
-    }
 
     if (view === 'personas' && S.selectedPersonaId) {
       var $selPersona = $('.cp-persona-item-selected');

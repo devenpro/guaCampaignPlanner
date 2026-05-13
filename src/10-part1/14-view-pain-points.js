@@ -112,7 +112,6 @@
 
   function renderPainPointListItem(pp) {
     var personaCount = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) > -1; }).length;
-    var recipeCount = (S.data.recipes || []).filter(function(r) { return (r.selected_pain_point_ids || []).indexOf(pp.id) > -1; }).length;
     var sel = S.selectedPainPointId === pp.id ? ' cp-pp-item-selected' : '';
     var hasSolution = !!(pp.solution && pp.solution.trim());
 
@@ -125,7 +124,6 @@
     html += '</div>';
     html += '<div class="cp-pp-item-meta">';
     if (personaCount > 0) html += '<span class="cp-pp-mini-stat" title="Linked personas">' + icon('users') + ' ' + personaCount + '</span>';
-    if (recipeCount > 0) html += '<span class="cp-pp-mini-stat" title="Used in recipes">' + icon('shuffle') + ' ' + recipeCount + '</span>';
     if (!hasSolution) html += '<span class="cp-pp-mini-stat cp-pp-mini-warn" title="No solution defined">' + icon('triangle-exclamation') + '</span>';
     html += '</div>';
     html += '</div>';
@@ -145,10 +143,9 @@
     var catLabel = '';
     if (pp.category) { var ppcMatch = ppCats.find(function(c) { return c.id === pp.category; }); catLabel = ppcMatch ? ppcMatch.name : ''; }
 
-    // Find linked personas and recipes
+    // Find linked personas
     var linkedPersonas = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) > -1; });
     var unlinkedPersonas = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) === -1; });
-    var linkedRecipes = (S.data.recipes || []).filter(function(r) { return (r.selected_pain_point_ids || []).indexOf(pp.id) > -1; });
 
     var html = '<div class="cp-detail-header"><div class="cp-detail-header-left">';
     html += '<h2>' + icon('bolt') + ' Pain Point</h2>';
@@ -190,21 +187,6 @@
         html += '<div class="cp-list-item-inline">';
         html += '<span style="flex:1;cursor:pointer" data-action="go-view" data-view="personas" data-select="' + esc(linkedPersonas[pi].id) + '">' + dimensionBadge('persona', linkedPersonas[pi].id) + '</span>';
         html += '<button class="cp-btn-icon cp-btn-xs" data-action="unlink-pp-from-persona" data-pp-id="' + esc(pp.id) + '" data-persona-id="' + esc(linkedPersonas[pi].id) + '" title="Unlink">' + icon('link-slash') + '</button>';
-        html += '</div>';
-      }
-    }
-    html += '</div>';
-
-    // Linked Recipes
-    html += '<div class="cp-card cp-pp-detail-card">';
-    html += '<div class="cp-section-header"><h3>' + icon('shuffle') + ' Used in Recipes (' + linkedRecipes.length + ')</h3></div>';
-    if (linkedRecipes.length === 0) {
-      html += '<p class="cp-text-muted">Not used in any recipes yet.</p>';
-    } else {
-      for (var ri = 0; ri < linkedRecipes.length; ri++) {
-        var r = linkedRecipes[ri];
-        html += '<div class="cp-list-item-inline" style="cursor:pointer" data-action="go-view" data-view="recipes" data-select="' + esc(r.id) + '">';
-        html += recipeStatusBadge(r.status) + ' ' + esc(truncate(r.title, 50));
         html += '</div>';
       }
     }

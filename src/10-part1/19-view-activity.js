@@ -32,11 +32,10 @@
     html += '<select class="cp-select cp-select-sm" id="cpActivityTypeFilter"><option value="">All Types</option>';
     // Group by entity type
     var typeGroups = [
-      { label: 'Recipes', types: ['recipe_created', 'recipe_updated', 'recipe_status_changed', 'recipe_deleted', 'recipe_batch_generated'] },
       { label: 'Personas', types: ['persona_created', 'persona_updated', 'persona_deleted', 'category_created', 'category_deleted'] },
       { label: 'Messages', types: ['message_created', 'message_updated', 'message_deleted'] },
       { label: 'Styles/Formats', types: ['style_created', 'style_updated', 'style_deleted', 'format_created', 'format_updated', 'format_deleted'] },
-      { label: 'Campaigns', types: ['campaign_created', 'campaign_updated', 'campaign_deleted'] },
+      { label: 'Campaigns (v2)', types: ['campaign_v2_created', 'campaign_v2_updated', 'campaign_v2_deleted', 'ad_set_created', 'ad_set_updated', 'ad_set_deleted', 'ad_created', 'ad_updated', 'ad_deleted', 'ad_status_changed', 'campaign_tree_generated', 'snapshot_resynced'] },
       { label: 'AI Actions', types: ['brief_generated', 'hook_generated', 'content_generated', 'media_generated', 'script_generated', 'pain_points_generated', 'messages_suggested', 'personas_researched'] },
       { label: 'Other', types: ['tag_created', 'tag_updated', 'tag_deleted', 'image_uploaded', 'settings_changed', 'data_imported', 'data_exported', 'setup_completed'] }
     ];

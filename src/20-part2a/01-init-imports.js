@@ -5,16 +5,15 @@
   var S, render, navigate, toast, generateId, buildMaps, syncToTextarea;
   var updateSaveStatus, esc, deepClone, icon, formatDate, formatRelativeTime;
   var truncate, formatNumber, stripHtml, countWords, countChars;
-  var badge, recipeStatusBadge, campaignStatusBadge, priorityBadge;
+  var badge, priorityBadge;
   var funnelBadge, dimensionBadge, mediaTypeBadge, hookTypeBadge, progressBar;
-  var logActivity, maybeAdvanceRecipeStatus;
+  var logActivity;
   var createEntity, deleteEntity, saveEntityField, duplicateEntity;
   var getAllPersonas, getAllMessages, getAllStyles, getAllFormats;
-  var getAllCategories, getAllPainPoints, getAllCampaigns, getAllTags;
+  var getAllCategories, getAllPainPoints, getAllTags;
   var getPersonaPainPoints, getPersona, getMessage, getStyle, getFormat;
-  var getCategory, getCampaign, getTag, getPainPoint, getFunnelStage;
-  var getFilteredRecipes, getRecipe;
-  var getRecipeProduction, getProductionStatusStyle, parseProductionData;
+  var getCategory, getTag, getPainPoint, getFunnelStage;
+  var getProductionStatusStyle, parseProductionData;
   var Constants;
   // Meta v2 imports
   var getCampaignV2, getAdSet, getAd;
@@ -59,26 +58,23 @@
     truncate = window._cpTruncate; formatNumber = window._cpFormatNumber;
     stripHtml = window._cpStripHtml; countWords = window._cpCountWords; countChars = window._cpCountChars;
     badge = window._cpBadge;
-    recipeStatusBadge = window._cpRecipeStatusBadge; campaignStatusBadge = window._cpCampaignStatusBadge;
     priorityBadge = window._cpPriorityBadge; funnelBadge = window._cpFunnelBadge;
     dimensionBadge = window._cpDimensionBadge; mediaTypeBadge = window._cpMediaTypeBadge;
     hookTypeBadge = window._cpHookTypeBadge;
     progressBar = window._cpProgressBar;
-    logActivity = window._cpLogActivity; maybeAdvanceRecipeStatus = window._cpMaybeAdvanceRecipeStatus;
+    logActivity = window._cpLogActivity;
     createEntity = window._cpCreateEntity; deleteEntity = window._cpDeleteEntity;
     saveEntityField = window._cpSaveEntityField; duplicateEntity = window._cpDuplicateEntity;
     getAllPersonas = window._cpGetAllPersonas; getAllMessages = window._cpGetAllMessages;
     getAllStyles = window._cpGetAllStyles; getAllFormats = window._cpGetAllFormats;
     getAllCategories = window._cpGetAllCategories; getAllPainPoints = window._cpGetAllPainPoints;
-    getAllCampaigns = window._cpGetAllCampaigns; getAllTags = window._cpGetAllTags;
+    getAllTags = window._cpGetAllTags;
     getPersonaPainPoints = window._cpGetPersonaPainPoints;
     getPersona = window._cpGetPersona; getMessage = window._cpGetMessage;
     getStyle = window._cpGetStyle; getFormat = window._cpGetFormat;
-    getCategory = window._cpGetCategory; getCampaign = window._cpGetCampaign;
+    getCategory = window._cpGetCategory;
     getTag = window._cpGetTag; getPainPoint = window._cpGetPainPoint;
     getFunnelStage = window._cpGetFunnelStage;
-    getFilteredRecipes = window._cpGetFilteredRecipes; getRecipe = window._cpGetRecipe;
-    getRecipeProduction = window._cpGetRecipeProduction;
     getProductionStatusStyle = window._cpGetProductionStatusStyle;
     parseProductionData = window._cpParseProductionData;
     Constants = window._cpConstants;
@@ -102,15 +98,12 @@
       if (window._cpPart2B && window._cpPart2B.renderInlinePicker) {
         return window._cpPart2B.renderInlinePicker(actionId);
       }
-      // Show loading placeholder; will be replaced once Part 2B loads.
       if (S && S._part2bTimeout) {
         return '<span class="cp-ai-picker-loading" data-pending-action="' + esc(actionId) + '" title="AI module failed to load">' + icon('warning') + ' AI unavailable</span>';
       }
       return '<span class="cp-ai-picker-loading" data-pending-action="' + esc(actionId) + '">' + icon('spinner') + ' Loading…</span>';
     };
 
-    // Replace any AI picker placeholders in the DOM with rendered pickers.
-    // Called after every render so newly rendered views get live pickers.
     window._cpReplaceAiPickers = function() {
       if (!window._cpPart2B || !window._cpPart2B.renderInlinePicker) return;
       $('.cp-ai-picker-loading').each(function() {
@@ -121,13 +114,7 @@
       });
     };
 
-    // Register step renderers
     var R = window._cpRenderers = window._cpRenderers || {};
-    R.step_composition = renderCompositionStep;
-    R.step_hook = renderHookStep;
-    R.step_content = renderContentStep;
-    R.step_media = renderMediaStep;
-    R.step_review = renderReviewStep;
     R.tagInput = renderTagInput;
 
     setupPart2AEvents();

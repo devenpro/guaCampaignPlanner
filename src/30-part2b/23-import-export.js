@@ -29,8 +29,8 @@
     }
     if (type === 'data' || type === 'combined') {
       var d = type === 'combined' ? data.data : data;
-      if (!Array.isArray(d.personas) && !Array.isArray(d.messages) && !Array.isArray(d.recipes)) {
-        return 'Data import must contain at least one entity array (personas, messages, or recipes).';
+      if (!Array.isArray(d.personas) && !Array.isArray(d.messages) && !Array.isArray(d.campaigns_v2)) {
+        return 'Data import must contain at least one entity array (personas, messages, or campaigns_v2).';
       }
     }
     return null; // valid
@@ -65,8 +65,15 @@
               // Snapshot before import for rollback via undo
               snapshot('Before import');
               if (importType === 'combined') {
-                S.meta = imported.meta; S.data = imported.data; S.activity = imported.activity || [];
-              } else if (importType === 'meta') { S.meta = imported; }
+                S.meta = imported.meta;
+                S.data = imported.data;
+                // Drop any legacy v1 collections; they're not supported anymore.
+                delete S.data.recipes;
+                delete S.data.campaigns;
+                S.activity = imported.activity || [];
+              } else if (importType === 'meta') {
+                S.meta = imported;
+              }
               else {
                 // Preserve essential arrays that might be missing in partial imports
                 S.data.personas = imported.personas || S.data.personas || [];
@@ -75,9 +82,11 @@
                 S.data.messages = imported.messages || S.data.messages || [];
                 S.data.styles = imported.styles || S.data.styles || [];
                 S.data.visual_formats = imported.visual_formats || S.data.visual_formats || [];
-                S.data.recipes = imported.recipes || S.data.recipes || [];
-                S.data.campaigns = imported.campaigns || S.data.campaigns || [];
                 S.data.tags = imported.tags || S.data.tags || [];
+                // Meta v2 entities (if present in the import)
+                if (Array.isArray(imported.campaigns_v2)) S.data.campaigns_v2 = imported.campaigns_v2;
+                if (Array.isArray(imported.ad_sets))      S.data.ad_sets      = imported.ad_sets;
+                if (Array.isArray(imported.ads))          S.data.ads          = imported.ads;
               }
               logActivity('data_imported', '', '', 'Data imported from file (' + importType + ')');
               snapshot('Import'); buildMaps(); render(); syncToTextarea(); toast('Imported successfully', 'success');

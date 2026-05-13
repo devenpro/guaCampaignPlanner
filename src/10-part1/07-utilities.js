@@ -105,16 +105,6 @@
     return '<span class="cp-badge" style="background:' + bg + '15;color:' + fg + '">' + esc(text) + '</span>';
   }
 
-  function recipeStatusBadge(status) {
-    var c = RECIPE_STATUSES[status] || { label: status, color: '#80868b', icon: 'circle' };
-    return '<span class="cp-status-badge"><span class="cp-status-dot" style="background:' + c.color + '"></span>' + esc(c.label) + '</span>';
-  }
-
-  function campaignStatusBadge(status) {
-    var c = CAMPAIGN_STATUSES[status] || { label: status, color: '#80868b' };
-    return '<span class="cp-badge" style="background:' + c.color + '15;color:' + c.color + '">' + icon(c.icon) + ' ' + esc(c.label) + '</span>';
-  }
-
   function priorityBadge(p) {
     if (!p) return '';
     var c = PRIORITY_LEVELS[p] || { label: p, color: '#80868b', icon: 'minus' };
@@ -164,8 +154,6 @@
   function getMessage(id) { return S.messageMap[id] || null; }
   function getStyle(id) { return S.styleMap[id] || null; }
   function getFormat(id) { return S.formatMap[id] || null; }
-  function getRecipe(id) { return S.recipeMap[id] || null; }
-  function getCampaign(id) { return S.campaignMap[id] || null; }
   function getTag(id) { return S.tagMap[id] || null; }
   function getFunnelStage(id) { return S.funnelStageMap[id] || null; }
   function getResearchSession(id) { return S.researchMap[id] || null; }
@@ -176,19 +164,6 @@
   function getAdSet(id)      { return S.adSetMap[id] || null; }
   function getAd(id)         { return S.adMap[id] || null; }
   function isMetaV2Enabled() { return !!(S.meta && S.meta.setup && S.meta.setup.meta_v2); }
-
-  // Returns the production node info for a recipe, preferring the live
-  // snapshot from S.productionMap (rebuilt on each page load from the view
-  // block) and falling back to the persistent recipe.production cache.
-  // Returns null if neither has a record.
-  function getRecipeProduction(recipeIdOrRecipe) {
-    if (!recipeIdOrRecipe) return null;
-    var recipe = typeof recipeIdOrRecipe === 'string' ? S.recipeMap[recipeIdOrRecipe] : recipeIdOrRecipe;
-    var live = (S.productionMap || {})[recipe ? recipe.id : recipeIdOrRecipe];
-    if (live && live.node_id) return live;
-    if (recipe && recipe.production && recipe.production.node_id) return recipe.production;
-    return null;
-  }
 
   // Looks up the visual style for a production node's status string.
   // Case-insensitive; unknown values get the neutral default.
@@ -204,8 +179,6 @@
   function getAllMessages() { return (S.data.messages || []).slice(); }
   function getAllStyles() { return (S.data.styles || []).slice(); }
   function getAllFormats() { return (S.data.visual_formats || []).slice(); }
-  function getAllRecipes() { return (S.data.recipes || []).slice(); }
-  function getAllCampaigns() { return (S.data.campaigns || []).slice(); }
   function getAllPainPoints() { return (S.data.pain_points || []).slice(); }
   function getAllCategories() { return (S.data.persona_categories || []).slice().sort(function(a, b) { return (a.order || 0) - (b.order || 0); }); }
 
@@ -229,14 +202,6 @@
 
   function getPersonasByCategory(catId) {
     return (S.data.personas || []).filter(function(p) { return p.category_id === catId; });
-  }
-
-  function getRecipesByCampaign(campId) {
-    return (S.data.recipes || []).filter(function(r) { return r.campaign_id === campId; });
-  }
-
-  function getRecipesByPersona(personaId) {
-    return (S.data.recipes || []).filter(function(r) { return r.persona_id === personaId; });
   }
 
   function getPersonaPainPoints(persona) {
@@ -279,27 +244,6 @@
     var tags = {};
     S.images.forEach(function(img) { (img.tags || []).forEach(function(t) { tags[t] = (tags[t] || 0) + 1; }); });
     return Object.keys(tags).sort();
-  }
-
-  // --- Diversity Score ---
-  function calculateDiversityScore() {
-    var uniquePairs = {};
-    var recipes = S.data.recipes || [];
-    for (var i = 0; i < recipes.length; i++) {
-      var r = recipes[i];
-      if (r.persona_id && r.message_id && r.status !== 'archived') {
-        uniquePairs[r.persona_id + '::' + r.message_id] = true;
-      }
-    }
-    var usedPairs = Object.keys(uniquePairs).length;
-    var totalPossible = S.totalPersonas * S.totalMessages;
-    if (totalPossible === 0) return { score: 0, used: 0, total: 0, remaining: 0 };
-    return {
-      score: Math.round((usedPairs / totalPossible) * 100),
-      used: usedPairs,
-      total: totalPossible,
-      remaining: totalPossible - usedPairs
-    };
   }
 
   // --- Misc ---

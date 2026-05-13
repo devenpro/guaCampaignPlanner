@@ -2,45 +2,12 @@
   // SECTION 21A: SETTINGS — META v2 TAB
   // ============================================================
   //
-  // Workspace-level Meta defaults + migration controls.
+  // Workspace-level Meta defaults (Page, Pixel, attribution, currency, etc.).
 
   function renderMetaV2Settings() {
-    var setup = (S.meta && S.meta.setup) || {};
     var defaults = (S.meta && S.meta.meta_defaults) || {};
-    var hasLegacy = !!(S.meta && S.meta.legacy_backup);
-    var legacyCount = hasLegacy ? ((S.meta.legacy_backup.campaigns || []).length + ' campaigns + ' + (S.meta.legacy_backup.recipes || []).length + ' recipes') : '';
-    var oldCamps = (S.data.campaigns || []).length;
-    var oldRecipes = (S.data.recipes || []).length;
-    var canMigrate = (oldCamps + oldRecipes) > 0;
 
     var html = '<div class="cp-settings-panel">';
-
-    // --- Feature flag toggle ---
-    html += '<div class="cp-settings-section">';
-    html += '<h3>' + icon('flask') + ' Meta v2 mode</h3>';
-    html += '<p class="cp-text-muted">The Meta v2 hierarchy (Campaign → Ad Set → Ad) is the new working surface for this app. When enabled, the legacy Recipes and Campaigns (v1) sidebar entries are hidden and the new Campaigns workspace takes over.</p>';
-    html += '<label class="cp-form-toggle">';
-    html += '<input type="checkbox" class="cp-v2-toggle-flag"' + (setup.meta_v2 ? ' checked' : '') + '>';
-    html += '<span>Enable Meta v2 mode</span></label>';
-    html += '</div>';
-
-    // --- Migration wizard CTA ---
-    html += '<div class="cp-settings-section">';
-    html += '<h3>' + icon('wand-magic') + ' Migrate legacy data</h3>';
-    if (setup.migrated_to_v2) {
-      html += '<p class="cp-text-muted">This workspace has been migrated.</p>';
-      if (hasLegacy) {
-        html += '<p class="cp-text-muted">Legacy backup: ' + esc(legacyCount) + ' (created ' + formatRelativeTime(S.meta.legacy_backup.timestamp) + ').</p>';
-        html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-discard-legacy">' + icon('trash') + ' Discard legacy backup</button>';
-      }
-      html += '<button class="cp-btn cp-btn-outline" data-action="v2-open-migration" style="margin-left:8px">' + icon('refresh') + ' Run migration again</button>';
-    } else if (canMigrate) {
-      html += '<p>You have ' + oldCamps + ' legacy campaign' + (oldCamps !== 1 ? 's' : '') + ' and ' + oldRecipes + ' recipe' + (oldRecipes !== 1 ? 's' : '') + ' to migrate.</p>';
-      html += '<button class="cp-btn cp-btn-ai" data-action="v2-open-migration">' + icon('wand-magic') + ' Start migration wizard</button>';
-    } else {
-      html += '<p class="cp-text-muted">No legacy data to migrate. You can enable Meta v2 directly above.</p>';
-    }
-    html += '</div>';
 
     // --- Meta defaults ---
     html += '<div class="cp-settings-section">';

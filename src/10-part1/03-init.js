@@ -49,7 +49,7 @@
 
       S.initialized = true;
       S._initializing = false;
-      console.log('[CP] Part 1 initialized — ' + S.totalRecipes + ' recipes, ' + S.totalPersonas + ' personas, ' + S.totalMessages + ' messages, user: ' + (S.user.name || 'unknown'));
+      console.log('[CP] Part 1 initialized — ' + S.totalAds + ' ads, ' + S.totalCampaignsV2 + ' campaigns, ' + S.totalPersonas + ' personas, ' + S.totalMessages + ' messages, user: ' + (S.user.name || 'unknown'));
     } catch(e) {
       console.error('[CP] Part 1 init CRASHED:', e.message, e.stack);
       S._initializing = false;
@@ -136,9 +136,10 @@
     parseProductionData();
   }
 
-  // Build S.productionMap from the Drupal view-media-productions block
-  // and mirror new entries into recipe.production (append-only — never
-  // overwrites or removes existing recipe.production records).
+  // Build S.productionMap from the Drupal view-media-productions block.
+  // Production nodes are keyed by `data-planner-id`, which now corresponds
+  // to a Meta v2 Ad id. The map is consulted by the Ad pipeline UI; we no
+  // longer mirror into entity-level caches.
   function parseProductionData() {
     S.productionMap = {};
     var $items = $('.media-production-data .media-production-item, .view-media-productions .media-production-item');
@@ -154,37 +155,7 @@
       if (!entry.node_id) return;
       S.productionMap[plannerId] = entry;
     });
-    // Mirror into recipe.production for any recipes that don't yet have a
-    // cached production. Append-only: existing recipe.production is kept
-    // as-is even if the view's snapshot has changed. For each newly-seeded
-    // recipe, log a "production attached" activity entry and try to
-    // auto-advance the recipe status (typically to media_ready).
-    var seeded = 0;
-    var advanced = 0;
-    var recipes = (S.data && S.data.recipes) || [];
-    for (var i = 0; i < recipes.length; i++) {
-      var r = recipes[i];
-      var live = S.productionMap[r.id];
-      if (!live) continue;
-      if (r.production && r.production.node_id) continue;
-      r.production = $.extend(true, {}, live);
-      seeded++;
-      // First-time discovery → activity log entry
-      if (typeof logActivity === 'function') {
-        var prodType = live.media_type || live.type || 'production';
-        var prodLabel = live.title || ('node ' + (live.node_id || '?'));
-        logActivity('production_attached', 'recipe', r.id, r.title,
-          'Production node attached: ' + prodLabel + ' (' + prodType + ')');
-      }
-      // Production existence is a strong signal — try to advance status.
-      if (typeof maybeAdvanceRecipeStatus === 'function') {
-        if (maybeAdvanceRecipeStatus(r, 'production node detected')) advanced++;
-      }
-    }
-    console.log('[CP] Parsed ' + Object.keys(S.productionMap).length +
-      ' production node(s)' +
-      (seeded   ? ', seeded ' + seeded + ' recipe.production cache entries' : '') +
-      (advanced ? ', advanced ' + advanced + ' recipe status to media_ready'  : ''));
+    console.log('[CP] Parsed ' + Object.keys(S.productionMap).length + ' production node(s)');
   }
 
   function _readProductionItem($item, plannerId) {

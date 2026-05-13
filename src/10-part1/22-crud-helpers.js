@@ -68,51 +68,6 @@
         logActivity('format_created', 'format', entity.id, entity.name, 'Created visual format');
         break;
 
-      case 'recipe':
-        entity = $.extend(true, {
-          id: generateId('rec'), title: '', status: 'draft', priority: (S.meta.settings.defaults || {}).priority || 'medium',
-          campaign_id: '', persona_id: '', message_id: '', style_id: '', visual_format_id: '',
-          selected_pain_point_ids: [], media_type: 'image',
-          hook: { selected_hook_id: '', custom_hook: '', hook_type: '' },
-          content: { ad_copy: '', headline: '', description: '', cta: '', variants: [], notes: '' },
-          image_brief: { creative_brief: '', ai_prompt: '', prompt_params: { aspect_ratio: '1:1', visual_approach: 'photography', mood: '', negative_prompt: '' }, reference_image_ids: [] },
-          video: { duration_seconds: 30, format: 'Reel', aspect_ratio: '9:16', concept: '', blueprint: { scenes: [] }, script: { rows: [] } },
-          review_notes: '', production_notes: '', assigned_to: '', due_date: '',
-          delivery_notes: '', creative_brief: '',
-          tags: [], batch_id: '',
-          // Production node attached to this recipe (one per recipe, by media type).
-          // Populated by parseProductionData() when the Drupal view block lists it.
-          production: null,
-          created: now, updated: now, created_by: S.user.id || ''
-        }, data);
-        // Auto-generate title from dimensions
-        if (!entity.title) {
-          var parts = [];
-          var per = S.personaMap[entity.persona_id]; if (per) parts.push(per.name);
-          var msg = S.messageMap[entity.message_id]; if (msg) parts.push(msg.title);
-          var sty = S.styleMap[entity.style_id]; if (sty) parts.push(sty.name);
-          var vf = S.formatMap[entity.visual_format_id]; if (vf) parts.push(vf.name);
-          entity.title = parts.length > 0 ? parts.join(' × ') : 'New Recipe';
-        }
-        S.data.recipes.push(entity);
-        logActivity('recipe_created', 'recipe', entity.id, entity.title, 'Created recipe');
-        break;
-
-      case 'campaign':
-        entity = $.extend(true, {
-          id: generateId('cmp'), name: '', description: '', objective: '',
-          funnel_stage: '', date_start: '', date_end: '',
-          status: (S.meta.settings.defaults || {}).campaign_status || 'planning',
-          budget_notes: '', target_audience_notes: '',
-          persona_ids: [], message_ids: [], style_ids: [], format_ids: [],
-          ai_instructions: '', phases: [], brief: '',
-          tags: [], notes: '',
-          created: now, updated: now, created_by: S.user.id || ''
-        }, data);
-        S.data.campaigns.push(entity);
-        logActivity('campaign_created', 'campaign', entity.id, entity.name, 'Created campaign');
-        break;
-
       case 'tag':
         entity = $.extend(true, {
           id: generateId('tag'), name: '', color: '#1a73e8', description: '',
@@ -222,7 +177,6 @@
         entityTitle = entity.name;
         idx = S.data.personas.findIndex(function(p) { return p.id === id; });
         if (idx > -1) S.data.personas.splice(idx, 1);
-        (S.data.recipes || []).forEach(function(r) { if (r.persona_id === id) r.persona_id = ''; });
         logActivity('persona_deleted', 'persona', id, entityTitle, 'Deleted persona');
         break;
 
@@ -243,9 +197,6 @@
         (S.data.personas || []).forEach(function(p) {
           p.pain_point_ids = (p.pain_point_ids || []).filter(function(pid) { return pid !== id; });
         });
-        (S.data.recipes || []).forEach(function(r) {
-          r.selected_pain_point_ids = (r.selected_pain_point_ids || []).filter(function(pid) { return pid !== id; });
-        });
         logActivity('pain_point_deleted', 'pain_point', id, truncate(entityTitle, 40), 'Deleted pain point');
         break;
 
@@ -254,7 +205,6 @@
         entityTitle = entity.title;
         idx = S.data.messages.findIndex(function(m) { return m.id === id; });
         if (idx > -1) S.data.messages.splice(idx, 1);
-        (S.data.recipes || []).forEach(function(r) { if (r.message_id === id) r.message_id = ''; });
         logActivity('message_deleted', 'message', id, entityTitle, 'Deleted message');
         break;
 
@@ -263,7 +213,6 @@
         entityTitle = entity.name;
         idx = S.data.styles.findIndex(function(s) { return s.id === id; });
         if (idx > -1) S.data.styles.splice(idx, 1);
-        (S.data.recipes || []).forEach(function(r) { if (r.style_id === id) r.style_id = ''; });
         logActivity('style_deleted', 'style', id, entityTitle, 'Deleted style');
         break;
 
@@ -272,26 +221,7 @@
         entityTitle = entity.name;
         idx = S.data.visual_formats.findIndex(function(f) { return f.id === id; });
         if (idx > -1) S.data.visual_formats.splice(idx, 1);
-        (S.data.recipes || []).forEach(function(r) { if (r.visual_format_id === id) r.visual_format_id = ''; });
         logActivity('format_deleted', 'format', id, entityTitle, 'Deleted visual format');
-        break;
-
-      case 'recipe':
-        entity = S.recipeMap[id]; if (!entity) return false;
-        entityTitle = entity.title;
-        idx = S.data.recipes.findIndex(function(r) { return r.id === id; });
-        if (idx > -1) S.data.recipes.splice(idx, 1);
-        if (S.selectedRecipeId === id) S.selectedRecipeId = null;
-        logActivity('recipe_deleted', 'recipe', id, entityTitle, 'Deleted recipe');
-        break;
-
-      case 'campaign':
-        entity = S.campaignMap[id]; if (!entity) return false;
-        entityTitle = entity.name;
-        idx = S.data.campaigns.findIndex(function(c) { return c.id === id; });
-        if (idx > -1) S.data.campaigns.splice(idx, 1);
-        (S.data.recipes || []).forEach(function(r) { if (r.campaign_id === id) r.campaign_id = ''; });
-        logActivity('campaign_deleted', 'campaign', id, entityTitle, 'Deleted campaign');
         break;
 
       case 'tag':
@@ -299,7 +229,7 @@
         entityTitle = entity.name;
         idx = S.data.tags.findIndex(function(t) { return t.id === id; });
         if (idx > -1) S.data.tags.splice(idx, 1);
-        var allArrays = [S.data.personas, S.data.messages, S.data.styles, S.data.visual_formats, S.data.recipes, S.data.campaigns, S.data.campaigns_v2, S.data.ads];
+        var allArrays = [S.data.personas, S.data.messages, S.data.styles, S.data.visual_formats, S.data.campaigns_v2, S.data.ad_sets, S.data.ads];
         allArrays.forEach(function(arr) {
           (arr || []).forEach(function(item) {
             if (item.tags) item.tags = item.tags.filter(function(tid) { return tid !== id; });
@@ -365,7 +295,7 @@
   function saveEntityField(type, id, field, value) {
     var collections = {
       persona: S.data.personas, message: S.data.messages, style: S.data.styles,
-      visual_format: S.data.visual_formats, recipe: S.data.recipes, campaign: S.data.campaigns,
+      visual_format: S.data.visual_formats,
       pain_point: S.data.pain_points, persona_category: S.data.persona_categories, tag: S.data.tags,
       campaign_v2: S.data.campaigns_v2, ad_set: S.data.ad_sets, ad: S.data.ads
     };
@@ -393,11 +323,6 @@
 
     entity.updated = new Date().toISOString();
 
-    // Recipe status change logging
-    if (type === 'recipe' && field === 'status') {
-      var newLabel = (RECIPE_STATUSES[value] || {}).label || value;
-      logActivity('recipe_status_changed', 'recipe', id, entity.title, 'Status changed to ' + newLabel);
-    }
     // Ad pipeline status change logging
     if (type === 'ad' && field === 'pipeline_status') {
       var adLabel = (META_AD_STATUSES[value] || {}).label || value;
@@ -422,7 +347,7 @@
   function duplicateEntity(type, id) {
     var collections = {
       persona: S.data.personas, message: S.data.messages, style: S.data.styles,
-      visual_format: S.data.visual_formats, recipe: S.data.recipes, campaign: S.data.campaigns,
+      visual_format: S.data.visual_formats,
       campaign_v2: S.data.campaigns_v2, ad_set: S.data.ad_sets, ad: S.data.ads
     };
     var coll = collections[type];
@@ -439,7 +364,6 @@
     clone.created_by = S.user.id || '';
     if (clone.title) clone.title += ' (copy)';
     if (clone.name) clone.name += ' (copy)';
-    if (type === 'recipe') { clone.status = 'draft'; clone.batch_id = ''; clone.review_notes = ''; clone.assigned_to = ''; }
     if (type === 'campaign_v2') { clone.status = 'DRAFT'; clone.ab_test = { enabled: false, primary_metric: '', variants: [] }; }
     if (type === 'ad_set')      { clone.status = 'DRAFT'; clone.ab_role = null; }
     if (type === 'ad')          { clone.pipeline_status = 'hook_ready'; clone.review_notes = ''; clone.assigned_to = ''; }

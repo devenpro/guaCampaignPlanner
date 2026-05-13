@@ -78,25 +78,31 @@
           html += '<input type="text" class="cp-input cp-img-meta-field" data-meta-field="tags" value="' + esc((meta.tags || []).join(', ')) + '" placeholder="studio, product, lifestyle"></div>';
           html += '<div style="margin-top:var(--cp-space-2)"><label style="display:flex;align-items:center;gap:var(--cp-space-2);cursor:pointer"><input type="checkbox" class="cp-img-meta-field" data-meta-field="star"' + (meta.star ? ' checked' : '') + '> ' + icon('star') + ' Starred</label></div>';
 
-          // Usage tracking — which recipes use this image
-          var usedInRecipes = (S.data.recipes || []).filter(function(r) {
-            return (r.image_brief && r.image_brief.reference_image_ids || []).indexOf(selImg.fid) > -1;
+          // Usage tracking — which Ads use this image
+          var usedInAds = (S.data.ads || []).filter(function(a) {
+            var imgIds = (a.media && a.media.image && a.media.image.reference_image_ids) || [];
+            if (imgIds.indexOf(selImg.fid) > -1) return true;
+            var cards = (a.media && a.media.carousel_cards) || [];
+            for (var ci = 0; ci < cards.length; ci++) {
+              if ((cards[ci].reference_image_ids || []).indexOf(selImg.fid) > -1) return true;
+            }
+            return false;
           });
-          if (usedInRecipes.length > 0) {
+          if (usedInAds.length > 0) {
             html += '<div style="margin-top:var(--cp-space-3);border-top:1px solid var(--cp-border-light);padding-top:var(--cp-space-2)">';
-            html += '<div class="cp-field-label">' + icon('shuffle') + ' Used in ' + usedInRecipes.length + ' recipe' + (usedInRecipes.length !== 1 ? 's' : '') + '</div>';
-            for (var uri = 0; uri < usedInRecipes.length; uri++) {
-              html += '<div style="font-size:11px;color:var(--cp-text-secondary);padding:2px 0;cursor:pointer" data-action="select-recipe" data-id="' + esc(usedInRecipes[uri].id) + '">' + icon('arrow-right') + ' ' + esc(truncate(usedInRecipes[uri].title, 25)) + '</div>';
+            html += '<div class="cp-field-label">' + icon('rectangle-ad') + ' Used in ' + usedInAds.length + ' Ad' + (usedInAds.length !== 1 ? 's' : '') + '</div>';
+            for (var uai = 0; uai < usedInAds.length; uai++) {
+              html += '<div style="font-size:11px;color:var(--cp-text-secondary);padding:2px 0;cursor:pointer" data-action="ws-select-ad" data-id="' + esc(usedInAds[uai].id) + '">' + icon('arrow-right') + ' ' + esc(truncate(usedInAds[uai].name, 25)) + '</div>';
             }
             html += '</div>';
           }
 
-          // Campaign association
-          var campId = (meta && meta.campaign_id) || '';
-          var camps = S.data.campaigns || [];
+          // Campaign association (Meta v2)
+          var campId = (meta && meta.campaign_v2_id) || '';
+          var camps = S.data.campaigns_v2 || [];
           if (camps.length > 0) {
             html += '<div class="cp-form-group" style="margin-top:var(--cp-space-3)"><label class="cp-field-label">' + icon('bullhorn') + ' Campaign</label>';
-            html += '<select class="cp-select cp-img-meta-field" data-meta-field="campaign_id">';
+            html += '<select class="cp-select cp-img-meta-field" data-meta-field="campaign_v2_id">';
             html += '<option value="">None</option>';
             for (var cmi = 0; cmi < camps.length; cmi++) {
               html += '<option value="' + esc(camps[cmi].id) + '"' + (campId === camps[cmi].id ? ' selected' : '') + '>' + esc(camps[cmi].name) + '</option>';

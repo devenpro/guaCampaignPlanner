@@ -77,8 +77,6 @@
       case 'messages':     html = renderMessagesView(); break;
       case 'styles':       html = renderStylesView(); break;
       case 'formats':      html = renderFormatsPageView(); break;
-      case 'recipes':      html = renderRecipesView(); break;
-      case 'campaigns':  html = renderCampaignsView(); break;
       case 'meta_campaigns':     html = renderMetaCampaignsView(); break;
       case 'campaign_workspace': html = renderCampaignWorkspaceView(); break;
       case 'calendar':   html = renderCalendarView(); break;

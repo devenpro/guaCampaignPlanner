@@ -1,4 +1,4 @@
-/* Campaign Planner — built from 99 source files (see src/) */
+/* Campaign Planner — built from 82 source files (see src/) */
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -52,9 +52,7 @@
     'messages':          { order: 4,  label: 'Messages',          icon: 'comments',           group: 'library', description: 'Message library' },
     'styles':            { order: 5,  label: 'Styles',            icon: 'palette',            group: 'library', description: 'Creative styles' },
     'formats':           { order: 6,  label: 'Formats',           icon: 'clapperboard',       group: 'library', description: 'Visual formats' },
-    'recipes':           { order: 99, label: 'Recipes',           icon: 'shuffle',            group: 'core',    description: 'Creative recipes (legacy)', legacy: true },
-    'campaigns':         { order: 99, label: 'Campaigns (v1)',    icon: 'bullhorn',           group: 'core',    description: 'Legacy campaigns',          legacy: true },
-    // Meta v2 — the only working surface. Always shown.
+    // Meta v2 — the only working surface.
     'meta_campaigns':    { order: 7,  label: 'Campaigns',         icon: 'bullhorn',           group: 'core',    description: 'Meta Campaigns' },
     'campaign_workspace':{ order: 8,  label: 'Campaign Workspace',icon: 'sitemap',            group: 'core',    description: 'Campaign → Ad Set → Ad',    hidden: true },
     'calendar':          { order: 9,  label: 'Calendar',          icon: 'calendar',           group: 'core',    description: 'Timeline view' },
@@ -78,41 +76,10 @@
     'format':  { key: 'format',  label: 'Visual Format', icon: 'clapperboard', color: '#0891b2' }
   };
 
-  var RECIPE_STATUSES = {
-    'draft':         { key: 'draft',         label: 'Draft',         icon: 'pencil',            color: '#80868b', order: 0 },
-    'hook_ready':    { key: 'hook_ready',    label: 'Hook Ready',    icon: 'anchor',            color: '#9334e9', order: 1 },
-    'content_ready': { key: 'content_ready', label: 'Content Ready', icon: 'pen-fancy',         color: '#1a73e8', order: 2 },
-    'media_ready':   { key: 'media_ready',   label: 'Media Ready',   icon: 'wand-magic',        color: '#7c3aed', order: 3 },
-    'in_review':     { key: 'in_review',     label: 'In Review',     icon: 'magnifying-glass',  color: '#e37400', order: 4 },
-    'approved':      { key: 'approved',      label: 'Approved',      icon: 'circle-check',      color: '#0d904f', order: 5 },
-    'live':          { key: 'live',          label: 'Live',          icon: 'signal',            color: '#0891b2', order: 6 },
-    'paused':        { key: 'paused',        label: 'Paused',        icon: 'pause',             color: '#be123c', order: 7 },
-    'archived':      { key: 'archived',      label: 'Archived',      icon: 'box-archive',       color: '#bdc1c6', order: 8 }
-  };
-
-  var STATUS_ORDER = ['draft', 'hook_ready', 'content_ready', 'media_ready', 'in_review', 'approved', 'live', 'paused', 'archived'];
-  var ACTIVE_STATUSES = ['draft', 'hook_ready', 'content_ready', 'media_ready', 'in_review', 'approved', 'live'];
-
-  var CAMPAIGN_STATUSES = {
-    'planning':  { key: 'planning',  label: 'Planning',  icon: 'clipboard-list', color: '#e37400' },
-    'active':    { key: 'active',    label: 'Active',    icon: 'bolt',           color: '#0d904f' },
-    'paused':    { key: 'paused',    label: 'Paused',    icon: 'pause',          color: '#be123c' },
-    'completed': { key: 'completed', label: 'Completed', icon: 'flag-checkered', color: '#1a73e8' },
-    'archived':  { key: 'archived',  label: 'Archived',  icon: 'box-archive',    color: '#80868b' }
-  };
-
   var FUNNEL_DEFAULTS = [
     { id: 'fs_top', name: 'Top of Funnel',    short: 'TOFU', color: '#1a73e8', order: 0, system: true },
     { id: 'fs_mid', name: 'Middle of Funnel',  short: 'MOFU', color: '#e37400', order: 1, system: true },
     { id: 'fs_bot', name: 'Bottom of Funnel',  short: 'BOFU', color: '#0d904f', order: 2, system: true }
-  ];
-
-  var PIPELINE_STEPS = [
-    { key: 'composition', label: 'Composition', icon: 'shapes',        order: 0 },
-    { key: 'hook',        label: 'Hook',        icon: 'anchor',        order: 1 },
-    { key: 'content',     label: 'Content',     icon: 'pen-fancy',     order: 2 },
-    { key: 'media',       label: 'Production',  icon: 'rocket',        order: 3 },
-    { key: 'review',      label: 'Review',      icon: 'eye',           order: 4 }
   ];
 
   var MEDIA_TYPES = {
@@ -135,14 +102,6 @@
     'high':     { key: 'high',     label: 'High',     icon: 'arrow-up',   color: '#d93025' },
     'critical': { key: 'critical', label: 'Critical', icon: 'bolt',       color: '#be123c' }
   };
-
-  var CAMPAIGN_OBJECTIVES = [
-    { id: 'obj_leads',       name: 'Lead Generation',  icon: 'user-plus' },
-    { id: 'obj_awareness',   name: 'Brand Awareness',  icon: 'eye' },
-    { id: 'obj_conversions', name: 'Conversions',      icon: 'cart-shopping' },
-    { id: 'obj_traffic',     name: 'Traffic',          icon: 'arrow-pointer' },
-    { id: 'obj_engagement',  name: 'Engagement',       icon: 'heart' }
-  ];
 
   var FORMAT_CATEGORIES = [
     { id: 'vfc_shoot',     name: 'Shoot',     icon: 'camera' },
@@ -531,8 +490,8 @@
 
   var S = {
     // Data (from JSON fields)
-    data: { persona_categories: [], personas: [], pain_points: [], messages: [], styles: [], visual_formats: [], recipes: [], campaigns: [], tags: [], research_sessions: [], campaigns_v2: [], ad_sets: [], ads: [] },
-    meta: { workspace: {}, setup: {}, settings: {}, aiPreferences: {}, meta_defaults: {}, legacy_backup: null },
+    data: { persona_categories: [], personas: [], pain_points: [], messages: [], styles: [], visual_formats: [], tags: [], research_sessions: [], campaigns_v2: [], ad_sets: [], ads: [] },
+    meta: { workspace: {}, setup: {}, settings: {}, aiPreferences: {}, meta_defaults: {} },
     activity: [],
     user: { id: '', name: '', email: '', fullName: '', timezone: '', roles: '' },
     brand: { configured: false, identity: {}, core: null, video: null, content: null, seo: null, social: null },
@@ -540,7 +499,7 @@
     // Lookup maps (rebuilt by buildMaps)
     personaMap: {}, categoryMap: {}, painPointMap: {},
     messageMap: {}, styleMap: {}, formatMap: {},
-    recipeMap: {}, campaignMap: {}, tagMap: {},
+    tagMap: {},
     funnelStageMap: {}, researchMap: {},
 
     // Meta v2 hierarchy maps
@@ -550,47 +509,31 @@
     totalCampaignsV2: 0, activeCampaignsV2: 0,
     totalAdSets: 0, totalAds: 0, activeAds: 0,
 
-    // Production node snapshot, keyed by `data-planner-id` (= recipe.id).
-    // Rebuilt on every page load from the Drupal `view-media-productions`
-    // block. Persistent copy lives in `recipe.production` (append-only).
+    // Production node snapshot, keyed by `data-planner-id` (= ad.id).
+    // Rebuilt on every page load from the Drupal `view-media-productions` block.
     productionMap: {},
 
     // Aggregated counts
-    recipeStatusCounts: {}, campaignStatusCounts: {},
     funnelCounts: {},
-    personaRecipeCounts: {}, messageRecipeCounts: {},
-    styleRecipeCounts: {}, formatRecipeCounts: {},
     categoryPersonaCounts: {},
     tagIndex: {},
-    totalRecipes: 0, activeRecipes: 0,
     totalPersonas: 0, totalMessages: 0, totalStyles: 0, totalFormats: 0,
-    totalCampaigns: 0, activeCampaigns: 0,
 
     // UI state
     currentView: 'dashboard', previousView: null,
-    selectedRecipeId: null, currentStep: 'composition',
     selectedPersonaId: null, selectedCategoryId: null,
-    selectedMessageId: null, selectedCampaignId: null,
+    selectedMessageId: null,
     selectedImageId: null, selectedTagId: null,
-    personasTab: 'personas', // 'personas' or 'pain_points'
-    stylesTab: 'styles', // 'styles' or 'formats'
+    personasTab: 'personas',  // 'personas' or 'pain_points'
+    stylesTab: 'styles',      // 'styles' or 'formats'
     settingsTab: 'workspace',
     cardDensity: 'normal',
     sidebarHidden: false,
-
-    // Recipe list filters
-    recipeGroupBy: 'status',
-    recipeFilter: { search: '', statuses: [], campaign: '', persona: '', funnel: '', priority: '', type: '', tag: '', production: '', sortBy: 'updated', sortDir: 'desc' },
-    collapsedGroups: {},
 
     // Persona search
     personaFilter: { search: '' },
     // Message filter
     messageFilter: { search: '', funnel: '', sortBy: 'updated' },
-    // Campaign filter
-    campaignFilter: { search: '', status: '' },
-    selectedCampaignId: null,
-    campaignDetailTab: 'overview',
 
     // Meta v2 UI state (Campaign Workspace)
     selectedCampaignV2Id: null,
@@ -610,7 +553,7 @@
     calendarYear: null, calendarMonth: null,
     calendarMode: 'month',
     calendarWeekStart: null,
-    calendarFilters: { campaign: '', status: '', funnel: '' },
+    calendarFilters: { campaign: '', status: '' },
     calendarPopover: null,
 
     // Activity filter
@@ -683,7 +626,7 @@
 
       S.initialized = true;
       S._initializing = false;
-      console.log('[CP] Part 1 initialized — ' + S.totalRecipes + ' recipes, ' + S.totalPersonas + ' personas, ' + S.totalMessages + ' messages, user: ' + (S.user.name || 'unknown'));
+      console.log('[CP] Part 1 initialized — ' + S.totalAds + ' ads, ' + S.totalCampaignsV2 + ' campaigns, ' + S.totalPersonas + ' personas, ' + S.totalMessages + ' messages, user: ' + (S.user.name || 'unknown'));
     } catch(e) {
       console.error('[CP] Part 1 init CRASHED:', e.message, e.stack);
       S._initializing = false;
@@ -770,9 +713,10 @@
     parseProductionData();
   }
 
-  // Build S.productionMap from the Drupal view-media-productions block
-  // and mirror new entries into recipe.production (append-only — never
-  // overwrites or removes existing recipe.production records).
+  // Build S.productionMap from the Drupal view-media-productions block.
+  // Production nodes are keyed by `data-planner-id`, which now corresponds
+  // to a Meta v2 Ad id. The map is consulted by the Ad pipeline UI; we no
+  // longer mirror into entity-level caches.
   function parseProductionData() {
     S.productionMap = {};
     var $items = $('.media-production-data .media-production-item, .view-media-productions .media-production-item');
@@ -788,37 +732,7 @@
       if (!entry.node_id) return;
       S.productionMap[plannerId] = entry;
     });
-    // Mirror into recipe.production for any recipes that don't yet have a
-    // cached production. Append-only: existing recipe.production is kept
-    // as-is even if the view's snapshot has changed. For each newly-seeded
-    // recipe, log a "production attached" activity entry and try to
-    // auto-advance the recipe status (typically to media_ready).
-    var seeded = 0;
-    var advanced = 0;
-    var recipes = (S.data && S.data.recipes) || [];
-    for (var i = 0; i < recipes.length; i++) {
-      var r = recipes[i];
-      var live = S.productionMap[r.id];
-      if (!live) continue;
-      if (r.production && r.production.node_id) continue;
-      r.production = $.extend(true, {}, live);
-      seeded++;
-      // First-time discovery → activity log entry
-      if (typeof logActivity === 'function') {
-        var prodType = live.media_type || live.type || 'production';
-        var prodLabel = live.title || ('node ' + (live.node_id || '?'));
-        logActivity('production_attached', 'recipe', r.id, r.title,
-          'Production node attached: ' + prodLabel + ' (' + prodType + ')');
-      }
-      // Production existence is a strong signal — try to advance status.
-      if (typeof maybeAdvanceRecipeStatus === 'function') {
-        if (maybeAdvanceRecipeStatus(r, 'production node detected')) advanced++;
-      }
-    }
-    console.log('[CP] Parsed ' + Object.keys(S.productionMap).length +
-      ' production node(s)' +
-      (seeded   ? ', seeded ' + seeded + ' recipe.production cache entries' : '') +
-      (advanced ? ', advanced ' + advanced + ' recipe status to media_ready'  : ''));
+    console.log('[CP] Parsed ' + Object.keys(S.productionMap).length + ' production node(s)');
   }
 
   function _readProductionItem($item, plannerId) {
@@ -960,29 +874,24 @@
       workspace: { name: '', description: '', created: new Date().toISOString() },
       setup: {
         product_name: '', objective: '', custom_instructions: '', setup_complete: false,
-        // Meta v2 is the only supported surface — always on for new workspaces.
-        meta_v2: true,
-        migrated_to_v2: false
+        // Meta v2 is the only supported surface.
+        meta_v2: true
       },
       settings: {
         timezone: 'Asia/Kolkata',
         default_view: 'dashboard',
         card_density: 'normal',
         funnel_stages: deepClone(FUNNEL_DEFAULTS),
-        campaign_objectives: deepClone(CAMPAIGN_OBJECTIVES),
         visual_format_categories: deepClone(FORMAT_CATEGORIES),
         pain_point_categories: deepClone(PAIN_POINT_CATEGORIES),
-        defaults: { priority: 'medium', funnel_stage: 'fs_top', recipe_status: 'draft', campaign_status: 'planning' },
+        defaults: { priority: 'medium', funnel_stage: 'fs_top' },
         brand_design: getDefaultBrandDesign()
       },
       aiPreferences: { appDefault: { provider: '', model: '' }, perAction: {}, lastProvider: '', lastModel: '' },
       reference_images: {},
       image_categories: getDefaultImageCategories(),
       // Meta v2 workspace-level defaults (Page, Pixel, attribution, currency etc.)
-      meta_defaults: getDefaultMetaDefaults(),
-      // Legacy backup populated by the migration importer (Stage 6) so users
-      // can recover their pre-v2 data until they explicitly discard it.
-      legacy_backup: null
+      meta_defaults: getDefaultMetaDefaults()
     };
   }
 
@@ -1016,10 +925,11 @@
     d.messages = d.messages || [];
     d.styles = d.styles || [];
     d.visual_formats = d.visual_formats || [];
-    d.recipes = d.recipes || [];
-    d.campaigns = d.campaigns || [];
     d.tags = d.tags || [];
     d.research_sessions = d.research_sessions || [];
+    // Drop any legacy v1 collections silently — Meta v2 is the only path.
+    delete d.recipes;
+    delete d.campaigns;
     // Meta v2 hierarchy
     d.campaigns_v2 = d.campaigns_v2 || [];
     d.ad_sets = d.ad_sets || [];
@@ -1101,71 +1011,6 @@
       vf.tags = vf.tags || [];
       vf.created = vf.created || new Date().toISOString();
       vf.updated = vf.updated || vf.created;
-    }
-
-    // Ensure each recipe has all fields
-    for (var ri = 0; ri < d.recipes.length; ri++) {
-      var r = d.recipes[ri];
-      r.title = r.title || '';
-      r.status = r.status || 'draft';
-      r.priority = r.priority || 'medium';
-      r.campaign_id = r.campaign_id || '';
-      r.persona_id = r.persona_id || '';
-      r.message_id = r.message_id || '';
-      r.style_id = r.style_id || '';
-      r.visual_format_id = r.visual_format_id || '';
-      r.selected_pain_point_ids = r.selected_pain_point_ids || [];
-      r.media_type = r.media_type || 'image';
-      // Hook
-      r.hook = r.hook || { selected_hook_id: '', custom_hook: '', hook_type: '' };
-      // Content
-      r.content = r.content || { ad_copy: '', headline: '', description: '', cta: '', variants: [], notes: '' };
-      r.content.variants = r.content.variants || [];
-      // Media - image
-      r.image_brief = r.image_brief || { creative_brief: '', ai_prompt: '', prompt_params: { aspect_ratio: '1:1', visual_approach: 'photography', mood: '', negative_prompt: '' }, reference_image_ids: [] };
-      // Media - video
-      r.video = r.video || { duration_seconds: 30, format: 'Reel', aspect_ratio: '9:16', concept: '' };
-      r.video.blueprint = r.video.blueprint || { scenes: [] };
-      r.video.script = r.video.script || { rows: [] };
-      // Review
-      r.review_notes = r.review_notes || '';
-      r.production_notes = r.production_notes || '';
-      r.assigned_to = r.assigned_to || '';
-      r.due_date = r.due_date || '';
-      r.delivery_notes = r.delivery_notes || '';
-      r.creative_brief = r.creative_brief || '';
-      // Meta
-      r.tags = r.tags || [];
-      r.batch_id = r.batch_id || '';
-      r.created = r.created || new Date().toISOString();
-      r.updated = r.updated || r.created;
-      r.created_by = r.created_by || '';
-    }
-
-    // Ensure each campaign has all fields
-    for (var ci = 0; ci < d.campaigns.length; ci++) {
-      var c = d.campaigns[ci];
-      c.name = c.name || '';
-      c.description = c.description || '';
-      c.objective = c.objective || '';
-      c.funnel_stage = c.funnel_stage || '';
-      c.date_start = c.date_start || '';
-      c.date_end = c.date_end || '';
-      c.status = c.status || 'planning';
-      c.budget_notes = c.budget_notes || '';
-      c.target_audience_notes = c.target_audience_notes || '';
-      c.persona_ids = c.persona_ids || [];
-      c.message_ids = c.message_ids || [];
-      c.style_ids = c.style_ids || [];
-      c.format_ids = c.format_ids || [];
-      c.ai_instructions = c.ai_instructions || '';
-      c.phases = c.phases || [];
-      c.brief = c.brief || '';
-      c.tags = c.tags || [];
-      c.notes = c.notes || '';
-      c.created = c.created || new Date().toISOString();
-      c.updated = c.updated || c.created;
-      c.created_by = c.created_by || '';
     }
 
     // Ensure each tag has all fields
@@ -1299,19 +1144,17 @@
     var m = S.meta;
     m.workspace = m.workspace || { name: '', description: '', created: new Date().toISOString() };
     m.setup = m.setup || { product_name: '', objective: '', custom_instructions: '', setup_complete: false };
-    // Meta v2 is the only supported surface. Default true for new and existing
-    // workspaces. Existing v1 data is preserved but no longer visible.
-    if (m.setup.meta_v2 !== true) m.setup.meta_v2 = true;
-    if (typeof m.setup.migrated_to_v2 !== 'boolean') m.setup.migrated_to_v2 = false;
+    // Meta v2 is the only supported surface.
+    m.setup.meta_v2 = true;
+    delete m.setup.migrated_to_v2;
     m.settings = m.settings || {};
     m.settings.timezone = m.settings.timezone || 'Asia/Kolkata';
     m.settings.default_view = m.settings.default_view || 'dashboard';
     m.settings.card_density = m.settings.card_density || 'normal';
     m.settings.funnel_stages = m.settings.funnel_stages || deepClone(FUNNEL_DEFAULTS);
-    m.settings.campaign_objectives = m.settings.campaign_objectives || deepClone(CAMPAIGN_OBJECTIVES);
     m.settings.visual_format_categories = m.settings.visual_format_categories || deepClone(FORMAT_CATEGORIES);
     m.settings.pain_point_categories = m.settings.pain_point_categories || deepClone(PAIN_POINT_CATEGORIES);
-    m.settings.defaults = m.settings.defaults || { priority: 'medium', funnel_stage: 'fs_top', recipe_status: 'draft', campaign_status: 'planning' };
+    m.settings.defaults = m.settings.defaults || { priority: 'medium', funnel_stage: 'fs_top' };
     m.settings.brand_design = m.settings.brand_design || getDefaultBrandDesign();
     m.aiPreferences = m.aiPreferences || {};
     m.aiPreferences.appDefault = m.aiPreferences.appDefault || { provider: '', model: '' };
@@ -1320,7 +1163,6 @@
     m.aiPreferences.lastModel = m.aiPreferences.lastModel || '';
     m.reference_images = m.reference_images || {};
     m.image_categories = m.image_categories || getDefaultImageCategories();
-    m.recipe_templates = m.recipe_templates || [];
 
     // Meta v2: workspace-level Page / Pixel / attribution / currency defaults
     m.meta_defaults = m.meta_defaults || {};
@@ -1328,8 +1170,10 @@
     for (var dk in defaults) {
       if (m.meta_defaults[dk] === undefined) m.meta_defaults[dk] = defaults[dk];
     }
-    // Legacy backup (populated by Stage 6 importer; null until then)
-    if (m.legacy_backup === undefined) m.legacy_backup = null;
+    // Drop any leftover legacy backup payload
+    delete m.legacy_backup;
+    delete m.settings.campaign_objectives;
+    delete m.recipe_templates;
 
     S.cardDensity = m.settings.card_density;
     S.currentView = readHash();
@@ -1355,13 +1199,11 @@
 
     // --- Personas ---
     S.personaMap = {};
-    S.personaRecipeCounts = {};
     S.totalPersonas = 0;
     var personas = S.data.personas || [];
     for (i = 0; i < personas.length; i++) {
       item = personas[i];
       S.personaMap[item.id] = item;
-      S.personaRecipeCounts[item.id] = 0;
       S.totalPersonas++;
       if (item.category_id && S.categoryPersonaCounts[item.category_id] !== undefined) {
         S.categoryPersonaCounts[item.category_id]++;
@@ -1375,34 +1217,28 @@
 
     // --- Messages ---
     S.messageMap = {};
-    S.messageRecipeCounts = {};
     S.totalMessages = 0;
     var msgs = S.data.messages || [];
     for (i = 0; i < msgs.length; i++) {
       S.messageMap[msgs[i].id] = msgs[i];
-      S.messageRecipeCounts[msgs[i].id] = 0;
       S.totalMessages++;
     }
 
     // --- Styles ---
     S.styleMap = {};
-    S.styleRecipeCounts = {};
     S.totalStyles = 0;
     var stys = S.data.styles || [];
     for (i = 0; i < stys.length; i++) {
       S.styleMap[stys[i].id] = stys[i];
-      S.styleRecipeCounts[stys[i].id] = 0;
       S.totalStyles++;
     }
 
     // --- Visual formats ---
     S.formatMap = {};
-    S.formatRecipeCounts = {};
     S.totalFormats = 0;
     var fmts = S.data.visual_formats || [];
     for (i = 0; i < fmts.length; i++) {
       S.formatMap[fmts[i].id] = fmts[i];
-      S.formatRecipeCounts[fmts[i].id] = 0;
       S.totalFormats++;
     }
 
@@ -1421,61 +1257,10 @@
     var tags = S.data.tags || [];
     for (i = 0; i < tags.length; i++) S.tagMap[tags[i].id] = tags[i];
 
-    // --- Campaigns ---
-    S.campaignMap = {};
-    S.campaignStatusCounts = {};
-    S.totalCampaigns = 0; S.activeCampaigns = 0;
-    for (var csk in CAMPAIGN_STATUSES) S.campaignStatusCounts[csk] = 0;
-    var camps = S.data.campaigns || [];
-    for (i = 0; i < camps.length; i++) {
-      item = camps[i];
-      S.campaignMap[item.id] = item;
-      S.campaignStatusCounts[item.status] = (S.campaignStatusCounts[item.status] || 0) + 1;
-      S.totalCampaigns++;
-      if (item.status === 'active' || item.status === 'planning') S.activeCampaigns++;
-    }
-
     // --- Research sessions ---
     S.researchMap = {};
     var sessions = S.data.research_sessions || [];
     for (i = 0; i < sessions.length; i++) S.researchMap[sessions[i].id] = sessions[i];
-
-    // --- Recipes (the big one — updates many cross-counts) ---
-    S.recipeMap = {};
-    S.recipeStatusCounts = {};
-    S.totalRecipes = 0; S.activeRecipes = 0;
-    for (var rsk in RECIPE_STATUSES) S.recipeStatusCounts[rsk] = 0;
-
-    var recipes = S.data.recipes || [];
-    for (i = 0; i < recipes.length; i++) {
-      item = recipes[i];
-      S.recipeMap[item.id] = item;
-      S.recipeStatusCounts[item.status] = (S.recipeStatusCounts[item.status] || 0) + 1;
-      S.totalRecipes++;
-      if (ACTIVE_STATUSES.indexOf(item.status) > -1) S.activeRecipes++;
-
-      // Cross-counts
-      if (item.persona_id && S.personaRecipeCounts[item.persona_id] !== undefined) S.personaRecipeCounts[item.persona_id]++;
-      if (item.message_id && S.messageRecipeCounts[item.message_id] !== undefined) S.messageRecipeCounts[item.message_id]++;
-      if (item.style_id && S.styleRecipeCounts[item.style_id] !== undefined) S.styleRecipeCounts[item.style_id]++;
-      if (item.visual_format_id && S.formatRecipeCounts[item.visual_format_id] !== undefined) S.formatRecipeCounts[item.visual_format_id]++;
-
-      // Funnel count (via message's funnel stages)
-      var msg = S.messageMap[item.message_id];
-      if (msg && msg.funnel_stages) {
-        for (var fi = 0; fi < msg.funnel_stages.length; fi++) {
-          var fsId = msg.funnel_stages[fi];
-          if (S.funnelCounts[fsId] !== undefined) S.funnelCounts[fsId]++;
-        }
-      }
-
-      // Tag index
-      var rTags = item.tags || [];
-      for (var rti = 0; rti < rTags.length; rti++) {
-        S.tagIndex[rTags[rti]] = S.tagIndex[rTags[rti]] || [];
-        S.tagIndex[rTags[rti]].push(item.id);
-      }
-    }
 
     // Image category map
     S.imageCategoryMap = {};
@@ -1614,8 +1399,6 @@
       case 'messages':     html = renderMessagesView(); break;
       case 'styles':       html = renderStylesView(); break;
       case 'formats':      html = renderFormatsPageView(); break;
-      case 'recipes':      html = renderRecipesView(); break;
-      case 'campaigns':  html = renderCampaignsView(); break;
       case 'meta_campaigns':     html = renderMetaCampaignsView(); break;
       case 'campaign_workspace': html = renderCampaignWorkspaceView(); break;
       case 'calendar':   html = renderCalendarView(); break;
@@ -1747,16 +1530,6 @@
     return '<span class="cp-badge" style="background:' + bg + '15;color:' + fg + '">' + esc(text) + '</span>';
   }
 
-  function recipeStatusBadge(status) {
-    var c = RECIPE_STATUSES[status] || { label: status, color: '#80868b', icon: 'circle' };
-    return '<span class="cp-status-badge"><span class="cp-status-dot" style="background:' + c.color + '"></span>' + esc(c.label) + '</span>';
-  }
-
-  function campaignStatusBadge(status) {
-    var c = CAMPAIGN_STATUSES[status] || { label: status, color: '#80868b' };
-    return '<span class="cp-badge" style="background:' + c.color + '15;color:' + c.color + '">' + icon(c.icon) + ' ' + esc(c.label) + '</span>';
-  }
-
   function priorityBadge(p) {
     if (!p) return '';
     var c = PRIORITY_LEVELS[p] || { label: p, color: '#80868b', icon: 'minus' };
@@ -1806,8 +1579,6 @@
   function getMessage(id) { return S.messageMap[id] || null; }
   function getStyle(id) { return S.styleMap[id] || null; }
   function getFormat(id) { return S.formatMap[id] || null; }
-  function getRecipe(id) { return S.recipeMap[id] || null; }
-  function getCampaign(id) { return S.campaignMap[id] || null; }
   function getTag(id) { return S.tagMap[id] || null; }
   function getFunnelStage(id) { return S.funnelStageMap[id] || null; }
   function getResearchSession(id) { return S.researchMap[id] || null; }
@@ -1818,19 +1589,6 @@
   function getAdSet(id)      { return S.adSetMap[id] || null; }
   function getAd(id)         { return S.adMap[id] || null; }
   function isMetaV2Enabled() { return !!(S.meta && S.meta.setup && S.meta.setup.meta_v2); }
-
-  // Returns the production node info for a recipe, preferring the live
-  // snapshot from S.productionMap (rebuilt on each page load from the view
-  // block) and falling back to the persistent recipe.production cache.
-  // Returns null if neither has a record.
-  function getRecipeProduction(recipeIdOrRecipe) {
-    if (!recipeIdOrRecipe) return null;
-    var recipe = typeof recipeIdOrRecipe === 'string' ? S.recipeMap[recipeIdOrRecipe] : recipeIdOrRecipe;
-    var live = (S.productionMap || {})[recipe ? recipe.id : recipeIdOrRecipe];
-    if (live && live.node_id) return live;
-    if (recipe && recipe.production && recipe.production.node_id) return recipe.production;
-    return null;
-  }
 
   // Looks up the visual style for a production node's status string.
   // Case-insensitive; unknown values get the neutral default.
@@ -1846,8 +1604,6 @@
   function getAllMessages() { return (S.data.messages || []).slice(); }
   function getAllStyles() { return (S.data.styles || []).slice(); }
   function getAllFormats() { return (S.data.visual_formats || []).slice(); }
-  function getAllRecipes() { return (S.data.recipes || []).slice(); }
-  function getAllCampaigns() { return (S.data.campaigns || []).slice(); }
   function getAllPainPoints() { return (S.data.pain_points || []).slice(); }
   function getAllCategories() { return (S.data.persona_categories || []).slice().sort(function(a, b) { return (a.order || 0) - (b.order || 0); }); }
 
@@ -1871,14 +1627,6 @@
 
   function getPersonasByCategory(catId) {
     return (S.data.personas || []).filter(function(p) { return p.category_id === catId; });
-  }
-
-  function getRecipesByCampaign(campId) {
-    return (S.data.recipes || []).filter(function(r) { return r.campaign_id === campId; });
-  }
-
-  function getRecipesByPersona(personaId) {
-    return (S.data.recipes || []).filter(function(r) { return r.persona_id === personaId; });
   }
 
   function getPersonaPainPoints(persona) {
@@ -1921,27 +1669,6 @@
     var tags = {};
     S.images.forEach(function(img) { (img.tags || []).forEach(function(t) { tags[t] = (tags[t] || 0) + 1; }); });
     return Object.keys(tags).sort();
-  }
-
-  // --- Diversity Score ---
-  function calculateDiversityScore() {
-    var uniquePairs = {};
-    var recipes = S.data.recipes || [];
-    for (var i = 0; i < recipes.length; i++) {
-      var r = recipes[i];
-      if (r.persona_id && r.message_id && r.status !== 'archived') {
-        uniquePairs[r.persona_id + '::' + r.message_id] = true;
-      }
-    }
-    var usedPairs = Object.keys(uniquePairs).length;
-    var totalPossible = S.totalPersonas * S.totalMessages;
-    if (totalPossible === 0) return { score: 0, used: 0, total: 0, remaining: 0 };
-    return {
-      score: Math.round((usedPairs / totalPossible) * 100),
-      used: usedPairs,
-      total: totalPossible,
-      remaining: totalPossible - usedPairs
-    };
   }
 
   // --- Misc ---
@@ -2059,8 +1786,6 @@
       case 'personas': count = S.totalPersonas; break;
       case 'messages': count = S.totalMessages; break;
       case 'styles': count = S.totalStyles + S.totalFormats; break;
-      case 'recipes': count = S.activeRecipes; break;
-      case 'campaigns': count = S.activeCampaigns; break;
       case 'meta_campaigns': count = S.activeCampaignsV2; break;
       case 'images': count = S.images.length; break;
       case 'activity':
@@ -2202,56 +1927,34 @@
     // Meta v2 widget (Campaigns / Ad Sets / Ads rollups)
     html += renderDashMetaV2Widget();
 
-    // Continue working card (last edited recipe)
-    var lastRecipe = (S.data.recipes || []).slice().sort(function(a, b) { return (b.updated || '') > (a.updated || '') ? 1 : -1; })[0];
-    if (lastRecipe && lastRecipe.updated) {
-      var lastCamp = S.campaignMap[lastRecipe.campaign_id];
-      html += '<div class="cp-card cp-dash-continue" data-action="select-recipe" data-id="' + esc(lastRecipe.id) + '">';
+    // Continue working card (last edited Ad)
+    var lastAd = (S.data.ads || []).slice().sort(function(a, b) { return (b.updated || '') > (a.updated || '') ? 1 : -1; })[0];
+    if (lastAd && lastAd.updated) {
+      var lastSet = S.adSetMap[lastAd.ad_set_id];
+      var lastCamp = lastSet && S.campaignV2Map[lastSet.campaign_id];
+      var statusCfg = (typeof metaAdStatus === 'function') ? metaAdStatus(lastAd.pipeline_status) : { label: lastAd.pipeline_status || '', color: '#80868b' };
+      html += '<div class="cp-card cp-dash-continue" data-action="ws-select-ad" data-id="' + esc(lastAd.id) + '">';
       html += '<div style="display:flex;align-items:center;gap:var(--cp-space-3)">';
       html += '<div style="flex:1"><span class="cp-text-muted" style="font-size:var(--cp-font-size-xs)">Continue where you left off</span>';
-      html += '<div style="font-weight:600">' + esc(lastRecipe.title || 'Untitled Recipe') + '</div>';
-      html += '<div style="display:flex;gap:var(--cp-space-2);margin-top:4px">' + recipeStatusBadge(lastRecipe.status) + mediaTypeBadge(lastRecipe.media_type);
+      html += '<div style="font-weight:600">' + esc(lastAd.name || 'Untitled Ad') + '</div>';
+      html += '<div style="display:flex;gap:var(--cp-space-2);margin-top:4px"><span class="cp-badge" style="background:' + statusCfg.color + '15;color:' + statusCfg.color + '">' + esc(statusCfg.label) + '</span>';
       if (lastCamp) html += '<span class="cp-badge" style="background:#0891b215;color:#0891b2">' + icon('bullhorn') + ' ' + esc(truncate(lastCamp.name, 14)) + '</span>';
       html += '</div></div>';
-      html += '<span class="cp-text-muted">' + formatRelativeTime(lastRecipe.updated) + ' ' + icon('arrow-right') + '</span>';
+      html += '<span class="cp-text-muted">' + formatRelativeTime(lastAd.updated) + ' ' + icon('arrow-right') + '</span>';
       html += '</div></div>';
     }
 
     // Stat cards row
     html += renderDashStats();
 
-    // Active campaigns summary
-    var activeCamps = (S.data.campaigns || []).filter(function(c) { return c.status === 'active' || c.status === 'planning'; });
-    if (activeCamps.length > 0) {
-      html += '<div class="cp-card" style="margin-bottom:var(--cp-space-4)">';
-      html += '<div class="cp-section-header"><h3>' + icon('bullhorn') + ' Active Campaigns (' + activeCamps.length + ')</h3></div>';
-      for (var aci = 0; aci < activeCamps.length; aci++) {
-        var ac = activeCamps[aci];
-        var acRecipes = getRecipesByCampaign(ac.id);
-        var acReady = acRecipes.filter(function(r) { return r.status === 'approved' || r.status === 'live'; }).length;
-        var acPct = acRecipes.length > 0 ? Math.round((acReady / acRecipes.length) * 100) : 0;
-        var acst = CAMPAIGN_STATUSES[ac.status] || { color: '#80868b', icon: 'circle' };
-        html += '<div class="cp-dash-campaign-row" data-action="go-to-campaign" data-id="' + esc(ac.id) + '">';
-        html += '<span class="cp-badge" style="background:' + acst.color + '15;color:' + acst.color + '">' + icon(acst.icon) + '</span>';
-        html += '<span style="flex:1;font-weight:500">' + esc(truncate(ac.name, 28)) + '</span>';
-        html += '<span class="cp-text-muted" style="font-size:11px">' + acRecipes.length + ' recipes</span>';
-        html += '<div class="cp-recipe-progress-mini" style="width:60px"><div class="cp-recipe-progress-fill" style="width:' + acPct + '%;background:' + (acPct >= 80 ? 'var(--cp-success)' : acPct >= 40 ? '#e37400' : 'var(--cp-gray-300)') + '"></div></div>';
-        html += '<span style="font-size:11px;font-weight:600;color:' + (acPct >= 80 ? 'var(--cp-success)' : '#e37400') + '">' + acPct + '%</span>';
-        html += '</div>';
-      }
-      html += '</div>';
-    }
-
     // Two-column grid
     html += '<div class="cp-dash-grid">';
     html += '<div class="cp-dash-col-left">';
     html += renderDashFunnelBar();
-    html += renderDashPipeline();
-    html += renderDashDiversity();
     html += '</div>';
     html += '<div class="cp-dash-col-right">';
     html += renderDashQuickActions();
-    html += renderDashRecentRecipes();
+    html += renderDashRecentAds();
     html += renderDashActivity();
     html += '</div>';
     html += '</div>';
@@ -2378,11 +2081,11 @@
     }
     html += renderStatCard(icon('comments'), 'Messages', S.totalMessages, funnelSummary.join(' · ') || 'No messages yet', '#1a73e8');
 
-    // Recipes
-    html += renderStatCard(icon('bolt'), 'Recipes', S.activeRecipes, 'active of ' + S.totalRecipes + ' total', '#e37400');
+    // Campaigns (Meta v2)
+    html += renderStatCard(icon('bullhorn'), 'Campaigns', S.totalCampaignsV2, S.activeCampaignsV2 + ' active', '#0891b2');
 
-    // Campaigns
-    html += renderStatCard(icon('bullhorn'), 'Campaigns', S.totalCampaigns, S.activeCampaigns + ' active', '#0891b2');
+    // Ads (Meta v2)
+    html += renderStatCard(icon('rectangle-ad'), 'Ads', S.totalAds, S.activeAds + ' active', '#e37400');
 
     html += '</div>';
     return html;
@@ -2405,7 +2108,7 @@
 
     var html = '<div class="cp-section"><div class="cp-section-header"><h2>' + icon('filter') + ' Funnel Distribution</h2></div>';
     if (totalFunnel === 0) {
-      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No recipes with funnel stages yet.</p></div>';
+      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No messages tagged with funnel stages yet.</p></div>';
     } else {
       html += '<div class="cp-funnel-bar">';
       for (var i = 0; i < funnels.length; i++) {
@@ -2423,94 +2126,35 @@
     return html;
   }
 
-  function renderDashPipeline() {
-    var html = '<div class="cp-section"><div class="cp-section-header"><h2>' + icon('diagram-project') + ' Recipe Pipeline</h2></div>';
-    html += '<div class="cp-pipeline">';
-    for (var status in RECIPE_STATUSES) {
-      if (status === 'archived') continue;
-      var cfg = RECIPE_STATUSES[status];
-      var count = S.recipeStatusCounts[status] || 0;
-      html += '<div class="cp-pipeline-card" data-action="filter-pipeline-status" data-status="' + status + '">';
-      html += '<div class="cp-pipeline-card-bar" style="background:' + cfg.color + '"></div>';
-      html += '<div class="cp-pipeline-card-count" style="color:' + cfg.color + '">' + count + '</div>';
-      html += '<div class="cp-pipeline-card-label">' + esc(cfg.label) + '</div>';
-      html += '</div>';
-    }
-    html += '</div>';
-
-    // Pipeline progress bar
-    if (S.totalRecipes > 0) {
-      html += '<div class="cp-pipeline-bar">';
-      for (var s in RECIPE_STATUSES) {
-        var cnt = S.recipeStatusCounts[s] || 0;
-        var w = (cnt / S.totalRecipes) * 100;
-        if (w > 0) html += '<div class="cp-pipeline-segment" style="width:' + w + '%;background:' + RECIPE_STATUSES[s].color + '" title="' + esc(RECIPE_STATUSES[s].label) + ': ' + cnt + '"></div>';
-      }
-      html += '</div>';
-    }
-    html += '</div>';
-    return html;
-  }
-
-  function renderDashDiversity() {
-    var ds = calculateDiversityScore();
-    var html = '<div class="cp-section"><div class="cp-section-header"><h2>' + icon('chart-pie') + ' Diversity Score</h2></div>';
-    html += '<div class="cp-diversity">';
-    // SVG ring
-    var circumference = 2 * Math.PI * 15;
-    var dashArray = (ds.score / 100) * circumference;
-    var scoreColor = ds.score >= 70 ? '#0d904f' : ds.score >= 40 ? '#e37400' : '#d93025';
-    html += '<div class="cp-diversity-ring">';
-    html += '<svg viewBox="0 0 36 36" class="cp-diversity-svg">';
-    html += '<circle cx="18" cy="18" r="15" fill="none" stroke="var(--cp-border-light)" stroke-width="3"></circle>';
-    if (ds.score > 0) {
-      html += '<circle cx="18" cy="18" r="15" fill="none" stroke="' + scoreColor + '" stroke-width="3" stroke-dasharray="' + dashArray.toFixed(1) + ' ' + circumference.toFixed(1) + '" stroke-linecap="round" transform="rotate(-90 18 18)"></circle>';
-    }
-    html += '</svg>';
-    html += '<span class="cp-diversity-pct" style="color:' + scoreColor + '">' + ds.score + '%</span>';
-    html += '</div>';
-
-    html += '<div class="cp-diversity-info">';
-    if (ds.total === 0) {
-      html += '<p>Add personas and messages to see your diversity score.</p>';
-    } else {
-      var scoreLabel = ds.score >= 70 ? 'Great coverage' : ds.score >= 40 ? 'Good progress' : 'Room to grow';
-      html += '<div class="cp-diversity-label" style="color:' + scoreColor + '">' + scoreLabel + '</div>';
-      html += '<p>' + ds.used + ' unique persona×message pairs used out of ' + ds.total + ' possible. ' + ds.remaining + ' untapped.</p>';
-    }
-    html += '</div></div></div>';
-    return html;
-  }
-
   function renderDashQuickActions() {
     var html = '<div class="cp-section"><div class="cp-section-header"><h2>' + icon('bolt') + ' Quick Actions</h2></div>';
     html += '<div class="cp-dash-actions">';
-    html += '<button class="cp-btn cp-btn-ai cp-dash-action-btn" data-action="go-view" data-view="recipes">' + icon('bolt') + ' Create Recipe</button>';
-    html += '<button class="cp-btn cp-btn-primary cp-dash-action-btn" data-action="go-view" data-view="recipes" data-sub="batch">' + icon('shuffle') + ' Batch Generate</button>';
+    html += '<button class="cp-btn cp-btn-ai cp-dash-action-btn" data-action="new-campaign-v2">' + icon('wand-magic') + ' New Campaign</button>';
+    html += '<button class="cp-btn cp-btn-primary cp-dash-action-btn" data-action="go-view" data-view="meta_campaigns">' + icon('bullhorn') + ' Campaigns</button>';
     html += '<button class="cp-btn cp-btn-outline cp-dash-action-btn" data-action="go-view" data-view="research">' + icon('flask') + ' Research Lab</button>';
     html += '</div></div>';
     return html;
   }
 
-  function renderDashRecentRecipes() {
-    var recent = (S.data.recipes || []).slice().sort(function(a, b) {
+  function renderDashRecentAds() {
+    var recent = (S.data.ads || []).slice().sort(function(a, b) {
       return (b.updated || b.created || '') > (a.updated || a.created || '') ? 1 : -1;
     }).slice(0, 5);
 
-    var html = '<div class="cp-section"><div class="cp-section-header"><h2>' + icon('bolt') + ' Recent Recipes</h2>';
-    if (S.totalRecipes > 0) html += '<a href="#" class="cp-btn-link" data-action="go-view" data-view="recipes">View all ' + icon('arrow-right') + '</a>';
+    var html = '<div class="cp-section"><div class="cp-section-header"><h2>' + icon('rectangle-ad') + ' Recent Ads</h2>';
+    if (S.totalAds > 0) html += '<a href="#" class="cp-btn-link" data-action="go-view" data-view="meta_campaigns">View all ' + icon('arrow-right') + '</a>';
     html += '</div>';
 
     if (recent.length === 0) {
-      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No recipes yet. Create your first!</p></div>';
+      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No ads yet. Create a Campaign to get started.</p></div>';
     } else {
       html += '<div class="cp-dash-recipe-list">';
       for (var i = 0; i < recent.length; i++) {
         var r = recent[i];
-        var stCfg = RECIPE_STATUSES[r.status] || { label: r.status, color: '#80868b' };
-        html += '<div class="cp-dash-recipe-item" data-action="select-recipe" data-id="' + esc(r.id) + '">';
+        var stCfg = (typeof metaAdStatus === 'function') ? metaAdStatus(r.pipeline_status) : { label: r.pipeline_status || '', color: '#80868b' };
+        html += '<div class="cp-dash-recipe-item" data-action="ws-select-ad" data-id="' + esc(r.id) + '">';
         html += '<span class="cp-status-dot" style="background:' + stCfg.color + '"></span>';
-        html += '<span class="cp-dash-recipe-title">' + esc(truncate(r.title || 'Untitled Recipe', 45)) + '</span>';
+        html += '<span class="cp-dash-recipe-title">' + esc(truncate(r.name || 'Untitled Ad', 45)) + '</span>';
         html += '<span class="cp-badge" style="background:' + stCfg.color + '15;color:' + stCfg.color + '">' + esc(stCfg.label) + '</span>';
         html += '</div>';
       }
@@ -3404,7 +3048,6 @@
 
   function renderPainPointListItem(pp) {
     var personaCount = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) > -1; }).length;
-    var recipeCount = (S.data.recipes || []).filter(function(r) { return (r.selected_pain_point_ids || []).indexOf(pp.id) > -1; }).length;
     var sel = S.selectedPainPointId === pp.id ? ' cp-pp-item-selected' : '';
     var hasSolution = !!(pp.solution && pp.solution.trim());
 
@@ -3417,7 +3060,6 @@
     html += '</div>';
     html += '<div class="cp-pp-item-meta">';
     if (personaCount > 0) html += '<span class="cp-pp-mini-stat" title="Linked personas">' + icon('users') + ' ' + personaCount + '</span>';
-    if (recipeCount > 0) html += '<span class="cp-pp-mini-stat" title="Used in recipes">' + icon('shuffle') + ' ' + recipeCount + '</span>';
     if (!hasSolution) html += '<span class="cp-pp-mini-stat cp-pp-mini-warn" title="No solution defined">' + icon('triangle-exclamation') + '</span>';
     html += '</div>';
     html += '</div>';
@@ -3437,10 +3079,9 @@
     var catLabel = '';
     if (pp.category) { var ppcMatch = ppCats.find(function(c) { return c.id === pp.category; }); catLabel = ppcMatch ? ppcMatch.name : ''; }
 
-    // Find linked personas and recipes
+    // Find linked personas
     var linkedPersonas = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) > -1; });
     var unlinkedPersonas = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) === -1; });
-    var linkedRecipes = (S.data.recipes || []).filter(function(r) { return (r.selected_pain_point_ids || []).indexOf(pp.id) > -1; });
 
     var html = '<div class="cp-detail-header"><div class="cp-detail-header-left">';
     html += '<h2>' + icon('bolt') + ' Pain Point</h2>';
@@ -3482,21 +3123,6 @@
         html += '<div class="cp-list-item-inline">';
         html += '<span style="flex:1;cursor:pointer" data-action="go-view" data-view="personas" data-select="' + esc(linkedPersonas[pi].id) + '">' + dimensionBadge('persona', linkedPersonas[pi].id) + '</span>';
         html += '<button class="cp-btn-icon cp-btn-xs" data-action="unlink-pp-from-persona" data-pp-id="' + esc(pp.id) + '" data-persona-id="' + esc(linkedPersonas[pi].id) + '" title="Unlink">' + icon('link-slash') + '</button>';
-        html += '</div>';
-      }
-    }
-    html += '</div>';
-
-    // Linked Recipes
-    html += '<div class="cp-card cp-pp-detail-card">';
-    html += '<div class="cp-section-header"><h3>' + icon('shuffle') + ' Used in Recipes (' + linkedRecipes.length + ')</h3></div>';
-    if (linkedRecipes.length === 0) {
-      html += '<p class="cp-text-muted">Not used in any recipes yet.</p>';
-    } else {
-      for (var ri = 0; ri < linkedRecipes.length; ri++) {
-        var r = linkedRecipes[ri];
-        html += '<div class="cp-list-item-inline" style="cursor:pointer" data-action="go-view" data-view="recipes" data-select="' + esc(r.id) + '">';
-        html += recipeStatusBadge(r.status) + ' ' + esc(truncate(r.title, 50));
         html += '</div>';
       }
     }
@@ -3565,780 +3191,6 @@
     }
 
     html += '</div>';
-    return html;
-  }
-
-
-/* ===== src/10-part1/16-view-recipes.js ===== */
-  // ============================================================
-  // SECTION 14: RECIPES VIEW (List + Pipeline Shell)
-  // ============================================================
-
-  function renderRecipesView() {
-    var html = '<div class="cp-view cp-view-recipes"><div class="cp-split-pane">';
-    html += renderRecipesLeftPane();
-    html += '<div class="cp-preview-pane" id="cpRecipePreview">' + renderRecipeRightPane() + '</div>';
-    html += '</div></div>';
-    return html;
-  }
-
-  function renderRecipesLeftPane() {
-    var f = S.recipeFilter;
-    var recipes = getFilteredRecipes();
-    var totalAll = (S.data.recipes || []).length;
-
-    var html = '<div class="cp-list-pane">';
-
-    // Toolbar
-    html += '<div class="cp-list-toolbar">';
-    // Search + buttons
-    html += '<div class="cp-list-toolbar-row">';
-    html += '<div class="cp-search-wrapper">' + icon('search') + '<input type="text" class="cp-input" id="cpRecipeSearch" placeholder="Search recipes..." value="' + esc(f.search) + '"></div>';
-    html += '</div>';
-    html += '<div class="cp-list-toolbar-row">';
-    html += '<button class="cp-btn cp-btn-ai cp-btn-sm" data-action="open-mixer" data-mode="manual">' + icon('bolt') + ' Create</button>';
-    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="open-mixer" data-mode="batch">' + icon('shuffle') + ' Batch</button>';
-    html += '</div>';
-
-    // Filters row
-    html += '<div class="cp-list-toolbar-row cp-list-filters">';
-    html += '<select class="cp-select cp-select-sm" id="cpRecipeStatusFilter"><option value="">All Status</option>';
-    for (var sk in RECIPE_STATUSES) {
-      html += '<option value="' + sk + '"' + (f.statuses.indexOf(sk) > -1 ? ' selected' : '') + '>' + RECIPE_STATUSES[sk].label + '</option>';
-    }
-    html += '</select>';
-    // Campaign filter
-    var camps = getAllCampaigns();
-    if (camps.length > 0) {
-      html += '<select class="cp-select cp-select-sm" id="cpRecipeCampaignFilter"><option value="">All Campaigns</option>';
-      for (var ci = 0; ci < camps.length; ci++) {
-        html += '<option value="' + esc(camps[ci].id) + '"' + (f.campaign === camps[ci].id ? ' selected' : '') + '>' + esc(truncate(camps[ci].name, 20)) + '</option>';
-      }
-      html += '</select>';
-    }
-    // Production filter (has / missing production node)
-    html += '<select class="cp-select cp-select-sm" id="cpRecipeProductionFilter" title="Production node status">';
-    html += '<option value=""' + (!f.production ? ' selected' : '') + '>All Production</option>';
-    html += '<option value="has"' + (f.production === 'has' ? ' selected' : '') + '>With Production</option>';
-    html += '<option value="missing"' + (f.production === 'missing' ? ' selected' : '') + '>Missing Production</option>';
-    html += '</select>';
-    html += '<span class="cp-filter-count">' + recipes.length + ' of ' + totalAll + '</span>';
-    html += '</div>';
-
-    // Sort + group
-    html += '<div class="cp-list-toolbar-row">';
-    html += '<select class="cp-select cp-select-sm" id="cpRecipeSortBy">';
-    html += '<option value="updated"' + (f.sortBy === 'updated' ? ' selected' : '') + '>Updated</option>';
-    html += '<option value="created"' + (f.sortBy === 'created' ? ' selected' : '') + '>Created</option>';
-    html += '<option value="title"' + (f.sortBy === 'title' ? ' selected' : '') + '>Title</option>';
-    html += '<option value="priority"' + (f.sortBy === 'priority' ? ' selected' : '') + '>Priority</option>';
-    html += '</select>';
-    html += '<button class="cp-btn-icon cp-btn-sm" data-action="toggle-recipe-sort-dir" title="Sort direction">' + icon(f.sortDir === 'asc' ? 'arrow-up' : 'arrow-down') + '</button>';
-    html += '<div style="flex:1"></div>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="toggle-bulk-mode" title="Bulk select">' + icon('list-check') + (S._bulkMode ? ' On' : '') + '</button>';
-    html += '</div>';
-
-    // Bulk action bar (visible when items selected)
-    if (S._bulkMode) {
-      S._bulkSelected = S._bulkSelected || [];
-      var selCount = S._bulkSelected.length;
-      html += '<div class="cp-bulk-bar">';
-      html += '<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" data-action="bulk-select-all"' + (selCount === recipes.length && selCount > 0 ? ' checked' : '') + '> All</label>';
-      html += '<span class="cp-text-muted" style="flex:1">' + selCount + ' selected</span>';
-      if (selCount > 0) {
-        html += '<select class="cp-select cp-select-sm" id="cpBulkStatus" style="width:auto"><option value="">Status...</option>';
-        for (var bsk in RECIPE_STATUSES) html += '<option value="' + bsk + '">' + RECIPE_STATUSES[bsk].label + '</option>';
-        html += '</select>';
-        html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="bulk-assign-campaign">' + icon('bullhorn') + '</button>';
-        html += '<button class="cp-btn cp-btn-outline cp-btn-sm cp-btn-danger" data-action="bulk-delete">' + icon('trash') + '</button>';
-      }
-      html += '</div>';
-    }
-
-    html += '</div>'; // toolbar
-
-    // Recipe list
-    html += '<div class="cp-recipe-list" id="cpRecipeList">';
-    if (recipes.length === 0) {
-      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No recipes' + (f.search ? ' match your search' : ' yet') + '.</p>';
-      html += '<button class="cp-btn cp-btn-ai cp-btn-sm" data-action="open-mixer" data-mode="manual">' + icon('bolt') + ' Create Recipe</button></div>';
-    } else {
-      for (var ri = 0; ri < recipes.length; ri++) {
-        html += renderRecipeListItem(recipes[ri]);
-      }
-    }
-    html += '</div></div>';
-    return html;
-  }
-
-  function renderRecipeListItem(recipe) {
-    var sel = S.selectedRecipeId === recipe.id ? ' cp-recipe-item-selected' : '';
-    var stCfg = RECIPE_STATUSES[recipe.status] || { label: recipe.status, color: '#80868b' };
-    var priCfg = PRIORITY_LEVELS[recipe.priority] || {};
-    var mt = MEDIA_TYPES[recipe.media_type] || MEDIA_TYPES.image;
-    var pct = getRecipeCompletionPct(recipe);
-
-    // Health indicators
-    var healthClass = '';
-    var healthIcon = '';
-    if (recipe.due_date && new Date(recipe.due_date) < new Date() && recipe.status !== 'live' && recipe.status !== 'archived') {
-      healthClass = ' cp-recipe-item-overdue';
-      healthIcon = '<span class="cp-recipe-health" style="color:#d93025" title="Overdue">' + icon('triangle-exclamation') + '</span>';
-    } else if (recipe.updated) {
-      var daysSinceUpdate = Math.floor((Date.now() - new Date(recipe.updated).getTime()) / 86400000);
-      if (daysSinceUpdate > 7 && recipe.status !== 'live' && recipe.status !== 'archived' && recipe.status !== 'approved') {
-        healthClass = ' cp-recipe-item-stale';
-        healthIcon = '<span class="cp-recipe-health" style="color:#e37400" title="Stale — ' + daysSinceUpdate + ' days since update">' + icon('clock') + '</span>';
-      }
-    }
-
-    var html = '<div class="cp-recipe-item' + sel + healthClass + '" data-action="select-recipe" data-id="' + esc(recipe.id) + '">';
-    // Bulk select checkbox
-    if (S._bulkMode) {
-      var bulkChecked = (S._bulkSelected || []).indexOf(recipe.id) > -1;
-      html += '<div class="cp-recipe-item-bulk"><input type="checkbox" class="cp-bulk-check" data-action="bulk-toggle-item" data-id="' + esc(recipe.id) + '"' + (bulkChecked ? ' checked' : '') + '></div>';
-    }
-    html += '<div class="cp-recipe-item-left">';
-    if (priCfg.color) html += '<span class="cp-priority-dot" style="background:' + priCfg.color + '" title="' + esc(priCfg.label || '') + '"></span>';
-    html += '</div>';
-    html += '<div class="cp-recipe-item-body">';
-    html += '<div class="cp-recipe-item-title">' + esc(recipe.title || 'Untitled Recipe') + healthIcon + '</div>';
-    html += '<div class="cp-recipe-item-badges">';
-    html += '<span class="cp-status-badge"><span class="cp-status-dot" style="background:' + stCfg.color + '"></span>' + esc(stCfg.label) + '</span>';
-    html += '<span class="cp-badge" style="background:' + mt.color + '15;color:' + mt.color + '">' + icon(mt.icon) + '</span>';
-    var rProd = getRecipeProduction(recipe);
-    if (rProd) {
-      var prodStatusStyle = getProductionStatusStyle(rProd.status);
-      var prodTitle = 'Production: ' + (rProd.title || 'connected') + (rProd.status ? ' • ' + rProd.status : '');
-      html += '<span class="cp-badge cp-recipe-item-prod-badge" style="background:' + prodStatusStyle.color + '15;color:' + prodStatusStyle.color + '" title="' + esc(prodTitle) + '">' + icon('rocket') + '</span>';
-    }
-    var persona = S.personaMap[recipe.persona_id];
-    if (persona) html += '<span class="cp-badge" style="background:#9334e915;color:#9334e9">' + esc(truncate(persona.name, 12)) + '</span>';
-    var campaign = S.campaignMap[recipe.campaign_id];
-    if (campaign) html += '<span class="cp-badge" style="background:#0891b215;color:#0891b2" title="Campaign: ' + esc(campaign.name) + '">' + icon('bullhorn') + ' ' + esc(truncate(campaign.name, 10)) + '</span>';
-    html += '</div>';
-    // Mini progress bar
-    var pctColor = pct >= 80 ? 'var(--cp-success)' : pct >= 40 ? '#e37400' : 'var(--cp-gray-300)';
-    html += '<div class="cp-recipe-progress-mini"><div class="cp-recipe-progress-fill" style="width:' + pct + '%;background:' + pctColor + '"></div></div>';
-    html += '</div>';
-    html += '<div class="cp-recipe-item-time">' + formatRelativeTime(recipe.updated || recipe.created) + '</div>';
-    html += '</div>';
-    return html;
-  }
-
-  function renderRecipeRightPane() {
-    if (!S.selectedRecipeId || !S.recipeMap[S.selectedRecipeId]) {
-      return '<div class="cp-empty-state cp-empty-state--center">' +
-        '<div class="cp-empty-state-icon">' + icon('bolt') + '</div>' +
-        '<div class="cp-empty-state-title">Select a recipe</div>' +
-        '<div class="cp-empty-state-text">Choose a recipe from the list, or create a new one with the Mix & Match engine.</div>' +
-        '<button class="cp-btn cp-btn-ai" data-action="open-mixer" data-mode="manual">' + icon('bolt') + ' Create Recipe</button></div>';
-    }
-
-    var recipe = S.recipeMap[S.selectedRecipeId];
-    var R = window._cpRenderers;
-
-    var html = '<div class="cp-recipe-detail" data-recipe-id="' + esc(recipe.id) + '">';
-
-    // Recipe header
-    html += renderRecipeDetailHeader(recipe);
-
-    // Pipeline step indicator
-    html += renderRecipePipelineIndicator(recipe);
-
-    // Step content — Part 2A overrides via renderer registry
-    html += '<div class="cp-step-content">';
-    var stepKey = 'step_' + S.currentStep;
-    if (R[stepKey]) {
-      html += R[stepKey](recipe);
-    } else {
-      html += renderRecipeStepPlaceholder(recipe);
-    }
-    html += '</div>';
-    html += '</div>';
-    return html;
-  }
-
-  function renderRecipeDetailHeader(recipe) {
-    var stCfg = RECIPE_STATUSES[recipe.status] || { label: recipe.status, color: '#80868b', icon: 'circle' };
-    var campaign = S.campaignMap[recipe.campaign_id];
-    var pct = getRecipeCompletionPct(recipe);
-
-    var html = '<div class="cp-recipe-detail-header">';
-    html += '<div class="cp-recipe-detail-title">' + esc(recipe.title || 'Untitled Recipe') + '</div>';
-    html += '<div class="cp-recipe-detail-badges">';
-    html += recipeStatusBadge(recipe.status);
-    if (recipe.priority) html += priorityBadge(recipe.priority);
-    if (campaign) html += '<span class="cp-badge cp-badge-link" style="background:#0891b215;color:#0891b2" data-action="go-to-campaign" data-id="' + esc(campaign.id) + '" title="Go to campaign">' + icon('bullhorn') + ' ' + esc(truncate(campaign.name, 18)) + '</span>';
-    html += mediaTypeBadge(recipe.media_type);
-    // Progress indicator
-    html += '<span class="cp-badge" style="background:' + (pct >= 80 ? 'var(--cp-success-light);color:var(--cp-success)' : pct >= 40 ? '#e3740015;color:#e37400' : 'var(--cp-gray-100);color:var(--cp-text-muted)') + '">' + pct + '% complete</span>';
-    html += '</div>';
-    html += '<div class="cp-recipe-detail-actions">';
-    html += '<button class="cp-btn-icon" data-action="duplicate-recipe" data-id="' + esc(recipe.id) + '" title="Duplicate">' + icon('copy') + '</button>';
-    html += '<button class="cp-btn-icon" data-action="move-recipe-campaign" data-id="' + esc(recipe.id) + '" title="Move to campaign">' + icon('arrow-right-arrow-left') + '</button>';
-    html += '<button class="cp-btn-icon" data-action="delete-recipe" data-id="' + esc(recipe.id) + '" title="Delete">' + icon('trash') + '</button>';
-    html += '</div></div>';
-    return html;
-  }
-
-  // C2: Recipe completion percentage (lightweight, no Part 2A dependency)
-  // Counts the primary fields: persona, message, hook, ad copy, headline,
-  // CTA, and a chosen media type for the production handoff.
-  function getRecipeCompletionPct(recipe) {
-    var done = 0, total = 7;
-    if (recipe.persona_id) done++;
-    if (recipe.message_id) done++;
-    var hook = recipe.hook || {};
-    if (hook.custom_hook || hook.selected_hook_id) done++;
-    var content = recipe.content || {};
-    var adCopy = stripHtml ? stripHtml(content.ad_copy || '') : (content.ad_copy || '').replace(/<[^>]*>/g, '');
-    if (adCopy.trim().length >= 50) done++;
-    if (content.headline && content.headline.trim()) done++;
-    if (content.cta && content.cta.trim()) done++;
-    if (recipe.media_type) done++;
-    return Math.round((done / total) * 100);
-  }
-
-  function renderRecipePipelineIndicator(recipe) {
-    var steps = PIPELINE_STEPS;
-    var currentIdx = -1;
-    for (var i = 0; i < steps.length; i++) {
-      if (steps[i].key === S.currentStep) { currentIdx = i; break; }
-    }
-    if (currentIdx < 0) { S.currentStep = 'composition'; currentIdx = 0; }
-
-    var html = '<div class="cp-pipeline-steps">';
-    for (var si = 0; si < steps.length; si++) {
-      var st = steps[si];
-      var isActive = si === currentIdx;
-      var isDone = si < currentIdx;
-      var stepClass = isActive ? ' cp-step-active' : isDone ? ' cp-step-done' : '';
-      html += '<button class="cp-step-item' + stepClass + '" data-action="go-step" data-step="' + st.key + '">';
-      html += '<span class="cp-step-dot">' + (isDone ? icon('check') : icon(st.icon)) + '</span>';
-      html += '<span class="cp-step-label">' + esc(st.label) + '</span>';
-      html += '</button>';
-      if (si < steps.length - 1) html += '<div class="cp-step-connector' + (isDone ? ' cp-step-connector-done' : '') + '"></div>';
-    }
-    html += '</div>';
-    return html;
-  }
-
-  function renderRecipeStepPlaceholder(recipe) {
-    var step = S.currentStep || 'composition';
-    var stepCfg = PIPELINE_STEPS.find(function(s) { return s.key === step; }) || PIPELINE_STEPS[0];
-
-    // Basic composition view as fallback (Part 2A will replace all steps)
-    if (step === 'composition') {
-      return renderRecipeCompositionFallback(recipe);
-    }
-
-    return '<div class="cp-step-placeholder">' +
-      '<div class="cp-empty-state cp-empty-state--compact">' +
-      '<div class="cp-empty-state-icon">' + icon(stepCfg.icon) + '</div>' +
-      '<div class="cp-empty-state-title">' + esc(stepCfg.label) + ' Step</div>' +
-      '<div class="cp-empty-state-text">This step will be available when the editor module loads.</div>' +
-      '</div></div>';
-  }
-
-  function renderRecipeCompositionFallback(recipe) {
-    var html = '<div class="cp-composition-card">';
-    html += '<div class="cp-section-header"><h3>' + icon('shapes') + ' Creative Composition</h3></div>';
-    html += '<div class="cp-composition-grid">';
-
-    var dims = [
-      { key: 'persona', id: recipe.persona_id },
-      { key: 'message', id: recipe.message_id },
-      { key: 'style',   id: recipe.style_id },
-      { key: 'format',  id: recipe.visual_format_id }
-    ];
-    for (var di = 0; di < dims.length; di++) {
-      var dim = DIMENSIONS[dims[di].key];
-      var entity = null;
-      if (dims[di].key === 'persona') entity = S.personaMap[dims[di].id];
-      else if (dims[di].key === 'message') entity = S.messageMap[dims[di].id];
-      else if (dims[di].key === 'style') entity = S.styleMap[dims[di].id];
-      else if (dims[di].key === 'format') entity = S.formatMap[dims[di].id];
-      var entityName = entity ? (entity.name || entity.title || '') : '(Not set)';
-      var entitySub = '';
-      if (dims[di].key === 'persona' && entity) {
-        var d = entity.demographics || {};
-        entitySub = [d.age_range, d.location].filter(Boolean).join(' · ');
-      } else if (dims[di].key === 'message' && entity) {
-        var fs = (entity.funnel_stages || []).map(function(fid) { var f = S.funnelStageMap[fid]; return f ? f.short : ''; }).filter(Boolean).join(', ');
-        entitySub = fs || '';
-      }
-
-      html += '<div class="cp-composition-dim" style="border-color:' + dim.color + '25">';
-      html += '<div class="cp-composition-dim-icon" style="background:' + dim.color + '12;color:' + dim.color + '">' + icon(dim.icon) + '</div>';
-      html += '<div class="cp-composition-dim-body">';
-      html += '<div class="cp-composition-dim-label" style="color:' + dim.color + '">' + esc(dim.label) + '</div>';
-      html += '<div class="cp-composition-dim-name">' + esc(entityName) + '</div>';
-      if (entitySub) html += '<div class="cp-composition-dim-sub">' + esc(entitySub) + '</div>';
-      html += '</div>';
-      html += '<button class="cp-btn-link cp-btn-sm" data-action="change-dimension" data-dim="' + dims[di].key + '">Change</button>';
-      html += '</div>';
-    }
-    html += '</div></div>';
-    return html;
-  }
-
-  function getFilteredRecipes() {
-    var f = S.recipeFilter;
-    var recipes = (S.data.recipes || []).slice();
-
-    if (f.search) {
-      var q = f.search.toLowerCase();
-      recipes = recipes.filter(function(r) {
-        return (r.title || '').toLowerCase().indexOf(q) > -1;
-      });
-    }
-    if (f.statuses && f.statuses.length > 0) recipes = recipes.filter(function(r) { return f.statuses.indexOf(r.status) > -1; });
-    if (f.campaign) recipes = recipes.filter(function(r) { return r.campaign_id === f.campaign; });
-    if (f.persona) recipes = recipes.filter(function(r) { return r.persona_id === f.persona; });
-    if (f.priority) recipes = recipes.filter(function(r) { return r.priority === f.priority; });
-    if (f.type) recipes = recipes.filter(function(r) { return r.media_type === f.type; });
-    if (f.tag) recipes = recipes.filter(function(r) { return (r.tags || []).indexOf(f.tag) > -1; });
-    if (f.production === 'has') recipes = recipes.filter(function(r) { return !!getRecipeProduction(r); });
-    else if (f.production === 'missing') recipes = recipes.filter(function(r) { return !getRecipeProduction(r); });
-
-    // Sort
-    var dir = f.sortDir === 'asc' ? 1 : -1;
-    if (f.sortBy === 'title') recipes.sort(function(a, b) { return dir * (a.title || '').localeCompare(b.title || ''); });
-    else if (f.sortBy === 'priority') {
-      var priOrder = { critical: 0, high: 1, medium: 2, low: 3 };
-      recipes.sort(function(a, b) { return dir * ((priOrder[a.priority] || 2) - (priOrder[b.priority] || 2)); });
-    }
-    else if (f.sortBy === 'created') recipes.sort(function(a, b) { return dir * ((a.created || '') > (b.created || '') ? 1 : -1); });
-    else recipes.sort(function(a, b) { return dir * ((a.updated || a.created || '') > (b.updated || b.created || '') ? 1 : -1); });
-
-    return recipes;
-  }
-
-
-/* ===== src/10-part1/17-view-campaigns.js ===== */
-  // ============================================================
-  // SECTION 15: CAMPAIGNS VIEW
-  // ============================================================
-
-  function renderCampaignsView() {
-    var camps = getAllCampaigns();
-    var f = S.campaignFilter;
-
-    // Apply filters
-    var filtered = camps.slice();
-    if (f.search) {
-      var q = f.search.toLowerCase();
-      filtered = filtered.filter(function(c) { return (c.name || '').toLowerCase().indexOf(q) > -1 || (c.description || '').toLowerCase().indexOf(q) > -1; });
-    }
-    if (f.status) filtered = filtered.filter(function(c) { return c.status === f.status; });
-    filtered.sort(function(a, b) { return (b.updated || b.created || '') > (a.updated || a.created || '') ? 1 : -1; });
-
-    var html = '<div class="cp-view cp-view-campaigns">';
-    html += '<div class="cp-view-header"><div class="cp-view-header-left">';
-    html += '<h1>' + icon('bullhorn') + ' Campaigns</h1>';
-    html += '<span class="cp-view-subtitle">' + filtered.length + ' campaign' + (filtered.length !== 1 ? 's' : '') + '</span>';
-    html += '</div><div class="cp-view-header-right">';
-    html += '<button class="cp-btn cp-btn-ai" data-action="open-campaign-wizard">' + icon('wand-magic') + ' Campaign Wizard</button>';
-    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-campaign">' + icon('plus') + ' Quick Create</button>';
-    html += '</div></div>';
-
-    // Split pane
-    html += '<div class="cp-split-pane">';
-
-    // Left: campaign list
-    html += '<div class="cp-list-pane">';
-    html += '<div class="cp-list-toolbar"><div class="cp-list-toolbar-row">';
-    html += '<div class="cp-search-wrapper">' + icon('search') + '<input type="text" class="cp-input" id="cpCampaignSearch" placeholder="Search..." value="' + esc(f.search) + '"></div>';
-    html += '<select class="cp-select cp-select-sm" id="cpCampaignStatusFilter" style="width:auto;min-width:80px"><option value="">All</option>';
-    for (var csk in CAMPAIGN_STATUSES) {
-      html += '<option value="' + csk + '"' + (f.status === csk ? ' selected' : '') + '>' + CAMPAIGN_STATUSES[csk].label + '</option>';
-    }
-    html += '</select>';
-    html += '</div></div>';
-
-    if (filtered.length === 0) {
-      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No campaigns' + (f.search || f.status ? ' match' : ' yet') + '.</p>';
-      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="open-campaign-wizard">' + icon('wand-magic') + ' Create</button></div>';
-    } else {
-      for (var i = 0; i < filtered.length; i++) html += renderCampaignListItem(filtered[i]);
-    }
-    html += '</div>';
-
-    // Right: campaign detail
-    html += '<div class="cp-preview-pane">';
-    html += renderCampaignDetailPane();
-    html += '</div>';
-
-    html += '</div></div>';
-    return html;
-  }
-
-  function renderCampaignListItem(camp) {
-    var cst = CAMPAIGN_STATUSES[camp.status] || { label: camp.status, color: '#80868b', icon: 'circle' };
-    var recipes = getRecipesByCampaign(camp.id);
-    var sel = S.selectedCampaignId === camp.id ? ' cp-list-item-selected' : '';
-
-    var html = '<div class="cp-list-item' + sel + '" data-action="select-campaign" data-id="' + esc(camp.id) + '">';
-    html += '<div class="cp-list-item-title">' + esc(camp.name || 'Untitled') + '</div>';
-    html += '<div class="cp-list-item-meta">';
-    html += '<span class="cp-badge" style="background:' + cst.color + '15;color:' + cst.color + '">' + esc(cst.label) + '</span>';
-    html += '<span class="cp-text-muted">' + recipes.length + ' recipe' + (recipes.length !== 1 ? 's' : '') + '</span>';
-    if (camp.date_start) html += '<span class="cp-text-muted">' + formatDateShort(camp.date_start) + '</span>';
-    html += '</div></div>';
-    return html;
-  }
-
-  function renderCampaignDetailPane() {
-    if (!S.selectedCampaignId || !S.campaignMap[S.selectedCampaignId]) {
-      return '<div class="cp-empty-state cp-empty-state--center">' +
-        '<div class="cp-empty-state-icon">' + icon('bullhorn') + '</div>' +
-        '<div class="cp-empty-state-title">Select a campaign</div>' +
-        '<div class="cp-empty-state-text">Choose from the list, or create a new one with the Campaign Wizard.</div>' +
-        '<button class="cp-btn cp-btn-ai" data-action="open-campaign-wizard">' + icon('wand-magic') + ' Campaign Wizard</button></div>';
-    }
-
-    var camp = S.campaignMap[S.selectedCampaignId];
-    var cst = CAMPAIGN_STATUSES[camp.status] || { label: camp.status, color: '#80868b', icon: 'circle' };
-    var objective = CAMPAIGN_OBJECTIVES.find(function(o) { return o.id === camp.objective; });
-    var recipes = getRecipesByCampaign(camp.id);
-    var tab = S.campaignDetailTab || 'overview';
-
-    var html = '';
-
-    // Header
-    html += '<div class="cp-detail-header"><div class="cp-detail-header-left">';
-    html += '<h2>' + esc(camp.name) + '</h2>';
-    html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap;margin-top:4px">';
-    html += '<span class="cp-badge" style="background:' + cst.color + '15;color:' + cst.color + '">' + icon(cst.icon) + ' ' + esc(cst.label) + '</span>';
-    if (objective) html += '<span class="cp-badge" style="background:#5f636815;color:#5f6368">' + icon(objective.icon) + ' ' + esc(objective.name) + '</span>';
-    if (camp.funnel_stage) { var fs = S.funnelStageMap[camp.funnel_stage]; if (fs) html += funnelBadge(camp.funnel_stage); }
-    html += '<span class="cp-badge" style="background:var(--cp-gray-50);color:var(--cp-text-muted)">' + recipes.length + ' recipe' + (recipes.length !== 1 ? 's' : '') + '</span>';
-    html += '</div>';
-    html += '</div><div class="cp-detail-header-right">';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="edit-campaign" data-id="' + esc(camp.id) + '">' + icon('edit') + ' Edit</button>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-campaign" data-id="' + esc(camp.id) + '">' + icon('trash') + '</button>';
-    html += '</div></div>';
-
-    // Tab navigation
-    var tabs = [
-      { key: 'overview', label: 'Overview', icon: 'chart-pie' },
-      { key: 'recipes', label: 'Recipes (' + recipes.length + ')', icon: 'shuffle' },
-      { key: 'research', label: 'Research', icon: 'flask' },
-      { key: 'brief', label: 'Brief', icon: 'file-lines' }
-    ];
-    html += '<div class="cp-campaign-tabs">';
-    for (var ti = 0; ti < tabs.length; ti++) {
-      var t = tabs[ti];
-      html += '<button class="cp-campaign-tab' + (tab === t.key ? ' cp-campaign-tab-active' : '') + '" data-action="set-campaign-tab" data-tab="' + t.key + '">' + icon(t.icon) + ' ' + esc(t.label) + '</button>';
-    }
-    html += '</div>';
-
-    // Tab content
-    html += '<div class="cp-campaign-tab-content">';
-    switch(tab) {
-      case 'overview': html += renderCampaignOverviewTab(camp, recipes); break;
-      case 'recipes':  html += renderCampaignRecipesTab(camp, recipes); break;
-      case 'research': html += renderCampaignResearchTab(camp); break;
-      case 'brief':    html += renderCampaignBriefTab(camp); break;
-    }
-    html += '</div>';
-
-    html += '<div class="cp-detail-footer"><span class="cp-text-muted">Created ' + formatDate(camp.created) + (camp.updated ? ' · Updated ' + formatRelativeTime(camp.updated) : '') + '</span></div>';
-    return html;
-  }
-
-  // --- Campaign Overview Tab ---
-  function renderCampaignOverviewTab(camp, recipes) {
-    var html = '';
-
-    // Progress stats row
-    var statusCounts = {};
-    recipes.forEach(function(r) { statusCounts[r.status] = (statusCounts[r.status] || 0) + 1; });
-    var readyCount = (statusCounts.approved || 0) + (statusCounts.live || 0);
-    var inProgressCount = (statusCounts.hook_ready || 0) + (statusCounts.content_ready || 0) + (statusCounts.media_ready || 0) + (statusCounts.in_review || 0);
-    var draftCount = statusCounts.draft || 0;
-    var progressPct = recipes.length > 0 ? Math.round((readyCount / recipes.length) * 100) : 0;
-
-    html += '<div class="cp-campaign-stats">';
-    html += '<div class="cp-campaign-stat"><div class="cp-campaign-stat-value" style="color:var(--cp-primary)">' + progressPct + '%</div><div class="cp-campaign-stat-label">Complete</div></div>';
-    html += '<div class="cp-campaign-stat"><div class="cp-campaign-stat-value">' + recipes.length + '</div><div class="cp-campaign-stat-label">Total Recipes</div></div>';
-    html += '<div class="cp-campaign-stat"><div class="cp-campaign-stat-value" style="color:#80868b">' + draftCount + '</div><div class="cp-campaign-stat-label">Draft</div></div>';
-    html += '<div class="cp-campaign-stat"><div class="cp-campaign-stat-value" style="color:#e37400">' + inProgressCount + '</div><div class="cp-campaign-stat-label">In Progress</div></div>';
-    html += '<div class="cp-campaign-stat"><div class="cp-campaign-stat-value" style="color:#0d904f">' + readyCount + '</div><div class="cp-campaign-stat-label">Ready / Live</div></div>';
-    html += '</div>';
-
-    // Status progress bar
-    if (recipes.length > 0) {
-      html += '<div class="cp-campaign-progress-bar">';
-      for (var sk in RECIPE_STATUSES) {
-        var cnt = statusCounts[sk] || 0;
-        if (cnt > 0) {
-          var w = (cnt / recipes.length) * 100;
-          html += '<div class="cp-campaign-status-segment" style="width:' + w + '%;background:' + RECIPE_STATUSES[sk].color + '" title="' + esc(RECIPE_STATUSES[sk].label) + ': ' + cnt + '"></div>';
-        }
-      }
-      html += '</div>';
-    }
-
-    // Description
-    if (camp.description) {
-      html += '<div class="cp-card" style="margin-bottom:var(--cp-space-4)">';
-      html += '<p style="color:var(--cp-text-secondary);line-height:1.6;margin:0">' + esc(camp.description) + '</p>';
-      html += '</div>';
-    }
-
-    // Info grid
-    html += '<div class="cp-detail-grid cp-detail-grid-2" style="margin-bottom:var(--cp-space-4)">';
-    if (camp.date_start || camp.date_end) {
-      html += '<div class="cp-detail-field"><div class="cp-detail-label">Date Range</div>';
-      html += '<div class="cp-detail-value">' + icon('calendar') + ' ' + (camp.date_start ? formatDateShort(camp.date_start) : '?') + ' → ' + (camp.date_end ? formatDateShort(camp.date_end) : '?') + '</div></div>';
-    }
-    if (camp.budget_notes) {
-      html += '<div class="cp-detail-field"><div class="cp-detail-label">Budget</div><div class="cp-detail-value">' + esc(camp.budget_notes) + '</div></div>';
-    }
-    if (camp.ai_instructions) {
-      html += '<div class="cp-detail-field" style="grid-column:1/-1"><div class="cp-detail-label">' + icon('sparkles') + ' AI Instructions</div><div class="cp-detail-value">' + esc(camp.ai_instructions) + '</div></div>';
-    }
-    html += '</div>';
-
-    // Targeted dimensions
-    var dimSections = [
-      { key: 'persona_ids', label: 'Personas', icon: 'users', color: '#9334e9', map: S.personaMap },
-      { key: 'message_ids', label: 'Messages', icon: 'comments', color: '#1a73e8', map: S.messageMap },
-      { key: 'style_ids', label: 'Styles', icon: 'palette', color: '#e37400', map: S.styleMap },
-      { key: 'format_ids', label: 'Formats', icon: 'clapperboard', color: '#0891b2', map: S.formatMap }
-    ];
-    var hasDimensions = dimSections.some(function(ds) { return (camp[ds.key] || []).length > 0; });
-    if (hasDimensions) {
-      html += '<div class="cp-card" style="margin-bottom:var(--cp-space-4)">';
-      html += '<div class="cp-section-header"><h3>' + icon('shapes') + ' Targeted Dimensions</h3></div>';
-      html += '<div class="cp-campaign-dim-grid">';
-      for (var di = 0; di < dimSections.length; di++) {
-        var ds = dimSections[di];
-        var ids = camp[ds.key] || [];
-        if (ids.length === 0) continue;
-        html += '<div><div class="cp-field-label" style="color:' + ds.color + '">' + icon(ds.icon) + ' ' + esc(ds.label) + ' (' + ids.length + ')</div>';
-        for (var dii = 0; dii < ids.length; dii++) {
-          var ent = ds.map[ids[dii]];
-          if (ent) html += '<div class="cp-badge" style="background:' + ds.color + '10;color:' + ds.color + ';margin:2px">' + esc(ent.name || ent.title || '') + '</div>';
-        }
-        html += '</div>';
-      }
-      html += '</div></div>';
-    }
-
-    // Coverage matrix: persona × message
-    var personaIds = camp.persona_ids || [];
-    var messageIds = camp.message_ids || [];
-    if (personaIds.length > 0 && messageIds.length > 0) {
-      html += '<div class="cp-card" style="margin-bottom:var(--cp-space-4)">';
-      html += '<div class="cp-section-header"><h3>' + icon('grid') + ' Coverage Matrix</h3>';
-      html += '<span class="cp-text-muted" style="font-size:var(--cp-font-size-xs)">Persona × Message recipe coverage</span>';
-      html += '</div>';
-      html += '<div class="cp-coverage-matrix" style="overflow-x:auto"><table class="cp-coverage-table"><thead><tr><th></th>';
-      for (var mi = 0; mi < messageIds.length; mi++) {
-        var msg = S.messageMap[messageIds[mi]];
-        html += '<th style="color:#1a73e8;font-size:11px;max-width:80px;overflow:hidden;text-overflow:ellipsis">' + esc(msg ? truncate(msg.title, 12) : '?') + '</th>';
-      }
-      html += '</tr></thead><tbody>';
-      for (var pi = 0; pi < personaIds.length; pi++) {
-        var per = S.personaMap[personaIds[pi]];
-        html += '<tr><td style="color:#9334e9;font-weight:600;font-size:11px;white-space:nowrap">' + esc(per ? truncate(per.name, 14) : '?') + '</td>';
-        for (var mj = 0; mj < messageIds.length; mj++) {
-          var hasRecipe = recipes.some(function(r) { return r.persona_id === personaIds[pi] && r.message_id === messageIds[mj]; });
-          html += '<td style="text-align:center">';
-          if (hasRecipe) html += '<span style="color:var(--cp-success)">' + icon('circle-check') + '</span>';
-          else html += '<span style="color:var(--cp-border-default);cursor:pointer" data-action="quick-create-recipe" data-persona-id="' + esc(personaIds[pi]) + '" data-message-id="' + esc(messageIds[mj]) + '" data-campaign-id="' + esc(camp.id) + '" title="Create recipe">' + icon('plus-circle') + '</span>';
-          html += '</td>';
-        }
-        html += '</tr>';
-      }
-      html += '</tbody></table></div></div>';
-    }
-
-    // Notes
-    if (camp.notes) {
-      html += '<div class="cp-card"><div class="cp-section-header"><h3>' + icon('note-sticky') + ' Notes</h3></div>';
-      html += '<p style="margin:0">' + esc(camp.notes) + '</p></div>';
-    }
-    return html;
-  }
-
-  // --- Campaign Recipes Tab ---
-  function renderCampaignRecipesTab(camp, recipes) {
-    var html = '';
-
-    // Actions bar
-    html += '<div style="display:flex;gap:var(--cp-space-2);margin-bottom:var(--cp-space-4);flex-wrap:wrap">';
-    html += '<button class="cp-btn cp-btn-ai cp-btn-sm" data-action="ai-campaign-recipes" data-campaign-id="' + esc(camp.id) + '">' + icon('sparkles') + ' AI Suggest Recipes</button>';
-    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="add-recipe-to-campaign" data-campaign-id="' + esc(camp.id) + '">' + icon('plus') + ' Add Recipe</button>';
-    html += '</div>';
-
-    if (recipes.length === 0) {
-      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No recipes in this campaign yet.</p>';
-      html += '<p class="cp-text-muted">Use AI to suggest recipe combinations based on your targeted dimensions, or create recipes manually.</p></div>';
-      return html;
-    }
-
-    // Group by status
-    var byStatus = {};
-    recipes.forEach(function(r) { byStatus[r.status] = byStatus[r.status] || []; byStatus[r.status].push(r); });
-    for (var sk in RECIPE_STATUSES) {
-      var group = byStatus[sk];
-      if (!group || group.length === 0) continue;
-      html += '<div class="cp-campaign-recipe-group">';
-      html += '<div class="cp-campaign-recipe-group-header" style="color:' + RECIPE_STATUSES[sk].color + '">' + icon(RECIPE_STATUSES[sk].icon) + ' ' + esc(RECIPE_STATUSES[sk].label) + ' (' + group.length + ')</div>';
-      for (var ri = 0; ri < group.length; ri++) {
-        var r = group[ri];
-        var persona = S.personaMap[r.persona_id];
-        var msg = S.messageMap[r.message_id];
-        html += '<div class="cp-campaign-recipe-item" data-action="select-recipe" data-id="' + esc(r.id) + '">';
-        html += '<span style="flex:1;font-weight:500">' + esc(truncate(r.title, 40)) + '</span>';
-        if (persona) html += '<span class="cp-badge" style="background:#9334e910;color:#9334e9;font-size:10px">' + esc(truncate(persona.name, 10)) + '</span>';
-        html += mediaTypeBadge(r.media_type);
-        if (r.priority && r.priority !== 'medium') html += priorityBadge(r.priority);
-        if (r.due_date) html += '<span class="cp-text-muted" style="font-size:11px">' + formatDateShort(r.due_date) + '</span>';
-        html += '</div>';
-      }
-      html += '</div>';
-    }
-
-    // Progress bar
-    var statusCounts = {};
-    recipes.forEach(function(r) { statusCounts[r.status] = (statusCounts[r.status] || 0) + 1; });
-    html += '<div class="cp-campaign-progress-bar" style="margin-top:var(--cp-space-3)">';
-    for (var sbk in RECIPE_STATUSES) {
-      var cnt = statusCounts[sbk] || 0;
-      if (cnt > 0) {
-        var w = (cnt / recipes.length) * 100;
-        html += '<div class="cp-campaign-status-segment" style="width:' + w + '%;background:' + RECIPE_STATUSES[sbk].color + '" title="' + esc(RECIPE_STATUSES[sbk].label) + ': ' + cnt + '"></div>';
-      }
-    }
-    html += '</div>';
-    return html;
-  }
-
-  // --- Campaign Research Tab ---
-  function renderCampaignResearchTab(camp) {
-    var html = '';
-    html += '<p class="cp-text-muted" style="margin-bottom:var(--cp-space-3)">AI Research scoped to this campaign\'s targeted dimensions and objective.</p>';
-
-    // Campaign-scoped AI Research Panel
-    html += '<div class="cp-ai-research-slot">';
-    html += renderAIResearchBar('Campaign Recipe', '#0891b2', 'bullhorn', 'campaign_research');
-    html += '</div>';
-
-    // Quick research actions
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('sparkles') + ' Campaign AI Actions</h3></div>';
-    html += '<div style="display:flex;flex-direction:column;gap:var(--cp-space-2)">';
-    html += '<button class="cp-btn cp-btn-ai cp-btn-sm" data-action="ai-campaign-recipes" data-campaign-id="' + esc(camp.id) + '" style="justify-content:flex-start">' + icon('shuffle') + ' Suggest recipe combinations for this campaign</button>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ai-campaign-gaps" data-campaign-id="' + esc(camp.id) + '" style="justify-content:flex-start">' + icon('magnifying-glass') + ' Analyze coverage gaps</button>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ai-campaign-brief" data-campaign-id="' + esc(camp.id) + '" style="justify-content:flex-start">' + icon('file-lines') + ' Generate campaign brief</button>';
-    html += '</div></div>';
-
-    // Campaign context preview
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('plug') + ' AI Context Preview</h3></div>';
-    html += '<p class="cp-text-muted" style="margin-bottom:var(--cp-space-2)">This context is injected into all AI prompts for this campaign:</p>';
-    var ctxItems = [];
-    if (camp.objective) { var obj = CAMPAIGN_OBJECTIVES.find(function(o) { return o.id === camp.objective; }); if (obj) ctxItems.push(['Objective', obj.name]); }
-    if (camp.funnel_stage) { var fs = S.funnelStageMap[camp.funnel_stage]; if (fs) ctxItems.push(['Funnel', fs.name]); }
-    if ((camp.persona_ids || []).length) ctxItems.push(['Personas', camp.persona_ids.map(function(id) { var p = S.personaMap[id]; return p ? p.name : '?'; }).join(', ')]);
-    if ((camp.message_ids || []).length) ctxItems.push(['Messages', camp.message_ids.map(function(id) { var m = S.messageMap[id]; return m ? m.title : '?'; }).join(', ')]);
-    if (camp.ai_instructions) ctxItems.push(['Instructions', camp.ai_instructions]);
-    for (var ci = 0; ci < ctxItems.length; ci++) {
-      html += '<div class="cp-brand-ctx-item"><span class="cp-brand-ctx-label">' + esc(ctxItems[ci][0]) + '</span><span class="cp-brand-ctx-value">' + esc(ctxItems[ci][1]) + '</span></div>';
-    }
-    if (ctxItems.length === 0) html += '<p class="cp-text-muted">No campaign context set. <a href="#" data-action="edit-campaign" data-id="' + esc(camp.id) + '" style="color:var(--cp-primary)">Edit campaign</a> to add targeting and AI instructions.</p>';
-    html += '</div>';
-    return html;
-  }
-
-  // --- Campaign Brief Tab ---
-  function renderCampaignBriefTab(camp) {
-    var html = '';
-
-    // Campaign brief (editable)
-    html += '<div class="cp-card" style="margin-bottom:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('file-lines') + ' Creative Brief</h3>';
-    html += '<button class="cp-btn cp-btn-ai cp-btn-sm" data-action="ai-campaign-brief" data-campaign-id="' + esc(camp.id) + '">' + icon('sparkles') + ' AI Generate</button>';
-    html += '</div>';
-    html += '<textarea class="cp-textarea cp-campaign-brief-field" data-campaign-id="' + esc(camp.id) + '" rows="6" placeholder="Write a creative brief for this campaign — target audience, key messaging, visual direction, tone, goals...">' + esc(camp.brief || '') + '</textarea>';
-    html += '</div>';
-
-    // Auto-generated audience summary
-    var personaIds = camp.persona_ids || [];
-    if (personaIds.length > 0) {
-      html += '<div class="cp-card" style="margin-bottom:var(--cp-space-4)">';
-      html += '<div class="cp-section-header"><h3>' + icon('users') + ' Target Audience Summary</h3></div>';
-      for (var pi = 0; pi < personaIds.length; pi++) {
-        var per = S.personaMap[personaIds[pi]];
-        if (!per) continue;
-        html += '<div style="padding:var(--cp-space-2) 0;border-bottom:1px solid var(--cp-border-light)">';
-        html += '<div style="font-weight:600;color:#9334e9;margin-bottom:2px">' + esc(per.name) + '</div>';
-        if (per.description) html += '<div style="font-size:var(--cp-font-size-sm);color:var(--cp-text-secondary)">' + esc(truncate(per.description, 120)) + '</div>';
-        // Show linked pain points
-        var ppIds = per.pain_point_ids || [];
-        if (ppIds.length > 0) {
-          var pains = ppIds.map(function(id) { var pp = S.painPointMap[id]; return pp ? truncate(pp.pain_point, 40) : null; }).filter(Boolean);
-          if (pains.length) html += '<div style="font-size:var(--cp-font-size-xs);color:var(--cp-text-muted);margin-top:4px">' + icon('bolt') + ' ' + pains.join(' · ') + '</div>';
-        }
-        html += '</div>';
-      }
-      html += '</div>';
-    }
-
-    // Key messages summary
-    var messageIds = camp.message_ids || [];
-    if (messageIds.length > 0) {
-      html += '<div class="cp-card" style="margin-bottom:var(--cp-space-4)">';
-      html += '<div class="cp-section-header"><h3>' + icon('comments') + ' Key Messages</h3></div>';
-      for (var mi = 0; mi < messageIds.length; mi++) {
-        var msg = S.messageMap[messageIds[mi]];
-        if (!msg) continue;
-        html += '<div style="padding:var(--cp-space-2) 0;border-bottom:1px solid var(--cp-border-light)">';
-        html += '<div style="font-weight:600;color:#1a73e8">' + esc(msg.title) + '</div>';
-        if (msg.funnel_stages && msg.funnel_stages.length) {
-          html += '<div style="margin-top:2px">';
-          for (var fi = 0; fi < msg.funnel_stages.length; fi++) html += funnelBadge(msg.funnel_stages[fi]);
-          html += '</div>';
-        }
-        if (msg.hooks && msg.hooks.length) {
-          html += '<div style="font-size:var(--cp-font-size-xs);color:var(--cp-text-muted);margin-top:4px">' + icon('anchor') + ' ' + msg.hooks.length + ' hook' + (msg.hooks.length !== 1 ? 's' : '') + ': ' + msg.hooks.map(function(h) { return '"' + truncate(h.text, 30) + '"'; }).slice(0, 3).join(', ') + '</div>';
-        }
-        html += '</div>';
-      }
-      html += '</div>';
-    }
-
-    // Visual direction summary
-    var styleIds = camp.style_ids || [];
-    var formatIds = camp.format_ids || [];
-    if (styleIds.length > 0 || formatIds.length > 0) {
-      html += '<div class="cp-card">';
-      html += '<div class="cp-section-header"><h3>' + icon('palette') + ' Visual Direction</h3></div>';
-      if (styleIds.length > 0) {
-        html += '<div class="cp-field-label" style="color:#e37400;margin-bottom:4px">Styles</div>';
-        html += '<div style="display:flex;flex-wrap:wrap;gap:var(--cp-space-2);margin-bottom:var(--cp-space-3)">';
-        for (var si = 0; si < styleIds.length; si++) {
-          var sty = S.styleMap[styleIds[si]];
-          if (sty) html += '<span class="cp-badge" style="background:#e3740010;color:#e37400">' + esc(sty.name) + '</span>';
-        }
-        html += '</div>';
-      }
-      if (formatIds.length > 0) {
-        html += '<div class="cp-field-label" style="color:#0891b2;margin-bottom:4px">Formats</div>';
-        html += '<div style="display:flex;flex-wrap:wrap;gap:var(--cp-space-2)">';
-        for (var fii = 0; fii < formatIds.length; fii++) {
-          var fmt = S.formatMap[formatIds[fii]];
-          if (fmt) html += '<span class="cp-badge" style="background:#0891b210;color:#0891b2">' + esc(fmt.name) + '</span>';
-        }
-        html += '</div>';
-      }
-      html += '</div>';
-    }
     return html;
   }
 
@@ -5633,25 +4485,27 @@
     var month = S.calendarMonth;
     var monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     var dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-    var mode = S.calendarMode || 'month';
     var calFilter = S.calendarFilters || {};
 
-    // Collect recipes with due dates (apply campaign filter)
-    var recipesWithDates = (S.data.recipes || []).filter(function(r) {
-      if (!r.due_date) return false;
-      if (calFilter.campaign && r.campaign_id !== calFilter.campaign) return false;
-      if (calFilter.status && r.status !== calFilter.status) return false;
+    // Collect Ads with due dates (apply campaign + pipeline status filter)
+    var ads = (S.data.ads || []).filter(function(a) {
+      if (!a.due_date) return false;
+      if (calFilter.status && a.pipeline_status !== calFilter.status) return false;
+      if (calFilter.campaign) {
+        var aSet = S.adSetMap[a.ad_set_id];
+        if (!aSet || aSet.campaign_id !== calFilter.campaign) return false;
+      }
       return true;
     });
-    var recipesByDate = {};
-    recipesWithDates.forEach(function(r) {
-      recipesByDate[r.due_date] = recipesByDate[r.due_date] || [];
-      recipesByDate[r.due_date].push(r);
+    var adsByDate = {};
+    ads.forEach(function(a) {
+      adsByDate[a.due_date] = adsByDate[a.due_date] || [];
+      adsByDate[a.due_date].push(a);
     });
 
-    // Collect campaigns with date ranges
-    var campaignsWithDates = (S.data.campaigns || []).filter(function(c) { return c.date_start && c.date_end; });
-    if (calFilter.campaign) campaignsWithDates = campaignsWithDates.filter(function(c) { return c.id === calFilter.campaign; });
+    // Collect Meta v2 campaigns with date ranges
+    var camps = (S.data.campaigns_v2 || []).filter(function(c) { return c.start_time && c.stop_time; });
+    if (calFilter.campaign) camps = camps.filter(function(c) { return c.id === calFilter.campaign; });
 
     var html = '<div class="cp-view cp-view-calendar">';
 
@@ -5668,63 +4522,49 @@
 
     // Filter bar
     html += '<div class="cp-view-toolbar">';
-    var camps = getAllCampaigns();
-    if (camps.length > 0) {
+    var allCamps = getAllCampaignsV2 ? getAllCampaignsV2() : [];
+    if (allCamps.length > 0) {
       html += '<select class="cp-select cp-select-sm" id="cpCalCampaignFilter"><option value="">All Campaigns</option>';
-      for (var cfi = 0; cfi < camps.length; cfi++) html += '<option value="' + esc(camps[cfi].id) + '"' + (calFilter.campaign === camps[cfi].id ? ' selected' : '') + '>' + esc(camps[cfi].name) + '</option>';
+      for (var cfi = 0; cfi < allCamps.length; cfi++) html += '<option value="' + esc(allCamps[cfi].id) + '"' + (calFilter.campaign === allCamps[cfi].id ? ' selected' : '') + '>' + esc(allCamps[cfi].name) + '</option>';
       html += '</select>';
     }
     html += '<select class="cp-select cp-select-sm" id="cpCalStatusFilter"><option value="">All Statuses</option>';
-    for (var csk in RECIPE_STATUSES) html += '<option value="' + csk + '"' + (calFilter.status === csk ? ' selected' : '') + '>' + RECIPE_STATUSES[csk].label + '</option>';
+    for (var csk in META_AD_STATUSES) html += '<option value="' + csk + '"' + (calFilter.status === csk ? ' selected' : '') + '>' + META_AD_STATUSES[csk].label + '</option>';
     html += '</select>';
-    html += '<span class="cp-text-muted" style="font-size:12px">' + recipesWithDates.length + ' recipe' + (recipesWithDates.length !== 1 ? 's' : '') + ' with due dates</span>';
+    html += '<span class="cp-text-muted" style="font-size:12px">' + ads.length + ' ad' + (ads.length !== 1 ? 's' : '') + ' with due dates</span>';
     html += '</div>';
 
-    // Campaign bars with phase segments
-    if (campaignsWithDates.length > 0) {
+    // Campaign bars (Meta v2)
+    if (camps.length > 0) {
       html += '<div class="cp-cal-campaign-bars">';
-      for (var ci = 0; ci < campaignsWithDates.length; ci++) {
-        var camp = campaignsWithDates[ci];
-        var cst = CAMPAIGN_STATUSES[camp.status] || { color: '#80868b' };
+      for (var ci = 0; ci < camps.length; ci++) {
+        var camp = camps[ci];
+        var cst = META_CAMPAIGN_STATUSES[camp.status] || { color: '#80868b' };
         html += '<div class="cp-cal-campaign-row" data-action="go-to-campaign" data-id="' + esc(camp.id) + '" style="cursor:pointer">';
         html += '<span class="cp-cal-campaign-name" style="color:' + cst.color + '">' + icon('bullhorn') + ' ' + esc(truncate(camp.name, 16)) + '</span>';
         html += '<div class="cp-cal-campaign-bar-track">';
         var monthStart = new Date(year, month, 1);
         var monthEnd = new Date(year, month + 1, 0);
-        var cStart = new Date(camp.date_start);
-        var cEnd = new Date(camp.date_end);
+        var cStart = new Date(camp.start_time);
+        var cEnd = new Date(camp.stop_time);
         var daysInMonth = monthEnd.getDate();
         var barLeft = Math.max(0, Math.floor(((cStart - monthStart) / (1000 * 60 * 60 * 24)) / daysInMonth * 100));
         var barRight = Math.max(0, 100 - Math.ceil(((cEnd - monthStart) / (1000 * 60 * 60 * 24) + 1) / daysInMonth * 100));
         if (cEnd < monthStart || cStart > monthEnd) { barLeft = 0; barRight = 100; }
         html += '<div class="cp-cal-campaign-bar" style="left:' + barLeft + '%;right:' + barRight + '%;background:' + cst.color + '20;border-color:' + cst.color + '50"></div>';
-        // Phase segments
-        var phases = camp.phases || [];
-        var phColors = ['#9334e9', '#1a73e8', '#0d904f', '#e37400', '#d93025'];
-        for (var phi = 0; phi < phases.length; phi++) {
-          var ph = phases[phi];
-          if (!ph.date_start || !ph.date_end) continue;
-          var phStart = new Date(ph.date_start);
-          var phEnd = new Date(ph.date_end);
-          if (phEnd < monthStart || phStart > monthEnd) continue;
-          var phLeft = Math.max(0, Math.floor(((phStart - monthStart) / (1000 * 60 * 60 * 24)) / daysInMonth * 100));
-          var phRight = Math.max(0, 100 - Math.ceil(((phEnd - monthStart) / (1000 * 60 * 60 * 24) + 1) / daysInMonth * 100));
-          var phColor = phColors[phi % phColors.length];
-          html += '<div class="cp-cal-phase-marker" style="left:' + phLeft + '%;right:' + phRight + '%;background:' + phColor + '35;border-bottom:2px solid ' + phColor + '" title="' + esc(ph.name || 'Phase ' + (phi + 1)) + '"></div>';
-        }
         html += '</div></div>';
       }
       html += '</div>';
     }
 
     // Calendar grid
-    html += renderCalMonthGrid(year, month, dayNames, recipesByDate, now);
+    html += renderCalMonthGrid(year, month, dayNames, adsByDate, now);
 
     html += '</div>';
     return html;
   }
 
-  function renderCalMonthGrid(year, month, dayNames, recipesByDate, now) {
+  function renderCalMonthGrid(year, month, dayNames, adsByDate, now) {
     var firstDay = new Date(year, month, 1);
     var startDow = (firstDay.getDay() + 6) % 7;
     var daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -5741,21 +4581,21 @@
       var isValid = dayNum >= 1 && dayNum <= daysInMonth;
       var isToday = isValid && dayNum === today && month === todayMonth && year === todayYear;
       var dateStr = isValid ? year + '-' + String(month + 1).padStart(2, '0') + '-' + String(dayNum).padStart(2, '0') : '';
-      var dayRecipes = isValid && recipesByDate[dateStr] ? recipesByDate[dateStr] : [];
+      var dayAds = isValid && adsByDate[dateStr] ? adsByDate[dateStr] : [];
 
       html += '<div class="cp-cal-day' + (isValid ? '' : ' cp-cal-day-empty') + (isToday ? ' cp-cal-day-today' : '') + '">';
       if (isValid) {
         html += '<div class="cp-cal-day-header"><span class="cp-cal-day-num">' + dayNum + '</span>';
-        if (dayRecipes.length > 0) html += '<span class="cp-cal-day-count">' + dayRecipes.length + '</span>';
+        if (dayAds.length > 0) html += '<span class="cp-cal-day-count">' + dayAds.length + '</span>';
         html += '</div>';
-        for (var dri = 0; dri < Math.min(dayRecipes.length, 3); dri++) {
-          var dr = dayRecipes[dri];
-          var drSt = RECIPE_STATUSES[dr.status] || { color: '#80868b' };
-          html += '<div class="cp-cal-recipe-chip" style="background:' + drSt.color + '15;color:' + drSt.color + '" data-action="select-recipe" data-id="' + esc(dr.id) + '">';
-          html += '<span class="cp-cal-chip-title">' + esc(truncate(dr.title, 14)) + '</span>';
+        for (var dai = 0; dai < Math.min(dayAds.length, 3); dai++) {
+          var ad = dayAds[dai];
+          var aSt = META_AD_STATUSES[ad.pipeline_status] || { color: '#80868b' };
+          html += '<div class="cp-cal-recipe-chip" style="background:' + aSt.color + '15;color:' + aSt.color + '" data-action="ws-select-ad" data-id="' + esc(ad.id) + '">';
+          html += '<span class="cp-cal-chip-title">' + esc(truncate(ad.name || 'Untitled', 14)) + '</span>';
           html += '</div>';
         }
-        if (dayRecipes.length > 3) html += '<div class="cp-cal-more">+' + (dayRecipes.length - 3) + ' more</div>';
+        if (dayAds.length > 3) html += '<div class="cp-cal-more">+' + (dayAds.length - 3) + ' more</div>';
       }
       html += '</div>';
     }
@@ -5799,11 +4639,10 @@
     html += '<select class="cp-select cp-select-sm" id="cpActivityTypeFilter"><option value="">All Types</option>';
     // Group by entity type
     var typeGroups = [
-      { label: 'Recipes', types: ['recipe_created', 'recipe_updated', 'recipe_status_changed', 'recipe_deleted', 'recipe_batch_generated'] },
       { label: 'Personas', types: ['persona_created', 'persona_updated', 'persona_deleted', 'category_created', 'category_deleted'] },
       { label: 'Messages', types: ['message_created', 'message_updated', 'message_deleted'] },
       { label: 'Styles/Formats', types: ['style_created', 'style_updated', 'style_deleted', 'format_created', 'format_updated', 'format_deleted'] },
-      { label: 'Campaigns', types: ['campaign_created', 'campaign_updated', 'campaign_deleted'] },
+      { label: 'Campaigns (v2)', types: ['campaign_v2_created', 'campaign_v2_updated', 'campaign_v2_deleted', 'ad_set_created', 'ad_set_updated', 'ad_set_deleted', 'ad_created', 'ad_updated', 'ad_deleted', 'ad_status_changed', 'campaign_tree_generated', 'snapshot_resynced'] },
       { label: 'AI Actions', types: ['brief_generated', 'hook_generated', 'content_generated', 'media_generated', 'script_generated', 'pain_points_generated', 'messages_suggested', 'personas_researched'] },
       { label: 'Other', types: ['tag_created', 'tag_updated', 'tag_deleted', 'image_uploaded', 'settings_changed', 'data_imported', 'data_exported', 'setup_completed'] }
     ];
@@ -5923,13 +4762,12 @@
       if (v) navigate(v);
     });
 
-    // Navigate to campaign from recipe badge
+    // Navigate to a Meta v2 Campaign in the Workspace
     $(document).off('click.cp-go-campaign').on('click.cp-go-campaign', '[data-action="go-to-campaign"]', function(e) {
       e.preventDefault(); e.stopPropagation();
       var campId = $(this).data('id');
-      if (campId) {
-        S.selectedCampaignId = campId;
-        navigate('campaigns');
+      if (campId && typeof window._cpNavigateToCampaignV2 === 'function') {
+        window._cpNavigateToCampaignV2(campId);
       }
     });
 
@@ -5964,16 +4802,17 @@
           results.push({ type: 'message', icon: 'comments', color: '#1a73e8', title: m.title, sub: m.theme || '', id: m.id, view: 'messages' });
         }
       });
-      // Search recipes
-      (S.data.recipes || []).forEach(function(r) {
-        if ((r.title || '').toLowerCase().indexOf(q) > -1) {
-          results.push({ type: 'recipe', icon: 'shuffle', color: '#e37400', title: r.title, sub: (RECIPE_STATUSES[r.status] || {}).label || '', id: r.id, view: 'recipes' });
+      // Search Meta v2 Campaigns + Ads
+      (S.data.campaigns_v2 || []).forEach(function(c) {
+        if ((c.name || '').toLowerCase().indexOf(q) > -1 || (c.objective || '').toLowerCase().indexOf(q) > -1) {
+          var st = (META_CAMPAIGN_STATUSES && META_CAMPAIGN_STATUSES[c.status]) || {};
+          results.push({ type: 'campaign_v2', icon: 'bullhorn', color: '#0891b2', title: c.name, sub: st.label || c.status || '', id: c.id, view: 'campaign_workspace' });
         }
       });
-      // Search campaigns
-      (S.data.campaigns || []).forEach(function(c) {
-        if ((c.name || '').toLowerCase().indexOf(q) > -1 || (c.description || '').toLowerCase().indexOf(q) > -1) {
-          results.push({ type: 'campaign', icon: 'bullhorn', color: '#0891b2', title: c.name, sub: (CAMPAIGN_STATUSES[c.status] || {}).label || '', id: c.id, view: 'campaigns' });
+      (S.data.ads || []).forEach(function(a) {
+        if ((a.name || '').toLowerCase().indexOf(q) > -1) {
+          var st2 = (META_AD_STATUSES && META_AD_STATUSES[a.pipeline_status]) || {};
+          results.push({ type: 'ad', icon: 'rectangle-ad', color: '#e37400', title: a.name, sub: st2.label || a.pipeline_status || '', id: a.id, view: 'campaign_workspace' });
         }
       });
       // Search pain points
@@ -6021,10 +4860,16 @@
       var type = $(this).data('type');
       $('#cpGlobalSearchInput').val('');
       $('#cpGlobalSearchResults').hide();
-      if (type === 'recipe') { S.selectedRecipeId = id; S.currentStep = 'composition'; }
-      else if (type === 'campaign') { S.selectedCampaignId = id; }
-      else if (type === 'persona') { S.selectedPersonaId = id; }
-      else if (type === 'pain_point') { S.selectedPainPointId = id; }
+      if (type === 'persona') S.selectedPersonaId = id;
+      else if (type === 'pain_point') S.selectedPainPointId = id;
+      else if (type === 'campaign_v2') { if (typeof window._cpNavigateToCampaignV2 === 'function') return window._cpNavigateToCampaignV2(id); }
+      else if (type === 'ad') {
+        var ad = S.adMap[id];
+        if (ad && typeof window._cpNavigateToCampaignV2 === 'function') {
+          var set = S.adSetMap[ad.ad_set_id];
+          return window._cpNavigateToCampaignV2(set ? set.campaign_id : null, ad.ad_set_id, ad.id);
+        }
+      }
       navigate(view);
     });
 
@@ -6239,185 +5084,6 @@
       renderCurrentView();
     });
 
-    // Select recipe
-    $(document).off('click.cp-select-recipe').on('click.cp-select-recipe', '[data-action="select-recipe"]', function(e) {
-      e.preventDefault();
-      var id = $(this).data('id');
-      if (id) {
-        S.selectedRecipeId = id;
-        S.currentStep = 'composition';
-        if (S.currentView !== 'recipes') navigate('recipes');
-        else renderCurrentView();
-      }
-    });
-
-    // Recipe search (debounced)
-    $(document).off('input.cp-recipe-search').on('input.cp-recipe-search', '#cpRecipeSearch', debounce(function() {
-      S.recipeFilter.search = $(this).val() || '';
-      renderCurrentView();
-      var $el = $('#cpRecipeSearch'); if ($el.length) { var v = $el.val(); $el.focus(); $el[0].setSelectionRange(v.length, v.length); }
-    }, 250));
-
-    // Recipe status filter
-    $(document).off('change.cp-recipe-status').on('change.cp-recipe-status', '#cpRecipeStatusFilter', function() {
-      var v = $(this).val();
-      S.recipeFilter.statuses = v ? [v] : [];
-      renderCurrentView();
-    });
-
-    // Recipe campaign filter
-    $(document).off('change.cp-recipe-camp').on('change.cp-recipe-camp', '#cpRecipeCampaignFilter', function() {
-      S.recipeFilter.campaign = $(this).val() || '';
-      renderCurrentView();
-    });
-
-    // Recipe production-presence filter (has / missing production node)
-    $(document).off('change.cp-recipe-prod').on('change.cp-recipe-prod', '#cpRecipeProductionFilter', function() {
-      S.recipeFilter.production = $(this).val() || '';
-      renderCurrentView();
-    });
-
-    // Recipe sort
-    $(document).off('change.cp-recipe-sort').on('change.cp-recipe-sort', '#cpRecipeSortBy', function() {
-      S.recipeFilter.sortBy = $(this).val() || 'updated';
-      renderCurrentView();
-    });
-
-    // Recipe sort direction toggle
-    $(document).off('click.cp-recipe-sortdir').on('click.cp-recipe-sortdir', '[data-action="toggle-recipe-sort-dir"]', function(e) {
-      e.preventDefault();
-      S.recipeFilter.sortDir = S.recipeFilter.sortDir === 'asc' ? 'desc' : 'asc';
-      renderCurrentView();
-    });
-
-    // Bulk mode toggle
-    $(document).off('click.cp-bulk-toggle').on('click.cp-bulk-toggle', '[data-action="toggle-bulk-mode"]', function(e) {
-      e.preventDefault();
-      S._bulkMode = !S._bulkMode;
-      S._bulkSelected = [];
-      renderCurrentView();
-    });
-    $(document).off('change.cp-bulk-item').on('change.cp-bulk-item', '[data-action="bulk-toggle-item"]', function(e) {
-      e.stopPropagation();
-      S._bulkSelected = S._bulkSelected || [];
-      var id = $(this).data('id');
-      var idx = S._bulkSelected.indexOf(id);
-      if (this.checked && idx === -1) S._bulkSelected.push(id);
-      else if (!this.checked && idx > -1) S._bulkSelected.splice(idx, 1);
-      renderCurrentView();
-    });
-    $(document).off('change.cp-bulk-all').on('change.cp-bulk-all', '[data-action="bulk-select-all"]', function() {
-      var recipes = getFilteredRecipes();
-      if (this.checked) {
-        S._bulkSelected = recipes.map(function(r) { return r.id; });
-      } else {
-        S._bulkSelected = [];
-      }
-      renderCurrentView();
-    });
-    $(document).off('change.cp-bulk-status').on('change.cp-bulk-status', '#cpBulkStatus', function() {
-      var newStatus = $(this).val();
-      if (!newStatus || !S._bulkSelected || S._bulkSelected.length === 0) return;
-      var count = S._bulkSelected.length;
-      snapshot('Bulk status change');
-      S._bulkSelected.forEach(function(id) { saveEntityField('recipe', id, 'status', newStatus); });
-      logActivity('recipe_batch_updated', 'recipe', '', '', 'Bulk status changed ' + count + ' recipes to ' + newStatus);
-      S._bulkSelected = [];
-      toast(count + ' recipes updated', 'success');
-    });
-    $(document).off('click.cp-bulk-assign').on('click.cp-bulk-assign', '[data-action="bulk-assign-campaign"]', function(e) {
-      e.preventDefault();
-      if (!S._bulkSelected || S._bulkSelected.length === 0) return;
-      var camps = getAllCampaigns();
-      var html = '<div class="cp-editor-form">';
-      html += '<p class="cp-text-muted">Assign ' + S._bulkSelected.length + ' selected recipe(s) to a campaign:</p>';
-      html += '<select class="cp-select" id="cpBulkCampaignSelect"><option value="">Unassigned</option>';
-      for (var ci = 0; ci < camps.length; ci++) html += '<option value="' + esc(camps[ci].id) + '">' + esc(camps[ci].name) + '</option>';
-      html += '</select></div>';
-      openModal('Bulk Assign Campaign', html, {
-        titleIcon: 'bullhorn', size: 'sm', saveLabel: 'Assign',
-        onSave: function() {
-          var campId = $('#cpBulkCampaignSelect').val() || '';
-          snapshot('Bulk assign campaign');
-          S._bulkSelected.forEach(function(id) { saveEntityField('recipe', id, 'campaign_id', campId); });
-          logActivity('recipe_batch_updated', 'recipe', '', '', 'Bulk assigned ' + S._bulkSelected.length + ' recipes to campaign');
-          S._bulkSelected = [];
-          closeModal();
-          toast('Recipes assigned', 'success');
-        }
-      });
-    });
-    $(document).off('click.cp-bulk-delete').on('click.cp-bulk-delete', '[data-action="bulk-delete"]', function(e) {
-      e.preventDefault();
-      if (!S._bulkSelected || S._bulkSelected.length === 0) return;
-      openConfirmDialog({
-        title: 'Delete ' + S._bulkSelected.length + ' Recipes',
-        message: 'Are you sure you want to delete ' + S._bulkSelected.length + ' selected recipe(s)? This cannot be undone.',
-        confirmLabel: 'Delete All', danger: true,
-        onConfirm: function() {
-          snapshot('Bulk delete');
-          S._bulkSelected.forEach(function(id) { deleteEntity('recipe', id); });
-          logActivity('recipe_batch_deleted', 'recipe', '', '', 'Bulk deleted ' + S._bulkSelected.length + ' recipes');
-          S._bulkSelected = [];
-          S._bulkMode = false;
-        }
-      });
-    });
-
-    // Pipeline step navigation
-    $(document).off('click.cp-go-step').on('click.cp-go-step', '[data-action="go-step"]', function(e) {
-      e.preventDefault();
-      var step = $(this).data('step');
-      if (step) {
-        S.currentStep = step;
-        renderCurrentView();
-      }
-    });
-
-    // Campaign search (debounced)
-    $(document).off('input.cp-campaign-search').on('input.cp-campaign-search', '#cpCampaignSearch', debounce(function() {
-      S.campaignFilter.search = $(this).val() || '';
-      renderCurrentView();
-    }, 250));
-
-    // Campaign status filter
-    $(document).off('change.cp-campaign-status').on('change.cp-campaign-status', '#cpCampaignStatusFilter', function() {
-      S.campaignFilter.status = $(this).val() || '';
-      renderCurrentView();
-    });
-
-    // Campaign detail tab switch
-    $(document).off('click.cp-campaign-tab').on('click.cp-campaign-tab', '[data-action="set-campaign-tab"]', function(e) {
-      e.preventDefault();
-      S.campaignDetailTab = $(this).data('tab') || 'overview';
-      renderCurrentView();
-    });
-
-    // Campaign brief save on blur
-    $(document).off('blur.cp-campaign-brief').on('blur.cp-campaign-brief', '.cp-campaign-brief-field', function() {
-      var campId = $(this).data('campaign-id');
-      if (campId) {
-        saveEntityField('campaign', campId, 'brief', $(this).val() || '');
-      }
-    });
-
-    // Quick-create recipe from coverage matrix
-    $(document).off('click.cp-quick-recipe').on('click.cp-quick-recipe', '[data-action="quick-create-recipe"]', function(e) {
-      e.preventDefault();
-      var personaId = $(this).data('persona-id');
-      var messageId = $(this).data('message-id');
-      var campId = $(this).data('campaign-id');
-      if (!personaId || !messageId || !campId) return;
-      snapshot('Quick create recipe');
-      var newRecipe = createEntity('recipe', {
-        persona_id: personaId, message_id: messageId, campaign_id: campId
-      });
-      if (newRecipe) {
-        buildMaps(); renderCurrentView();
-        toast('Recipe created and linked to campaign', 'success');
-      }
-    });
-
     // Calendar navigation
     $(document).off('click.cp-cal-prev').on('click.cp-cal-prev', '[data-action="cal-prev"]', function(e) {
       e.preventDefault();
@@ -6468,25 +5134,21 @@
       renderCurrentView();
     });
 
-    // Filter pipeline status from dashboard
-    $(document).off('click.cp-filter-pipeline').on('click.cp-filter-pipeline', '[data-action="filter-pipeline-status"]', function(e) {
-      e.preventDefault();
-      var status = $(this).data('status');
-      if (status) {
-        S.recipeFilter.statuses = [status];
-        navigate('recipes');
-      }
-    });
-
     // Select entity from activity
     $(document).off('click.cp-select-entity').on('click.cp-select-entity', '[data-action="select-entity"]', function(e) {
       e.preventDefault();
       var type = $(this).data('type');
       var id = $(this).data('id');
-      if (type === 'recipe' && id) { S.selectedRecipeId = id; navigate('recipes'); }
-      else if (type === 'persona' && id) { S.selectedPersonaId = id; navigate('personas'); }
-      else if (type === 'campaign' && id) { navigate('campaigns'); }
+      if (type === 'persona' && id) { S.selectedPersonaId = id; navigate('personas'); }
       else if (type === 'message' && id) { navigate('messages'); }
+      else if (type === 'campaign_v2' && id) { if (typeof window._cpNavigateToCampaignV2 === 'function') window._cpNavigateToCampaignV2(id); }
+      else if (type === 'ad' && id) {
+        var ad = S.adMap[id];
+        if (ad && typeof window._cpNavigateToCampaignV2 === 'function') {
+          var set = S.adSetMap[ad.ad_set_id];
+          window._cpNavigateToCampaignV2(set ? set.campaign_id : null, ad.ad_set_id, ad.id);
+        }
+      }
     });
 
     // Hash change
@@ -6501,21 +5163,6 @@
   function setupViewEventHandlers() {
     // Per-render hooks — called after each renderCurrentView()
     var view = S.currentView;
-
-    // Restore scroll position for list panes
-    if (view === 'recipes' && S.selectedRecipeId) {
-      var $selItem = $('.cp-recipe-item-selected');
-      if ($selItem.length) {
-        var $list = $selItem.closest('.cp-recipe-list');
-        if ($list.length) {
-          var itemTop = $selItem.position().top;
-          var listH = $list.height();
-          if (itemTop > listH - 50 || itemTop < 0) {
-            $list.scrollTop($list.scrollTop() + itemTop - listH / 3);
-          }
-        }
-      }
-    }
 
     if (view === 'personas' && S.selectedPersonaId) {
       var $selPersona = $('.cp-persona-item-selected');
@@ -6546,8 +5193,6 @@
   // SECTION 19: FILTERING & SORTING HELPERS
   // ============================================================
 
-  // getFilteredRecipes() is in Section 14
-
   function getFilteredPersonas(search) {
     var personas = (S.data.personas || []).slice();
     if (!search) return personas;
@@ -6574,99 +5219,9 @@
       msgs = msgs.filter(function(m) { return (m.funnel_stages || []).indexOf(filters.funnel) > -1; });
     }
     if (filters.sortBy === 'title') msgs.sort(function(a, b) { return (a.title || '').localeCompare(b.title || ''); });
-    else if (filters.sortBy === 'most_used') msgs.sort(function(a, b) { return (S.messageRecipeCounts[b.id] || 0) - (S.messageRecipeCounts[a.id] || 0); });
     else msgs.sort(function(a, b) { return (b.updated || b.created || '') > (a.updated || a.created || '') ? 1 : -1; });
     return msgs;
   }
-
-  function getGroupedRecipes(groupBy) {
-    var recipes = getFilteredRecipes();
-    var groups = [];
-
-    if (groupBy === 'status') {
-      for (var sk in RECIPE_STATUSES) {
-        var stCfg = RECIPE_STATUSES[sk];
-        var stRecipes = recipes.filter(function(r) { return r.status === sk; });
-        if (stRecipes.length > 0) {
-          groups.push({ key: sk, label: stCfg.label, icon: stCfg.icon, color: stCfg.color, recipes: stRecipes });
-        }
-      }
-    } else if (groupBy === 'campaign') {
-      var campRecipes = {};
-      recipes.forEach(function(r) {
-        var ck = r.campaign_id || '_none';
-        campRecipes[ck] = campRecipes[ck] || [];
-        campRecipes[ck].push(r);
-      });
-      for (var cid in campRecipes) {
-        var camp = S.campaignMap[cid];
-        groups.push({
-          key: cid, label: camp ? camp.name : 'No Campaign',
-          icon: camp ? 'bullhorn' : 'folder',
-          color: camp ? (CAMPAIGN_STATUSES[camp.status] || {}).color || '#80868b' : '#80868b',
-          recipes: campRecipes[cid]
-        });
-      }
-    } else if (groupBy === 'persona') {
-      var perRecipes = {};
-      recipes.forEach(function(r) {
-        var pk = r.persona_id || '_none';
-        perRecipes[pk] = perRecipes[pk] || [];
-        perRecipes[pk].push(r);
-      });
-      for (var pid in perRecipes) {
-        var persona = S.personaMap[pid];
-        groups.push({ key: pid, label: persona ? persona.name : 'No Persona', icon: 'user', color: '#9334e9', recipes: perRecipes[pid] });
-      }
-    } else if (groupBy === 'priority') {
-      for (var plk in PRIORITY_LEVELS) {
-        var plCfg = PRIORITY_LEVELS[plk];
-        var plRecipes = recipes.filter(function(r) { return r.priority === plk; });
-        if (plRecipes.length > 0) {
-          groups.push({ key: plk, label: plCfg.label, icon: plCfg.icon, color: plCfg.color, recipes: plRecipes });
-        }
-      }
-    } else if (groupBy === 'funnel') {
-      var funnels = (S.meta.settings && S.meta.settings.funnel_stages) || [];
-      funnels.forEach(function(f) {
-        var fRecipes = recipes.filter(function(r) {
-          var msg = S.messageMap[r.message_id];
-          return msg && (msg.funnel_stages || []).indexOf(f.id) > -1;
-        });
-        if (fRecipes.length > 0) {
-          groups.push({ key: f.id, label: f.name, icon: 'filter', color: f.color, recipes: fRecipes });
-        }
-      });
-      var noFunnel = recipes.filter(function(r) {
-        var msg = S.messageMap[r.message_id];
-        return !msg || !msg.funnel_stages || msg.funnel_stages.length === 0;
-      });
-      if (noFunnel.length > 0) {
-        groups.push({ key: '_none', label: 'No Funnel Stage', icon: 'circle', color: '#80868b', recipes: noFunnel });
-      }
-    } else if (groupBy === 'tag') {
-      var taggedRecipes = {};
-      recipes.forEach(function(r) {
-        var tags = r.tags || [];
-        if (tags.length === 0) {
-          taggedRecipes['_none'] = taggedRecipes['_none'] || [];
-          taggedRecipes['_none'].push(r);
-        } else {
-          tags.forEach(function(tid) {
-            taggedRecipes[tid] = taggedRecipes[tid] || [];
-            taggedRecipes[tid].push(r);
-          });
-        }
-      });
-      for (var tid in taggedRecipes) {
-        var tag = S.tagMap[tid];
-        groups.push({ key: tid, label: tag ? tag.name : 'Untagged', icon: 'tag', color: tag ? tag.color : '#80868b', recipes: taggedRecipes[tid] });
-      }
-    }
-
-    return groups;
-  }
-
 
 /* ===== src/10-part1/22-crud-helpers.js ===== */
   // ============================================================
@@ -6737,51 +5292,6 @@
         }, data);
         S.data.visual_formats.push(entity);
         logActivity('format_created', 'format', entity.id, entity.name, 'Created visual format');
-        break;
-
-      case 'recipe':
-        entity = $.extend(true, {
-          id: generateId('rec'), title: '', status: 'draft', priority: (S.meta.settings.defaults || {}).priority || 'medium',
-          campaign_id: '', persona_id: '', message_id: '', style_id: '', visual_format_id: '',
-          selected_pain_point_ids: [], media_type: 'image',
-          hook: { selected_hook_id: '', custom_hook: '', hook_type: '' },
-          content: { ad_copy: '', headline: '', description: '', cta: '', variants: [], notes: '' },
-          image_brief: { creative_brief: '', ai_prompt: '', prompt_params: { aspect_ratio: '1:1', visual_approach: 'photography', mood: '', negative_prompt: '' }, reference_image_ids: [] },
-          video: { duration_seconds: 30, format: 'Reel', aspect_ratio: '9:16', concept: '', blueprint: { scenes: [] }, script: { rows: [] } },
-          review_notes: '', production_notes: '', assigned_to: '', due_date: '',
-          delivery_notes: '', creative_brief: '',
-          tags: [], batch_id: '',
-          // Production node attached to this recipe (one per recipe, by media type).
-          // Populated by parseProductionData() when the Drupal view block lists it.
-          production: null,
-          created: now, updated: now, created_by: S.user.id || ''
-        }, data);
-        // Auto-generate title from dimensions
-        if (!entity.title) {
-          var parts = [];
-          var per = S.personaMap[entity.persona_id]; if (per) parts.push(per.name);
-          var msg = S.messageMap[entity.message_id]; if (msg) parts.push(msg.title);
-          var sty = S.styleMap[entity.style_id]; if (sty) parts.push(sty.name);
-          var vf = S.formatMap[entity.visual_format_id]; if (vf) parts.push(vf.name);
-          entity.title = parts.length > 0 ? parts.join(' × ') : 'New Recipe';
-        }
-        S.data.recipes.push(entity);
-        logActivity('recipe_created', 'recipe', entity.id, entity.title, 'Created recipe');
-        break;
-
-      case 'campaign':
-        entity = $.extend(true, {
-          id: generateId('cmp'), name: '', description: '', objective: '',
-          funnel_stage: '', date_start: '', date_end: '',
-          status: (S.meta.settings.defaults || {}).campaign_status || 'planning',
-          budget_notes: '', target_audience_notes: '',
-          persona_ids: [], message_ids: [], style_ids: [], format_ids: [],
-          ai_instructions: '', phases: [], brief: '',
-          tags: [], notes: '',
-          created: now, updated: now, created_by: S.user.id || ''
-        }, data);
-        S.data.campaigns.push(entity);
-        logActivity('campaign_created', 'campaign', entity.id, entity.name, 'Created campaign');
         break;
 
       case 'tag':
@@ -6893,7 +5403,6 @@
         entityTitle = entity.name;
         idx = S.data.personas.findIndex(function(p) { return p.id === id; });
         if (idx > -1) S.data.personas.splice(idx, 1);
-        (S.data.recipes || []).forEach(function(r) { if (r.persona_id === id) r.persona_id = ''; });
         logActivity('persona_deleted', 'persona', id, entityTitle, 'Deleted persona');
         break;
 
@@ -6914,9 +5423,6 @@
         (S.data.personas || []).forEach(function(p) {
           p.pain_point_ids = (p.pain_point_ids || []).filter(function(pid) { return pid !== id; });
         });
-        (S.data.recipes || []).forEach(function(r) {
-          r.selected_pain_point_ids = (r.selected_pain_point_ids || []).filter(function(pid) { return pid !== id; });
-        });
         logActivity('pain_point_deleted', 'pain_point', id, truncate(entityTitle, 40), 'Deleted pain point');
         break;
 
@@ -6925,7 +5431,6 @@
         entityTitle = entity.title;
         idx = S.data.messages.findIndex(function(m) { return m.id === id; });
         if (idx > -1) S.data.messages.splice(idx, 1);
-        (S.data.recipes || []).forEach(function(r) { if (r.message_id === id) r.message_id = ''; });
         logActivity('message_deleted', 'message', id, entityTitle, 'Deleted message');
         break;
 
@@ -6934,7 +5439,6 @@
         entityTitle = entity.name;
         idx = S.data.styles.findIndex(function(s) { return s.id === id; });
         if (idx > -1) S.data.styles.splice(idx, 1);
-        (S.data.recipes || []).forEach(function(r) { if (r.style_id === id) r.style_id = ''; });
         logActivity('style_deleted', 'style', id, entityTitle, 'Deleted style');
         break;
 
@@ -6943,26 +5447,7 @@
         entityTitle = entity.name;
         idx = S.data.visual_formats.findIndex(function(f) { return f.id === id; });
         if (idx > -1) S.data.visual_formats.splice(idx, 1);
-        (S.data.recipes || []).forEach(function(r) { if (r.visual_format_id === id) r.visual_format_id = ''; });
         logActivity('format_deleted', 'format', id, entityTitle, 'Deleted visual format');
-        break;
-
-      case 'recipe':
-        entity = S.recipeMap[id]; if (!entity) return false;
-        entityTitle = entity.title;
-        idx = S.data.recipes.findIndex(function(r) { return r.id === id; });
-        if (idx > -1) S.data.recipes.splice(idx, 1);
-        if (S.selectedRecipeId === id) S.selectedRecipeId = null;
-        logActivity('recipe_deleted', 'recipe', id, entityTitle, 'Deleted recipe');
-        break;
-
-      case 'campaign':
-        entity = S.campaignMap[id]; if (!entity) return false;
-        entityTitle = entity.name;
-        idx = S.data.campaigns.findIndex(function(c) { return c.id === id; });
-        if (idx > -1) S.data.campaigns.splice(idx, 1);
-        (S.data.recipes || []).forEach(function(r) { if (r.campaign_id === id) r.campaign_id = ''; });
-        logActivity('campaign_deleted', 'campaign', id, entityTitle, 'Deleted campaign');
         break;
 
       case 'tag':
@@ -6970,7 +5455,7 @@
         entityTitle = entity.name;
         idx = S.data.tags.findIndex(function(t) { return t.id === id; });
         if (idx > -1) S.data.tags.splice(idx, 1);
-        var allArrays = [S.data.personas, S.data.messages, S.data.styles, S.data.visual_formats, S.data.recipes, S.data.campaigns, S.data.campaigns_v2, S.data.ads];
+        var allArrays = [S.data.personas, S.data.messages, S.data.styles, S.data.visual_formats, S.data.campaigns_v2, S.data.ad_sets, S.data.ads];
         allArrays.forEach(function(arr) {
           (arr || []).forEach(function(item) {
             if (item.tags) item.tags = item.tags.filter(function(tid) { return tid !== id; });
@@ -7036,7 +5521,7 @@
   function saveEntityField(type, id, field, value) {
     var collections = {
       persona: S.data.personas, message: S.data.messages, style: S.data.styles,
-      visual_format: S.data.visual_formats, recipe: S.data.recipes, campaign: S.data.campaigns,
+      visual_format: S.data.visual_formats,
       pain_point: S.data.pain_points, persona_category: S.data.persona_categories, tag: S.data.tags,
       campaign_v2: S.data.campaigns_v2, ad_set: S.data.ad_sets, ad: S.data.ads
     };
@@ -7064,11 +5549,6 @@
 
     entity.updated = new Date().toISOString();
 
-    // Recipe status change logging
-    if (type === 'recipe' && field === 'status') {
-      var newLabel = (RECIPE_STATUSES[value] || {}).label || value;
-      logActivity('recipe_status_changed', 'recipe', id, entity.title, 'Status changed to ' + newLabel);
-    }
     // Ad pipeline status change logging
     if (type === 'ad' && field === 'pipeline_status') {
       var adLabel = (META_AD_STATUSES[value] || {}).label || value;
@@ -7093,7 +5573,7 @@
   function duplicateEntity(type, id) {
     var collections = {
       persona: S.data.personas, message: S.data.messages, style: S.data.styles,
-      visual_format: S.data.visual_formats, recipe: S.data.recipes, campaign: S.data.campaigns,
+      visual_format: S.data.visual_formats,
       campaign_v2: S.data.campaigns_v2, ad_set: S.data.ad_sets, ad: S.data.ads
     };
     var coll = collections[type];
@@ -7110,7 +5590,6 @@
     clone.created_by = S.user.id || '';
     if (clone.title) clone.title += ' (copy)';
     if (clone.name) clone.name += ' (copy)';
-    if (type === 'recipe') { clone.status = 'draft'; clone.batch_id = ''; clone.review_notes = ''; clone.assigned_to = ''; }
     if (type === 'campaign_v2') { clone.status = 'DRAFT'; clone.ab_test = { enabled: false, primary_metric: '', variants: [] }; }
     if (type === 'ad_set')      { clone.status = 'DRAFT'; clone.ab_role = null; }
     if (type === 'ad')          { clone.pipeline_status = 'hook_ready'; clone.review_notes = ''; clone.assigned_to = ''; }
@@ -7129,70 +5608,9 @@
 
 /* ===== src/10-part1/23-auto-status.js ===== */
   // ============================================================
-  // SECTION 22: AUTO-STATUS ENGINE
+  // SECTION 22: PERSISTENCE + LOGGING HELPERS
   // ============================================================
 
-  function evaluateAutoStatus(recipe) {
-    if (!recipe) return null;
-    var currentIdx = STATUS_ORDER.indexOf(recipe.status);
-    if (currentIdx < 0) return null;
-    var suggested = recipe.status;
-
-    // draft → hook_ready
-    var hook = recipe.hook || {};
-    if (STATUS_ORDER.indexOf('hook_ready') > currentIdx) {
-      if (hook.selected_hook_id || (hook.custom_hook && hook.custom_hook.trim().length > 10)) {
-        suggested = 'hook_ready';
-      }
-    }
-
-    // hook_ready → content_ready
-    var sugIdx = STATUS_ORDER.indexOf(suggested);
-    var content = recipe.content || {};
-    if (STATUS_ORDER.indexOf('content_ready') > sugIdx) {
-      var adCopyText = stripHtml(content.ad_copy || '');
-      if (adCopyText.trim().length > 50) {
-        suggested = 'content_ready';
-      }
-    }
-
-    // content_ready → media_ready
-    // Media production now happens in dedicated apps (image_production,
-    // carousel_production, video_production). The recipe is considered
-    // production-ready as soon as a media type is chosen for handoff and
-    // ad copy is in place — the actual creative is built downstream.
-    // A production node attached to the recipe is the strongest possible
-    // signal and advances us regardless of intermediate state.
-    sugIdx = STATUS_ORDER.indexOf(suggested);
-    if (STATUS_ORDER.indexOf('media_ready') > sugIdx) {
-      var hasProd = typeof getRecipeProduction === 'function' && !!getRecipeProduction(recipe);
-      if (hasProd) {
-        suggested = 'media_ready';
-      } else if (recipe.media_type && suggested === 'content_ready') {
-        suggested = 'media_ready';
-      }
-    }
-
-    // in_review, approved, live are manual only
-    return suggested === recipe.status ? null : suggested;
-  }
-
-  function maybeAdvanceRecipeStatus(recipe, reason) {
-    if (!recipe) return false;
-    var suggested = evaluateAutoStatus(recipe);
-    if (!suggested) return false;
-    var currentIdx = STATUS_ORDER.indexOf(recipe.status);
-    var suggestedIdx = STATUS_ORDER.indexOf(suggested);
-    if (suggestedIdx <= currentIdx) return false;
-
-    var oldLabel = (RECIPE_STATUSES[recipe.status] || {}).label || recipe.status;
-    var newLabel = (RECIPE_STATUSES[suggested] || {}).label || suggested;
-    recipe.status = suggested;
-    recipe.updated = new Date().toISOString();
-    logActivity('recipe_status_changed', 'recipe', recipe.id, recipe.title, oldLabel + ' → ' + newLabel + (reason ? ' (' + reason + ')' : ''));
-    toast('Auto-advanced to ' + newLabel + (reason ? ' — ' + reason : ''), 'success', 4000);
-    return true;
-  }
   function syncToTextarea() {
     if (!S.$textarea || !S.$metaTextarea || !S.$activityTextarea) return;
     try {
@@ -7281,8 +5699,6 @@
 
   // Badges
   window._cpBadge = badge;
-  window._cpRecipeStatusBadge = recipeStatusBadge;
-  window._cpCampaignStatusBadge = campaignStatusBadge;
   window._cpPriorityBadge = priorityBadge;
   window._cpFunnelBadge = funnelBadge;
   window._cpDimensionBadge = dimensionBadge;
@@ -7297,13 +5713,10 @@
   window._cpGetMessage = getMessage;
   window._cpGetStyle = getStyle;
   window._cpGetFormat = getFormat;
-  window._cpGetRecipe = getRecipe;
-  window._cpGetCampaign = getCampaign;
   window._cpGetTag = getTag;
   window._cpGetFunnelStage = getFunnelStage;
   window._cpGetResearchSession = getResearchSession;
   window._cpGetImageById = getImageById;
-  window._cpGetRecipeProduction = getRecipeProduction;
   window._cpGetProductionStatusStyle = getProductionStatusStyle;
   window._cpParseProductionData = parseProductionData;
 
@@ -7319,8 +5732,6 @@
   window._cpGetAllMessages = getAllMessages;
   window._cpGetAllStyles = getAllStyles;
   window._cpGetAllFormats = getAllFormats;
-  window._cpGetAllRecipes = getAllRecipes;
-  window._cpGetAllCampaigns = getAllCampaigns;
   window._cpGetAllPainPoints = getAllPainPoints;
   window._cpGetAllCategories = getAllCategories;
 
@@ -7333,22 +5744,18 @@
   window._cpGetAdsByCampaign = getAdsByCampaign;
   window._cpGetRecentActivity = getRecentActivity;
   window._cpGetPersonasByCategory = getPersonasByCategory;
-  window._cpGetRecipesByCampaign = getRecipesByCampaign;
-  window._cpGetRecipesByPersona = getRecipesByPersona;
   window._cpGetPersonaPainPoints = getPersonaPainPoints;
   window._cpGetImages = getImages;
   window._cpGetAllImageTags = getAllImageTags;
-  window._cpCalculateDiversityScore = calculateDiversityScore;
   window._cpIsSetupComplete = isSetupComplete;
   window._cpParseImageField = parseImageField;
 
   // Constants
   window._cpConstants = {
     APP_VIEWS: APP_VIEWS, SIDEBAR_GROUPS: SIDEBAR_GROUPS, DIMENSIONS: DIMENSIONS,
-    RECIPE_STATUSES: RECIPE_STATUSES, STATUS_ORDER: STATUS_ORDER, ACTIVE_STATUSES: ACTIVE_STATUSES,
-    CAMPAIGN_STATUSES: CAMPAIGN_STATUSES, FUNNEL_DEFAULTS: FUNNEL_DEFAULTS,
-    PIPELINE_STEPS: PIPELINE_STEPS, MEDIA_TYPES: MEDIA_TYPES, HOOK_TYPES: HOOK_TYPES,
-    PRIORITY_LEVELS: PRIORITY_LEVELS, CAMPAIGN_OBJECTIVES: CAMPAIGN_OBJECTIVES,
+    FUNNEL_DEFAULTS: FUNNEL_DEFAULTS,
+    MEDIA_TYPES: MEDIA_TYPES, HOOK_TYPES: HOOK_TYPES,
+    PRIORITY_LEVELS: PRIORITY_LEVELS,
     FORMAT_CATEGORIES: FORMAT_CATEGORIES, PAIN_POINT_CATEGORIES: PAIN_POINT_CATEGORIES,
     ACTIVITY_TYPES: ACTIVITY_TYPES, CARD_DENSITIES: CARD_DENSITIES, GROUPING_OPTIONS: GROUPING_OPTIONS,
     PRODUCTION_STATUSES: PRODUCTION_STATUSES, PRODUCTION_STATUS_DEFAULT: PRODUCTION_STATUS_DEFAULT,
@@ -7402,23 +5809,14 @@
   window._cpRenderMessageCard = renderMessageCard;
   window._cpRenderStyleCard = renderStyleCard;
   window._cpRenderFormatCard = renderFormatCard;
-  window._cpRenderRecipeListItem = renderRecipeListItem;
-  window._cpRenderCampaignListItem = renderCampaignListItem;
-  window._cpGetRecipeCompletionPct = getRecipeCompletionPct;
-  window._cpGetFilteredRecipes = getFilteredRecipes;
   window._cpGetFilteredPersonas = getFilteredPersonas;
   window._cpGetFilteredMessages = getFilteredMessages;
-  window._cpGetGroupedRecipes = getGroupedRecipes;
 
   // CRUD
   window._cpCreateEntity = createEntity;
   window._cpDeleteEntity = deleteEntity;
   window._cpSaveEntityField = saveEntityField;
   window._cpDuplicateEntity = duplicateEntity;
-
-  // Auto-status
-  window._cpEvaluateAutoStatus = evaluateAutoStatus;
-  window._cpMaybeAdvanceRecipeStatus = maybeAdvanceRecipeStatus;
 
   // Meta v2 snapshot + auto-status (Stage 2)
   window._cpIsPersonaSnapshotStale = isPersonaSnapshotStale;
@@ -7611,16 +6009,15 @@
   var S, render, navigate, toast, generateId, buildMaps, syncToTextarea;
   var updateSaveStatus, esc, deepClone, icon, formatDate, formatRelativeTime;
   var truncate, formatNumber, stripHtml, countWords, countChars;
-  var badge, recipeStatusBadge, campaignStatusBadge, priorityBadge;
+  var badge, priorityBadge;
   var funnelBadge, dimensionBadge, mediaTypeBadge, hookTypeBadge, progressBar;
-  var logActivity, maybeAdvanceRecipeStatus;
+  var logActivity;
   var createEntity, deleteEntity, saveEntityField, duplicateEntity;
   var getAllPersonas, getAllMessages, getAllStyles, getAllFormats;
-  var getAllCategories, getAllPainPoints, getAllCampaigns, getAllTags;
+  var getAllCategories, getAllPainPoints, getAllTags;
   var getPersonaPainPoints, getPersona, getMessage, getStyle, getFormat;
-  var getCategory, getCampaign, getTag, getPainPoint, getFunnelStage;
-  var getFilteredRecipes, getRecipe;
-  var getRecipeProduction, getProductionStatusStyle, parseProductionData;
+  var getCategory, getTag, getPainPoint, getFunnelStage;
+  var getProductionStatusStyle, parseProductionData;
   var Constants;
   // Meta v2 imports
   var getCampaignV2, getAdSet, getAd;
@@ -7665,26 +6062,23 @@
     truncate = window._cpTruncate; formatNumber = window._cpFormatNumber;
     stripHtml = window._cpStripHtml; countWords = window._cpCountWords; countChars = window._cpCountChars;
     badge = window._cpBadge;
-    recipeStatusBadge = window._cpRecipeStatusBadge; campaignStatusBadge = window._cpCampaignStatusBadge;
     priorityBadge = window._cpPriorityBadge; funnelBadge = window._cpFunnelBadge;
     dimensionBadge = window._cpDimensionBadge; mediaTypeBadge = window._cpMediaTypeBadge;
     hookTypeBadge = window._cpHookTypeBadge;
     progressBar = window._cpProgressBar;
-    logActivity = window._cpLogActivity; maybeAdvanceRecipeStatus = window._cpMaybeAdvanceRecipeStatus;
+    logActivity = window._cpLogActivity;
     createEntity = window._cpCreateEntity; deleteEntity = window._cpDeleteEntity;
     saveEntityField = window._cpSaveEntityField; duplicateEntity = window._cpDuplicateEntity;
     getAllPersonas = window._cpGetAllPersonas; getAllMessages = window._cpGetAllMessages;
     getAllStyles = window._cpGetAllStyles; getAllFormats = window._cpGetAllFormats;
     getAllCategories = window._cpGetAllCategories; getAllPainPoints = window._cpGetAllPainPoints;
-    getAllCampaigns = window._cpGetAllCampaigns; getAllTags = window._cpGetAllTags;
+    getAllTags = window._cpGetAllTags;
     getPersonaPainPoints = window._cpGetPersonaPainPoints;
     getPersona = window._cpGetPersona; getMessage = window._cpGetMessage;
     getStyle = window._cpGetStyle; getFormat = window._cpGetFormat;
-    getCategory = window._cpGetCategory; getCampaign = window._cpGetCampaign;
+    getCategory = window._cpGetCategory;
     getTag = window._cpGetTag; getPainPoint = window._cpGetPainPoint;
     getFunnelStage = window._cpGetFunnelStage;
-    getFilteredRecipes = window._cpGetFilteredRecipes; getRecipe = window._cpGetRecipe;
-    getRecipeProduction = window._cpGetRecipeProduction;
     getProductionStatusStyle = window._cpGetProductionStatusStyle;
     parseProductionData = window._cpParseProductionData;
     Constants = window._cpConstants;
@@ -7708,15 +6102,12 @@
       if (window._cpPart2B && window._cpPart2B.renderInlinePicker) {
         return window._cpPart2B.renderInlinePicker(actionId);
       }
-      // Show loading placeholder; will be replaced once Part 2B loads.
       if (S && S._part2bTimeout) {
         return '<span class="cp-ai-picker-loading" data-pending-action="' + esc(actionId) + '" title="AI module failed to load">' + icon('warning') + ' AI unavailable</span>';
       }
       return '<span class="cp-ai-picker-loading" data-pending-action="' + esc(actionId) + '">' + icon('spinner') + ' Loading…</span>';
     };
 
-    // Replace any AI picker placeholders in the DOM with rendered pickers.
-    // Called after every render so newly rendered views get live pickers.
     window._cpReplaceAiPickers = function() {
       if (!window._cpPart2B || !window._cpPart2B.renderInlinePicker) return;
       $('.cp-ai-picker-loading').each(function() {
@@ -7727,13 +6118,7 @@
       });
     };
 
-    // Register step renderers
     var R = window._cpRenderers = window._cpRenderers || {};
-    R.step_composition = renderCompositionStep;
-    R.step_hook = renderHookStep;
-    R.step_content = renderContentStep;
-    R.step_media = renderMediaStep;
-    R.step_review = renderReviewStep;
     R.tagInput = renderTagInput;
 
     setupPart2AEvents();
@@ -8387,178 +6772,6 @@
       message: 'Delete "' + f.name + '"?' + (recipeCount > 0 ? ' ' + recipeCount + ' recipe(s) will lose their format reference.' : ''),
       confirmLabel: 'Delete', danger: true,
       onConfirm: function() { snapshot('Delete format'); deleteEntity('visual_format', formatId); }
-    });
-  }
-
-
-/* ===== src/20-part2a/09-campaign-crud.js ===== */
-  // ============================================================
-  // SECTION 9: CAMPAIGN CRUD
-  // ============================================================
-
-  function openCampaignModal(campId) {
-    var isEdit = !!campId;
-    var c = isEdit ? getCampaign(campId) : null;
-    var objectives = Constants.CAMPAIGN_OBJECTIVES || [];
-    var funnels = (S.meta.settings && S.meta.settings.funnel_stages) || [];
-    var campStatuses = Constants.CAMPAIGN_STATUSES || {};
-
-    // Pre-fill dimension selections for edit
-    var selPersonas = (c && c.persona_ids) ? c.persona_ids.slice() : [];
-    var selMessages = (c && c.message_ids) ? c.message_ids.slice() : [];
-    var selStyles = (c && c.style_ids) ? c.style_ids.slice() : [];
-    var selFormats = (c && c.format_ids) ? c.format_ids.slice() : [];
-
-    var html = '<div class="cp-editor-form">';
-
-    // Name + status
-    html += '<div class="cp-form-row"><div class="cp-form-half">';
-    html += '<label>Campaign Name *</label>';
-    html += '<input type="text" class="cp-input" data-field="name" value="' + esc(c ? c.name : '') + '" placeholder="e.g., Q2 Lead Generation">';
-    html += '</div><div class="cp-form-half">';
-    html += '<label>Status</label>';
-    html += '<select class="cp-select" data-field="status">';
-    for (var sk in campStatuses) {
-      var sel = (c && c.status === sk) ? ' selected' : '';
-      if (!c && sk === 'planning') sel = ' selected';
-      html += '<option value="' + sk + '"' + sel + '>' + esc(campStatuses[sk].label) + '</option>';
-    }
-    html += '</select></div></div>';
-
-    // Description
-    html += '<div class="cp-form-group"><label>Description</label>';
-    html += '<textarea class="cp-textarea" data-field="description" rows="2" placeholder="Campaign description...">' + esc(c ? c.description || '' : '') + '</textarea></div>';
-
-    // Objective + Funnel
-    html += '<div class="cp-form-row"><div class="cp-form-half">';
-    html += '<label>Objective</label>';
-    html += '<select class="cp-select" data-field="objective">';
-    html += '<option value="">Select...</option>';
-    for (var oi = 0; oi < objectives.length; oi++) {
-      var oSel = (c && c.objective === objectives[oi].id) ? ' selected' : '';
-      html += '<option value="' + esc(objectives[oi].id) + '"' + oSel + '>' + esc(objectives[oi].name) + '</option>';
-    }
-    html += '</select></div><div class="cp-form-half">';
-    html += '<label>Funnel Stage</label>';
-    html += '<select class="cp-select" data-field="funnel_stage">';
-    html += '<option value="">All stages</option>';
-    for (var fi = 0; fi < funnels.length; fi++) {
-      var fSel = (c && c.funnel_stage === funnels[fi].id) ? ' selected' : '';
-      html += '<option value="' + esc(funnels[fi].id) + '"' + fSel + '>' + esc(funnels[fi].short || funnels[fi].name) + '</option>';
-    }
-    html += '</select></div></div>';
-
-    // Date range
-    html += '<div class="cp-form-row"><div class="cp-form-half">';
-    html += '<label>Start Date</label>';
-    html += '<input type="date" class="cp-input" data-field="date_start" value="' + esc(c ? c.date_start || '' : '') + '">';
-    html += '</div><div class="cp-form-half">';
-    html += '<label>End Date</label>';
-    html += '<input type="date" class="cp-input" data-field="date_end" value="' + esc(c ? c.date_end || '' : '') + '">';
-    html += '</div></div>';
-
-    // Budget notes
-    html += '<div class="cp-form-group"><label>Budget / Target Notes</label>';
-    html += '<textarea class="cp-textarea" data-field="budget_notes" rows="2" placeholder="Budget range, target CPL, etc...">' + esc(c ? c.budget_notes || '' : '') + '</textarea></div>';
-
-    // Dimension targeting — multi-select checkboxes
-    var dims = [
-      { key: 'persona_ids', label: 'Target Personas', icon: 'users', color: '#9334e9', items: getAllPersonas(), nameKey: 'name', selected: selPersonas },
-      { key: 'message_ids', label: 'Messages', icon: 'comments', color: '#1a73e8', items: getAllMessages(), nameKey: 'title', selected: selMessages },
-      { key: 'style_ids', label: 'Styles', icon: 'palette', color: '#e37400', items: getAllStyles(), nameKey: 'name', selected: selStyles },
-      { key: 'format_ids', label: 'Formats', icon: 'clapperboard', color: '#0891b2', items: getAllFormats(), nameKey: 'name', selected: selFormats }
-    ];
-
-    html += '<div style="border-top:1px solid var(--cp-border-light);padding-top:var(--cp-space-3);margin-top:var(--cp-space-3)">';
-    html += '<label style="font-weight:600;margin-bottom:var(--cp-space-2);display:block">' + icon('crosshairs') + ' Dimension Targeting</label>';
-    html += '<p class="cp-text-muted" style="margin-bottom:var(--cp-space-3)">Select which dimensions this campaign will use for recipe generation.</p>';
-
-    for (var di = 0; di < dims.length; di++) {
-      var dim = dims[di];
-      if (dim.items.length === 0) continue;
-      html += '<div class="cp-form-group" style="margin-bottom:var(--cp-space-2)">';
-      html += '<label style="color:' + dim.color + '">' + icon(dim.icon) + ' ' + esc(dim.label) + '</label>';
-      html += '<div class="cp-wizard-dim-list">';
-      for (var ii = 0; ii < dim.items.length; ii++) {
-        var item = dim.items[ii];
-        var isSel = dim.selected.indexOf(item.id) > -1;
-        html += '<label class="cp-wizard-dim-chip' + (isSel ? ' cp-wizard-dim-chip-selected' : '') + '" style="' + (isSel ? 'background:' + dim.color + '12;color:' + dim.color + ';border-color:' + dim.color : '') + '">';
-        html += '<input type="checkbox" class="cp-camp-dim-check" data-dim="' + dim.key + '" data-id="' + esc(item.id) + '"' + (isSel ? ' checked' : '') + ' style="display:none">';
-        html += esc(item[dim.nameKey] || 'Untitled');
-        html += '</label>';
-      }
-      html += '</div></div>';
-    }
-    html += '</div>';
-
-    // AI Instructions
-    html += '<div class="cp-form-group"><label>' + icon('sparkles') + ' Campaign AI Instructions</label>';
-    html += '<textarea class="cp-textarea" data-field="ai_instructions" rows="2" placeholder="Special instructions for AI when generating content for this campaign...">' + esc(c ? c.ai_instructions || '' : '') + '</textarea></div>';
-
-    // General notes
-    html += '<div class="cp-form-group"><label>Notes</label>';
-    html += '<textarea class="cp-textarea" data-field="notes" rows="2" placeholder="Internal notes...">' + esc(c ? c.notes || '' : '') + '</textarea></div>';
-
-    html += '</div>';
-
-    openModal(isEdit ? 'Edit Campaign' : 'New Campaign', html, {
-      titleIcon: 'bullhorn',
-      size: 'lg',
-      saveLabel: isEdit ? 'Save Campaign' : 'Create Campaign',
-      onSave: function() {
-        var fields = collectModalFields();
-        if (!fields.name || !fields.name.trim()) { toast('Campaign name is required', 'warning'); return; }
-
-        // Collect dimension selections from checkboxes
-        var dimData = { persona_ids: [], message_ids: [], style_ids: [], format_ids: [] };
-        $('.cp-camp-dim-check:checked').each(function() {
-          var dimKey = $(this).data('dim');
-          var itemId = $(this).data('id');
-          if (dimData[dimKey] && itemId) dimData[dimKey].push(itemId);
-        });
-
-        if (isEdit) {
-          saveEntityField('campaign', campId, 'name', fields.name.trim());
-          saveEntityField('campaign', campId, 'description', fields.description || '');
-          saveEntityField('campaign', campId, 'objective', fields.objective || '');
-          snapshot('Edit campaign');
-          saveEntityField('campaign', campId, 'funnel_stage', fields.funnel_stage || '');
-          saveEntityField('campaign', campId, 'date_start', fields.date_start || '');
-          saveEntityField('campaign', campId, 'date_end', fields.date_end || '');
-          saveEntityField('campaign', campId, 'status', fields.status || 'planning');
-          saveEntityField('campaign', campId, 'budget_notes', fields.budget_notes || '');
-          saveEntityField('campaign', campId, 'ai_instructions', fields.ai_instructions || '');
-          saveEntityField('campaign', campId, 'notes', fields.notes || '');
-          saveEntityField('campaign', campId, 'persona_ids', dimData.persona_ids);
-          saveEntityField('campaign', campId, 'message_ids', dimData.message_ids);
-          saveEntityField('campaign', campId, 'style_ids', dimData.style_ids);
-          saveEntityField('campaign', campId, 'format_ids', dimData.format_ids);
-        } else {
-          createEntity('campaign', {
-            name: fields.name.trim(), description: fields.description || '',
-            objective: fields.objective || '', funnel_stage: fields.funnel_stage || '',
-            date_start: fields.date_start || '', date_end: fields.date_end || '',
-            status: fields.status || 'planning', budget_notes: fields.budget_notes || '',
-            ai_instructions: fields.ai_instructions || '', notes: fields.notes || '',
-            persona_ids: dimData.persona_ids, message_ids: dimData.message_ids,
-            style_ids: dimData.style_ids, format_ids: dimData.format_ids
-          });
-          snapshot('Create campaign');
-        }
-        closeModal();
-      }
-    });
-  }
-
-  function confirmDeleteCampaign(campId) {
-    var c = getCampaign(campId);
-    if (!c) return;
-    var recipeCount = (S.data.recipes || []).filter(function(r) { return r.campaign_id === campId; }).length;
-    openConfirmDialog({
-      title: 'Delete Campaign',
-      message: 'Delete "' + c.name + '"?' + (recipeCount > 0 ? ' ' + recipeCount + ' recipe(s) will become ungrouped.' : ''),
-      confirmLabel: 'Delete', danger: true,
-      onConfirm: function() { snapshot('Delete campaign'); deleteEntity('campaign', campId); }
     });
   }
 
@@ -9608,74 +7821,6 @@
     setTimeout(function() { openCompareVariantsModal(campaignId); }, 100);
   }
 
-/* ===== src/20-part2a/10-campaign-phases-crud.js ===== */
-  // ============================================================
-  // SECTION 9.4: CAMPAIGN PHASES CRUD
-  // ============================================================
-
-  function openCampaignPhasesModal(campId) {
-    var camp = getCampaign(campId);
-    if (!camp) return;
-    var phases = (camp.phases || []).slice();
-
-    function renderPhasesForm() {
-      var html = '<div class="cp-editor-form">';
-      html += '<p class="cp-text-muted" style="margin-bottom:var(--cp-space-3)">Define campaign phases (e.g., TOFU Awareness → MOFU Consideration → BOFU Conversion). Each phase can have its own date range.</p>';
-      if (phases.length === 0) {
-        html += '<div class="cp-empty-state cp-empty-state--compact"><p>No phases yet.</p></div>';
-      } else {
-        for (var i = 0; i < phases.length; i++) {
-          var ph = phases[i];
-          html += '<div class="cp-card" style="margin-bottom:var(--cp-space-2);padding:var(--cp-space-3)">';
-          html += '<div style="display:flex;align-items:center;gap:var(--cp-space-2);margin-bottom:var(--cp-space-2)">';
-          html += '<span class="cp-badge" style="background:var(--cp-primary-subtle);color:var(--cp-primary);font-weight:700">Phase ' + (i + 1) + '</span>';
-          html += '<input type="text" class="cp-input cp-phase-field" data-pidx="' + i + '" data-pfield="name" value="' + esc(ph.name || '') + '" placeholder="Phase name..." style="flex:1">';
-          html += '<button class="cp-btn-icon cp-btn-xs cp-phase-delete" data-pidx="' + i + '">' + icon('trash') + '</button>';
-          html += '</div>';
-          html += '<div class="cp-form-row">';
-          html += '<div class="cp-form-third"><label class="cp-field-label">Start</label><input type="date" class="cp-input cp-phase-field" data-pidx="' + i + '" data-pfield="date_start" value="' + esc(ph.date_start || '') + '"></div>';
-          html += '<div class="cp-form-third"><label class="cp-field-label">End</label><input type="date" class="cp-input cp-phase-field" data-pidx="' + i + '" data-pfield="date_end" value="' + esc(ph.date_end || '') + '"></div>';
-          html += '<div class="cp-form-third"><label class="cp-field-label">Focus</label><input type="text" class="cp-input cp-phase-field" data-pidx="' + i + '" data-pfield="funnel_stage" value="' + esc(ph.funnel_stage || '') + '" placeholder="e.g., TOFU"></div>';
-          html += '</div></div>';
-        }
-      }
-      html += '<button class="cp-btn cp-btn-outline cp-btn-sm cp-phase-add" style="margin-top:var(--cp-space-2)">' + icon('plus') + ' Add Phase</button>';
-      html += '</div>';
-      return html;
-    }
-
-    openModal('Campaign Phases — ' + camp.name, renderPhasesForm(), {
-      titleIcon: 'timeline', size: 'lg',
-      saveLabel: 'Save Phases',
-      onSave: function() {
-        // Collect phase data from fields
-        $('.cp-phase-field').each(function() {
-          var idx = parseInt($(this).data('pidx'), 10);
-          var field = $(this).data('pfield');
-          if (phases[idx]) phases[idx][field] = $(this).val() || '';
-        });
-        snapshot('Update campaign phases');
-        saveEntityField('campaign', campId, 'phases', phases);
-        closeModal();
-        toast('Campaign phases saved', 'success');
-      }
-    });
-
-    // Live handlers inside modal
-    $(document).off('click.cp-phase-add').on('click.cp-phase-add', '.cp-phase-add', function(e) {
-      e.preventDefault();
-      phases.push({ name: '', date_start: '', date_end: '', funnel_stage: '' });
-      $('.cp-modal-body').html(renderPhasesForm());
-    });
-    $(document).off('click.cp-phase-del').on('click.cp-phase-del', '.cp-phase-delete', function(e) {
-      e.preventDefault();
-      var idx = parseInt($(this).data('pidx'), 10);
-      phases.splice(idx, 1);
-      $('.cp-modal-body').html(renderPhasesForm());
-    });
-  }
-
-
 /* ===== src/20-part2a/11-setup-wizard.js ===== */
   // ============================================================
   // SECTION 9.4: SETUP WIZARD (First-Run Guided Setup)
@@ -10219,7 +8364,8 @@
 
   function renderSWStep1() {
     var ws  = setupWizardState.workspace;
-    var objectives = Constants.CAMPAIGN_OBJECTIVES || [];
+    var objMap = Constants.META_OBJECTIVES || {};
+    var objectives = Object.keys(objMap).map(function(k) { return { id: k, name: objMap[k].label || k }; });
 
     var html = _buildSWStepHeader(
       'Workspace Setup',
@@ -11341,276 +9487,6 @@
     return html;
   }
 
-/* ===== src/20-part2a/16-campaign-wizard.js ===== */
-  // ============================================================
-  // SECTION 9.5: CAMPAIGN WIZARD (Multi-Step)
-  // ============================================================
-
-  var wizardState = { step: 1, data: {}, selections: { personas: [], messages: [], styles: [], formats: [] }, recipes: [], allSelected: false };
-
-  function openCampaignWizard() {
-    wizardState = {
-      step: 1, data: { name: '', description: '', objective: '', funnel_stage: '', date_start: '', date_end: '', budget_notes: '', ai_instructions: '' },
-      selections: { personas: [], messages: [], styles: [], formats: [] },
-      recipes: [], allSelected: false
-    };
-    renderWizardModal();
-  }
-
-  function renderWizardModal() {
-    var step = wizardState.step;
-    var steps = [
-      { num: 1, label: 'Basics', icon: 'clipboard-list' },
-      { num: 2, label: 'Targeting', icon: 'crosshairs' },
-      { num: 3, label: 'Recipes', icon: 'shuffle' },
-      { num: 4, label: 'Review', icon: 'check' }
-    ];
-
-    var html = '<div class="cp-wizard">';
-    // Step indicator
-    html += '<div class="cp-wizard-steps">';
-    for (var si = 0; si < steps.length; si++) {
-      var st = steps[si];
-      var cls = step === st.num ? ' cp-wizard-step-active' : (step > st.num ? ' cp-wizard-step-done' : '');
-      html += '<div class="cp-wizard-step' + cls + '" data-action="wizard-go-step" data-step="' + st.num + '">';
-      html += (step > st.num ? icon('circle-check') + ' ' : '') + icon(st.icon) + ' ' + esc(st.label);
-      html += '</div>';
-    }
-    html += '</div>';
-
-    // Body
-    html += '<div class="cp-wizard-body">';
-    switch(step) {
-      case 1: html += renderWizardStep1(); break;
-      case 2: html += renderWizardStep2(); break;
-      case 3: html += renderWizardStep3(); break;
-      case 4: html += renderWizardStep4(); break;
-    }
-    html += '</div>';
-
-    // Footer
-    html += '<div class="cp-wizard-footer">';
-    if (step > 1) html += '<button class="cp-btn cp-btn-outline" data-action="wizard-prev">' + icon('arrow-left') + ' Back</button>';
-    else html += '<span></span>';
-    if (step < 4) html += '<button class="cp-btn cp-btn-primary" data-action="wizard-next">Next ' + icon('arrow-right') + '</button>';
-    else html += '<button class="cp-btn cp-btn-ai" data-action="wizard-create">' + icon('bolt') + ' Create Campaign</button>';
-    html += '</div></div>';
-
-    openModal('Campaign Wizard', html, { titleIcon: 'wand-magic', size: 'xl', footer: false });
-  }
-
-  function renderWizardStep1() {
-    var d = wizardState.data;
-    var objectives = Constants.CAMPAIGN_OBJECTIVES || [];
-    var funnels = (S.meta.settings && S.meta.settings.funnel_stages) || [];
-    var html = '<h3 style="margin-bottom:var(--cp-space-4)">' + icon('clipboard-list') + ' Campaign Basics</h3>';
-    html += '<div class="cp-form-group"><label>Campaign Name *</label>';
-    html += '<input type="text" class="cp-input cp-wizard-field" data-wfield="name" value="' + esc(d.name) + '" placeholder="e.g., Q3 Creator Growth Campaign"></div>';
-    html += '<div class="cp-form-group"><label>Description</label>';
-    html += '<textarea class="cp-textarea cp-wizard-field" data-wfield="description" rows="2" placeholder="What is this campaign about?">' + esc(d.description) + '</textarea></div>';
-    html += '<div class="cp-form-row"><div class="cp-form-third"><label>Objective</label>';
-    html += '<select class="cp-select cp-wizard-field" data-wfield="objective"><option value="">Select...</option>';
-    for (var oi = 0; oi < objectives.length; oi++) html += '<option value="' + esc(objectives[oi].id) + '"' + (d.objective === objectives[oi].id ? ' selected' : '') + '>' + esc(objectives[oi].name) + '</option>';
-    html += '</select></div><div class="cp-form-third"><label>Start Date</label>';
-    html += '<input type="date" class="cp-input cp-wizard-field" data-wfield="date_start" value="' + esc(d.date_start) + '"></div>';
-    html += '<div class="cp-form-third"><label>End Date</label>';
-    html += '<input type="date" class="cp-input cp-wizard-field" data-wfield="date_end" value="' + esc(d.date_end) + '"></div></div>';
-    html += '<div class="cp-form-row"><div class="cp-form-half"><label>Funnel Focus</label>';
-    html += '<select class="cp-select cp-wizard-field" data-wfield="funnel_stage"><option value="">All stages</option>';
-    for (var fi = 0; fi < funnels.length; fi++) html += '<option value="' + esc(funnels[fi].id) + '"' + (d.funnel_stage === funnels[fi].id ? ' selected' : '') + '>' + esc(funnels[fi].name) + '</option>';
-    html += '</select></div><div class="cp-form-half"><label>Budget Notes</label>';
-    html += '<input type="text" class="cp-input cp-wizard-field" data-wfield="budget_notes" value="' + esc(d.budget_notes) + '" placeholder="e.g., ₹2L/month"></div></div>';
-    html += '<div class="cp-form-group"><label>AI Instructions for this Campaign</label>';
-    html += '<textarea class="cp-textarea cp-wizard-field" data-wfield="ai_instructions" rows="2" placeholder="Special instructions for AI when generating recipes for this campaign...">' + esc(d.ai_instructions) + '</textarea></div>';
-    return html;
-  }
-
-  function renderWizardStep2() {
-    var sel = wizardState.selections;
-    var dims = [
-      { key: 'personas', label: 'Personas', icon: 'users', color: '#9334e9', items: getAllPersonas(), nameKey: 'name' },
-      { key: 'messages', label: 'Messages', icon: 'comments', color: '#1a73e8', items: getAllMessages(), nameKey: 'title' },
-      { key: 'styles', label: 'Styles', icon: 'palette', color: '#e37400', items: getAllStyles(), nameKey: 'name' },
-      { key: 'formats', label: 'Formats', icon: 'clapperboard', color: '#0891b2', items: getAllFormats(), nameKey: 'name' }
-    ];
-    var html = '<h3 style="margin-bottom:var(--cp-space-4)">' + icon('crosshairs') + ' Select Dimensions</h3>';
-    html += '<p class="cp-text-muted" style="margin-bottom:var(--cp-space-4)">Choose which personas, messages, styles, and formats this campaign will use. Selected dimensions will be used for recipe generation.</p>';
-    for (var di = 0; di < dims.length; di++) {
-      var dim = dims[di];
-      html += '<div class="cp-wizard-dim-section">';
-      html += '<div class="cp-wizard-dim-header" style="color:' + dim.color + '">' + icon(dim.icon) + ' ' + esc(dim.label) + ' <span class="cp-text-muted" style="font-weight:400">(' + sel[dim.key].length + '/' + dim.items.length + ' selected)</span></div>';
-      html += '<div class="cp-wizard-dim-list">';
-      if (dim.items.length === 0) {
-        html += '<span class="cp-text-muted">No ' + dim.label.toLowerCase() + ' in library. <a href="#" data-action="close-modal" style="color:var(--cp-primary)">Create some first.</a></span>';
-      } else {
-        for (var ii = 0; ii < dim.items.length; ii++) {
-          var item = dim.items[ii];
-          var isSel = sel[dim.key].indexOf(item.id) > -1;
-          html += '<label class="cp-wizard-dim-chip' + (isSel ? ' cp-wizard-dim-chip-selected' : '') + '" style="' + (isSel ? 'background:' + dim.color + '12;color:' + dim.color + ';border-color:' + dim.color : '') + '">';
-          html += '<input type="checkbox" data-action="wizard-toggle-dim" data-dim="' + dim.key + '" data-id="' + esc(item.id) + '"' + (isSel ? ' checked' : '') + ' style="display:none">';
-          html += esc(item[dim.nameKey] || item.name || item.title || 'Untitled');
-          html += '</label>';
-        }
-      }
-      html += '</div></div>';
-    }
-    return html;
-  }
-
-  function renderWizardStep3() {
-    var sel = wizardState.selections;
-    var personas = sel.personas.length > 0 ? sel.personas : [''];
-    var messages = sel.messages.length > 0 ? sel.messages : [''];
-    var styles = sel.styles.length > 0 ? sel.styles : [''];
-    var formats = sel.formats.length > 0 ? sel.formats : [''];
-    var totalCombos = Math.max(1, personas.length) * Math.max(1, messages.length) * Math.max(1, styles.length) * Math.max(1, formats.length);
-    var hasSel = sel.personas.length + sel.messages.length + sel.styles.length + sel.formats.length > 0;
-
-    var html = '<h3 style="margin-bottom:var(--cp-space-3)">' + icon('shuffle') + ' Recipe Combinations</h3>';
-
-    if (!hasSel) {
-      html += '<div class="cp-empty-state cp-empty-state--compact"><p>Go back to Step 2 and select dimensions to generate recipe combinations.</p></div>';
-      return html;
-    }
-
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--cp-space-4)">';
-    html += '<p class="cp-text-muted">' + totalCombos + ' possible combination' + (totalCombos !== 1 ? 's' : '') + '. Select which ones to create.</p>';
-    html += '<div style="display:flex;gap:var(--cp-space-2)">';
-    html += '<button class="cp-btn cp-btn-ai cp-btn-sm" data-action="wizard-ai-suggest">' + icon('sparkles') + ' AI Suggest Best</button>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="wizard-select-all">' + (wizardState.allSelected ? 'Deselect All' : 'Select All') + '</button>';
-    html += '</div></div>';
-
-    // Generate recipe preview cards — preserve prior selections
-    var prevSelections = {};
-    for (var ps = 0; ps < wizardState.recipes.length; ps++) {
-      var pr = wizardState.recipes[ps];
-      prevSelections[pr.persona_id + '|' + pr.message_id + '|' + pr.style_id + '|' + pr.visual_format_id] = pr.selected;
-    }
-    var hadPrevRecipes = wizardState.recipes.length > 0;
-    wizardState.recipes = [];
-    var idx = 0;
-    for (var pi = 0; pi < personas.length; pi++) {
-      for (var mi = 0; mi < messages.length; mi++) {
-        for (var si = 0; si < styles.length; si++) {
-          for (var fi = 0; fi < formats.length; fi++) {
-            if (idx >= 50) break; // Cap at 50 preview cards
-            var pName = personas[pi] ? (S.personaMap[personas[pi]] || {}).name || '?' : '—';
-            var mName = messages[mi] ? (S.messageMap[messages[mi]] || {}).title || '?' : '—';
-            var sName = styles[si] ? (S.styleMap[styles[si]] || {}).name || '?' : '—';
-            var fName = formats[fi] ? (S.formatMap[formats[fi]] || {}).name || '?' : '—';
-            var comboKey = personas[pi] + '|' + messages[mi] + '|' + styles[si] + '|' + formats[fi];
-            var isSelected = hadPrevRecipes ? (prevSelections[comboKey] !== undefined ? prevSelections[comboKey] : wizardState.allSelected || false) : (wizardState.allSelected || false);
-            wizardState.recipes.push({
-              idx: idx, persona_id: personas[pi], message_id: messages[mi],
-              style_id: styles[si], visual_format_id: formats[fi],
-              title: pName + ' × ' + mName + ' × ' + sName + ' × ' + fName,
-              selected: isSelected
-            });
-            idx++;
-          }
-        }
-      }
-    }
-
-    html += '<div class="cp-wizard-recipe-preview">';
-    for (var ri = 0; ri < wizardState.recipes.length; ri++) {
-      var r = wizardState.recipes[ri];
-      html += '<div class="cp-wizard-recipe-card' + (r.selected ? ' cp-wizard-recipe-card-selected' : '') + '" data-action="wizard-toggle-recipe" data-ridx="' + ri + '">';
-      html += '<div style="font-weight:600;font-size:12px;margin-bottom:6px">#' + (ri + 1) + '</div>';
-      if (r.persona_id) html += '<div>' + dimensionBadge('persona', (S.personaMap[r.persona_id] || {}).name || '?') + '</div>';
-      if (r.message_id) html += '<div>' + dimensionBadge('message', (S.messageMap[r.message_id] || {}).title || '?') + '</div>';
-      if (r.style_id) html += '<div>' + dimensionBadge('style', (S.styleMap[r.style_id] || {}).name || '?') + '</div>';
-      if (r.visual_format_id) html += '<div>' + dimensionBadge('format', (S.formatMap[r.visual_format_id] || {}).name || '?') + '</div>';
-      html += '</div>';
-    }
-    html += '</div>';
-
-    var selCount = wizardState.recipes.filter(function(r) { return r.selected; }).length;
-    html += '<div style="margin-top:var(--cp-space-3)"><strong>' + selCount + '</strong> recipe' + (selCount !== 1 ? 's' : '') + ' selected for creation</div>';
-    return html;
-  }
-
-  function renderWizardStep4() {
-    var d = wizardState.data;
-    var sel = wizardState.selections;
-    var selRecipes = wizardState.recipes.filter(function(r) { return r.selected; });
-    var objective = (Constants.CAMPAIGN_OBJECTIVES || []).find(function(o) { return o.id === d.objective; });
-
-    var html = '<h3 style="margin-bottom:var(--cp-space-4)">' + icon('check') + ' Review & Create</h3>';
-    html += '<div class="cp-card" style="margin-bottom:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('bullhorn') + ' Campaign Summary</h3></div>';
-    html += '<div class="cp-detail-grid cp-detail-grid-2">';
-    html += '<div class="cp-detail-field"><div class="cp-detail-label">Name</div><div class="cp-detail-value">' + esc(d.name || 'Untitled') + '</div></div>';
-    if (objective) html += '<div class="cp-detail-field"><div class="cp-detail-label">Objective</div><div class="cp-detail-value">' + icon(objective.icon) + ' ' + esc(objective.name) + '</div></div>';
-    if (d.date_start || d.date_end) html += '<div class="cp-detail-field"><div class="cp-detail-label">Dates</div><div class="cp-detail-value">' + esc(d.date_start || '?') + ' → ' + esc(d.date_end || '?') + '</div></div>';
-    if (d.budget_notes) html += '<div class="cp-detail-field"><div class="cp-detail-label">Budget</div><div class="cp-detail-value">' + esc(d.budget_notes) + '</div></div>';
-    html += '<div class="cp-detail-field"><div class="cp-detail-label">Dimensions</div><div class="cp-detail-value">';
-    html += sel.personas.length + ' personas · ' + sel.messages.length + ' messages · ' + sel.styles.length + ' styles · ' + sel.formats.length + ' formats';
-    html += '</div></div>';
-    html += '<div class="cp-detail-field"><div class="cp-detail-label">Recipes to Create</div><div class="cp-detail-value" style="font-size:var(--cp-font-size-xl);font-weight:700;color:var(--cp-primary)">' + selRecipes.length + '</div></div>';
-    html += '</div></div>';
-
-    if (d.description) {
-      html += '<div class="cp-card" style="margin-bottom:var(--cp-space-4)"><div class="cp-section-header"><h3>Description</h3></div>';
-      html += '<p>' + esc(d.description) + '</p></div>';
-    }
-
-    if (selRecipes.length > 0) {
-      html += '<div class="cp-card"><div class="cp-section-header"><h3>' + icon('shuffle') + ' Recipes (' + selRecipes.length + ')</h3></div>';
-      for (var ri = 0; ri < Math.min(selRecipes.length, 15); ri++) {
-        html += '<div style="padding:4px 0;border-bottom:1px solid var(--cp-border-light);font-size:var(--cp-font-size-sm)">' + esc(selRecipes[ri].title) + '</div>';
-      }
-      if (selRecipes.length > 15) html += '<p class="cp-text-muted" style="margin-top:4px">...and ' + (selRecipes.length - 15) + ' more</p>';
-      html += '</div>';
-    }
-    return html;
-  }
-
-  function collectWizardFields() {
-    $('.cp-wizard-field').each(function() {
-      var key = $(this).data('wfield');
-      if (key) wizardState.data[key] = $(this).is(':checkbox') ? $(this).is(':checked') : $(this).val() || '';
-    });
-  }
-
-  function executeWizardCreate() {
-    collectWizardFields();
-    var d = wizardState.data;
-    if (!d.name || !d.name.trim()) { toast('Campaign name is required', 'warning'); return; }
-
-    snapshot('Campaign wizard');
-    var camp = createEntity('campaign', {
-      name: d.name.trim(), description: d.description || '',
-      objective: d.objective || '', funnel_stage: d.funnel_stage || '',
-      date_start: d.date_start || '', date_end: d.date_end || '',
-      budget_notes: d.budget_notes || '', ai_instructions: d.ai_instructions || '',
-      persona_ids: wizardState.selections.personas.slice(),
-      message_ids: wizardState.selections.messages.slice(),
-      style_ids: wizardState.selections.styles.slice(),
-      format_ids: wizardState.selections.formats.slice()
-    });
-
-    if (!camp) { toast('Failed to create campaign', 'error'); return; }
-
-    // Create selected recipes
-    var selRecipes = wizardState.recipes.filter(function(r) { return r.selected; });
-    for (var i = 0; i < selRecipes.length; i++) {
-      var sr = selRecipes[i];
-      createEntity('recipe', {
-        persona_id: sr.persona_id || '', message_id: sr.message_id || '',
-        style_id: sr.style_id || '', visual_format_id: sr.visual_format_id || '',
-        campaign_id: camp.id
-      });
-    }
-
-    logActivity('campaign_created', 'campaign', camp.id, camp.name, 'Campaign wizard: created with ' + selRecipes.length + ' recipes');
-    S.selectedCampaignId = camp.id;
-    closeModal();
-    navigate('campaigns');
-    toast('Campaign "' + d.name + '" created with ' + selRecipes.length + ' recipes', 'success', 5000);
-  }
-
-
 /* ===== src/20-part2a/16a-new-campaign-wizard.js ===== */
   // ============================================================
   // SECTION 9.6: NEW CAMPAIGN WIZARD (per-campaign, Meta v2 native)
@@ -12222,1452 +10098,6 @@
   }
 
 
-/* ===== src/20-part2a/18-step-composition.js ===== */
-  // ============================================================
-  // SECTION 11: COMPOSITION STEP RENDERER
-  // ============================================================
-
-  function renderCompositionStep(recipe) {
-    var html = '<div class="cp-step-composition" data-recipe-id="' + esc(recipe.id) + '">';
-
-    // ── PRIMARY ROW: Persona + Message (large, dominant)
-    html += '<div class="cp-card cp-composition-primary">';
-    html += '<div class="cp-section-header"><h3>' + icon('shapes') + ' Core Composition</h3>';
-    html += '<span class="cp-text-muted">Persona &amp; message angle drive every creative decision.</span></div>';
-    html += '<div class="cp-composition-primary-grid">';
-    html += renderCompositionPrimaryCard('persona', recipe.persona_id, 'persona_id', recipe);
-    html += renderCompositionPrimaryCard('message', recipe.message_id, 'message_id', recipe);
-    html += '</div></div>';
-
-    // ── SECONDARY ROW: Style + Visual Format (compact chips)
-    html += '<div class="cp-card cp-composition-secondary">';
-    html += '<div class="cp-composition-secondary-header">';
-    html += '<span class="cp-composition-secondary-label">' + icon('sliders') + ' Style &amp; Visual Format <span class="cp-text-muted">(optional refinements)</span></span>';
-    html += '</div>';
-    html += '<div class="cp-composition-secondary-grid">';
-    html += renderCompositionChip('style', recipe.style_id, recipe);
-    html += renderCompositionChip('format', recipe.visual_format_id, recipe);
-    html += '</div></div>';
-
-    // ── Media type toggle (used downstream to pick production app)
-    // Once a production node exists for this recipe, the media type is locked
-    // to whatever that production was created as. To switch types, the user
-    // has to delete the production node in Drupal first.
-    var compProd = getRecipeProduction(recipe);
-    var mtLocked = !!compProd;
-    var lockedMtKey = compProd ? (compProd.media_type || recipe.media_type) : '';
-    html += '<div class="cp-card' + (mtLocked ? ' cp-media-type-card-locked' : '') + '" style="margin-top:var(--cp-space-3)">';
-    html += '<div class="cp-section-header"><h3>' + icon('image') + ' Media Type' + (mtLocked ? ' <span class="cp-media-type-lock-icon" title="Locked — production node exists">' + icon('lock') + '</span>' : '') + '</h3>';
-    if (mtLocked) {
-      html += '<span class="cp-text-muted">Locked — a production node exists for this recipe. <a href="#" data-action="go-step" data-step="media">View it →</a></span></div>';
-    } else {
-      html += '<span class="cp-text-muted">Determines which production app handles delivery.</span></div>';
-    }
-    html += '<div class="cp-media-type-toggle' + (mtLocked ? ' cp-media-type-toggle-locked' : '') + '">';
-    var mediaTypes = (typeof Constants !== 'undefined' && Constants.MEDIA_TYPES) || {};
-    for (var mtk in mediaTypes) {
-      var mt = mediaTypes[mtk];
-      var mtActive = (mtLocked ? lockedMtKey : recipe.media_type) === mtk ? ' cp-media-type-active' : '';
-      if (mtLocked) {
-        html += '<button class="cp-media-type-btn cp-media-type-btn-locked' + mtActive + '" type="button" disabled aria-disabled="true" title="Locked — production node exists">' + icon(mt.icon) + ' ' + esc(mt.label) + '</button>';
-      } else {
-        html += '<button class="cp-media-type-btn' + mtActive + '" data-action="set-media-type" data-type="' + mtk + '">' + icon(mt.icon) + ' ' + esc(mt.label) + '</button>';
-      }
-    }
-    html += '</div></div>';
-
-    // ── Pain point selector (grouped + searchable)
-    html += renderPainPointSelector(recipe);
-
-    // ── Title editor
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-3)">';
-    html += '<div class="cp-section-header"><h3>' + icon('edit') + ' Recipe Title</h3></div>';
-    html += '<input type="text" class="cp-input" data-action="save-recipe-title" value="' + esc(recipe.title || '') + '" placeholder="Recipe title...">';
-    html += '</div>';
-
-    // ── Priority + Campaign + Due date
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-3)">';
-    html += '<div class="cp-section-header"><h3>' + icon('sliders') + ' Details</h3></div>';
-    var camps = getAllCampaigns();
-    html += '<div class="cp-recipe-details-grid">';
-    html += '<div class="cp-form-group"><label class="cp-field-label">Priority</label>';
-    html += '<select class="cp-select" data-action="save-recipe-field" data-rfield="priority">';
-    for (var pk in Constants.PRIORITY_LEVELS) {
-      html += '<option value="' + pk + '"' + (recipe.priority === pk ? ' selected' : '') + '>' + esc(Constants.PRIORITY_LEVELS[pk].label) + '</option>';
-    }
-    html += '</select></div>';
-    html += '<div class="cp-form-group"><label class="cp-field-label">Campaign</label>';
-    html += '<select class="cp-select" data-action="save-recipe-field" data-rfield="campaign_id">';
-    html += '<option value="">None</option>';
-    for (var ci = 0; ci < camps.length; ci++) {
-      html += '<option value="' + esc(camps[ci].id) + '"' + (recipe.campaign_id === camps[ci].id ? ' selected' : '') + '>' + esc(truncate(camps[ci].name, 25)) + '</option>';
-    }
-    html += '</select></div>';
-    html += '<div class="cp-form-group"><label class="cp-field-label">Due Date</label>';
-    html += '<input type="date" class="cp-input" data-action="save-recipe-field" data-rfield="due_date" value="' + esc(recipe.due_date || '') + '"></div>';
-    html += '</div></div>';
-
-    // ── Templates
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-3)">';
-    html += '<div class="cp-section-header"><h3>' + icon('bookmark') + ' Templates</h3></div>';
-    html += '<div style="display:flex;gap:var(--cp-space-2);flex-wrap:wrap">';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="save-recipe-template" data-recipe-id="' + esc(recipe.id) + '">' + icon('floppy-disk') + ' Save as Template</button>';
-    var templates = (S.meta && S.meta.recipe_templates) || [];
-    if (templates.length > 0) {
-      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="apply-recipe-template" data-recipe-id="' + esc(recipe.id) + '">' + icon('file-import') + ' Apply Template (' + templates.length + ')</button>';
-    }
-    html += '</div></div>';
-
-    html += '</div>';
-    return html;
-  }
-
-  function renderCompositionPrimaryCard(dimKey, currentId, fieldKey, recipe) {
-    var dim = Constants.DIMENSIONS[dimKey];
-    var entity = getEntityForDim(dimKey, currentId);
-    var entityName = entity ? (entity.name || entity.title || '') : '';
-    var entitySub = getEntitySubtext(dimKey, entity);
-    var entityDesc = entity ? (entity.description || entity.body || '') : '';
-    var isEmpty = !entity;
-
-    var html = '<div class="cp-comp-primary-card' + (isEmpty ? ' cp-comp-primary-card-empty' : '') + '" style="--dim-color:' + dim.color + '">';
-    html += '<div class="cp-comp-primary-icon" style="background:' + dim.color + '15;color:' + dim.color + '">' + icon(dim.icon) + '</div>';
-    html += '<div class="cp-comp-primary-body">';
-    html += '<div class="cp-comp-primary-label" style="color:' + dim.color + '">' + esc(dim.label) + (dimKey === 'message' ? ' Angle' : '') + '</div>';
-    if (isEmpty) {
-      html += '<div class="cp-comp-primary-empty">Not set</div>';
-    } else {
-      html += '<div class="cp-comp-primary-name">' + esc(entityName) + '</div>';
-      if (entitySub) html += '<div class="cp-comp-primary-sub">' + esc(entitySub) + '</div>';
-      if (entityDesc) html += '<div class="cp-comp-primary-desc">' + esc(truncate(entityDesc, 140)) + '</div>';
-    }
-    html += '</div>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="change-dimension" data-dim="' + dimKey + '" data-recipe-id="' + esc(recipe.id) + '">' + (isEmpty ? icon('plus') + ' Set' : icon('refresh') + ' Change') + '</button>';
-    html += '</div>';
-    return html;
-  }
-
-  function renderCompositionChip(dimKey, currentId, recipe) {
-    var dim = Constants.DIMENSIONS[dimKey];
-    var entity = getEntityForDim(dimKey, currentId);
-    var entityName = entity ? (entity.name || entity.title || '') : '';
-    var isEmpty = !entity;
-
-    var html = '<button class="cp-comp-chip' + (isEmpty ? ' cp-comp-chip-empty' : '') + '" data-action="change-dimension" data-dim="' + dimKey + '" data-recipe-id="' + esc(recipe.id) + '" style="--dim-color:' + dim.color + '">';
-    html += '<span class="cp-comp-chip-icon" style="color:' + dim.color + '">' + icon(dim.icon) + '</span>';
-    html += '<span class="cp-comp-chip-label">' + esc(dim.label) + ':</span>';
-    html += '<span class="cp-comp-chip-value">' + (isEmpty ? '<span class="cp-text-muted">Not set</span>' : esc(entityName)) + '</span>';
-    html += '<span class="cp-comp-chip-edit">' + icon(isEmpty ? 'plus' : 'edit') + '</span>';
-    html += '</button>';
-    return html;
-  }
-
-  function renderPainPointSelector(recipe) {
-    var persona = S.personaMap[recipe.persona_id];
-    var personaPainPoints = persona ? getPersonaPainPoints(persona) : [];
-    var allPainPoints = getAllPainPoints();
-    if (allPainPoints.length === 0) return '';
-
-    var selected = recipe.selected_pain_point_ids || [];
-    S._compPainFilter = S._compPainFilter || { search: '', scope: 'persona', category: '' };
-    var f = S._compPainFilter;
-
-    // Scope: 'persona' (default if persona has points) | 'all'
-    if (personaPainPoints.length === 0 && f.scope === 'persona') f.scope = 'all';
-    var basePool = f.scope === 'persona' ? personaPainPoints : allPainPoints;
-
-    // Apply filters
-    var pool = basePool.slice();
-    if (f.search) {
-      var q = f.search.toLowerCase();
-      pool = pool.filter(function(pp) {
-        return (pp.pain_point || '').toLowerCase().indexOf(q) > -1 ||
-               (pp.solution || '').toLowerCase().indexOf(q) > -1;
-      });
-    }
-    if (f.category) pool = pool.filter(function(pp) { return pp.category === f.category; });
-
-    var html = '<div class="cp-card cp-pain-picker-card" style="margin-top:var(--cp-space-3)">';
-    html += '<div class="cp-section-header"><h3>' + icon('bolt') + ' Pain Points to Address</h3>';
-    html += '<span class="cp-text-muted">' + selected.length + ' selected · ' + pool.length + ' shown</span></div>';
-
-    // Toolbar
-    html += '<div class="cp-pain-picker-toolbar">';
-    html += '<div class="cp-search-wrapper cp-search-wrapper-sm">' + icon('search') + '<input type="text" class="cp-input cp-input-sm" id="cpRecipePainSearch" placeholder="Search pain points…" value="' + esc(f.search || '') + '"></div>';
-    html += '<select class="cp-select cp-select-sm" id="cpRecipePainCategory"><option value="">All categories</option>';
-    var ppCats = Constants.PAIN_POINT_CATEGORIES || [];
-    for (var ci = 0; ci < ppCats.length; ci++) {
-      html += '<option value="' + esc(ppCats[ci].id) + '"' + (f.category === ppCats[ci].id ? ' selected' : '') + '>' + esc(ppCats[ci].name) + '</option>';
-    }
-    html += '</select>';
-    if (personaPainPoints.length > 0) {
-      html += '<div class="cp-pain-scope-toggle">';
-      html += '<button class="cp-pain-scope-btn' + (f.scope === 'persona' ? ' cp-pain-scope-active' : '') + '" data-action="set-pain-scope" data-scope="persona" title="Pain points linked to this recipe’s persona">' + icon('user') + ' Persona (' + personaPainPoints.length + ')</button>';
-      html += '<button class="cp-pain-scope-btn' + (f.scope === 'all' ? ' cp-pain-scope-active' : '') + '" data-action="set-pain-scope" data-scope="all" title="Browse every pain point in the library">' + icon('list') + ' All (' + allPainPoints.length + ')</button>';
-      html += '</div>';
-    }
-    html += '</div>';
-
-    // List — grouped by category
-    if (pool.length === 0) {
-      html += '<p class="cp-text-muted" style="padding:var(--cp-space-3) 0">No pain points match the filters.</p>';
-    } else {
-      var groups = groupPainPointsByCategory(pool);
-      html += '<div class="cp-pain-picker-list">';
-      for (var gi = 0; gi < groups.length; gi++) {
-        var g = groups[gi];
-        if (groups.length > 1) {
-          html += '<div class="cp-pain-picker-group-label">' + esc(g.label) + ' <span class="cp-text-muted">(' + g.items.length + ')</span></div>';
-        }
-        for (var pi = 0; pi < g.items.length; pi++) {
-          var pp = g.items[pi];
-          var isSelected = selected.indexOf(pp.id) > -1;
-          html += '<label class="cp-pain-point-picker-item' + (isSelected ? ' cp-pain-point-picker-item-selected' : '') + '">';
-          html += '<input type="checkbox" data-action="toggle-recipe-pp" data-pp-id="' + esc(pp.id) + '"' + (isSelected ? ' checked' : '') + '>';
-          html += '<div style="flex:1;min-width:0">';
-          html += '<div style="font-weight:600;font-size:13px;line-height:1.4">' + esc(truncate(pp.pain_point, 110)) + '</div>';
-          if (pp.solution) html += '<div style="font-size:11px;color:var(--cp-success);margin-top:2px;line-height:1.4"><i class="fa-solid fa-lightbulb" style="margin-right:3px"></i>' + esc(truncate(pp.solution, 100)) + '</div>';
-          html += '</div></label>';
-        }
-      }
-      html += '</div>';
-    }
-    html += '</div>';
-    return html;
-  }
-
-  // Debounced search handler — exported for event handler registration
-  var _cpPainSearchTimer = null;
-  function _cpDebouncePainSearch() {
-    var val = $(this).val() || '';
-    if (_cpPainSearchTimer) clearTimeout(_cpPainSearchTimer);
-    _cpPainSearchTimer = setTimeout(function() {
-      S._compPainFilter = S._compPainFilter || {};
-      S._compPainFilter.search = val;
-      render();
-      // Restore focus + caret after re-render
-      var $el = $('#cpRecipePainSearch');
-      if ($el.length) { var v = $el.val(); $el.focus(); try { $el[0].setSelectionRange(v.length, v.length); } catch(e) {} }
-    }, 250);
-  }
-
-  function groupPainPointsByCategory(items) {
-    var ppCats = Constants.PAIN_POINT_CATEGORIES || [];
-    var grouped = {};
-    for (var i = 0; i < items.length; i++) {
-      var k = items[i].category || '__uncat__';
-      (grouped[k] = grouped[k] || []).push(items[i]);
-    }
-    var result = [];
-    for (var ci = 0; ci < ppCats.length; ci++) {
-      if (grouped[ppCats[ci].id]) result.push({ id: ppCats[ci].id, label: ppCats[ci].name, items: grouped[ppCats[ci].id] });
-    }
-    if (grouped.__uncat__) result.push({ id: '', label: 'Uncategorized', items: grouped.__uncat__ });
-    return result;
-  }
-
-  function getEntityForDim(dimKey, id) {
-    if (!id) return null;
-    if (dimKey === 'persona') return S.personaMap[id];
-    if (dimKey === 'message') return S.messageMap[id];
-    if (dimKey === 'style') return S.styleMap[id];
-    if (dimKey === 'format') return S.formatMap[id];
-    return null;
-  }
-
-  function getEntitySubtext(dimKey, entity) {
-    if (!entity) return '';
-    if (dimKey === 'persona') {
-      var d = entity.demographics || {};
-      return [d.age_range, d.location].filter(Boolean).join(' · ');
-    }
-    if (dimKey === 'message') {
-      return (entity.funnel_stages || []).map(function(fid) {
-        var f = S.funnelStageMap[fid]; return f ? f.short : '';
-      }).filter(Boolean).join(', ');
-    }
-    if (dimKey === 'format' && entity.category) {
-      var cat = (Constants.FORMAT_CATEGORIES || []).find(function(c) { return c.id === entity.category; });
-      return cat ? cat.name : '';
-    }
-    return entity.description ? truncate(entity.description, 40) : '';
-  }
-
-  function openDimensionPicker(dimKey, recipeId) {
-    var recipe = getRecipe(recipeId);
-    if (!recipe) return;
-    var dim = Constants.DIMENSIONS[dimKey];
-    var items = [];
-    var currentId = '';
-
-    if (dimKey === 'persona') { items = getAllPersonas(); currentId = recipe.persona_id; }
-    else if (dimKey === 'message') { items = getAllMessages(); currentId = recipe.message_id; }
-    else if (dimKey === 'style') { items = getAllStyles(); currentId = recipe.style_id; }
-    else if (dimKey === 'format') { items = getAllFormats(); currentId = recipe.visual_format_id; }
-
-    // Reset/use per-dim picker filter state
-    S._dimPickerFilter = S._dimPickerFilter || {};
-    var fState = S._dimPickerFilter[dimKey] = S._dimPickerFilter[dimKey] || { search: '', groupBy: getDefaultPickerGroup(dimKey) };
-
-    var html = renderDimensionPickerBody(dimKey, items, currentId, fState);
-
-    openModal('Select ' + dim.label, html, {
-      titleIcon: dim.icon,
-      size: 'lg',
-      saveLabel: 'Select',
-      onSave: function() {
-        var selected = $('.cp-modal-body input[name="dim_pick"]:checked').val() || '';
-        var fieldMap = { persona: 'persona_id', message: 'message_id', style: 'style_id', format: 'visual_format_id' };
-        saveEntityField('recipe', recipeId, fieldMap[dimKey], selected);
-        autoUpdateRecipeTitle(recipeId);
-        snapshot('Change ' + dim.label);
-        closeModal();
-      }
-    });
-
-    // Wire up filter/group within the modal (delegated handlers, no re-render of modal)
-    $(document).off('input.cp-dim-pick-search').on('input.cp-dim-pick-search', '.cp-dim-picker-search', function() {
-      var v = ($(this).val() || '').toLowerCase();
-      $('.cp-dim-picker-item').each(function() {
-        var $it = $(this);
-        var hay = ($it.data('search-text') || '').toLowerCase();
-        $it.toggle(!v || hay.indexOf(v) > -1);
-      });
-      // Hide empty groups
-      $('.cp-dim-picker-group').each(function() {
-        var $g = $(this);
-        $g.toggle($g.find('.cp-dim-picker-item:visible').length > 0);
-      });
-    });
-    $(document).off('change.cp-dim-pick-group').on('change.cp-dim-pick-group', '.cp-dim-picker-group-select', function() {
-      fState.groupBy = $(this).val() || '';
-      // Re-render body
-      $('.cp-dim-picker-body').html(renderDimensionPickerBodyInner(dimKey, items, currentId, fState));
-    });
-  }
-
-  function getDefaultPickerGroup(dimKey) {
-    if (dimKey === 'persona') return 'category';
-    if (dimKey === 'message') return 'funnel';
-    if (dimKey === 'format')  return 'category';
-    return '';
-  }
-
-  function renderDimensionPickerBody(dimKey, items, currentId, fState) {
-    var dim = Constants.DIMENSIONS[dimKey];
-    var html = '<div class="cp-editor-form cp-dim-picker">';
-
-    // Toolbar
-    if (items.length > 0) {
-      html += '<div class="cp-dim-picker-toolbar">';
-      html += '<div class="cp-search-wrapper cp-search-wrapper-sm">' + icon('search') + '<input type="text" class="cp-input cp-input-sm cp-dim-picker-search" placeholder="Search ' + esc(dim.label.toLowerCase()) + 's…"></div>';
-
-      var groupOptions = getDimGroupOptions(dimKey);
-      if (groupOptions.length > 1) {
-        html += '<select class="cp-select cp-select-sm cp-dim-picker-group-select">';
-        for (var gi = 0; gi < groupOptions.length; gi++) {
-          html += '<option value="' + esc(groupOptions[gi].key) + '"' + (fState.groupBy === groupOptions[gi].key ? ' selected' : '') + '>Group: ' + esc(groupOptions[gi].label) + '</option>';
-        }
-        html += '</select>';
-      }
-      html += '<span class="cp-text-muted cp-dim-picker-count">' + items.length + ' total</span>';
-      html += '</div>';
-    }
-
-    html += '<div class="cp-dim-picker-body">';
-    html += renderDimensionPickerBodyInner(dimKey, items, currentId, fState);
-    html += '</div></div>';
-    return html;
-  }
-
-  function getDimGroupOptions(dimKey) {
-    var common = [{ key: '', label: 'None' }];
-    if (dimKey === 'persona') return common.concat([{ key: 'category', label: 'Category' }]);
-    if (dimKey === 'message') return common.concat([{ key: 'funnel', label: 'Funnel Stage' }]);
-    if (dimKey === 'format')  return common.concat([{ key: 'category', label: 'Category' }]);
-    return common;
-  }
-
-  function renderDimensionPickerBodyInner(dimKey, items, currentId, fState) {
-    var dim = Constants.DIMENSIONS[dimKey];
-    if (items.length === 0) {
-      return '<div class="cp-empty-state cp-empty-state--compact"><p>No ' + esc(dim.label.toLowerCase()) + 's created yet.</p>' +
-        '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-' + dimKey + '">' + icon('plus') + ' Create ' + esc(dim.label) + '</button></div>';
-    }
-
-    var groups = groupDimensionItems(dimKey, items, fState.groupBy);
-    var html = '<div class="cp-dim-picker-list">';
-    for (var gi = 0; gi < groups.length; gi++) {
-      var g = groups[gi];
-      if (groups.length > 1 || g.label) {
-        html += '<div class="cp-dim-picker-group">';
-        html += '<div class="cp-dim-picker-group-label">' + esc(g.label) + ' <span class="cp-text-muted">(' + g.items.length + ')</span></div>';
-      } else {
-        html += '<div class="cp-dim-picker-group">';
-      }
-      for (var ii = 0; ii < g.items.length; ii++) {
-        var item = g.items[ii];
-        var iid = item.id;
-        var iname = item.name || item.title || 'Untitled';
-        var isSelected = iid === currentId;
-        var sub = getEntitySubtext(dimKey, item);
-        var desc = item.description || item.body || '';
-        var searchText = (iname + ' ' + (sub || '') + ' ' + (desc || '')).trim();
-
-        html += '<label class="cp-dim-picker-item cp-hook-radio-item' + (isSelected ? ' cp-hook-radio-item-selected' : '') + '" data-search-text="' + esc(searchText) + '">';
-        html += '<input type="radio" name="dim_pick" value="' + esc(iid) + '"' + (isSelected ? ' checked' : '') + '>';
-        html += '<div style="flex:1;min-width:0">';
-        html += '<div style="font-weight:600;font-size:13px;line-height:1.4">' + esc(iname) + '</div>';
-        if (sub) html += '<div style="font-size:11px;color:var(--cp-text-muted);margin-top:2px">' + esc(sub) + '</div>';
-        if (desc) html += '<div style="font-size:11px;color:var(--cp-text-secondary);margin-top:4px;line-height:1.5">' + esc(truncate(desc, 160)) + '</div>';
-        html += '</div></label>';
-      }
-      html += '</div>';
-    }
-    html += '</div>';
-    return html;
-  }
-
-  function groupDimensionItems(dimKey, items, groupBy) {
-    if (!groupBy) return [{ id: '', label: '', items: items }];
-
-    if (dimKey === 'persona' && groupBy === 'category') {
-      var pcats = getAllCategories();
-      var byCat = {}; var uncat = [];
-      for (var i = 0; i < items.length; i++) {
-        var cid = items[i].category_id;
-        if (cid && S.categoryMap[cid]) (byCat[cid] = byCat[cid] || []).push(items[i]);
-        else uncat.push(items[i]);
-      }
-      var groups = [];
-      for (var pi = 0; pi < pcats.length; pi++) {
-        if (byCat[pcats[pi].id]) groups.push({ id: pcats[pi].id, label: pcats[pi].name, items: byCat[pcats[pi].id] });
-      }
-      if (uncat.length) groups.push({ id: '', label: 'Uncategorized', items: uncat });
-      return groups;
-    }
-
-    if (dimKey === 'message' && groupBy === 'funnel') {
-      var funnels = (S.meta.settings && S.meta.settings.funnel_stages) || [];
-      var byFun = {}; var unas = [];
-      for (var mi = 0; mi < items.length; mi++) {
-        var stages = items[mi].funnel_stages || [];
-        if (stages.length === 0) { unas.push(items[mi]); continue; }
-        for (var si = 0; si < stages.length; si++) {
-          (byFun[stages[si]] = byFun[stages[si]] || []).push(items[mi]);
-        }
-      }
-      var mGroups = [];
-      for (var fi = 0; fi < funnels.length; fi++) {
-        if (byFun[funnels[fi].id]) mGroups.push({ id: funnels[fi].id, label: funnels[fi].name, items: byFun[funnels[fi].id] });
-      }
-      if (unas.length) mGroups.push({ id: '', label: 'Unassigned', items: unas });
-      return mGroups;
-    }
-
-    if (dimKey === 'format' && groupBy === 'category') {
-      var fcats = Constants.FORMAT_CATEGORIES || [];
-      var byFc = {}; var unFc = [];
-      for (var ji = 0; ji < items.length; ji++) {
-        var c = items[ji].category;
-        if (c) (byFc[c] = byFc[c] || []).push(items[ji]); else unFc.push(items[ji]);
-      }
-      var fGroups = [];
-      for (var fci = 0; fci < fcats.length; fci++) {
-        if (byFc[fcats[fci].id]) fGroups.push({ id: fcats[fci].id, label: fcats[fci].name, items: byFc[fcats[fci].id] });
-      }
-      if (unFc.length) fGroups.push({ id: '', label: 'Uncategorized', items: unFc });
-      return fGroups;
-    }
-
-    return [{ id: '', label: '', items: items }];
-  }
-
-  function autoUpdateRecipeTitle(recipeId) {
-    var recipe = getRecipe(recipeId);
-    if (!recipe) return;
-    // Only auto-update if title is empty or was auto-generated (contains ×)
-    if (recipe.title && recipe.title.indexOf(' × ') === -1 && recipe.title !== 'New Recipe') return;
-    var parts = [];
-    var per = S.personaMap[recipe.persona_id]; if (per) parts.push(per.name);
-    var msg = S.messageMap[recipe.message_id]; if (msg) parts.push(msg.title);
-    var sty = S.styleMap[recipe.style_id]; if (sty) parts.push(sty.name);
-    var vf = S.formatMap[recipe.visual_format_id]; if (vf) parts.push(vf.name);
-    if (parts.length > 0) saveEntityField('recipe', recipeId, 'title', parts.join(' × '));
-  }
-
-
-/* ===== src/20-part2a/19-step-hook.js ===== */
-  // ============================================================
-  // SECTION 12: HOOK STEP RENDERER
-  // ============================================================
-
-  function renderHookStep(recipe) {
-    var msg = S.messageMap[recipe.message_id];
-    var hook = recipe.hook || {};
-    var html = '<div class="cp-step-hook" data-recipe-id="' + esc(recipe.id) + '">';
-
-    // Inherited hooks from message
-    if (msg && (msg.hooks || []).length > 0) {
-      html += '<div class="cp-card cp-hook-inherited">';
-      html += '<div class="cp-hook-inherited-header">';
-      html += '<h3>' + icon('anchor') + ' Message Hooks</h3>';
-      html += '<span class="cp-text-muted">Inherited from: ' + esc(msg.title) + '</span>';
-      html += '</div>';
-      html += '<p class="cp-text-muted" style="margin-bottom:12px">Select a hook to open this recipe, or write a custom override below.</p>';
-
-      html += '<div class="cp-hook-radio-list">';
-      for (var hi = 0; hi < msg.hooks.length; hi++) {
-        var h = msg.hooks[hi];
-        var isSelected = hook.selected_hook_id === h.id;
-        var htCfg = Constants.HOOK_TYPES[h.type] || { label: h.type, color: '#80868b' };
-
-        html += '<label class="cp-hook-radio-item' + (isSelected ? ' cp-hook-radio-item-selected' : '') + '">';
-        html += '<input type="radio" name="hook_select" value="' + esc(h.id) + '"' + (isSelected ? ' checked' : '') + ' data-action="select-hook" style="margin:3px 0 0;flex-shrink:0;cursor:pointer">';
-        html += '<div style="flex:1"><div style="font-weight:600;font-size:13px">' + esc(h.text) + '</div>';
-        html += '<div style="margin-top:4px">' + hookTypeBadge(h.type) + '</div>';
-        html += '</div></label>';
-      }
-      html += '</div></div>';
-    } else {
-      html += '<div class="cp-card">';
-      html += '<div class="cp-empty-state cp-empty-state--compact">';
-      html += '<p>' + icon('info') + (msg ? ' No hooks defined on message "' + esc(msg.title) + '".' : ' No message linked to this recipe.') + '</p>';
-      html += '</div></div>';
-    }
-
-    // Custom hook override
-    html += '<div class="cp-card cp-hook-override" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('pen-fancy') + ' Custom Hook Override</h3>';
-    html += renderRecipeAIBar('ai-generate-hook', recipe.id, 'AI Suggest', 'sparkles');
-    html += '</div>';
-    html += '<p class="cp-text-muted" style="margin-bottom:8px">Write a custom hook to override the inherited one. Leave empty to use the selected hook above.</p>';
-    html += '<textarea class="cp-textarea" data-action="save-recipe-hook-custom" rows="3" placeholder="Write a custom opening hook...">' + esc(hook.custom_hook || '') + '</textarea>';
-
-    // Hook type for custom
-    if (hook.custom_hook) {
-      html += '<div style="margin-top:8px"><label class="cp-field-label">Hook Type</label>';
-      html += '<select class="cp-select cp-select-sm" data-action="save-recipe-hook-type" style="width:auto">';
-      for (var tk in Constants.HOOK_TYPES) {
-        html += '<option value="' + tk + '"' + (hook.hook_type === tk ? ' selected' : '') + '>' + esc(Constants.HOOK_TYPES[tk].label) + '</option>';
-      }
-      html += '</select></div>';
-    }
-    html += '</div>';
-
-    // Effective hook summary
-    var effectiveHook = getEffectiveHook(recipe);
-    if (effectiveHook) {
-      html += '<div class="cp-card" style="margin-top:var(--cp-space-4);background:var(--cp-success-light);border-color:rgba(13,144,79,0.15)">';
-      html += '<div class="cp-section-header"><h3 style="color:var(--cp-success)">' + icon('check') + ' Active Hook</h3></div>';
-      html += '<p style="font-weight:600;font-size:var(--cp-font-size-md);margin-bottom:4px">"' + esc(effectiveHook.text) + '"</p>';
-      html += hookTypeBadge(effectiveHook.type);
-      html += '</div>';
-    }
-
-    html += '</div>';
-    return html;
-  }
-
-  function getEffectiveHook(recipe) {
-    var hook = recipe.hook || {};
-    // Custom override takes priority
-    if (hook.custom_hook && hook.custom_hook.trim()) {
-      return { text: hook.custom_hook.trim(), type: hook.hook_type || 'direct' };
-    }
-    // Selected inherited hook
-    if (hook.selected_hook_id) {
-      var msg = S.messageMap[recipe.message_id];
-      if (msg) {
-        var found = (msg.hooks || []).find(function(h) { return h.id === hook.selected_hook_id; });
-        if (found) return { text: found.text, type: found.type };
-      }
-    }
-    return null;
-  }
-
-
-/* ===== src/20-part2a/20-step-content.js ===== */
-  // ============================================================
-  // SECTION 13: CONTENT STEP RENDERER
-  // ============================================================
-
-  function renderContentStep(recipe) {
-    var content = recipe.content || {};
-    var html = '<div class="cp-step-content" data-recipe-id="' + esc(recipe.id) + '">';
-
-    // Ad copy (Quill editor)
-    html += '<div class="cp-card cp-ad-copy-editor">';
-    html += '<div class="cp-section-header"><h3>' + icon('pen-fancy') + ' Ad Copy / Primary Text</h3>';
-    html += renderRecipeAIBar('ai-generate-content', recipe.id, 'AI Write', 'sparkles');
-    html += renderRecipeAIBar('ai-improve-content', recipe.id, 'AI Improve', 'wand-magic');
-    html += '</div>';
-    html += '<div id="cpQuillEditor" class="cp-quill-container"></div>';
-    html += '<input type="hidden" id="cpQuillContent" value="' + esc(content.ad_copy || '') + '">';
-    html += '</div>';
-
-    // Headline, Description, CTA
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('heading') + ' Headline & CTA</h3></div>';
-    html += '<div class="cp-cta-fields">';
-    html += '<div class="cp-form-group"><label class="cp-field-label">Headline</label>';
-    html += '<input type="text" class="cp-input" data-action="save-content-field" data-cfield="headline" value="' + esc(content.headline || '') + '" placeholder="Short attention-grabbing headline"></div>';
-    html += '<div class="cp-form-group"><label class="cp-field-label">Description</label>';
-    html += '<input type="text" class="cp-input" data-action="save-content-field" data-cfield="description" value="' + esc(content.description || '') + '" placeholder="Supporting description text"></div>';
-    html += '<div class="cp-form-group"><label class="cp-field-label">Call to Action</label>';
-    html += '<input type="text" class="cp-input" data-action="save-content-field" data-cfield="cta" value="' + esc(content.cta || '') + '" placeholder="e.g., Book a Free Demo"></div>';
-    html += '</div></div>';
-
-    // Variants
-    html += '<div class="cp-card cp-variant-panel" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('copy') + ' Variants</h3>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="add-variant">' + icon('plus') + ' Add Variant</button></div>';
-    var variants = content.variants || [];
-    if (variants.length === 0) {
-      html += '<p class="cp-text-muted">No variants yet. Add variations of your ad copy for A/B testing.</p>';
-    } else {
-      for (var vi = 0; vi < variants.length; vi++) {
-        html += '<div class="cp-variant-item" data-variant-index="' + vi + '">';
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
-        html += '<span class="cp-field-label">Variant ' + (vi + 1) + '</span>';
-        html += '<button class="cp-btn-icon cp-btn-xs" data-action="remove-variant" data-variant-index="' + vi + '">' + icon('trash') + '</button>';
-        html += '</div>';
-        html += '<textarea class="cp-textarea" data-action="save-variant" data-variant-index="' + vi + '" rows="3" placeholder="Variant copy...">' + esc(variants[vi].text || '') + '</textarea>';
-        html += '</div>';
-      }
-    }
-    html += '</div>';
-
-    // Notes
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('file-text') + ' Content Notes</h3></div>';
-    html += '<textarea class="cp-textarea" data-action="save-content-field" data-cfield="notes" rows="2" placeholder="Internal notes about this content...">' + esc(content.notes || '') + '</textarea>';
-    html += '</div>';
-
-    html += '</div>';
-
-    // Init Quill after render
-    setTimeout(function() { initQuillForRecipe(recipe.id); }, 50);
-
-    return html;
-  }
-
-  var currentQuill = null;
-  var currentQuillSaveTimeout = null;
-  function destroyQuill() {
-    if (currentQuillSaveTimeout) { clearTimeout(currentQuillSaveTimeout); currentQuillSaveTimeout = null; }
-    if (currentQuill) {
-      try { currentQuill.off('text-change'); } catch(e) {}
-      currentQuill = null;
-    }
-    $('#cpQuillEditor').html('');
-  }
-  function initQuillForRecipe(recipeId) {
-    if (typeof Quill === 'undefined') {
-      console.warn('[CP] Quill not loaded');
-      return;
-    }
-    var $container = $('#cpQuillEditor');
-    if (!$container.length) return;
-    destroyQuill();
-
-    currentQuill = new Quill('#cpQuillEditor', {
-      theme: 'snow',
-      placeholder: 'Write your ad copy here...',
-      modules: {
-        toolbar: [
-          ['bold', 'italic', 'underline'],
-          [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-          ['link'],
-          ['clean']
-        ]
-      }
-    });
-
-    // Load existing content
-    var existing = $('#cpQuillContent').val() || '';
-    if (existing) {
-      try { currentQuill.root.innerHTML = existing; } catch(e) { currentQuill.setText(existing); }
-    }
-
-    // Save on change (debounced)
-    currentQuill.on('text-change', function() {
-      clearTimeout(currentQuillSaveTimeout);
-      currentQuillSaveTimeout = setTimeout(function() {
-        // Guard: only save if this Quill instance is still the active one for this recipe
-        if (!currentQuill || recipeId !== S.selectedRecipeId) return;
-        var recipe = getRecipe(recipeId);
-        if (!recipe) return;
-        recipe.content = recipe.content || {};
-        recipe.content.ad_copy = currentQuill.root.innerHTML;
-        recipe.updated = new Date().toISOString();
-        syncToTextarea();
-        if (maybeAdvanceRecipeStatus) maybeAdvanceRecipeStatus(recipe, 'content updated');
-        buildMaps();
-      }, 500);
-    });
-  }
-
-
-/* ===== src/20-part2a/21-step-media.js ===== */
-  // ============================================================
-  // SECTION 14: PRODUCTION STEP RENDERER
-  // ============================================================
-  // Hands off recipe to the matching media-production Drupal app
-  // (image_production / carousel_production / video_production).
-  // Pre-fills title, brand, planner hub, planner id via query params.
-  // ============================================================
-
-  function renderMediaStep(recipe) {
-    var prod = getRecipeProduction(recipe);
-    var html = '<div class="cp-step-production" data-recipe-id="' + esc(recipe.id) + '">';
-
-    if (prod) {
-      // A production node already exists for this recipe — show the
-      // connected-production card instead of the create-handoff UI.
-      html += renderProductionExistsCard(recipe, prod);
-    } else {
-      // Header / context
-      html += '<div class="cp-card cp-production-header-card">';
-      html += '<div class="cp-section-header"><h3>' + icon('rocket') + ' Production Handoff</h3>';
-      html += '<span class="cp-text-muted">Send this recipe to the matching media production app.</span></div>';
-      html += '<p class="cp-production-intro">';
-      html += 'Choose the media type, then open the production node-add form pre-filled with this recipe’s title, brand, and planner IDs. ';
-      html += 'You will craft the actual creative — image prompts, carousel slides, or video script — inside the production app.';
-      html += '</p>';
-      html += '</div>';
-
-      // Media-type selector
-      html += '<div class="cp-card cp-production-type-card">';
-      html += '<div class="cp-section-header"><h3>' + icon('layer-group') + ' Media Type</h3></div>';
-      html += '<div class="cp-production-type-grid">';
-      var types = (typeof Constants !== 'undefined' && Constants.MEDIA_TYPES) || {};
-      for (var key in types) {
-        var mt = types[key];
-        var active = recipe.media_type === key;
-        html += '<button class="cp-production-type-card-btn' + (active ? ' cp-production-type-active' : '') + '" data-action="set-media-type" data-type="' + esc(key) + '" style="--mt-color:' + mt.color + '">';
-        html += '<span class="cp-production-type-icon" style="background:' + mt.color + '15;color:' + mt.color + '">' + icon(mt.icon) + '</span>';
-        html += '<span class="cp-production-type-label">' + esc(mt.label) + '</span>';
-        html += '<span class="cp-production-type-sub">/node/add/' + esc(mt.node_type) + '</span>';
-        if (active) html += '<span class="cp-production-type-selected">' + icon('circle-check') + ' Selected</span>';
-        html += '</button>';
-      }
-      html += '</div></div>';
-
-      // Production handoff panel for the selected type
-      html += renderProductionHandoff(recipe);
-    }
-
-    // Production / delivery notes (kept from before — used by reviewer)
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-3)">';
-    html += '<div class="cp-section-header"><h3>' + icon('clipboard-list') + ' Production Notes</h3>';
-    html += '<span class="cp-text-muted">Optional — passed along as context for the production team.</span></div>';
-    html += '<textarea class="cp-textarea" data-action="save-production-notes" rows="3" placeholder="Anything the production team should know — references, constraints, tone reminders…">' + esc(recipe.production_notes || '') + '</textarea>';
-    html += '</div>';
-
-    html += '</div>';
-    return html;
-  }
-
-  // Renders the "production node is connected" card. Shown in place of the
-  // media-type selector + handoff panel once a node exists for the recipe.
-  function renderProductionExistsCard(recipe, prod) {
-    var mediaTypes = (typeof Constants !== 'undefined' && Constants.MEDIA_TYPES) || {};
-    var mtKey = prod.media_type || recipe.media_type || 'image';
-    var mt = mediaTypes[mtKey] || mediaTypes.image || { color: '#1a73e8', icon: 'image', label: 'Production' };
-    var statusStyle = getProductionStatusStyle(prod.status);
-
-    var prodTitle = prod.title || recipe.title || 'Untitled production';
-    var prodUrl   = prod.url || (prod.node_id ? '/node/' + prod.node_id : '');
-    var editUrl   = prod.node_id ? '/node/' + prod.node_id + '/edit' : prodUrl;
-
-    var html = '<div class="cp-card cp-production-exists-card" style="--mt-color:' + mt.color + '">';
-
-    // Header strip
-    html += '<div class="cp-production-exists-header">';
-    html += '<div class="cp-production-exists-icon" style="background:' + mt.color + '15;color:' + mt.color + '">' + icon(mt.icon) + '</div>';
-    html += '<div class="cp-production-exists-headings">';
-    html += '<div class="cp-production-exists-eyebrow">' + icon('circle-check') + ' Production node connected</div>';
-    if (prodUrl) {
-      html += '<h3 class="cp-production-exists-title"><a href="' + esc(prodUrl) + '" target="_blank" rel="noopener">' + esc(prodTitle) + '</a></h3>';
-    } else {
-      html += '<h3 class="cp-production-exists-title">' + esc(prodTitle) + '</h3>';
-    }
-    html += '<div class="cp-production-exists-badges">';
-    html += '<span class="cp-production-exists-type-badge" style="background:' + mt.color + '15;color:' + mt.color + '">' + icon(mt.icon) + ' ' + esc(mt.label) + '</span>';
-    if (statusStyle.label || prod.status) {
-      var statusText = statusStyle.label || prod.status;
-      html += '<span class="cp-production-exists-status-badge" style="background:' + statusStyle.color + '15;color:' + statusStyle.color + ';border-color:' + statusStyle.color + '40">' + esc(statusText) + '</span>';
-    }
-    if (prod.node_id) {
-      html += '<span class="cp-production-exists-id"><code>node/' + esc(prod.node_id) + '</code></span>';
-    }
-    html += '</div>';
-    html += '</div>';
-    html += '</div>';
-
-    // Metadata grid
-    var metaRows = [];
-    if (prod.director) metaRows.push(['Director', esc(prod.director)]);
-    if (prod.created)  metaRows.push(['Created', _formatProdDate(prod.created)]);
-    if (prod.updated)  metaRows.push(['Last updated', _formatProdDate(prod.updated)]);
-    if (metaRows.length) {
-      html += '<div class="cp-production-exists-meta">';
-      for (var i = 0; i < metaRows.length; i++) {
-        html += '<div class="cp-production-exists-meta-row"><span class="cp-production-exists-meta-label">' + metaRows[i][0] + '</span><span class="cp-production-exists-meta-value">' + metaRows[i][1] + '</span></div>';
-      }
-      html += '</div>';
-    }
-
-    // Actions
-    html += '<div class="cp-production-exists-actions">';
-    if (editUrl) {
-      html += '<a class="cp-btn cp-btn-primary cp-btn-lg" href="' + esc(editUrl) + '" target="_blank" rel="noopener">' + icon('external-link') + ' Open Production</a>';
-    }
-    html += '<button class="cp-btn cp-btn-outline" data-action="refresh-production">' + icon('refresh') + ' Refresh from page</button>';
-    if (prodUrl && prodUrl !== editUrl) {
-      html += '<a class="cp-btn cp-btn-outline" href="' + esc(prodUrl) + '" target="_blank" rel="noopener">' + icon('eye') + ' View</a>';
-    }
-    if (prodUrl) {
-      html += '<button class="cp-btn cp-btn-outline" data-action="copy-production-url" data-url="' + esc(prodUrl) + '">' + icon('copy') + ' Copy URL</button>';
-    }
-    html += '</div>';
-
-    // Lock note
-    html += '<div class="cp-production-exists-lock-note">' + icon('lock') + ' Media type is locked while a production node exists for this recipe. To switch types, delete the production node in Drupal first.</div>';
-
-    html += '</div>';
-    return html;
-  }
-
-  function _formatProdDate(value) {
-    if (!value) return '';
-    var d = new Date(value);
-    if (isNaN(d.getTime())) return esc(String(value));
-    if (typeof window._cpFormatRelativeTime === 'function') {
-      return window._cpFormatRelativeTime(d.toISOString());
-    }
-    return d.toLocaleDateString();
-  }
-
-  function renderProductionHandoff(recipe) {
-    var mtKey = recipe.media_type || 'image';
-    var mt = (Constants.MEDIA_TYPES || {})[mtKey] || Constants.MEDIA_TYPES.image;
-    var url = buildProductionNodeAddUrl(recipe, mt);
-    var brand = (S.brand && S.brand.identity) || {};
-    var brandName = (S.brand && S.brand.core && S.brand.core.brand_name) || brand.name || '';
-    var brandId = brand.id || '';
-    var plannerHubId = getPlannerHubId();
-    var plannerId = recipe.id;
-
-    var html = '<div class="cp-card cp-production-handoff" style="margin-top:var(--cp-space-3);--mt-color:' + mt.color + '">';
-    html += '<div class="cp-section-header"><h3 style="color:' + mt.color + '">' + icon(mt.icon) + ' ' + esc(mt.label) + ' Production</h3></div>';
-
-    html += '<div class="cp-production-summary">';
-    html += '<div class="cp-production-summary-row"><span class="cp-production-summary-label">Title</span><span class="cp-production-summary-value">' + esc(recipe.title || '(Untitled)') + '</span></div>';
-    html += '<div class="cp-production-summary-row"><span class="cp-production-summary-label">Brand</span><span class="cp-production-summary-value">' + (brandName ? esc(brandName) : '<span class="cp-text-muted">(not detected)</span>') + (brandId ? ' <span class="cp-text-muted">(#' + esc(brandId) + ')</span>' : '') + '</span></div>';
-    html += '<div class="cp-production-summary-row"><span class="cp-production-summary-label">Planner Hub</span><span class="cp-production-summary-value">' + (plannerHubId ? esc(plannerHubId) : '<span class="cp-text-muted">(not detected)</span>') + '</span></div>';
-    html += '<div class="cp-production-summary-row"><span class="cp-production-summary-label">Planner ID</span><span class="cp-production-summary-value"><code>' + esc(plannerId) + '</code></span></div>';
-    html += '</div>';
-
-    // Validation warnings
-    var warnings = [];
-    if (!brandId) warnings.push('No brand ID detected from page (<code>.brand-id</code> inside <code>.brand-data</code>).');
-    if (!plannerHubId) warnings.push('No planner hub ID detected. Production node will be created without the hub reference.');
-    if (warnings.length > 0) {
-      html += '<div class="cp-production-warning">' + icon('triangle-exclamation') + ' <div>';
-      for (var wi = 0; wi < warnings.length; wi++) html += '<div>' + warnings[wi] + '</div>';
-      html += '</div></div>';
-    }
-
-    // Open button
-    html += '<div class="cp-production-actions">';
-    html += '<a class="cp-btn cp-btn-primary cp-btn-lg cp-production-open-btn" href="' + esc(url) + '" target="_blank" rel="noopener">' + icon('external-link') + ' Create ' + esc(mt.label) + ' Production Node</a>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="copy-production-url" data-url="' + esc(url) + '">' + icon('copy') + ' Copy URL</button>';
-    html += '</div>';
-
-    // URL preview (collapsed)
-    html += '<details class="cp-production-url-details">';
-    html += '<summary>' + icon('link') + ' URL preview</summary>';
-    html += '<code class="cp-production-url-preview">' + esc(url) + '</code>';
-    html += '</details>';
-
-    html += '</div>';
-    return html;
-  }
-
-  function buildProductionNodeAddUrl(recipe, mt) {
-    var origin = window.location.origin;
-    var path = '/node/add/' + mt.node_type;
-    var brand = (S.brand && S.brand.identity) || {};
-    var brandId = brand.id || '';
-    var plannerHubId = getPlannerHubId();
-    var title = recipe.title || '';
-
-    // Drupal nested-array query format: edit[field][widget][0][value|target_id]
-    var params = [];
-    if (title) params.push(_qpair('edit[title][widget][0][value]', title));
-    if (brandId) params.push(_qpair('edit[field_brand][widget][0][target_id]', brandId));
-    if (plannerHubId) params.push(_qpair('edit[field_planner_hub][widget][0][target_id]', plannerHubId));
-    params.push(_qpair('edit[field_planner_id][widget][0][value]', recipe.id));
-
-    return origin + path + (params.length ? '?' + params.join('&') : '');
-  }
-
-  function _qpair(key, val) {
-    return encodeURIComponent(key) + '=' + encodeURIComponent(val);
-  }
-
-  // Reads the current planner hub (campaign planner node) ID — the node we're
-  // currently editing inside. We try several signals; first available wins.
-  function getPlannerHubId() {
-    // 1) Drupal data attribute on body (common in node-edit forms)
-    var nid = $('body').attr('data-node-id') || $('body').attr('data-nid');
-    if (nid) return String(nid).trim();
-
-    // 2) Hidden Drupal field
-    var $nid = $('input[name="nid"]').first();
-    if ($nid.length && $nid.val()) return String($nid.val()).trim();
-
-    // 3) Drupal settings (if exposed)
-    if (window.drupalSettings && window.drupalSettings.path && window.drupalSettings.path.currentPath) {
-      var m = String(window.drupalSettings.path.currentPath).match(/^node\/(\d+)/);
-      if (m) return m[1];
-    }
-
-    // 4) Body class node-XXX
-    var cls = $('body').attr('class') || '';
-    var bm = cls.match(/\bnode-(\d+)\b/);
-    if (bm) return bm[1];
-
-    // 5) Page URL /node/123/edit or /node/123
-    var um = String(window.location.pathname).match(/\/node\/(\d+)(\b|\/)/);
-    if (um) return um[1];
-
-    // 6) Configured in workspace meta
-    if (S.meta && S.meta.workspace && S.meta.workspace.planner_hub_id) return String(S.meta.workspace.planner_hub_id);
-
-    return '';
-  }
-
-
-/* ===== src/20-part2a/22-step-review.js ===== */
-  // ============================================================
-  // SECTION 15: REVIEW STEP RENDERER
-  // ============================================================
-
-  function renderReviewStep(recipe) {
-    var html = '<div class="cp-step-review" data-recipe-id="' + esc(recipe.id) + '">';
-
-    // Completion checklist
-    html += '<div class="cp-card cp-review-checklist">';
-    html += '<div class="cp-section-header"><h3>' + icon('clipboard-check') + ' Completion Checklist</h3></div>';
-
-    var checks = buildCompletionChecks(recipe);
-    var doneCount = checks.filter(function(c) { return c.done; }).length;
-    var totalChecks = checks.length;
-
-    html += progressBar(Math.round(doneCount / totalChecks * 100), doneCount === totalChecks ? 'var(--cp-success)' : 'var(--cp-primary)');
-    html += '<span class="cp-text-muted" style="display:block;margin:6px 0 12px">' + doneCount + ' of ' + totalChecks + ' complete</span>';
-
-    for (var ci = 0; ci < checks.length; ci++) {
-      var chk = checks[ci];
-      html += '<div class="cp-review-check-item">';
-      html += '<div class="cp-review-check-icon' + (chk.done ? ' cp-review-check-done' : ' cp-review-check-pending') + '">' + (chk.done ? icon('check') : '') + '</div>';
-      html += '<span style="flex:1;font-size:var(--cp-font-size-sm);' + (chk.done ? 'color:var(--cp-success)' : '') + '">' + esc(chk.label) + '</span>';
-      if (chk.action) html += '<button class="cp-btn-link cp-btn-sm" data-action="go-step" data-step="' + esc(chk.step) + '">' + icon('arrow-right') + ' Go</button>';
-      html += '</div>';
-    }
-    html += '</div>';
-
-    // Status management
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('signal') + ' Status</h3></div>';
-    html += '<div style="margin-bottom:12px">';
-    html += '<span class="cp-text-muted">Current: </span>' + recipeStatusBadge(recipe.status);
-    html += '</div>';
-
-    var stIdx = Constants.STATUS_ORDER.indexOf(recipe.status);
-    // Manual status actions
-    html += '<div class="cp-review-actions">';
-    if (stIdx < Constants.STATUS_ORDER.indexOf('in_review') && stIdx >= Constants.STATUS_ORDER.indexOf('media_ready')) {
-      html += '<button class="cp-btn cp-btn-primary" data-action="set-recipe-status" data-status="in_review">' + icon('magnifying-glass') + ' Submit for Review</button>';
-    }
-    if (recipe.status === 'in_review') {
-      html += '<button class="cp-btn cp-btn-primary" data-action="set-recipe-status" data-status="approved">' + icon('circle-check') + ' Approve</button>';
-      html += '<button class="cp-btn cp-btn-outline" data-action="set-recipe-status" data-status="content_ready">' + icon('arrow-left') + ' Request Changes</button>';
-    }
-    if (recipe.status === 'approved') {
-      html += '<button class="cp-btn cp-btn-primary" data-action="set-recipe-status" data-status="live">' + icon('signal') + ' Mark as Live</button>';
-    }
-    if (recipe.status === 'live') {
-      html += '<button class="cp-btn cp-btn-outline" data-action="set-recipe-status" data-status="paused">' + icon('pause') + ' Pause</button>';
-    }
-    if (recipe.status === 'paused') {
-      html += '<button class="cp-btn cp-btn-primary" data-action="set-recipe-status" data-status="live">' + icon('signal') + ' Resume</button>';
-    }
-    if (recipe.status !== 'archived') {
-      html += '<button class="cp-btn cp-btn-outline cp-btn-danger" data-action="set-recipe-status" data-status="archived">' + icon('box-archive') + ' Archive</button>';
-    }
-    html += '</div></div>';
-
-    // Review notes
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('file-text') + ' Review Notes</h3></div>';
-    html += '<textarea class="cp-textarea" data-action="save-review-notes" rows="3" placeholder="Feedback, approval notes, change requests...">' + esc(recipe.review_notes || '') + '</textarea>';
-    html += '</div>';
-
-    // Production notes
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('clipboard-list') + ' Production Notes</h3></div>';
-    html += '<textarea class="cp-textarea" data-action="save-production-notes" rows="2" placeholder="Instructions for production team...">' + esc(recipe.production_notes || '') + '</textarea>';
-    html += '</div>';
-
-    // Export actions
-    html += '<div class="cp-card" style="margin-top:var(--cp-space-4)">';
-    html += '<div class="cp-section-header"><h3>' + icon('share-nodes') + ' Export & Share</h3></div>';
-    html += '<div style="display:flex;flex-wrap:wrap;gap:var(--cp-space-2)">';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="copy-recipe-content" data-recipe-id="' + esc(recipe.id) + '">' + icon('copy') + ' Copy Ad Copy</button>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="copy-recipe-brief" data-recipe-id="' + esc(recipe.id) + '">' + icon('clipboard') + ' Copy Creative Brief</button>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="export-recipe-json" data-recipe-id="' + esc(recipe.id) + '">' + icon('download') + ' Export JSON</button>';
-    html += '</div></div>';
-
-    html += '</div>';
-    return html;
-  }
-
-  function buildCompletionChecks(recipe) {
-    var content = recipe.content || {};
-    var hook = recipe.hook || {};
-    var effectiveHook = getEffectiveHook(recipe);
-    var adCopyText = stripHtml(content.ad_copy || '');
-
-    var checks = [
-      { label: 'Persona assigned', done: !!recipe.persona_id, step: 'composition', action: true },
-      { label: 'Message angle assigned', done: !!recipe.message_id, step: 'composition', action: true },
-      { label: 'Hook selected or written', done: !!effectiveHook, step: 'hook', action: true },
-      { label: 'Ad copy written (50+ chars)', done: adCopyText.trim().length >= 50, step: 'content', action: true },
-      { label: 'Headline written', done: !!(content.headline && content.headline.trim()), step: 'content', action: true },
-      { label: 'CTA defined', done: !!(content.cta && content.cta.trim()), step: 'content', action: true },
-      { label: 'Media type selected for production', done: !!recipe.media_type, step: 'media', action: true }
-    ];
-
-    // Optional refinement checks (secondary)
-    if (recipe.style_id) checks.push({ label: 'Style selected (optional)', done: true, step: 'composition', action: true });
-    if (recipe.visual_format_id) checks.push({ label: 'Visual format selected (optional)', done: true, step: 'composition', action: true });
-
-    return checks;
-  }
-
-
-/* ===== src/20-part2a/23-recipe-ai-action-bar.js ===== */
-  // ============================================================
-  // SECTION 15.5: RECIPE AI ACTION BAR (Expandable Picker)
-  // ============================================================
-
-  function renderRecipeAIBar(actionId, recipeId, label, iconName) {
-    iconName = iconName || 'sparkles';
-    var panelId = actionId.replace(/[^a-zA-Z0-9]/g, '_') + '_' + recipeId.substring(0, 6);
-    var html = '<div class="cp-ai-action-bar" data-panel-id="' + esc(panelId) + '">';
-    html += '<button class="cp-btn cp-btn-ai cp-btn-sm" data-action="expand-ai-action" data-panel-id="' + esc(panelId) + '">' + icon(iconName) + ' ' + esc(label) + '</button>';
-
-    // Expandable panel (hidden by default)
-    html += '<div class="cp-ai-action-expanded" id="cpAIPanel_' + esc(panelId) + '" style="display:none">';
-    html += '<div class="cp-ai-action-row">';
-    // AI Picker
-    html += '<div class="cp-ai-action-picker">';
-    html += (window._cpAiSel ? window._cpAiSel(actionId) : '');
-    html += '</div>';
-    html += '</div>';
-    // Custom instructions
-    html += '<div class="cp-form-group" style="margin:var(--cp-space-2) 0">';
-    html += '<textarea class="cp-textarea cp-ai-custom-instructions" data-panel-id="' + esc(panelId) + '" rows="2" placeholder="Custom instructions for this AI action (optional)..."></textarea>';
-    html += '</div>';
-    // Generate button
-    html += '<div class="cp-ai-action-footer">';
-    html += '<button class="cp-btn cp-btn-ai cp-btn-sm" data-action="' + esc(actionId) + '" data-recipe-id="' + esc(recipeId) + '" data-panel-id="' + esc(panelId) + '">' + icon('sparkles') + ' Generate</button>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="collapse-ai-action" data-panel-id="' + esc(panelId) + '">Cancel</button>';
-    html += '</div></div>';
-    html += '</div>';
-    return html;
-  }
-
-
-/* ===== src/20-part2a/24-save-helpers.js ===== */
-  // ============================================================
-  // SECTION 16: SAVE HELPERS (Pipeline-specific)
-  // ============================================================
-
-  function getSelectedRecipe() {
-    return S.selectedRecipeId ? S.recipeMap[S.selectedRecipeId] : null;
-  }
-
-  function saveRecipeSimpleField(recipeId, field, value) {
-    saveEntityField('recipe', recipeId, field, value);
-  }
-
-  function saveContentField(cfield, value) {
-    var recipe = getSelectedRecipe();
-    if (!recipe) return;
-    recipe.content = recipe.content || {};
-    recipe.content[cfield] = value;
-    recipe.updated = new Date().toISOString();
-    syncToTextarea();
-    if (maybeAdvanceRecipeStatus) maybeAdvanceRecipeStatus(recipe, 'content updated');
-    buildMaps();
-  }
-
-  function saveBriefField(bfield, value) {
-    var recipe = getSelectedRecipe();
-    if (!recipe) return;
-    recipe.image_brief = recipe.image_brief || {};
-    recipe.image_brief[bfield] = value;
-    recipe.updated = new Date().toISOString();
-    syncToTextarea();
-    if (maybeAdvanceRecipeStatus) maybeAdvanceRecipeStatus(recipe, 'brief updated');
-    buildMaps();
-  }
-
-  function savePromptParam(param, value) {
-    var recipe = getSelectedRecipe();
-    if (!recipe) return;
-    recipe.image_brief = recipe.image_brief || {};
-    recipe.image_brief.prompt_params = recipe.image_brief.prompt_params || {};
-    recipe.image_brief.prompt_params[param] = value;
-    recipe.updated = new Date().toISOString();
-    syncToTextarea();
-  }
-
-  function saveVideoField(vfield, value) {
-    var recipe = getSelectedRecipe();
-    if (!recipe) return;
-    recipe.video = recipe.video || {};
-    recipe.video[vfield] = value;
-    recipe.updated = new Date().toISOString();
-    syncToTextarea();
-    if (maybeAdvanceRecipeStatus) maybeAdvanceRecipeStatus(recipe, 'video updated');
-    buildMaps();
-  }
-
-  function saveSceneField(sceneIndex, sfield, value) {
-    var recipe = getSelectedRecipe();
-    if (!recipe) return;
-    recipe.video = recipe.video || {};
-    recipe.video.blueprint = recipe.video.blueprint || {};
-    recipe.video.blueprint.scenes = recipe.video.blueprint.scenes || [];
-    var scene = recipe.video.blueprint.scenes[sceneIndex];
-    if (!scene) return;
-    scene[sfield] = value;
-    recipe.updated = new Date().toISOString();
-    syncToTextarea();
-    if (maybeAdvanceRecipeStatus) maybeAdvanceRecipeStatus(recipe, 'scene updated');
-    buildMaps();
-  }
-
-  function addScene() {
-    var recipe = getSelectedRecipe();
-    if (!recipe) return;
-    recipe.video = recipe.video || {};
-    recipe.video.blueprint = recipe.video.blueprint || {};
-    recipe.video.blueprint.scenes = recipe.video.blueprint.scenes || [];
-    var idx = recipe.video.blueprint.scenes.length;
-    recipe.video.blueprint.scenes.push({ name: 'Scene ' + (idx + 1), description: '', timestamp: '', duration: '' });
-    recipe.updated = new Date().toISOString();
-    snapshot('Add scene');
-    buildMaps(); syncToTextarea(); render();
-  }
-
-  function deleteScene(sceneIndex) {
-    var recipe = getSelectedRecipe();
-    if (!recipe || !recipe.video || !recipe.video.blueprint) return;
-    recipe.video.blueprint.scenes.splice(sceneIndex, 1);
-    recipe.updated = new Date().toISOString();
-    snapshot('Delete scene');
-    buildMaps(); syncToTextarea(); render();
-  }
-
-  function saveScriptField(rowIndex, srfield, value) {
-    var recipe = getSelectedRecipe();
-    if (!recipe) return;
-    recipe.video = recipe.video || {};
-    recipe.video.script = recipe.video.script || {};
-    recipe.video.script.rows = recipe.video.script.rows || [];
-    var row = recipe.video.script.rows[rowIndex];
-    if (!row) return;
-    row[srfield] = value;
-    recipe.updated = new Date().toISOString();
-    syncToTextarea();
-  }
-
-  function addScriptRow() {
-    var recipe = getSelectedRecipe();
-    if (!recipe) return;
-    recipe.video = recipe.video || {};
-    recipe.video.script = recipe.video.script || {};
-    recipe.video.script.rows = recipe.video.script.rows || [];
-    recipe.video.script.rows.push({ time: '', dialogue: '', visual: '', camera: '', audio: '' });
-    recipe.updated = new Date().toISOString();
-    snapshot('Add script row');
-    buildMaps(); syncToTextarea(); render();
-  }
-
-  function addVariant() {
-    var recipe = getSelectedRecipe();
-    if (!recipe) return;
-    recipe.content = recipe.content || {};
-    recipe.content.variants = recipe.content.variants || [];
-    recipe.content.variants.push({ text: '', label: 'Variant ' + (recipe.content.variants.length + 1) });
-    recipe.updated = new Date().toISOString();
-    snapshot('Add variant');
-    buildMaps(); syncToTextarea(); render();
-  }
-
-  function removeVariant(idx) {
-    var recipe = getSelectedRecipe();
-    if (!recipe || !recipe.content) return;
-    recipe.content.variants = recipe.content.variants || [];
-    recipe.content.variants.splice(idx, 1);
-    recipe.updated = new Date().toISOString();
-    snapshot('Remove variant');
-    buildMaps(); syncToTextarea(); render();
-  }
-
-  function setRecipeStatus(recipeId, status) {
-    var recipe = getRecipe(recipeId);
-    if (!recipe) return;
-    var oldLabel = (Constants.RECIPE_STATUSES[recipe.status] || {}).label || recipe.status;
-    var newLabel = (Constants.RECIPE_STATUSES[status] || {}).label || status;
-    recipe.status = status;
-    recipe.updated = new Date().toISOString();
-    logActivity('recipe_status_changed', 'recipe', recipeId, recipe.title, oldLabel + ' → ' + newLabel);
-    snapshot('Status change');
-    buildMaps(); syncToTextarea(); render();
-    toast('Status changed to ' + newLabel, 'success');
-  }
-
-
-/* ===== src/20-part2a/25-mix-match-engine.js ===== */
-  // ============================================================
-  // SECTION 17: MIX & MATCH ENGINE
-  // ============================================================
-
-  var mixerState = { mode: 'manual', selections: { persona: [], message: [], style: [], format: [] } };
-
-  function openMixerModal(mode) {
-    mixerState.mode = mode || 'manual';
-    mixerState.selections = { persona: [], message: [], style: [], format: [] };
-
-    var isManual = mixerState.mode === 'manual';
-    var title = isManual ? 'Create Recipe' : 'Batch Generate Recipes';
-    var titleIcon = isManual ? 'bolt' : 'shuffle';
-
-    var html = '<div class="cp-mixer" data-mode="' + esc(mixerState.mode) + '">';
-
-    // Mode description
-    html += '<div style="margin-bottom:var(--cp-space-4)">';
-    if (isManual) {
-      html += '<p class="cp-text-muted">' + icon('info') + ' Select one from each dimension to create a single recipe.</p>';
-    } else {
-      html += '<p class="cp-text-muted">' + icon('info') + ' Select multiple from each dimension. All permutations will be generated as recipes.</p>';
-    }
-    html += '</div>';
-
-    // Batch counter (batch mode only)
-    if (!isManual) {
-      html += '<div class="cp-mixer-batch-counter" id="cpMixerCounter" style="background:var(--cp-primary-light);margin-bottom:var(--cp-space-3)">';
-      html += '<span class="cp-mixer-batch-count" id="cpMixerCountNum">0</span>';
-      html += '<span class="cp-mixer-batch-label">recipes will be created</span>';
-      html += '</div>';
-    }
-
-    // 4 columns
-    html += '<div class="cp-mixer-columns">';
-    var dimKeys = ['persona', 'message', 'style', 'format'];
-    for (var di = 0; di < dimKeys.length; di++) {
-      html += renderMixerColumn(dimKeys[di], isManual);
-    }
-    html += '</div>';
-
-    // Warning zone for batch
-    if (!isManual) {
-      html += '<div id="cpMixerWarning" style="display:none"></div>';
-    }
-
-    html += '</div>';
-
-    openModal(title, html, {
-      titleIcon: titleIcon,
-      size: 'xl',
-      saveLabel: isManual ? icon('plus') + ' Create Recipe' : icon('shuffle') + ' Generate All',
-      ai: !isManual,
-      onSave: function() {
-        if (isManual) {
-          createRecipeFromMixer();
-        } else {
-          batchGenerateRecipes();
-        }
-      }
-    });
-
-    // Wire up mixer events after modal renders
-    setTimeout(setupMixerEvents, 50);
-  }
-
-  function renderMixerColumn(dimKey, isManual) {
-    var dim = Constants.DIMENSIONS[dimKey];
-    var items = [];
-    if (dimKey === 'persona') items = getAllPersonas();
-    else if (dimKey === 'message') items = getAllMessages();
-    else if (dimKey === 'style') items = getAllStyles();
-    else if (dimKey === 'format') items = getAllFormats();
-
-    var html = '<div class="cp-mixer-column" data-dim="' + dimKey + '">';
-    html += '<div class="cp-mixer-column-header" style="background:' + dim.color + '10">';
-    html += '<span class="cp-mixer-column-icon" style="color:' + dim.color + '">' + icon(dim.icon) + '</span>';
-    html += '<span class="cp-mixer-column-title">' + esc(dim.label) + '</span>';
-    html += '<span class="cp-mixer-column-count cp-nav-badge">' + items.length + '</span>';
-    html += '</div>';
-
-    html += '<div class="cp-mixer-list">';
-    if (items.length === 0) {
-      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No ' + esc(dim.label.toLowerCase()) + 's yet.</p>';
-      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="new-' + dimKey + '">' + icon('plus') + ' Create</button></div>';
-    } else {
-      for (var i = 0; i < items.length; i++) {
-        var item = items[i];
-        var iname = item.name || item.title || 'Untitled';
-        var sub = getEntitySubtext(dimKey, item);
-        var inputType = isManual ? 'radio' : 'checkbox';
-
-        html += '<label class="cp-mixer-item" data-id="' + esc(item.id) + '" data-dim="' + dimKey + '">';
-        html += '<input type="' + inputType + '" name="mixer_' + dimKey + '" value="' + esc(item.id) + '" class="cp-mixer-input" data-dim="' + dimKey + '" style="margin:3px 0 0;flex-shrink:0;cursor:pointer">';
-        html += '<div style="flex:1;min-width:0">';
-        html += '<div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(iname) + '</div>';
-        if (sub) html += '<div style="font-size:11px;color:var(--cp-text-muted);margin-top:1px">' + esc(sub) + '</div>';
-        html += '</div></label>';
-      }
-    }
-    html += '</div></div>';
-    return html;
-  }
-
-  function setupMixerEvents() {
-    // Manual mode: radio selection highlight
-    $('.cp-mixer-input[type="radio"]').off('change.mixer').on('change.mixer', function() {
-      var dim = $(this).data('dim');
-      $('.cp-mixer-item[data-dim="' + dim + '"]').removeClass('cp-mixer-item-selected');
-      $(this).closest('.cp-mixer-item').addClass('cp-mixer-item-selected');
-      mixerState.selections[dim] = [$(this).val()];
-    });
-
-    // Batch mode: checkbox selection + permutation counter
-    $('.cp-mixer-input[type="checkbox"]').off('change.mixer').on('change.mixer', function() {
-      var dim = $(this).data('dim');
-      $(this).closest('.cp-mixer-item').toggleClass('cp-mixer-item-selected', this.checked);
-      // Rebuild selection array
-      mixerState.selections[dim] = [];
-      $('.cp-mixer-input[data-dim="' + dim + '"]:checked').each(function() {
-        mixerState.selections[dim].push($(this).val());
-      });
-      updatePermutationCount();
-    });
-  }
-
-  function updatePermutationCount() {
-    var sel = mixerState.selections;
-    var counts = [
-      Math.max(sel.persona.length, 0),
-      Math.max(sel.message.length, 0),
-      Math.max(sel.style.length, 0),
-      Math.max(sel.format.length, 0)
-    ];
-    // Only count dimensions with selections; empty dims = 1 (will be left blank)
-    var total = 1;
-    var hasSel = false;
-    for (var i = 0; i < counts.length; i++) {
-      if (counts[i] > 0) { total *= counts[i]; hasSel = true; }
-    }
-    if (!hasSel) total = 0;
-
-    $('#cpMixerCountNum').text(total);
-
-    var $warn = $('#cpMixerWarning');
-    if (total > 50) {
-      $warn.show().html('<div class="cp-mixer-warning">' + icon('warning') + ' <strong>' + total + ' recipes</strong> is a lot! Consider narrowing your selection. Max 100 per batch.</div>');
-    } else if (total > 20) {
-      $warn.show().html('<div class="cp-mixer-warning" style="background:var(--cp-accent-light);border-color:rgba(227,116,0,0.2);color:#92400e">' + icon('circle-info') + ' ' + total + ' recipes will be generated.</div>');
-    } else {
-      $warn.hide();
-    }
-  }
-
-  function createRecipeFromMixer() {
-    var sel = mixerState.selections;
-    var personaId = (sel.persona && sel.persona[0]) || '';
-    var messageId = (sel.message && sel.message[0]) || '';
-    var styleId = (sel.style && sel.style[0]) || '';
-    var formatId = (sel.format && sel.format[0]) || '';
-
-    if (!personaId && !messageId && !styleId && !formatId) {
-      toast('Select at least one dimension', 'warning');
-      return;
-    }
-
-    snapshot('Create recipe (mixer)');
-    var newRecipe = createEntity('recipe', {
-      persona_id: personaId, message_id: messageId,
-      style_id: styleId, visual_format_id: formatId,
-      campaign_id: S._pendingCampaignId || ''
-    });
-
-    if (newRecipe) {
-      S.selectedRecipeId = newRecipe.id;
-      S.currentStep = 'composition';
-      S._pendingCampaignId = null;
-      closeModal();
-      navigate('recipes');
-      toast('Recipe created', 'success');
-    }
-  }
-
-  function batchGenerateRecipes() {
-    var sel = mixerState.selections;
-    var personas = sel.persona.length > 0 ? sel.persona : [''];
-    var messages = sel.message.length > 0 ? sel.message : [''];
-    var styles = sel.style.length > 0 ? sel.style : [''];
-    var formats = sel.format.length > 0 ? sel.format : [''];
-
-    var total = personas.length * messages.length * styles.length * formats.length;
-    if (total === 0) { toast('Select at least one item from any dimension', 'warning'); return; }
-    if (total > 100) { toast('Maximum 100 recipes per batch. Narrow your selection.', 'error'); return; }
-
-    snapshot('Batch generate ' + total + ' recipes');
-    var batchId = generateId('batch');
-    var count = 0;
-
-    for (var pi = 0; pi < personas.length; pi++) {
-      for (var mi = 0; mi < messages.length; mi++) {
-        for (var si = 0; si < styles.length; si++) {
-          for (var fi = 0; fi < formats.length; fi++) {
-            createEntity('recipe', {
-              persona_id: personas[pi], message_id: messages[mi],
-              style_id: styles[si], visual_format_id: formats[fi],
-              batch_id: batchId, campaign_id: S._pendingCampaignId || ''
-            });
-            count++;
-          }
-        }
-      }
-    }
-
-    logActivity('recipe_batch_generated', 'recipe', batchId, '', 'Batch generated ' + count + ' recipes');
-    S._pendingCampaignId = null;
-    closeModal();
-    navigate('recipes');
-    toast(count + ' recipes generated', 'success', 5000);
-  }
-
-
 /* ===== src/20-part2a/26-tag-input.js ===== */
   // ============================================================
   // SECTION 18: TAG INPUT COMPONENT
@@ -13807,22 +10237,6 @@
       e.preventDefault(); e.stopPropagation(); confirmDeleteFormat($(this).data('id'));
     });
 
-    // --- Campaign CRUD ---
-    $(document).off('click.cp2a-new-camp').on('click.cp2a-new-camp', '[data-action="new-campaign"]', function(e) {
-      e.preventDefault(); openCampaignModal();
-    });
-    $(document).off('click.cp2a-edit-camp').on('click.cp2a-edit-camp', '[data-action="edit-campaign"]', function(e) {
-      e.preventDefault(); e.stopPropagation(); openCampaignModal($(this).data('id'));
-    });
-    $(document).off('click.cp2a-delete-camp').on('click.cp2a-delete-camp', '[data-action="delete-campaign"]', function(e) {
-      e.preventDefault(); e.stopPropagation(); confirmDeleteCampaign($(this).data('id'));
-    });
-    $(document).off('click.cp2a-select-camp').on('click.cp2a-select-camp', '[data-action="select-campaign"]', function(e) {
-      e.preventDefault();
-      S.selectedCampaignId = $(this).data('id');
-      render();
-    });
-
     // --- Tag CRUD ---
     $(document).off('click.cp2a-new-tag').on('click.cp2a-new-tag', '[data-action="new-tag"]', function(e) {
       e.preventDefault(); openTagModal();
@@ -13834,23 +10248,6 @@
     $(document).off('click.cp2a-delete-tag').on('click.cp2a-delete-tag', '[data-action="delete-tag"]', function(e) {
       e.preventDefault(); e.stopPropagation();
       confirmDeleteTag($(this).data('id'));
-    });
-
-    // --- Recipe delete ---
-    $(document).off('click.cp2a-delete-recipe').on('click.cp2a-delete-recipe', '[data-action="delete-recipe"]', function(e) {
-      e.preventDefault();
-      var id = $(this).data('id');
-      var r = getRecipe(id);
-      if (!r) return;
-      openConfirmDialog({
-        title: 'Delete Recipe',
-        message: 'Delete "' + (r.title || 'Untitled') + '"?',
-        confirmLabel: 'Delete', danger: true,
-        onConfirm: function() {
-          snapshot('Delete recipe'); deleteEntity('recipe', id);
-          if (S.selectedRecipeId === id) { S.selectedRecipeId = null; S.currentStep = null; }
-        }
-      });
     });
 
     // --- Modal-specific interactions ---
@@ -13892,226 +10289,6 @@
       $(this).closest('.cp-pain-point-picker-item').toggleClass('cp-pain-point-picker-item-selected', this.checked);
     });
 
-    // --- Pipeline Step Events ---
-
-    // Change dimension (opens picker modal)
-    $(document).off('click.cp2a-change-dim').on('click.cp2a-change-dim', '[data-action="change-dimension"]', function(e) {
-      e.preventDefault();
-      var dim = $(this).data('dim');
-      var recipeId = $(this).data('recipe-id') || (getSelectedRecipe() ? getSelectedRecipe().id : '');
-      if (dim && recipeId) openDimensionPicker(dim, recipeId);
-    });
-
-    // Set media type
-    $(document).off('click.cp2a-media-type').on('click.cp2a-media-type', '[data-action="set-media-type"]', function(e) {
-      e.preventDefault();
-      var type = $(this).data('type');
-      var recipe = getSelectedRecipe();
-      if (!recipe || !type) return;
-      // Guard: media type is locked once a production node exists for the recipe.
-      if (typeof getRecipeProduction === 'function' && getRecipeProduction(recipe)) {
-        toast('Media type is locked — a production node exists for this recipe', 'warning');
-        return;
-      }
-      saveEntityField('recipe', recipe.id, 'media_type', type);
-      snapshot('Change media type');
-    });
-
-    // Refresh production data from the page (re-parse view-media-productions
-    // block, then re-render). Used by the "Refresh from page" button on the
-    // production-exists card.
-    $(document).off('click.cp2a-refresh-prod').on('click.cp2a-refresh-prod', '[data-action="refresh-production"]', function(e) {
-      e.preventDefault();
-      if (typeof parseProductionData !== 'function') { toast('Refresh unavailable', 'warning'); return; }
-      parseProductionData();
-      toast('Production data refreshed', 'success');
-      if (typeof window._cpRender === 'function') window._cpRender();
-    });
-
-    // Save recipe title
-    $(document).off('blur.cp2a-recipe-title').on('blur.cp2a-recipe-title', '[data-action="save-recipe-title"]', function() {
-      var recipe = getSelectedRecipe();
-      if (recipe) saveEntityField('recipe', recipe.id, 'title', $(this).val() || '');
-    });
-
-    // Save recipe simple fields (priority, campaign, due_date)
-    $(document).off('change.cp2a-recipe-field').on('change.cp2a-recipe-field', '[data-action="save-recipe-field"]', function() {
-      var recipe = getSelectedRecipe();
-      var field = $(this).data('rfield');
-      if (recipe && field) saveEntityField('recipe', recipe.id, field, $(this).val() || '');
-    });
-
-    // Toggle recipe pain point
-    $(document).off('change.cp2a-recipe-pp').on('change.cp2a-recipe-pp', '[data-action="toggle-recipe-pp"]', function() {
-      var recipe = getSelectedRecipe();
-      if (!recipe) return;
-      var ppId = $(this).data('pp-id');
-      var pps = recipe.selected_pain_point_ids || [];
-      if (this.checked) { if (pps.indexOf(ppId) === -1) pps.push(ppId); }
-      else { pps = pps.filter(function(id) { return id !== ppId; }); }
-      saveEntityField('recipe', recipe.id, 'selected_pain_point_ids', pps);
-      $(this).closest('.cp-pain-point-picker-item').toggleClass('cp-pain-point-picker-item-selected', this.checked);
-    });
-
-    // Composition pain point filter + scope toggle (in-step picker)
-    $(document).off('input.cp2a-comp-pain-search').on('input.cp2a-comp-pain-search', '#cpRecipePainSearch', _cpDebouncePainSearch);
-    $(document).off('change.cp2a-comp-pain-cat').on('change.cp2a-comp-pain-cat', '#cpRecipePainCategory', function() {
-      S._compPainFilter = S._compPainFilter || {};
-      S._compPainFilter.category = $(this).val() || '';
-      render();
-    });
-    $(document).off('click.cp2a-comp-pain-scope').on('click.cp2a-comp-pain-scope', '[data-action="set-pain-scope"]', function(e) {
-      e.preventDefault();
-      S._compPainFilter = S._compPainFilter || {};
-      S._compPainFilter.scope = $(this).data('scope') || 'persona';
-      render();
-    });
-
-    // Hook selection (radio)
-    $(document).off('change.cp2a-select-hook').on('change.cp2a-select-hook', '[data-action="select-hook"]', function() {
-      var recipe = getSelectedRecipe();
-      if (!recipe) return;
-      recipe.hook = recipe.hook || {};
-      recipe.hook.selected_hook_id = $(this).val() || '';
-      recipe.updated = new Date().toISOString();
-      syncToTextarea();
-      if (maybeAdvanceRecipeStatus) maybeAdvanceRecipeStatus(recipe, 'hook selected');
-      buildMaps(); render();
-    });
-
-    // Save custom hook
-    $(document).off('blur.cp2a-hook-custom').on('blur.cp2a-hook-custom', '[data-action="save-recipe-hook-custom"]', function() {
-      var recipe = getSelectedRecipe();
-      if (!recipe) return;
-      recipe.hook = recipe.hook || {};
-      recipe.hook.custom_hook = $(this).val() || '';
-      recipe.updated = new Date().toISOString();
-      syncToTextarea();
-      if (maybeAdvanceRecipeStatus) maybeAdvanceRecipeStatus(recipe, 'custom hook written');
-      buildMaps();
-    });
-
-    // Save hook type
-    $(document).off('change.cp2a-hook-type').on('change.cp2a-hook-type', '[data-action="save-recipe-hook-type"]', function() {
-      var recipe = getSelectedRecipe();
-      if (!recipe) return;
-      recipe.hook = recipe.hook || {};
-      recipe.hook.hook_type = $(this).val() || '';
-      recipe.updated = new Date().toISOString();
-      syncToTextarea();
-    });
-
-    // Save content fields (headline, description, cta, notes)
-    $(document).off('blur.cp2a-content-field').on('blur.cp2a-content-field', '[data-action="save-content-field"]', function() {
-      var field = $(this).data('cfield');
-      if (field) saveContentField(field, $(this).val() || '');
-    });
-
-    // Save brief fields
-    $(document).off('blur.cp2a-brief-field').on('blur.cp2a-brief-field', '[data-action="save-brief-field"]', function() {
-      var field = $(this).data('bfield');
-      if (field) saveBriefField(field, $(this).val() || '');
-    });
-
-    // Save prompt params
-    $(document).off('change.cp2a-prompt-param blur.cp2a-prompt-param').on('change.cp2a-prompt-param blur.cp2a-prompt-param', '[data-action="save-prompt-param"]', function() {
-      var param = $(this).data('param');
-      if (param) savePromptParam(param, $(this).val() || '');
-    });
-
-    // Save video fields
-    $(document).off('change.cp2a-video-field blur.cp2a-video-field').on('change.cp2a-video-field blur.cp2a-video-field', '[data-action="save-video-field"]', function() {
-      var field = $(this).data('vfield');
-      if (field) saveVideoField(field, $(this).val() || '');
-    });
-
-    // Save scene fields
-    $(document).off('blur.cp2a-scene-field').on('blur.cp2a-scene-field', '[data-action="save-scene-field"]', function() {
-      var idx = parseInt($(this).data('scene-index'), 10);
-      var field = $(this).data('sfield');
-      if (!isNaN(idx) && field) saveSceneField(idx, field, $(this).val() || '');
-    });
-
-    // Add/delete scene
-    $(document).off('click.cp2a-add-scene').on('click.cp2a-add-scene', '[data-action="add-scene"]', function(e) { e.preventDefault(); addScene(); });
-    $(document).off('click.cp2a-del-scene').on('click.cp2a-del-scene', '[data-action="delete-scene"]', function(e) {
-      e.preventDefault();
-      deleteScene(parseInt($(this).data('scene-index'), 10));
-    });
-
-    // Save script fields
-    $(document).off('blur.cp2a-script-field').on('blur.cp2a-script-field', '[data-action="save-script-field"]', function() {
-      var idx = parseInt($(this).data('row-index'), 10);
-      var field = $(this).data('srfield');
-      if (!isNaN(idx) && field) saveScriptField(idx, field, $(this).val() || '');
-    });
-
-    // Add script row
-    $(document).off('click.cp2a-add-script-row').on('click.cp2a-add-script-row', '[data-action="add-script-row"]', function(e) { e.preventDefault(); addScriptRow(); });
-
-    // Add/remove variants
-    $(document).off('click.cp2a-add-variant').on('click.cp2a-add-variant', '[data-action="add-variant"]', function(e) { e.preventDefault(); addVariant(); });
-    $(document).off('click.cp2a-rm-variant').on('click.cp2a-rm-variant', '[data-action="remove-variant"]', function(e) {
-      e.preventDefault(); removeVariant(parseInt($(this).data('variant-index'), 10));
-    });
-
-    // Save variant text
-    $(document).off('blur.cp2a-save-variant').on('blur.cp2a-save-variant', '[data-action="save-variant"]', function() {
-      var recipe = getSelectedRecipe();
-      if (!recipe) return;
-      var idx = parseInt($(this).data('variant-index'), 10);
-      recipe.content = recipe.content || {};
-      recipe.content.variants = recipe.content.variants || [];
-      if (recipe.content.variants[idx]) {
-        recipe.content.variants[idx].text = $(this).val() || '';
-        recipe.updated = new Date().toISOString();
-        syncToTextarea();
-      }
-    });
-
-    // Set recipe status (review step)
-    $(document).off('click.cp2a-set-status').on('click.cp2a-set-status', '[data-action="set-recipe-status"]', function(e) {
-      e.preventDefault();
-      var status = $(this).data('status');
-      var recipe = getSelectedRecipe();
-      if (recipe && status) setRecipeStatus(recipe.id, status);
-    });
-
-    // Save review notes
-    $(document).off('blur.cp2a-review-notes').on('blur.cp2a-review-notes', '[data-action="save-review-notes"]', function() {
-      var recipe = getSelectedRecipe();
-      if (recipe) saveEntityField('recipe', recipe.id, 'review_notes', $(this).val() || '');
-    });
-
-    // Save production notes
-    $(document).off('blur.cp2a-prod-notes').on('blur.cp2a-prod-notes', '[data-action="save-production-notes"]', function() {
-      var recipe = getSelectedRecipe();
-      if (recipe) saveEntityField('recipe', recipe.id, 'production_notes', $(this).val() || '');
-    });
-
-    // Copy production handoff URL to clipboard
-    $(document).off('click.cp2a-copy-prod-url').on('click.cp2a-copy-prod-url', '[data-action="copy-production-url"]', function(e) {
-      e.preventDefault();
-      var url = $(this).data('url') || '';
-      if (!url) { toast('No production URL available', 'warning'); return; }
-      try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(url).then(function() { toast('Production URL copied', 'success'); });
-        } else {
-          var ta = document.createElement('textarea');
-          ta.value = url; document.body.appendChild(ta); ta.select();
-          document.execCommand('copy'); document.body.removeChild(ta);
-          toast('Production URL copied', 'success');
-        }
-      } catch(ex) { toast('Copy failed: ' + ex.message, 'error'); }
-    });
-
-    // --- Mix & Match Engine ---
-    $(document).off('click.cp2a-open-mixer').on('click.cp2a-open-mixer', '[data-action="open-mixer"]', function(e) {
-      e.preventDefault();
-      var mode = $(this).data('mode') || 'manual';
-      openMixerModal(mode);
-    });
 
     // --- Tag Input Component ---
     $(document).off('change.cp2a-add-tag').on('change.cp2a-add-tag', '[data-action="add-entity-tag"]', function() {
@@ -14123,7 +10300,8 @@
       if (!entityType || !entityId) return;
       var collections = {
         persona: S.data.personas, message: S.data.messages, style: S.data.styles,
-        visual_format: S.data.visual_formats, recipe: S.data.recipes, campaign: S.data.campaigns
+        visual_format: S.data.visual_formats, pain_point: S.data.pain_points,
+        campaign_v2: S.data.campaigns_v2, ad_set: S.data.ad_sets, ad: S.data.ads
       };
       var coll = collections[entityType];
       if (!coll) return;
@@ -14147,7 +10325,8 @@
       if (!entityType || !entityId) return;
       var collections = {
         persona: S.data.personas, message: S.data.messages, style: S.data.styles,
-        visual_format: S.data.visual_formats, recipe: S.data.recipes, campaign: S.data.campaigns
+        visual_format: S.data.visual_formats, pain_point: S.data.pain_points,
+        campaign_v2: S.data.campaigns_v2, ad_set: S.data.ad_sets, ad: S.data.ads
       };
       var coll = collections[entityType];
       if (!coll) return;
@@ -14170,264 +10349,6 @@
       e.preventDefault();
       var panelId = $(this).data('panel-id');
       $('#cpAIPanel_' + panelId).slideUp(150);
-    });
-
-    // --- Campaign Wizard ---
-    $(document).off('click.cp2a-open-wizard').on('click.cp2a-open-wizard', '[data-action="open-campaign-wizard"]', function(e) {
-      e.preventDefault(); openCampaignWizard();
-    });
-    $(document).off('click.cp2a-wizard-next').on('click.cp2a-wizard-next', '[data-action="wizard-next"]', function(e) {
-      e.preventDefault();
-      collectWizardFields();
-      if (wizardState.step === 1 && (!wizardState.data.name || !wizardState.data.name.trim())) { toast('Campaign name is required', 'warning'); return; }
-      if (wizardState.step < 4) { wizardState.step++; renderWizardModal(); }
-    });
-    $(document).off('click.cp2a-wizard-prev').on('click.cp2a-wizard-prev', '[data-action="wizard-prev"]', function(e) {
-      e.preventDefault();
-      collectWizardFields();
-      if (wizardState.step > 1) { wizardState.step--; renderWizardModal(); }
-    });
-    $(document).off('click.cp2a-wizard-step').on('click.cp2a-wizard-step', '[data-action="wizard-go-step"]', function(e) {
-      e.preventDefault();
-      collectWizardFields();
-      var targetStep = parseInt($(this).data('step'), 10);
-      if (targetStep <= wizardState.step || targetStep === wizardState.step + 1) {
-        wizardState.step = targetStep;
-        renderWizardModal();
-      }
-    });
-    $(document).off('change.cp2a-wizard-dim').on('change.cp2a-wizard-dim', '[data-action="wizard-toggle-dim"]', function() {
-      var dim = $(this).data('dim');
-      var id = $(this).data('id');
-      var sel = wizardState.selections[dim];
-      if (!sel) return;
-      var idx = sel.indexOf(id);
-      if (this.checked && idx === -1) sel.push(id);
-      else if (!this.checked && idx > -1) sel.splice(idx, 1);
-      collectWizardFields();
-      renderWizardModal();
-    });
-    $(document).off('click.cp2a-wizard-recipe').on('click.cp2a-wizard-recipe', '[data-action="wizard-toggle-recipe"]', function(e) {
-      e.preventDefault();
-      var ridx = parseInt($(this).data('ridx'), 10);
-      if (wizardState.recipes[ridx]) {
-        wizardState.recipes[ridx].selected = !wizardState.recipes[ridx].selected;
-        renderWizardModal();
-      }
-    });
-    $(document).off('click.cp2a-wizard-selall').on('click.cp2a-wizard-selall', '[data-action="wizard-select-all"]', function(e) {
-      e.preventDefault();
-      wizardState.allSelected = !wizardState.allSelected;
-      wizardState.recipes.forEach(function(r) { r.selected = wizardState.allSelected; });
-      renderWizardModal();
-    });
-    $(document).off('click.cp2a-wizard-create').on('click.cp2a-wizard-create', '[data-action="wizard-create"]', function(e) {
-      e.preventDefault(); executeWizardCreate();
-    });
-    // Add recipe to campaign (from detail view) — pre-link to campaign
-    $(document).off('click.cp2a-add-recipe-camp').on('click.cp2a-add-recipe-camp', '[data-action="add-recipe-to-campaign"]', function(e) {
-      e.preventDefault();
-      var campId = $(this).data('campaign-id');
-      if (!campId) return;
-      S._pendingCampaignId = campId;
-      openMixerModal('manual');
-    });
-
-    // Quick create recipe from campaign (uses first available dimension from each)
-    $(document).off('click.cp2a-camp-quick').on('click.cp2a-camp-quick', '[data-action="camp-quick-recipe"]', function(e) {
-      e.preventDefault();
-      var campId = $(this).data('campaign-id');
-      var camp = getCampaign(campId);
-      if (!camp) return;
-      snapshot('Quick recipe from campaign');
-      var newRecipe = createEntity('recipe', {
-        persona_id: (camp.persona_ids || [])[0] || '',
-        message_id: (camp.message_ids || [])[0] || '',
-        style_id: (camp.style_ids || [])[0] || '',
-        visual_format_id: (camp.format_ids || [])[0] || '',
-        campaign_id: campId
-      });
-      if (newRecipe) {
-        S.selectedRecipeId = newRecipe.id;
-        S.currentStep = 'composition';
-        navigate('recipes');
-        toast('Recipe created — edit its dimensions in the Composition step', 'success');
-      }
-    });
-
-    // Move recipe to a different campaign
-    $(document).off('click.cp2a-move-recipe-camp').on('click.cp2a-move-recipe-camp', '[data-action="move-recipe-campaign"]', function(e) {
-      e.preventDefault();
-      var recipeId = $(this).data('id');
-      var recipe = getRecipe(recipeId);
-      if (!recipe) return;
-      var camps = getAllCampaigns();
-      var html = '<div class="cp-editor-form">';
-      html += '<p class="cp-text-muted" style="margin-bottom:var(--cp-space-3)">Select a campaign to assign this recipe to:</p>';
-      html += '<label style="display:flex;align-items:center;gap:var(--cp-space-2);padding:var(--cp-space-2) 0;border-bottom:1px solid var(--cp-border-light);cursor:pointer">';
-      html += '<input type="radio" name="cp-move-camp" value="" ' + (!recipe.campaign_id ? 'checked' : '') + '>';
-      html += '<span style="color:var(--cp-text-muted)">No campaign (unassigned)</span></label>';
-      for (var ci = 0; ci < camps.length; ci++) {
-        var c = camps[ci];
-        html += '<label style="display:flex;align-items:center;gap:var(--cp-space-2);padding:var(--cp-space-2) 0;border-bottom:1px solid var(--cp-border-light);cursor:pointer">';
-        html += '<input type="radio" name="cp-move-camp" value="' + esc(c.id) + '" ' + (recipe.campaign_id === c.id ? 'checked' : '') + '>';
-        html += '<span>' + icon('bullhorn') + ' ' + esc(c.name) + '</span></label>';
-      }
-      html += '</div>';
-      openModal('Move Recipe to Campaign', html, {
-        titleIcon: 'arrow-right-arrow-left', size: 'md',
-        saveLabel: 'Move',
-        onSave: function() {
-          var newCampId = $('input[name="cp-move-camp"]:checked').val() || '';
-          snapshot('Move recipe to campaign');
-          saveEntityField('recipe', recipeId, 'campaign_id', newCampId);
-          closeModal();
-          toast(newCampId ? 'Recipe moved to ' + (S.campaignMap[newCampId] ? S.campaignMap[newCampId].name : 'campaign') : 'Recipe unassigned from campaign', 'success');
-        }
-      });
-    });
-
-    // Create recipe from coverage matrix cell (persona × message pre-set)
-    $(document).off('click.cp2a-camp-combo').on('click.cp2a-camp-combo', '[data-action="camp-create-combo"]', function(e) {
-      e.preventDefault();
-      var campId = $(this).data('campaign-id');
-      var personaId = $(this).data('persona-id');
-      var messageId = $(this).data('message-id');
-      var camp = getCampaign(campId);
-      if (!camp) return;
-      snapshot('Recipe from coverage matrix');
-      var newRecipe = createEntity('recipe', {
-        persona_id: personaId || '',
-        message_id: messageId || '',
-        style_id: (camp.style_ids || [])[0] || '',
-        visual_format_id: (camp.format_ids || [])[0] || '',
-        campaign_id: campId
-      });
-      if (newRecipe) {
-        S.selectedRecipeId = newRecipe.id;
-        S.currentStep = 'composition';
-        navigate('recipes');
-        toast('Recipe created from coverage matrix', 'success');
-      }
-    });
-
-    // Manage campaign phases
-    $(document).off('click.cp2a-camp-phases').on('click.cp2a-camp-phases', '[data-action="manage-campaign-phases"]', function(e) {
-      e.preventDefault();
-      var campId = $(this).data('campaign-id');
-      var camp = getCampaign(campId);
-      if (!camp) return;
-      openCampaignPhasesModal(campId);
-    });
-
-    // --- Recipe Templates ---
-    $(document).off('click.cp2a-save-template').on('click.cp2a-save-template', '[data-action="save-recipe-template"]', function(e) {
-      e.preventDefault();
-      var recipeId = $(this).data('recipe-id');
-      var recipe = getRecipe(recipeId);
-      if (!recipe) return;
-      var pName = S.personaMap[recipe.persona_id] ? S.personaMap[recipe.persona_id].name : '';
-      var mName = S.messageMap[recipe.message_id] ? S.messageMap[recipe.message_id].title : '';
-      var sName = S.styleMap[recipe.style_id] ? S.styleMap[recipe.style_id].name : '';
-      var fName = S.formatMap[recipe.visual_format_id] ? S.formatMap[recipe.visual_format_id].name : '';
-      var defaultName = [pName, mName, sName, fName].filter(Boolean).join(' × ') || 'Recipe Template';
-
-      var html = '<div class="cp-editor-form">';
-      html += '<div class="cp-form-group"><label>Template Name</label>';
-      html += '<input type="text" class="cp-input" data-field="name" value="' + esc(defaultName) + '"></div>';
-      html += '<p class="cp-text-muted">Saves the recipe\'s composition (persona, message, style, format, media type) as a reusable template.</p>';
-      html += '</div>';
-
-      openModal('Save Recipe Template', html, {
-        titleIcon: 'bookmark', size: 'md', saveLabel: 'Save Template',
-        onSave: function() {
-          var name = collectModalFields().name || defaultName;
-          S.meta.recipe_templates = S.meta.recipe_templates || [];
-          S.meta.recipe_templates.push({
-            id: 'tpl_' + Date.now(),
-            name: name,
-            persona_id: recipe.persona_id || '',
-            message_id: recipe.message_id || '',
-            style_id: recipe.style_id || '',
-            visual_format_id: recipe.visual_format_id || '',
-            media_type: recipe.media_type || 'image',
-            created: new Date().toISOString()
-          });
-          syncToTextarea();
-          closeModal();
-          toast('Template "' + name + '" saved', 'success');
-        }
-      });
-    });
-
-    $(document).off('click.cp2a-apply-template').on('click.cp2a-apply-template', '[data-action="apply-recipe-template"]', function(e) {
-      e.preventDefault();
-      var recipeId = $(this).data('recipe-id');
-      var recipe = getRecipe(recipeId);
-      if (!recipe) return;
-      var templates = (S.meta && S.meta.recipe_templates) || [];
-      if (templates.length === 0) { toast('No templates saved yet', 'info'); return; }
-
-      var html = '<div class="cp-editor-form">';
-      html += '<p class="cp-text-muted" style="margin-bottom:var(--cp-space-3)">Apply a template to set this recipe\'s dimensions:</p>';
-      for (var ti = 0; ti < templates.length; ti++) {
-        var t = templates[ti];
-        html += '<label style="display:flex;align-items:center;gap:var(--cp-space-2);padding:var(--cp-space-2) 0;border-bottom:1px solid var(--cp-border-light);cursor:pointer">';
-        html += '<input type="radio" name="cp-tpl" value="' + ti + '"' + (ti === 0 ? ' checked' : '') + '>';
-        html += '<div style="flex:1"><strong>' + esc(t.name) + '</strong>';
-        html += '<div style="font-size:11px;color:var(--cp-text-muted)">';
-        var parts = [];
-        if (t.persona_id && S.personaMap[t.persona_id]) parts.push(S.personaMap[t.persona_id].name);
-        if (t.message_id && S.messageMap[t.message_id]) parts.push(S.messageMap[t.message_id].title);
-        if (t.style_id && S.styleMap[t.style_id]) parts.push(S.styleMap[t.style_id].name);
-        if (t.visual_format_id && S.formatMap[t.visual_format_id]) parts.push(S.formatMap[t.visual_format_id].name);
-        html += parts.join(' × ') + ' · ' + (t.media_type || 'image');
-        html += '</div></div>';
-        html += '<button class="cp-btn-icon cp-btn-xs" data-action="delete-template" data-tidx="' + ti + '" title="Delete">' + icon('trash') + '</button>';
-        html += '</label>';
-      }
-      html += '</div>';
-
-      openModal('Apply Template', html, {
-        titleIcon: 'file-import', size: 'md', saveLabel: 'Apply',
-        onSave: function() {
-          var idx = parseInt($('input[name="cp-tpl"]:checked').val(), 10);
-          var t = templates[idx];
-          if (!t) return;
-          snapshot('Apply recipe template');
-          if (t.persona_id) saveEntityField('recipe', recipeId, 'persona_id', t.persona_id);
-          if (t.message_id) saveEntityField('recipe', recipeId, 'message_id', t.message_id);
-          if (t.style_id) saveEntityField('recipe', recipeId, 'style_id', t.style_id);
-          if (t.visual_format_id) saveEntityField('recipe', recipeId, 'visual_format_id', t.visual_format_id);
-          if (t.media_type) saveEntityField('recipe', recipeId, 'media_type', t.media_type);
-          closeModal();
-          toast('Template applied', 'success');
-        }
-      });
-    });
-
-    // Delete template (from within apply modal)
-    $(document).off('click.cp2a-del-tpl').on('click.cp2a-del-tpl', '[data-action="delete-template"]', function(e) {
-      e.preventDefault(); e.stopPropagation();
-      var idx = parseInt($(this).data('tidx'), 10);
-      S.meta.recipe_templates = S.meta.recipe_templates || [];
-      if (S.meta.recipe_templates[idx]) {
-        S.meta.recipe_templates.splice(idx, 1);
-        syncToTextarea();
-        toast('Template deleted', 'success');
-        closeModal();
-      }
-    });
-
-    // --- Duplicate recipe ---
-    $(document).off('click.cp2a-dup-recipe').on('click.cp2a-dup-recipe', '[data-action="duplicate-recipe"]', function(e) {
-      e.preventDefault();
-      var id = $(this).data('id') || (getSelectedRecipe() ? getSelectedRecipe().id : '');
-      if (id) {
-        snapshot('Duplicate recipe');
-        var clone = duplicateEntity('recipe', id);
-        if (clone) { S.selectedRecipeId = clone.id; S.currentStep = 'composition'; }
-      }
     });
 
     // --- Setup Wizard ---
@@ -15283,15 +11204,12 @@
     openStyleModal: openStyleModal, confirmDeleteStyle: confirmDeleteStyle,
     openFormatModal: openFormatModal, confirmDeleteFormat: confirmDeleteFormat,
 
-    // Campaign CRUD
-    openCampaignModal: openCampaignModal, confirmDeleteCampaign: confirmDeleteCampaign,
-
     // Meta v2 CRUD
     openMetaCampaignModal: openMetaCampaignModal, confirmDeleteMetaCampaign: confirmDeleteMetaCampaign,
     openMetaAdSetModal: openMetaAdSetModal, confirmDeleteMetaAdSet: confirmDeleteMetaAdSet,
     openMetaAdModal: openMetaAdModal, confirmDeleteMetaAd: confirmDeleteMetaAd,
     buildPersonaSnapshot: buildPersonaSnapshot,
-    // Stage 5: A/B testing
+    // A/B testing
     openABTestConfigModal: openABTestConfigModal,
     openCompareVariantsModal: openCompareVariantsModal,
     setABWinner: setABWinner,
@@ -15299,33 +11217,8 @@
     // Tag CRUD
     openTagModal: openTagModal, confirmDeleteTag: confirmDeleteTag,
 
-    // Render helpers (for Part 2B to use)
-    renderHookEditRow: renderHookEditRow,
-
-    // Pipeline step helpers
-    getEffectiveHook: getEffectiveHook,
-    buildCompletionChecks: buildCompletionChecks,
-    openDimensionPicker: openDimensionPicker,
-    autoUpdateRecipeTitle: autoUpdateRecipeTitle,
-    setRecipeStatus: setRecipeStatus,
-    addScene: addScene, deleteScene: deleteScene,
-    addScriptRow: addScriptRow,
-    addVariant: addVariant, removeVariant: removeVariant,
-    getSelectedRecipe: getSelectedRecipe,
-
-    // Mix & Match
-    openMixerModal: openMixerModal,
-    createRecipeFromMixer: createRecipeFromMixer,
-    batchGenerateRecipes: batchGenerateRecipes,
-
     // Tag Input
     renderTagInput: renderTagInput,
-
-    // AI Action Bar
-    renderRecipeAIBar: renderRecipeAIBar,
-
-    // Campaign Wizard
-    openCampaignWizard: openCampaignWizard, wizardState: wizardState,
 
     // Setup Wizard
     openSetupWizard: openSetupWizard,
@@ -15396,19 +11289,18 @@
   var S, render, navigate, toast, generateId, buildMaps, syncToTextarea, esc, deepClone, icon;
   var formatDate, formatRelativeTime, formatNumber, truncate, logActivity;
   var stripHtml, countWords, countChars;
-  var badge, recipeStatusBadge, campaignStatusBadge, priorityBadge;
+  var badge, priorityBadge;
   var funnelBadge, dimensionBadge, mediaTypeBadge, hookTypeBadge, progressBar;
   var createEntity, deleteEntity, saveEntityField, duplicateEntity;
-  var maybeAdvanceRecipeStatus;
   var getAllPersonas, getAllMessages, getAllStyles, getAllFormats;
-  var getAllCategories, getAllPainPoints, getAllCampaigns, getAllTags;
+  var getAllCategories, getAllPainPoints, getAllTags;
   var getPersonaPainPoints, getPersona, getMessage, getStyle, getFormat;
-  var getCategory, getCampaign, getTag, getPainPoint, getFunnelStage;
-  var getRecipe, getImages, getAllImageTags, parseImageField, isSetupComplete;
-  var getRecipeProduction, getProductionStatusStyle, parseProductionData;
+  var getCategory, getTag, getPainPoint, getFunnelStage;
+  var getImages, getAllImageTags, parseImageField, isSetupComplete;
+  var getProductionStatusStyle, parseProductionData;
   var Constants;
   var snapshot, openModal, closeModal, openConfirmDialog, closeConfirmDialog, collectModalFields;
-  var collectFunnelChips, getSelectedRecipe, getEffectiveHook, renderTagInput;
+  var collectFunnelChips, renderTagInput;
   // Meta v2 (Stage 4 imports)
   var getCampaignV2, getAdSet, getAd;
   var getAllCampaignsV2, getAllAdSets, getAllAds;
@@ -15450,25 +11342,23 @@
     icon = window._cpIcon; formatDate = window._cpFormatDate; formatRelativeTime = window._cpFormatRelativeTime;
     formatNumber = window._cpFormatNumber; truncate = window._cpTruncate; logActivity = window._cpLogActivity;
     stripHtml = window._cpStripHtml; countWords = window._cpCountWords; countChars = window._cpCountChars;
-    badge = window._cpBadge; recipeStatusBadge = window._cpRecipeStatusBadge;
-    campaignStatusBadge = window._cpCampaignStatusBadge; priorityBadge = window._cpPriorityBadge;
+    badge = window._cpBadge;
+    priorityBadge = window._cpPriorityBadge;
     funnelBadge = window._cpFunnelBadge; dimensionBadge = window._cpDimensionBadge;
     mediaTypeBadge = window._cpMediaTypeBadge; hookTypeBadge = window._cpHookTypeBadge;
     progressBar = window._cpProgressBar; Constants = window._cpConstants;
     createEntity = window._cpCreateEntity; deleteEntity = window._cpDeleteEntity;
     saveEntityField = window._cpSaveEntityField; duplicateEntity = window._cpDuplicateEntity;
-    maybeAdvanceRecipeStatus = window._cpMaybeAdvanceRecipeStatus;
     getAllPersonas = window._cpGetAllPersonas; getAllMessages = window._cpGetAllMessages;
     getAllStyles = window._cpGetAllStyles; getAllFormats = window._cpGetAllFormats;
     getAllCategories = window._cpGetAllCategories; getAllPainPoints = window._cpGetAllPainPoints;
-    getAllCampaigns = window._cpGetAllCampaigns; getAllTags = window._cpGetAllTags;
+    getAllTags = window._cpGetAllTags;
     getPersonaPainPoints = window._cpGetPersonaPainPoints;
     getPersona = window._cpGetPersona; getMessage = window._cpGetMessage;
     getStyle = window._cpGetStyle; getFormat = window._cpGetFormat;
-    getCategory = window._cpGetCategory; getCampaign = window._cpGetCampaign;
+    getCategory = window._cpGetCategory;
     getTag = window._cpGetTag; getPainPoint = window._cpGetPainPoint;
-    getFunnelStage = window._cpGetFunnelStage; getRecipe = window._cpGetRecipe;
-    getRecipeProduction = window._cpGetRecipeProduction;
+    getFunnelStage = window._cpGetFunnelStage;
     getProductionStatusStyle = window._cpGetProductionStatusStyle;
     parseProductionData = window._cpParseProductionData;
     getImages = window._cpGetImages; getAllImageTags = window._cpGetAllImageTags;
@@ -15483,7 +11373,6 @@
     snapshot = P2A.snapshot; openModal = P2A.openModal; closeModal = P2A.closeModal;
     openConfirmDialog = P2A.openConfirmDialog; closeConfirmDialog = P2A.closeConfirmDialog;
     collectModalFields = P2A.collectModalFields; collectFunnelChips = P2A.collectFunnelChips;
-    getSelectedRecipe = P2A.getSelectedRecipe; getEffectiveHook = P2A.getEffectiveHook;
     renderTagInput = P2A.renderTagInput;
     buildPersonaSnapshot = P2A.buildPersonaSnapshot;
     // Meta v2 helpers from Part 1
@@ -15938,51 +11827,6 @@
     var setupCtx2 = BrandService.getSetupContext();
     if (setupCtx2) lines.push(setupCtx2);
     return lines.length ? '\n\nBrand context:\n' + lines.join('\n') : '';
-  }
-
-  function recipeContextSnippet(recipe) {
-    if (!recipe) return '';
-    var parts = [];
-    var persona = S.personaMap[recipe.persona_id];
-    var msg = S.messageMap[recipe.message_id];
-    var style = S.styleMap[recipe.style_id];
-    var format = S.formatMap[recipe.visual_format_id];
-
-    if (persona) {
-      parts.push('Persona: ' + persona.name);
-      var demo = persona.demographics || {};
-      var demoStr = [demo.age_range, demo.gender !== 'all' ? demo.gender : '', demo.location, demo.occupation].filter(Boolean).join(', ');
-      if (demoStr) parts.push('Demographics: ' + demoStr);
-      var psych = persona.psychographics || {};
-      if (psych.desires) parts.push('Desires: ' + psych.desires);
-      if (psych.fears) parts.push('Fears: ' + psych.fears);
-      if (psych.emotional_triggers) parts.push('Emotional triggers: ' + psych.emotional_triggers);
-    }
-    if (msg) {
-      parts.push('Message: ' + msg.title);
-      if (msg.body) parts.push('Message body: ' + truncate(stripHtml(msg.body), 200));
-      if (msg.delivery_notes) parts.push('Delivery: ' + truncate(msg.delivery_notes, 100));
-      var funnelLabels = (msg.funnel_stages || []).map(function(fid) { var f = S.funnelStageMap[fid]; return f ? f.name : ''; }).filter(Boolean);
-      if (funnelLabels.length) parts.push('Funnel: ' + funnelLabels.join(', '));
-    }
-    if (style) parts.push('Style: ' + style.name + (style.description ? ' — ' + truncate(style.description, 80) : ''));
-    if (format) parts.push('Visual format: ' + format.name + (format.description ? ' — ' + truncate(format.description, 80) : ''));
-
-    // Selected pain points
-    var pps = recipe.selected_pain_point_ids || [];
-    if (pps.length > 0) {
-      var ppTexts = pps.map(function(ppId) { var pp = S.painPointMap[ppId]; return pp ? pp.pain_point : ''; }).filter(Boolean);
-      if (ppTexts.length) parts.push('Pain points addressed: ' + ppTexts.join('; '));
-    }
-
-    // Existing hook
-    var hook = getEffectiveHook ? getEffectiveHook(recipe) : null;
-    if (hook) parts.push('Hook: "' + hook.text + '" (' + hook.type + ')');
-
-    // Media type
-    parts.push('Media type: ' + recipe.media_type);
-
-    return parts.length ? '\n\nRecipe context:\n' + parts.join('\n') : '';
   }
 
   function entityContextSnippet(entityType, entity) {
@@ -16502,456 +12346,6 @@
       $('#cpResearchLoading_' + stateKey).hide();
       toast('AI Error: ' + err, 'error');
     }, 'ai-research-formats', BrandService.getSystemPrompt('content'), parseJSON);
-  }
-
-
-/* ===== src/30-part2b/15-ai-recipe-content.js ===== */
-  // ============================================================
-  // SECTION 14: AI — RECIPE CONTENT
-  // ============================================================
-
-  function aiGenerateHook(recipeId, customInstructions) {
-    var recipe = getRecipe(recipeId); if (!recipe) return;
-    if (!LLMService.isConfigured()) { toast('No AI providers configured', 'warning'); return; }
-    toast('Generating hooks...', 'info');
-
-    var prompt = 'You are a copywriting expert specializing in scroll-stopping Meta Ads hooks. Generate 5 opening hooks for this ad.\n';
-    prompt += recipeContextSnippet(recipe);
-    prompt += brandSnippet('hooks');
-    if (customInstructions) prompt += '\n\nAdditional instructions: ' + customInstructions;
-    prompt += '\n\nRules:\n- Each hook MUST stop the scroll in under 2 seconds\n- Use different hook psychology types:\n  1. Question hook (provocative question)\n  2. Bold claim / contrarian statement\n  3. Story/curiosity hook ("I was wrong about...")\n  4. Data/statistic hook (specific number)\n  5. Direct address ("If you [specific situation]...")\n- Keep each hook under 15 words\n- Tailor to the specific persona and their pain points\n- No generic openers like "In today\'s world"\n\nRespond ONLY as JSON: {"hooks":[{"text":"hook text...","type":"question|bold|story|data|direct"}]}';
-
-    callAIWithRetry(prompt, function(parsed) {
-      var hooks = parsed.hooks || [];
-      if (hooks.length === 0) { toast('AI returned no hooks — try again', 'warning'); return; }
-
-      // Add hooks to linked message if it exists
-      var msg = S.messageMap[recipe.message_id];
-      if (msg) {
-        msg.hooks = msg.hooks || [];
-        hooks.forEach(function(h) {
-          msg.hooks.push({ id: generateId('hk'), text: h.text || '', type: h.type || 'direct' });
-        });
-        msg.updated = new Date().toISOString();
-        // Select the first new hook
-        recipe.hook = recipe.hook || {};
-        recipe.hook.selected_hook_id = msg.hooks[msg.hooks.length - hooks.length].id;
-      } else {
-        // No message linked — store the best hook as custom_hook
-        recipe.hook = recipe.hook || {};
-        recipe.hook.custom_hook = hooks[0].text || '';
-        recipe.hook.hook_type = hooks[0].type || 'direct';
-        // Log the others so the user can see them
-        if (hooks.length > 1) {
-          recipe.hook._ai_suggestions = hooks.map(function(h) { return { text: h.text || '', type: h.type || '' }; });
-        }
-        toast('No message linked — saved best hook as custom hook. Link a message to store all hooks.', 'info', 5000);
-      }
-      recipe.updated = new Date().toISOString();
-      logActivity('hook_generated', 'recipe', recipeId, recipe.title, (parsed.hooks || []).length + ' hooks generated');
-      snapshot('AI hooks'); if (maybeAdvanceRecipeStatus) maybeAdvanceRecipeStatus(recipe, 'hooks generated');
-      buildMaps(); render(); syncToTextarea();
-      toast('Generated ' + (parsed.hooks || []).length + ' hooks', 'success');
-    }, function(err) { toast('AI Error: ' + err, 'error'); }, 'ai-generate-hook', BrandService.getSystemPrompt('content'), parseJSON);
-  }
-
-  function aiWriteContent(recipeId, customInstructions) {
-    var recipe = getRecipe(recipeId); if (!recipe) return;
-    if (!LLMService.isConfigured()) { toast('No AI providers configured', 'warning'); return; }
-    toast('Writing ad copy alternatives...', 'info');
-
-    var hook = getEffectiveHook ? getEffectiveHook(recipe) : null;
-    var prompt = 'You are a top-performing Meta Ads copywriter. Write 2 compelling ad copy ALTERNATIVES for this creative. Each should take a different angle or tone.\n';
-    prompt += recipeContextSnippet(recipe);
-    prompt += brandSnippet('content');
-    if (customInstructions) prompt += '\n\nAdditional instructions: ' + customInstructions;
-    prompt += '\n\nRules:\n- Start with the hook' + (hook ? ': "' + hook.text + '"' : '') + '\n- Write for Meta Ads: concise, punchy, action-oriented\n- Each alternative should be DISTINCT in approach\n- Include headline (under 10 words) and CTA button text per alternative\n- Alternative 1: more emotional/story-driven\n- Alternative 2: more direct/benefits-focused\n\nRespond ONLY as JSON: {"alternatives":[{"label":"approach name","ad_copy":"primary text with \\n for line breaks","headline":"short headline","description":"supporting description","cta":"CTA button text"}]}';
-
-    callAIWithRetry(prompt, function(parsed) {
-      var alts = parsed.alternatives || [];
-      if (alts.length === 0) { toast('AI returned no content', 'warning'); return; }
-
-      // Show preview modal
-      var previewAlts = alts.map(function(a) {
-        return {
-          label: a.label || '',
-          sections: [
-            { label: 'Ad Copy', value: (a.ad_copy || '').replace(/\\n/g, '\n') },
-            { label: 'Headline', value: a.headline || '' },
-            { label: 'Description', value: a.description || '' },
-            { label: 'CTA', value: a.cta || '' }
-          ],
-          _data: a
-        };
-      });
-
-      showAIPreview('Choose Ad Copy — ' + truncate(recipe.title, 30), previewAlts, function(idx) {
-        var chosen = alts[idx];
-        recipe.content = recipe.content || {};
-        var paragraphs = (chosen.ad_copy || '').split(/\\n|\n/).filter(function(p) { return p.trim(); });
-        recipe.content.ad_copy = paragraphs.length > 0 ? '<p>' + paragraphs.join('</p><p>') + '</p>' : '<p>' + (chosen.ad_copy || '') + '</p>';
-        if (chosen.headline) recipe.content.headline = chosen.headline;
-        if (chosen.description) recipe.content.description = chosen.description;
-        if (chosen.cta) recipe.content.cta = chosen.cta;
-        recipe.updated = new Date().toISOString();
-        logActivity('content_generated', 'recipe', recipeId, recipe.title, 'Ad copy selected from AI alternatives');
-        snapshot('AI content'); if (maybeAdvanceRecipeStatus) maybeAdvanceRecipeStatus(recipe, 'content written');
-        buildMaps(); render(); syncToTextarea();
-        closeModal();
-        toast('Ad copy applied', 'success');
-      }, {
-        onRegenerate: function(instructions) { aiWriteContent(recipeId, instructions); }
-      });
-    }, function(err) { toast('AI Error: ' + err, 'error'); }, 'ai-generate-content', BrandService.getSystemPrompt('content'), parseJSON);
-  }
-
-
-/* ===== src/30-part2b/16-ai-recipe-media.js ===== */
-  // ============================================================
-  // SECTION 15: AI — RECIPE MEDIA
-  // ============================================================
-
-  function aiImproveContent(recipeId, customInstructions) {
-    var recipe = getRecipe(recipeId); if (!recipe) return;
-    if (!LLMService.isConfigured()) { toast('No AI providers configured', 'warning'); return; }
-    var existing = stripHtml(recipe.content && recipe.content.ad_copy || '');
-    if (!existing || existing.trim().length < 20) { toast('Write some ad copy first — then improve it', 'warning'); return; }
-    toast('Improving ad copy...', 'info');
-
-    var prompt = 'You are a Meta Ads copywriting expert. Improve the following ad copy. Make it more compelling, specific, and action-oriented while keeping the core message.\n\n';
-    prompt += 'CURRENT AD COPY:\n' + existing + '\n';
-    if (recipe.content.headline) prompt += 'CURRENT HEADLINE: ' + recipe.content.headline + '\n';
-    if (recipe.content.cta) prompt += 'CURRENT CTA: ' + recipe.content.cta + '\n';
-    prompt += recipeContextSnippet(recipe);
-    prompt += brandSnippet('content');
-    if (customInstructions) prompt += '\n\nSpecific improvement direction: ' + customInstructions;
-    prompt += '\n\nRules:\n- Keep the same overall message and structure\n- Sharpen the language — remove filler words, strengthen verbs\n- Make the hook more scroll-stopping\n- Improve the CTA urgency\n- Keep the brand voice consistent\n\nRespond ONLY as JSON: {"ad_copy":"improved text with \\n for line breaks","headline":"improved headline","cta":"improved CTA","changes":"brief summary of what you changed and why"}';
-
-    callAIWithRetry(prompt, function(parsed) {
-      var improved = parsed.ad_copy || '';
-      if (!improved) { toast('AI returned empty content', 'warning'); return; }
-
-      // Show preview: original vs improved
-      var previewAlts = [
-        { label: 'Original (Current)', sections: [
-          { label: 'Ad Copy', value: existing },
-          { label: 'Headline', value: recipe.content.headline || '' },
-          { label: 'CTA', value: recipe.content.cta || '' }
-        ] },
-        { label: 'Improved' + (parsed.changes ? ' — ' + truncate(parsed.changes, 40) : ''), sections: [
-          { label: 'Ad Copy', value: improved.replace(/\\n/g, '\n') },
-          { label: 'Headline', value: parsed.headline || recipe.content.headline || '' },
-          { label: 'CTA', value: parsed.cta || recipe.content.cta || '' }
-        ], _data: parsed }
-      ];
-
-      showAIPreview('Improve Ad Copy — ' + truncate(recipe.title, 30), previewAlts, function(idx) {
-        if (idx === 0) { closeModal(); toast('Kept original', 'info'); return; }
-        var paragraphs = improved.split(/\\n|\n/).filter(function(p) { return p.trim(); });
-        recipe.content.ad_copy = '<p>' + paragraphs.join('</p><p>') + '</p>';
-        if (parsed.headline) recipe.content.headline = parsed.headline;
-        if (parsed.cta) recipe.content.cta = parsed.cta;
-        recipe.updated = new Date().toISOString();
-        logActivity('content_generated', 'recipe', recipeId, recipe.title, 'Ad copy improved via AI');
-        snapshot('AI improve'); buildMaps(); render(); syncToTextarea();
-        closeModal();
-        toast('Improved ad copy applied', 'success');
-      }, {
-        onRegenerate: function(instructions) { aiImproveContent(recipeId, instructions); }
-      });
-    }, function(err) { toast('AI Error: ' + err, 'error'); }, 'ai-improve-content', BrandService.getSystemPrompt('content'), parseJSON);
-  }
-
-  function aiGenerateBrief(recipeId, customInstructions) {
-    var recipe = getRecipe(recipeId); if (!recipe) return;
-    if (!LLMService.isConfigured()) { toast('No AI providers configured', 'warning'); return; }
-    toast('Generating creative brief alternatives...', 'info');
-
-    var prompt = 'You are a creative director writing creative briefs for Meta Ads images. Generate 2 DIFFERENT brief alternatives — each with a distinct visual approach.\n';
-    prompt += recipeContextSnippet(recipe);
-    prompt += brandSnippet('media');
-    if (customInstructions) prompt += '\n\nAdditional instructions: ' + customInstructions;
-    prompt += '\n\nRules:\n- Each brief must describe a DIFFERENT visual direction\n- Alternative 1: more lifestyle/emotional approach\n- Alternative 2: more product-focused/direct approach\n- Include: setting, subjects, composition, lighting, mood, key visual elements\n- Reference the persona and what resonates with them\n- Consider the visual format: ' + (S.formatMap[recipe.visual_format_id] ? S.formatMap[recipe.visual_format_id].name : 'not specified') + '\n\nRespond ONLY as JSON: {"alternatives":[{"label":"approach name","creative_brief":"detailed visual description (3-5 sentences)"}]}';
-
-    callAIWithRetry(prompt, function(parsed) {
-      var alts = parsed.alternatives || [];
-      if (alts.length === 0) { toast('AI returned no briefs', 'warning'); return; }
-
-      var previewAlts = alts.map(function(a) {
-        return { label: a.label || '', text: a.creative_brief || '', _data: a };
-      });
-
-      showAIPreview('Choose Creative Brief — ' + truncate(recipe.title, 30), previewAlts, function(idx) {
-        var chosen = alts[idx];
-        recipe.image_brief = recipe.image_brief || {};
-        recipe.image_brief.creative_brief = chosen.creative_brief || '';
-        recipe.updated = new Date().toISOString();
-        logActivity('brief_generated', 'recipe', recipeId, recipe.title, 'Creative brief selected from alternatives');
-        snapshot('AI brief'); if (maybeAdvanceRecipeStatus) maybeAdvanceRecipeStatus(recipe, 'brief generated');
-        buildMaps(); render(); syncToTextarea();
-        closeModal();
-        toast('Creative brief applied', 'success');
-      }, {
-        onRegenerate: function(instructions) { aiGenerateBrief(recipeId, instructions); }
-      });
-    }, function(err) { toast('AI Error: ' + err, 'error'); }, 'ai-generate-brief', BrandService.getSystemPrompt('media'), parseJSON);
-  }
-
-  function aiGenerateImagePrompt(recipeId, customInstructions) {
-    var recipe = getRecipe(recipeId); if (!recipe) return;
-    if (!LLMService.isConfigured()) { toast('No AI providers configured', 'warning'); return; }
-    toast('Generating AI image prompt...', 'info');
-
-    var brief = (recipe.image_brief && recipe.image_brief.creative_brief) || '';
-    var params = (recipe.image_brief && recipe.image_brief.prompt_params) || {};
-
-    var prompt = 'You are an expert at writing AI image generation prompts (for Midjourney, DALL-E, or Flux).\n';
-    if (brief) prompt += '\nCreative brief: ' + brief;
-    prompt += recipeContextSnippet(recipe);
-    prompt += brandSnippet('media');
-    if (customInstructions) prompt += '\n\nAdditional instructions: ' + customInstructions;
-    prompt += '\n\nRules:\n- Write a detailed, specific image generation prompt\n- Include: subject, setting, composition, lighting, camera angle, mood, color palette\n- Visual approach: ' + (params.visual_approach || 'photography') + '\n- Aspect ratio: ' + (params.aspect_ratio || '1:1') + '\n' + (params.mood ? '- Mood: ' + params.mood + '\n' : '') + '- Do NOT include text/typography in the image prompt (text overlays are added separately)\n- Write a negative prompt to exclude unwanted elements\n\nRespond ONLY as JSON: {"ai_prompt":"detailed image generation prompt...","negative_prompt":"elements to exclude..."}';
-
-    callAIWithRetry(prompt, function(parsed) {
-      recipe.image_brief = recipe.image_brief || {};
-      recipe.image_brief.ai_prompt = parsed.ai_prompt || '';
-      recipe.image_brief.prompt_params = recipe.image_brief.prompt_params || {};
-      if (parsed.negative_prompt) recipe.image_brief.prompt_params.negative_prompt = parsed.negative_prompt;
-      recipe.updated = new Date().toISOString();
-      logActivity('media_generated', 'recipe', recipeId, recipe.title, 'AI image prompt generated');
-      snapshot('AI prompt'); if (maybeAdvanceRecipeStatus) maybeAdvanceRecipeStatus(recipe, 'image prompt generated');
-      buildMaps(); render(); syncToTextarea();
-      toast('AI image prompt generated', 'success');
-    }, function(err) { toast('AI Error: ' + err, 'error'); }, 'ai-generate-prompt', BrandService.getSystemPrompt('media'), parseJSON);
-  }
-
-  function aiGenerateBlueprint(recipeId, customInstructions) {
-    var recipe = getRecipe(recipeId); if (!recipe) return;
-    if (!LLMService.isConfigured()) { toast('No AI providers configured', 'warning'); return; }
-    toast('Generating video blueprint...', 'info');
-
-    var vid = recipe.video || {};
-    var duration = vid.duration_seconds || 30;
-    var format = vid.format || 'Reel';
-
-    var prompt = 'You are a video production expert creating a scene-by-scene blueprint for a Meta Ads video.\n';
-    prompt += recipeContextSnippet(recipe);
-    prompt += brandSnippet('content');
-    if (customInstructions) prompt += '\n\nAdditional instructions: ' + customInstructions;
-    prompt += '\n\nVideo specs:\n- Duration: ' + duration + ' seconds\n- Format: ' + format + '\n- Aspect ratio: ' + (vid.aspect_ratio || '9:16') + '\n' + (vid.concept ? '- Concept: ' + vid.concept + '\n' : '');
-    prompt += '\n\nRules:\n- Break the video into 4-6 distinct scenes\n- Each scene should have a clear purpose in the narrative arc\n- First scene = HOOK (must grab attention in first 2 seconds)\n- Last scene = CTA / brand moment\n- Include timestamp for each scene (e.g., "0:00-0:05")\n- Scene descriptions should be actionable for a production team\n- Total scene durations must add up to approximately ' + duration + ' seconds\n\nRespond ONLY as JSON: {"scenes":[{"name":"scene name","description":"what happens, visuals, action...","timestamp":"0:00-0:05","duration":"5s"}]}';
-
-    callAIWithRetry(prompt, function(parsed) {
-      recipe.video = recipe.video || {};
-      recipe.video.blueprint = recipe.video.blueprint || {};
-      recipe.video.blueprint.scenes = (parsed.scenes || []).map(function(s) {
-        return { name: s.name || '', description: s.description || '', timestamp: s.timestamp || '', duration: s.duration || '' };
-      });
-      recipe.updated = new Date().toISOString();
-      logActivity('media_generated', 'recipe', recipeId, recipe.title, (parsed.scenes || []).length + ' video scenes generated');
-      snapshot('AI blueprint'); if (maybeAdvanceRecipeStatus) maybeAdvanceRecipeStatus(recipe, 'blueprint generated');
-      buildMaps(); render(); syncToTextarea();
-      toast('Generated ' + (parsed.scenes || []).length + ' scene blueprint', 'success');
-    }, function(err) { toast('AI Error: ' + err, 'error'); }, 'ai-generate-blueprint', BrandService.getSystemPrompt('content'), parseJSON);
-  }
-
-  function aiGenerateScript(recipeId, customInstructions) {
-    var recipe = getRecipe(recipeId); if (!recipe) return;
-    if (!LLMService.isConfigured()) { toast('No AI providers configured', 'warning'); return; }
-
-    var scenes = (recipe.video && recipe.video.blueprint && recipe.video.blueprint.scenes) || [];
-    if (scenes.length === 0) { toast('Generate a blueprint first — the script is built from scenes', 'warning'); return; }
-    toast('Generating detailed script...', 'info');
-
-    var sceneSummary = scenes.map(function(s, i) { return 'Scene ' + (i + 1) + ' (' + (s.timestamp || '?') + '): ' + (s.name || '') + ' — ' + truncate(s.description || '', 60); }).join('\n');
-
-    var prompt = 'You are a video production scriptwriter. Create a detailed production script based on the scene blueprint below.\n';
-    prompt += recipeContextSnippet(recipe);
-    prompt += '\n\nScene blueprint:\n' + sceneSummary;
-    prompt += brandSnippet('content');
-    if (customInstructions) prompt += '\n\nAdditional instructions: ' + customInstructions;
-    prompt += '\n\nRules:\n- Create one row per scene (or split longer scenes into 2 rows)\n- Each row needs: time (timestamp), dialogue (what talent says), visual (what viewer sees), camera (camera angle/movement), audio (music/SFX)\n- Dialogue should match the brand voice and style\n- Camera directions should be specific: "close-up face", "wide establishing shot", "product detail B-roll"\n- Audio should enhance the emotional arc\n\nRespond ONLY as JSON: {"rows":[{"time":"0:00","dialogue":"what is said...","visual":"what is shown...","camera":"camera direction...","audio":"music/sfx note..."}]}';
-
-    callAIWithRetry(prompt, function(parsed) {
-      recipe.video = recipe.video || {};
-      recipe.video.script = recipe.video.script || {};
-      recipe.video.script.rows = (parsed.rows || []).map(function(r) {
-        return { time: r.time || '', dialogue: r.dialogue || '', visual: r.visual || '', camera: r.camera || '', audio: r.audio || '' };
-      });
-      recipe.updated = new Date().toISOString();
-      logActivity('script_generated', 'recipe', recipeId, recipe.title, (parsed.rows || []).length + ' script rows generated');
-      snapshot('AI script'); buildMaps(); render(); syncToTextarea();
-      toast('Generated ' + (parsed.rows || []).length + '-row script', 'success');
-    }, function(err) { toast('AI Error: ' + err, 'error'); }, 'ai-generate-script', BrandService.getSystemPrompt('content'), parseJSON);
-  }
-
-
-/* ===== src/30-part2b/17-ai-campaign-suggestions.js ===== */
-  // ============================================================
-  // SECTION 15.5: AI — CAMPAIGN RECIPE SUGGESTIONS
-  // ============================================================
-
-  function aiSuggestCampaignRecipes(campaignId) {
-    var camp = getCampaign(campaignId); if (!camp) return;
-    if (!LLMService.isConfigured()) { toast('No AI providers configured', 'warning'); return; }
-    toast('AI analyzing campaign dimensions...', 'info');
-
-    var personas = (camp.persona_ids || []).map(function(id) { var p = S.personaMap[id]; return p ? { name: p.name, description: truncate(p.description || '', 80) } : null; }).filter(Boolean);
-    var messages = (camp.message_ids || []).map(function(id) { var m = S.messageMap[id]; return m ? { title: m.title, theme: m.theme || '', funnel: (m.funnel_stages || []).join(',') } : null; }).filter(Boolean);
-    var styles = (camp.style_ids || []).map(function(id) { var s = S.styleMap[id]; return s ? { name: s.name } : null; }).filter(Boolean);
-    var formats = (camp.format_ids || []).map(function(id) { var f = S.formatMap[id]; return f ? { name: f.name, category: f.category || '' } : null; }).filter(Boolean);
-
-    if (personas.length === 0 && messages.length === 0) {
-      toast('Select personas and messages in the campaign targeting first', 'warning');
-      return;
-    }
-
-    var objective = (Constants.CAMPAIGN_OBJECTIVES || []).find(function(o) { return o.id === camp.objective; });
-
-    var prompt = 'You are a Meta Ads campaign strategist. Analyze the available creative dimensions and suggest the best recipe combinations for this campaign.\n\n';
-    prompt += 'Campaign: ' + camp.name + '\n';
-    if (objective) prompt += 'Objective: ' + objective.name + '\n';
-    if (camp.funnel_stage) { var fs = S.funnelStageMap[camp.funnel_stage]; if (fs) prompt += 'Funnel focus: ' + fs.name + '\n'; }
-    if (camp.date_start) prompt += 'Date range: ' + camp.date_start + ' to ' + (camp.date_end || '?') + '\n';
-    if (camp.ai_instructions) prompt += 'Special instructions: ' + camp.ai_instructions + '\n';
-
-    prompt += '\nAvailable Personas:\n' + personas.map(function(p, i) { return (i + 1) + '. ' + p.name + ' — ' + p.description; }).join('\n');
-    prompt += '\n\nAvailable Messages:\n' + messages.map(function(m, i) { return (i + 1) + '. ' + m.title + (m.theme ? ' [' + m.theme + ']' : '') + (m.funnel ? ' (Funnel: ' + m.funnel + ')' : ''); }).join('\n');
-    if (styles.length) prompt += '\n\nAvailable Styles:\n' + styles.map(function(s, i) { return (i + 1) + '. ' + s.name; }).join('\n');
-    if (formats.length) prompt += '\n\nAvailable Formats:\n' + formats.map(function(f, i) { return (i + 1) + '. ' + f.name + (f.category ? ' [' + f.category + ']' : ''); }).join('\n');
-
-    prompt += brandSnippet('research');
-
-    prompt += '\n\nRules:\n- Suggest 4-8 specific recipe combinations (persona × message × style × format)\n- For each, explain WHY this combination works for the campaign objective\n- Prioritize diversity — don\'t repeat the same persona or message too often\n- Consider funnel stage matching (TOFU messages with awareness personas, BOFU with conversion personas)\n- Suggest media type (image or video) for each based on format\n- Order from highest priority to lowest\n\nRespond ONLY as JSON: {"suggestions":[{"persona_name":"...","message_title":"...","style_name":"...","format_name":"...","media_type":"image|video","reasoning":"why this combo works...","priority":"high|medium|low"}]}';
-
-    callAIWithRetry(prompt, function(parsed) {
-      var suggestions = parsed.suggestions || [];
-      if (suggestions.length === 0) { toast('AI returned no suggestions', 'warning'); return; }
-
-      // Map names back to IDs
-      var mappedSuggestions = suggestions.map(function(s) {
-        var pMatch = (S.data.personas || []).find(function(p) { return p.name === s.persona_name; });
-        var mMatch = (S.data.messages || []).find(function(m) { return m.title === s.message_title; });
-        var sMatch = (S.data.styles || []).find(function(st) { return st.name === s.style_name; });
-        var fMatch = (S.data.visual_formats || []).find(function(f) { return f.name === s.format_name; });
-        return {
-          persona_id: pMatch ? pMatch.id : '', message_id: mMatch ? mMatch.id : '',
-          style_id: sMatch ? sMatch.id : '', visual_format_id: fMatch ? fMatch.id : '',
-          media_type: s.media_type || 'image', reasoning: s.reasoning || '', priority: s.priority || 'medium',
-          title: (pMatch ? pMatch.name : '?') + ' × ' + (mMatch ? mMatch.title : '?') + ' × ' + (sMatch ? sMatch.name : '?') + ' × ' + (fMatch ? fMatch.name : '?'),
-          _selected: true
-        };
-      });
-
-      // Show results in modal for user to review and select
-      var html = '<div style="margin-bottom:var(--cp-space-3)">';
-      html += '<p class="cp-text-muted">AI suggested ' + mappedSuggestions.length + ' recipe combinations. Select which ones to create.</p>';
-      html += '</div>';
-
-      for (var i = 0; i < mappedSuggestions.length; i++) {
-        var ms = mappedSuggestions[i];
-        html += '<div class="cp-card" style="margin-bottom:var(--cp-space-2);padding:var(--cp-space-3);cursor:pointer" data-suggestion-idx="' + i + '">';
-        html += '<div style="display:flex;align-items:center;gap:var(--cp-space-2);margin-bottom:6px">';
-        html += '<input type="checkbox" class="cp-ai-suggestion-check" data-idx="' + i + '" checked>';
-        html += '<strong style="flex:1">' + esc(ms.title) + '</strong>';
-        html += priorityBadge(ms.priority) + ' ' + mediaTypeBadge(ms.media_type);
-        html += '</div>';
-        html += '<p style="font-size:var(--cp-font-size-xs);color:var(--cp-text-secondary);margin:0">' + esc(ms.reasoning) + '</p>';
-        html += '</div>';
-      }
-
-      openModal('AI Recipe Suggestions — ' + camp.name, html, {
-        titleIcon: 'sparkles', size: 'lg',
-        saveLabel: icon('plus') + ' Create Selected Recipes',
-        onSave: function() {
-          snapshot('AI campaign recipes');
-          var count = 0;
-          $('.cp-ai-suggestion-check:checked').each(function() {
-            var idx = parseInt($(this).data('idx'), 10);
-            var s = mappedSuggestions[idx];
-            if (s) {
-              createEntity('recipe', {
-                persona_id: s.persona_id, message_id: s.message_id,
-                style_id: s.style_id, visual_format_id: s.visual_format_id,
-                media_type: s.media_type, priority: s.priority, campaign_id: campaignId
-              });
-              count++;
-            }
-          });
-          logActivity('recipe_batch_generated', 'campaign', campaignId, camp.name, 'AI suggested ' + count + ' recipes for campaign');
-          closeModal();
-          toast(count + ' AI-suggested recipes created', 'success', 4000);
-        }
-      });
-    }, function(err) { toast('AI Error: ' + err, 'error'); }, 'ai-campaign-recipes', BrandService.getSystemPrompt('research'), parseJSON);
-  }
-
-  function aiGenerateCampaignBrief(campaignId) {
-    var camp = getCampaign(campaignId); if (!camp) return;
-    if (!LLMService.isConfigured()) { toast('No AI providers configured', 'warning'); return; }
-    toast('Generating campaign brief...', 'info');
-
-    var personas = (camp.persona_ids || []).map(function(id) { var p = S.personaMap[id]; return p ? p.name + (p.description ? ': ' + truncate(p.description, 60) : '') : null; }).filter(Boolean);
-    var messages = (camp.message_ids || []).map(function(id) { var m = S.messageMap[id]; return m ? m.title : null; }).filter(Boolean);
-    var styles = (camp.style_ids || []).map(function(id) { var s = S.styleMap[id]; return s ? s.name : null; }).filter(Boolean);
-    var objective = (Constants.CAMPAIGN_OBJECTIVES || []).find(function(o) { return o.id === camp.objective; });
-
-    var prompt = 'You are a senior advertising strategist. Write a comprehensive creative brief for this Meta Ads campaign.\n\n';
-    prompt += 'Campaign: ' + camp.name + '\n';
-    if (objective) prompt += 'Objective: ' + objective.name + '\n';
-    if (camp.funnel_stage) { var fs = S.funnelStageMap[camp.funnel_stage]; if (fs) prompt += 'Funnel focus: ' + fs.name + '\n'; }
-    if (camp.date_start) prompt += 'Timeline: ' + camp.date_start + ' to ' + (camp.date_end || 'ongoing') + '\n';
-    if (camp.budget_notes) prompt += 'Budget: ' + camp.budget_notes + '\n';
-    if (personas.length) prompt += '\nTarget Personas:\n' + personas.map(function(p, i) { return (i + 1) + '. ' + p; }).join('\n');
-    if (messages.length) prompt += '\nKey Messages: ' + messages.join(', ');
-    if (styles.length) prompt += '\nCreative Styles: ' + styles.join(', ');
-    if (camp.ai_instructions) prompt += '\nSpecial Instructions: ' + camp.ai_instructions;
-    prompt += brandSnippet('content');
-    prompt += '\n\nWrite a creative brief covering:\n1. Campaign overview and objective\n2. Target audience insights (from personas)\n3. Key messaging strategy\n4. Creative direction and visual guidelines\n5. Tone of voice\n6. Success metrics and KPIs\n\nWrite in a professional but actionable tone. 200-400 words. Plain text, no markdown.';
-
-    callAIWithRetry(prompt, function(text) {
-      // Clean any JSON wrapping
-      var clean = text.replace(/^```[\s\S]*?\n/, '').replace(/\n```$/, '').replace(/^\{[\s\S]*?"brief"\s*:\s*"/, '').replace(/"\s*\}$/, '').trim();
-      snapshot('AI campaign brief');
-      saveEntityField('campaign', campaignId, 'brief', clean);
-      S.campaignDetailTab = 'brief';
-      buildMaps(); render(); syncToTextarea();
-      toast('Campaign brief generated', 'success');
-    }, function(err) { toast('AI Error: ' + err, 'error'); }, 'ai-campaign-brief', BrandService.getSystemPrompt('content'), parseJSON);
-  }
-
-  function aiAnalyzeCampaignGaps(campaignId) {
-    var camp = getCampaign(campaignId); if (!camp) return;
-    if (!LLMService.isConfigured()) { toast('No AI providers configured', 'warning'); return; }
-    var recipes = (S.data.recipes || []).filter(function(r) { return r.campaign_id === campaignId; });
-    toast('Analyzing coverage gaps...', 'info');
-
-    var personaNames = (camp.persona_ids || []).map(function(id) { var p = S.personaMap[id]; return p ? p.name : null; }).filter(Boolean);
-    var messageNames = (camp.message_ids || []).map(function(id) { var m = S.messageMap[id]; return m ? m.title : null; }).filter(Boolean);
-    var objective = (Constants.CAMPAIGN_OBJECTIVES || []).find(function(o) { return o.id === camp.objective; });
-
-    // Build coverage info
-    var existingCombos = recipes.map(function(r) {
-      var pn = S.personaMap[r.persona_id] ? S.personaMap[r.persona_id].name : '?';
-      var mn = S.messageMap[r.message_id] ? S.messageMap[r.message_id].title : '?';
-      return pn + ' × ' + mn;
-    });
-
-    var prompt = 'You are a campaign strategist analyzing ad creative coverage for a Meta Ads campaign.\n\n';
-    prompt += 'Campaign: ' + camp.name + '\n';
-    if (objective) prompt += 'Objective: ' + objective.name + '\n';
-    prompt += '\nAvailable Personas: ' + personaNames.join(', ');
-    prompt += '\nAvailable Messages: ' + messageNames.join(', ');
-    prompt += '\nExisting recipes (persona × message combos):\n' + (existingCombos.length ? existingCombos.join('\n') : 'None');
-    prompt += brandSnippet('research');
-    prompt += '\n\nAnalyze and provide:\n1. Missing persona×message combinations that should be covered\n2. Over-covered areas (too many recipes for one combo)\n3. Funnel stage gaps (TOFU/MOFU/BOFU balance)\n4. Recommendations for priority additions\n\nKeep it concise and actionable. Plain text, no markdown.';
-
-    callAIWithRetry(prompt, function(text) {
-      var clean = text.replace(/^```[\s\S]*?\n/, '').replace(/\n```$/, '').trim();
-      openModal('Campaign Gap Analysis — ' + camp.name, '<div style="white-space:pre-wrap;line-height:1.7;font-size:var(--cp-font-size-sm)">' + esc(clean) + '</div>', {
-        titleIcon: 'magnifying-glass', size: 'lg', footer: false
-      });
-    }, function(err) { toast('AI Error: ' + err, 'error'); }, 'ai-campaign-gaps', BrandService.getSystemPrompt('research'), parseJSON);
   }
 
 
@@ -18832,7 +14226,7 @@
   function renderCategorySettings() {
     var ppCats = Constants.PAIN_POINT_CATEGORIES || [];
     var fmtCats = Constants.FORMAT_CATEGORIES || [];
-    var objectives = Constants.CAMPAIGN_OBJECTIVES || [];
+    var metaObjMap = Constants.META_OBJECTIVES || {};
     var html = '<div class="cp-settings-panel">';
     html += '<div class="cp-settings-section"><h3>' + icon('bolt') + ' Pain Point Categories</h3>';
     html += '<div class="cp-config-list">';
@@ -18842,9 +14236,12 @@
     html += '<div class="cp-config-list">';
     for (var fi = 0; fi < fmtCats.length; fi++) html += '<div class="cp-config-item"><span class="cp-config-item-name">' + esc(fmtCats[fi].name) + '</span><span class="cp-text-muted">' + icon(fmtCats[fi].icon) + '</span></div>';
     html += '</div></div>';
-    html += '<div class="cp-settings-section"><h3>' + icon('bullseye') + ' Campaign Objectives</h3>';
+    html += '<div class="cp-settings-section"><h3>' + icon('bullseye') + ' Meta Campaign Objectives</h3>';
     html += '<div class="cp-config-list">';
-    for (var oi = 0; oi < objectives.length; oi++) html += '<div class="cp-config-item"><span class="cp-config-item-name">' + esc(objectives[oi].name) + '</span><span class="cp-text-muted">' + icon(objectives[oi].icon) + '</span></div>';
+    for (var ok in metaObjMap) {
+      var mo = metaObjMap[ok];
+      html += '<div class="cp-config-item"><span class="cp-config-item-name">' + esc(mo.label || ok) + '</span><span class="cp-text-muted">' + esc(ok) + '</span></div>';
+    }
     html += '</div></div>';
     html += '<p class="cp-text-muted">These categories are system defaults. Custom category management will be available in a future update.</p>';
     html += '</div>';
@@ -18951,45 +14348,12 @@
   // SECTION 21A: SETTINGS — META v2 TAB
   // ============================================================
   //
-  // Workspace-level Meta defaults + migration controls.
+  // Workspace-level Meta defaults (Page, Pixel, attribution, currency, etc.).
 
   function renderMetaV2Settings() {
-    var setup = (S.meta && S.meta.setup) || {};
     var defaults = (S.meta && S.meta.meta_defaults) || {};
-    var hasLegacy = !!(S.meta && S.meta.legacy_backup);
-    var legacyCount = hasLegacy ? ((S.meta.legacy_backup.campaigns || []).length + ' campaigns + ' + (S.meta.legacy_backup.recipes || []).length + ' recipes') : '';
-    var oldCamps = (S.data.campaigns || []).length;
-    var oldRecipes = (S.data.recipes || []).length;
-    var canMigrate = (oldCamps + oldRecipes) > 0;
 
     var html = '<div class="cp-settings-panel">';
-
-    // --- Feature flag toggle ---
-    html += '<div class="cp-settings-section">';
-    html += '<h3>' + icon('flask') + ' Meta v2 mode</h3>';
-    html += '<p class="cp-text-muted">The Meta v2 hierarchy (Campaign → Ad Set → Ad) is the new working surface for this app. When enabled, the legacy Recipes and Campaigns (v1) sidebar entries are hidden and the new Campaigns workspace takes over.</p>';
-    html += '<label class="cp-form-toggle">';
-    html += '<input type="checkbox" class="cp-v2-toggle-flag"' + (setup.meta_v2 ? ' checked' : '') + '>';
-    html += '<span>Enable Meta v2 mode</span></label>';
-    html += '</div>';
-
-    // --- Migration wizard CTA ---
-    html += '<div class="cp-settings-section">';
-    html += '<h3>' + icon('wand-magic') + ' Migrate legacy data</h3>';
-    if (setup.migrated_to_v2) {
-      html += '<p class="cp-text-muted">This workspace has been migrated.</p>';
-      if (hasLegacy) {
-        html += '<p class="cp-text-muted">Legacy backup: ' + esc(legacyCount) + ' (created ' + formatRelativeTime(S.meta.legacy_backup.timestamp) + ').</p>';
-        html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="v2-discard-legacy">' + icon('trash') + ' Discard legacy backup</button>';
-      }
-      html += '<button class="cp-btn cp-btn-outline" data-action="v2-open-migration" style="margin-left:8px">' + icon('refresh') + ' Run migration again</button>';
-    } else if (canMigrate) {
-      html += '<p>You have ' + oldCamps + ' legacy campaign' + (oldCamps !== 1 ? 's' : '') + ' and ' + oldRecipes + ' recipe' + (oldRecipes !== 1 ? 's' : '') + ' to migrate.</p>';
-      html += '<button class="cp-btn cp-btn-ai" data-action="v2-open-migration">' + icon('wand-magic') + ' Start migration wizard</button>';
-    } else {
-      html += '<p class="cp-text-muted">No legacy data to migrate. You can enable Meta v2 directly above.</p>';
-    }
-    html += '</div>';
 
     // --- Meta defaults ---
     html += '<div class="cp-settings-section">';
@@ -19099,489 +14463,6 @@
   }
 
 
-/* ===== src/30-part2b/22a-migration-importer.js ===== */
-  // ============================================================
-  // SECTION 22A: META v2 MIGRATION IMPORTER (Stage 6)
-  // ============================================================
-  //
-  // Wizard that converts legacy data (campaigns[] + recipes[]) into the
-  // Meta v2 hierarchy (campaigns_v2[] + ad_sets[] + ads[]). Run once per
-  // workspace from Settings → "Migrate legacy data". Preserves all old
-  // data in S.meta.legacy_backup until the user explicitly discards.
-
-  var v2MigrationState = { step: 1, mappings: {}, summary: null };
-
-  // --- Mapping tables (legacy → Meta enum) ---
-
-  var V2_OBJ_MAP = {
-    'obj_leads':       'OUTCOME_LEADS',
-    'obj_awareness':   'OUTCOME_AWARENESS',
-    'obj_conversions': 'OUTCOME_SALES',
-    'obj_traffic':     'OUTCOME_TRAFFIC',
-    'obj_engagement':  'OUTCOME_ENGAGEMENT'
-  };
-  var V2_CAMP_STATUS_MAP = {
-    'planning':  'DRAFT',
-    'active':    'ACTIVE',
-    'paused':    'PAUSED',
-    'completed': 'ARCHIVED',
-    'archived':  'ARCHIVED'
-  };
-  var V2_AD_STATUS_MAP = {
-    'draft':         'hook_ready',
-    'hook_ready':    'hook_ready',
-    'content_ready': 'copy_ready',
-    'media_ready':   'media_ready',
-    'in_review':     'in_review',
-    'approved':      'approved',
-    'live':          'live',
-    'paused':        'paused',
-    'archived':      'archived'
-  };
-  var V2_CREATIVE_TYPE_MAP = {
-    'image':    'single_image',
-    'carousel': 'carousel',
-    'video':    'single_video'
-  };
-
-  // --- Entry point ---
-
-  function openMigrationWizard() {
-    var oldCamps = (S.data.campaigns || []).length;
-    var oldRecipes = (S.data.recipes || []).length;
-    if (oldCamps === 0 && oldRecipes === 0) {
-      toast('No legacy data to migrate. You can enable Meta v2 directly from Settings.', 'info');
-      return;
-    }
-    if (S.meta.setup && S.meta.setup.migrated_to_v2) {
-      openConfirmDialog({
-        title: 'Already migrated',
-        message: 'This workspace has already been migrated to Meta v2. Run again anyway? (Existing v2 entities will be preserved; legacy data will be re-imported alongside.)',
-        confirmLabel: 'Run again',
-        onConfirm: function() { closeConfirmDialog(); v2MigrationState = { step: 1, mappings: {}, summary: null }; renderMigrationWizardStep(); }
-      });
-      return;
-    }
-    v2MigrationState = { step: 1, mappings: {}, summary: null };
-    renderMigrationWizardStep();
-  }
-
-  function renderMigrationWizardStep() {
-    var step = v2MigrationState.step;
-    var html = '<div class="cp-v2-migration-wizard">';
-    html += renderMigrationStepIndicator(step);
-    html += '<div class="cp-v2-migration-body">';
-    if (step === 1)      html += renderMigrationStep1Backup();
-    else if (step === 2) html += renderMigrationStep2Objectives();
-    else if (step === 3) html += renderMigrationStep3AdSets();
-    else if (step === 4) html += renderMigrationStep4Preview();
-    else if (step === 5) html += renderMigrationStep5Summary();
-    html += '</div>';
-    html += '<div class="cp-v2-migration-footer">';
-    if (step > 1 && step < 5) html += '<button class="cp-btn cp-btn-outline" data-action="v2-mig-back">' + icon('arrow-left') + ' Back</button>';
-    else html += '<span></span>';
-    if (step < 4)      html += '<button class="cp-btn cp-btn-primary" data-action="v2-mig-next">Next ' + icon('arrow-right') + '</button>';
-    else if (step === 4) html += '<button class="cp-btn cp-btn-ai" data-action="v2-mig-run">' + icon('bolt') + ' Run migration</button>';
-    else if (step === 5) html += '<button class="cp-btn cp-btn-primary" data-action="close-modal">Done</button>';
-    html += '</div></div>';
-
-    openModal('Migrate to Meta v2 — Step ' + step + ' of 5', html, {
-      titleIcon: 'wand-magic', size: 'xl', footer: false
-    });
-
-    // Step navigation
-    $(document).off('click.cpv2-mig-next').on('click.cpv2-mig-next', '[data-action="v2-mig-next"]', function(e) {
-      e.preventDefault();
-      v2MigrationState.step++;
-      renderMigrationWizardStep();
-    });
-    $(document).off('click.cpv2-mig-back').on('click.cpv2-mig-back', '[data-action="v2-mig-back"]', function(e) {
-      e.preventDefault();
-      v2MigrationState.step--;
-      renderMigrationWizardStep();
-    });
-    $(document).off('click.cpv2-mig-run').on('click.cpv2-mig-run', '[data-action="v2-mig-run"]', function(e) {
-      e.preventDefault();
-      runMigration();
-    });
-  }
-
-  function renderMigrationStepIndicator(currentStep) {
-    var steps = ['Backup', 'Objectives', 'Ad Sets', 'Preview', 'Done'];
-    var html = '<div class="cp-v2-migration-steps">';
-    for (var i = 0; i < steps.length; i++) {
-      var s = i + 1;
-      var cls = s === currentStep ? ' cp-v2-mig-step-active' : (s < currentStep ? ' cp-v2-mig-step-done' : '');
-      html += '<div class="cp-v2-mig-step' + cls + '">';
-      html += '<span class="cp-v2-mig-step-num">' + (s < currentStep ? icon('circle-check') : s) + '</span>';
-      html += '<span class="cp-v2-mig-step-label">' + esc(steps[i]) + '</span>';
-      html += '</div>';
-      if (i < steps.length - 1) html += '<div class="cp-v2-mig-step-connector"></div>';
-    }
-    html += '</div>';
-    return html;
-  }
-
-  // --- Step 1: Backup confirmation ---
-
-  function renderMigrationStep1Backup() {
-    var oldCamps = (S.data.campaigns || []).length;
-    var oldRecipes = (S.data.recipes || []).length;
-    var oldPersonas = (S.data.personas || []).length;
-    var oldMessages = (S.data.messages || []).length;
-
-    var html = '<h3>' + icon('shield') + ' Backup before we begin</h3>';
-    html += '<p>Your existing workspace contains:</p>';
-    html += '<div class="cp-v2-mig-stats">';
-    html += '<div class="cp-v2-mig-stat"><div class="cp-v2-mig-stat-val">' + oldCamps + '</div><div class="cp-v2-mig-stat-lbl">Campaigns</div></div>';
-    html += '<div class="cp-v2-mig-stat"><div class="cp-v2-mig-stat-val">' + oldRecipes + '</div><div class="cp-v2-mig-stat-lbl">Recipes</div></div>';
-    html += '<div class="cp-v2-mig-stat"><div class="cp-v2-mig-stat-val">' + oldPersonas + '</div><div class="cp-v2-mig-stat-lbl">Personas (kept)</div></div>';
-    html += '<div class="cp-v2-mig-stat"><div class="cp-v2-mig-stat-val">' + oldMessages + '</div><div class="cp-v2-mig-stat-lbl">Messages (kept)</div></div>';
-    html += '</div>';
-
-    html += '<div class="cp-card cp-v2-mig-info-box">';
-    html += '<h4>' + icon('info') + ' What this wizard does</h4>';
-    html += '<ul>';
-    html += '<li>Each legacy <strong>Campaign</strong> becomes a new Meta-shaped <strong>Campaign</strong> with sensible defaults (objective mapped, status mapped, brief preserved).</li>';
-    html += '<li>For each legacy campaign, recipes are grouped by their <code>persona_id</code> and become one <strong>Ad Set</strong> per persona.</li>';
-    html += '<li>Each <strong>recipe</strong> becomes an <strong>Ad</strong> under its persona\'s Ad Set, preserving hook, copy, media briefs, status, assignee, and dates.</li>';
-    html += '<li>The Library (personas, messages, styles, formats, pain points) stays exactly as it is — those are reusable resources.</li>';
-    html += '<li>All legacy data is backed up to <code>S.meta.legacy_backup</code> so you can recover anything. Old views disappear from the sidebar after migration.</li>';
-    html += '</ul>';
-    html += '</div>';
-    return html;
-  }
-
-  // --- Step 2: Objective mapping ---
-
-  function renderMigrationStep2Objectives() {
-    var camps = S.data.campaigns || [];
-    var html = '<h3>' + icon('bullseye-arrow') + ' Map legacy objectives to Meta objectives</h3>';
-    html += '<p class="cp-text-muted">We\'ve pre-filled likely matches. Adjust any that look wrong.</p>';
-
-    if (!v2MigrationState.mappings.objectives) v2MigrationState.mappings.objectives = {};
-    var objMap = v2MigrationState.mappings.objectives;
-
-    html += '<table class="cp-v2-mig-mapping-table"><thead><tr><th>Campaign</th><th>Legacy objective</th><th>Meta objective</th></tr></thead><tbody>';
-    for (var i = 0; i < camps.length; i++) {
-      var c = camps[i];
-      var legacyObj = (Constants.CAMPAIGN_OBJECTIVES || []).find(function(o) { return o.id === c.objective; });
-      var legacyLabel = legacyObj ? legacyObj.name : (c.objective || '(none)');
-      var defaultMeta = V2_OBJ_MAP[c.objective] || 'OUTCOME_LEADS';
-      if (!objMap[c.id]) objMap[c.id] = defaultMeta;
-      html += '<tr><td><strong>' + esc(c.name) + '</strong></td>';
-      html += '<td>' + esc(legacyLabel) + '</td>';
-      html += '<td><select class="cp-select cp-v2-mig-obj-select" data-camp-id="' + esc(c.id) + '">';
-      for (var ok in Constants.META_OBJECTIVES) {
-        var oSel = (objMap[c.id] === ok) ? ' selected' : '';
-        html += '<option value="' + ok + '"' + oSel + '>' + esc(Constants.META_OBJECTIVES[ok].label) + '</option>';
-      }
-      html += '</select></td></tr>';
-    }
-    html += '</tbody></table>';
-
-    $(document).off('change.cpv2-mig-obj').on('change.cpv2-mig-obj', '.cp-v2-mig-obj-select', function() {
-      objMap[$(this).data('camp-id')] = $(this).val();
-    });
-    return html;
-  }
-
-  // --- Step 3: Ad Set grouping preview ---
-
-  function renderMigrationStep3AdSets() {
-    var camps = S.data.campaigns || [];
-    var recipes = S.data.recipes || [];
-
-    var html = '<h3>' + icon('crosshairs') + ' Ad Set grouping preview</h3>';
-    html += '<p class="cp-text-muted">Each legacy campaign\'s recipes are grouped by persona. Each group becomes one Ad Set.</p>';
-
-    for (var i = 0; i < camps.length; i++) {
-      var c = camps[i];
-      var campRecipes = recipes.filter(function(r) { return r.campaign_id === c.id; });
-      // Group by persona_id
-      var groups = {};
-      campRecipes.forEach(function(r) {
-        var key = r.persona_id || '__unassigned__';
-        groups[key] = groups[key] || [];
-        groups[key].push(r);
-      });
-      var groupKeys = Object.keys(groups);
-
-      html += '<div class="cp-card cp-v2-mig-camp-card">';
-      html += '<div class="cp-v2-mig-camp-name">' + icon('bullhorn') + ' ' + esc(c.name) + ' — ' + groupKeys.length + ' Ad Set' + (groupKeys.length !== 1 ? 's' : '') + ', ' + campRecipes.length + ' Ad' + (campRecipes.length !== 1 ? 's' : '') + '</div>';
-      if (groupKeys.length === 0) {
-        html += '<div class="cp-text-muted">No recipes in this campaign. The Campaign will be created without Ad Sets.</div>';
-      } else {
-        html += '<div class="cp-v2-mig-group-list">';
-        for (var gi = 0; gi < groupKeys.length; gi++) {
-          var pid = groupKeys[gi];
-          var persona = (pid === '__unassigned__') ? null : S.personaMap[pid];
-          var personaName = persona ? persona.name : '(no persona)';
-          var groupRecipes = groups[pid];
-          html += '<div class="cp-v2-mig-group">';
-          html += '<span class="cp-v2-mig-group-persona">' + icon('user') + ' ' + esc(personaName) + '</span>';
-          html += '<span class="cp-v2-mig-group-count">' + groupRecipes.length + ' Ad' + (groupRecipes.length !== 1 ? 's' : '') + '</span>';
-          html += '</div>';
-        }
-        html += '</div>';
-      }
-      html += '</div>';
-    }
-    return html;
-  }
-
-  // --- Step 4: Field mapping preview ---
-
-  function renderMigrationStep4Preview() {
-    var sample = (S.data.recipes || []).slice(0, 3);
-    var html = '<h3>' + icon('file-lines') + ' Field mapping preview</h3>';
-    html += '<p class="cp-text-muted">Here\'s how the first few recipes will become Ads. Click "Run migration" when you\'re ready.</p>';
-
-    if (sample.length === 0) {
-      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No recipes to migrate.</p></div>';
-      return html;
-    }
-
-    for (var i = 0; i < sample.length; i++) {
-      var r = sample[i];
-      var newAd = mapRecipeToAd(r);
-      html += '<div class="cp-card cp-v2-mig-preview-card">';
-      html += '<div class="cp-v2-mig-preview-header">';
-      html += '<div><strong>' + icon('shuffle') + ' Recipe:</strong> ' + esc(r.title || 'Untitled') + '</div>';
-      html += '<div class="cp-text-muted" style="font-size:11px;margin-top:2px">→ Will become Ad: <strong>' + esc(newAd.name) + '</strong></div>';
-      html += '</div>';
-      html += '<div class="cp-v2-mig-preview-fields">';
-      html += '<div><span class="cp-v2-mig-field-key">Creative type</span><span class="cp-v2-mig-field-val">' + esc(newAd.creative_type) + '</span></div>';
-      html += '<div><span class="cp-v2-mig-field-key">Status</span><span class="cp-v2-mig-field-val">' + esc(newAd.pipeline_status) + '</span></div>';
-      if (newAd.hook.text) html += '<div><span class="cp-v2-mig-field-key">Hook</span><span class="cp-v2-mig-field-val">' + esc(truncate(newAd.hook.text, 80)) + '</span></div>';
-      if (newAd.creative.primary_text) html += '<div><span class="cp-v2-mig-field-key">Primary text</span><span class="cp-v2-mig-field-val">' + esc(truncate(newAd.creative.primary_text, 80)) + '</span></div>';
-      if (newAd.creative.headline) html += '<div><span class="cp-v2-mig-field-key">Headline</span><span class="cp-v2-mig-field-val">' + esc(newAd.creative.headline) + '</span></div>';
-      if (newAd.creative.cta_type) html += '<div><span class="cp-v2-mig-field-key">CTA</span><span class="cp-v2-mig-field-val">' + esc(newAd.creative.cta_type) + '</span></div>';
-      html += '</div>';
-      html += '</div>';
-    }
-
-    if ((S.data.recipes || []).length > 3) {
-      html += '<div class="cp-text-muted">+ ' + ((S.data.recipes || []).length - 3) + ' more recipes will be migrated the same way.</div>';
-    }
-    return html;
-  }
-
-  // --- Step 5: Summary ---
-
-  function renderMigrationStep5Summary() {
-    var sum = v2MigrationState.summary || {};
-    var html = '<h3>' + icon('circle-check') + ' Migration complete</h3>';
-    html += '<p>Your workspace has been migrated to Meta v2.</p>';
-    html += '<div class="cp-v2-mig-stats">';
-    html += '<div class="cp-v2-mig-stat"><div class="cp-v2-mig-stat-val">' + (sum.campaigns || 0) + '</div><div class="cp-v2-mig-stat-lbl">Campaigns</div></div>';
-    html += '<div class="cp-v2-mig-stat"><div class="cp-v2-mig-stat-val">' + (sum.ad_sets || 0) + '</div><div class="cp-v2-mig-stat-lbl">Ad Sets</div></div>';
-    html += '<div class="cp-v2-mig-stat"><div class="cp-v2-mig-stat-val">' + (sum.ads || 0) + '</div><div class="cp-v2-mig-stat-lbl">Ads</div></div>';
-    html += '<div class="cp-v2-mig-stat"><div class="cp-v2-mig-stat-val">' + (sum.errors || 0) + '</div><div class="cp-v2-mig-stat-lbl">Errors</div></div>';
-    html += '</div>';
-    html += '<div class="cp-card cp-v2-mig-info-box">';
-    html += '<h4>' + icon('shield') + ' Your legacy data is safe</h4>';
-    html += '<p>Old campaigns + recipes are preserved in <code>S.meta.legacy_backup</code>. You can recover or re-import anytime from Settings.</p>';
-    html += '</div>';
-    return html;
-  }
-
-  // --- Recipe → Ad field mapping ---
-
-  function mapRecipeToAd(r) {
-    var hook = r.hook || {};
-    var content = r.content || {};
-    var imgBrief = r.image_brief || {};
-    var vid = r.video || {};
-    return {
-      name: r.title || 'Migrated Ad',
-      creative_type: V2_CREATIVE_TYPE_MAP[r.media_type] || 'single_image',
-      pipeline_status: V2_AD_STATUS_MAP[r.status] || 'hook_ready',
-      hook: {
-        text: hook.custom_hook || '',
-        type: hook.hook_type || 'direct',
-        source_message_id: r.message_id || '',
-        selected_hook_id: hook.selected_hook_id || ''
-      },
-      creative: {
-        primary_text: stripHtml(content.ad_copy || ''),
-        headline: content.headline || '',
-        description: content.description || '',
-        cta_type: 'LEARN_MORE',  // Legacy stored as free text; default to LEARN_MORE
-        cta_link: '',
-        display_link: '',
-        tracking_params: ''
-      },
-      media: {
-        image: {
-          asset_id: '',
-          ai_prompt: imgBrief.ai_prompt || '',
-          brief: imgBrief.creative_brief || '',
-          aspect_ratio: (imgBrief.prompt_params && imgBrief.prompt_params.aspect_ratio) || '1:1',
-          negative_prompt: (imgBrief.prompt_params && imgBrief.prompt_params.negative_prompt) || '',
-          reference_image_ids: (imgBrief.reference_image_ids || []).slice()
-        },
-        video: {
-          asset_id: '',
-          duration_seconds: vid.duration_seconds || 30,
-          aspect_ratio: vid.aspect_ratio || '9:16',
-          concept: vid.concept || '',
-          blueprint: vid.blueprint || { scenes: [] },
-          script: vid.script || { rows: [] }
-        },
-        carousel_cards: []
-      },
-      assigned_to: r.assigned_to || '',
-      due_date: r.due_date || '',
-      production_notes: r.production_notes || '',
-      review_notes: r.review_notes || '',
-      tags: (r.tags || []).slice(),
-      created: r.created || new Date().toISOString(),
-      updated: r.updated || r.created || new Date().toISOString()
-    };
-  }
-
-  // --- The actual migration runner ---
-
-  function runMigration() {
-    snapshot('Legacy migration');
-    var summary = { campaigns: 0, ad_sets: 0, ads: 0, errors: 0 };
-    var objMap = (v2MigrationState.mappings && v2MigrationState.mappings.objectives) || {};
-
-    // Backup legacy data
-    S.meta.legacy_backup = {
-      timestamp: new Date().toISOString(),
-      campaigns: deepClone(S.data.campaigns || []),
-      recipes: deepClone(S.data.recipes || [])
-    };
-
-    var legacyCamps = S.data.campaigns || [];
-    var legacyRecipes = S.data.recipes || [];
-
-    legacyCamps.forEach(function(c) {
-      try {
-        // Create the v2 Campaign
-        var newCamp = createEntity('campaign_v2', {
-          name: c.name || 'Migrated Campaign',
-          description: c.description || '',
-          objective: objMap[c.id] || V2_OBJ_MAP[c.objective] || 'OUTCOME_LEADS',
-          status: V2_CAMP_STATUS_MAP[c.status] || 'DRAFT',
-          buying_type: 'AUCTION',
-          budget_mode: 'CBO',
-          bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
-          start_time: c.date_start ? (new Date(c.date_start)).toISOString() : '',
-          stop_time: c.date_end ? (new Date(c.date_end)).toISOString() : '',
-          brief: c.brief || '',
-          ai_instructions: c.ai_instructions || '',
-          notes: c.budget_notes || c.target_audience_notes ? [c.budget_notes, c.target_audience_notes].filter(Boolean).join('\n\n') : (c.notes || ''),
-          tags: (c.tags || []).slice(),
-          created: c.created || new Date().toISOString(),
-          updated: c.updated || c.created || new Date().toISOString()
-        });
-        if (!newCamp) { summary.errors++; return; }
-        summary.campaigns++;
-
-        // Group recipes by persona
-        var campRecipes = legacyRecipes.filter(function(r) { return r.campaign_id === c.id; });
-        var groups = {};
-        campRecipes.forEach(function(r) {
-          var key = r.persona_id || '__unassigned__';
-          groups[key] = groups[key] || [];
-          groups[key].push(r);
-        });
-
-        Object.keys(groups).forEach(function(personaKey) {
-          var personaId = personaKey === '__unassigned__' ? '' : personaKey;
-          var persona = personaId ? getPersona(personaId) : null;
-          var grp = groups[personaKey];
-
-          // Pull message_ids/style_ids/format_ids from the legacy campaign + recipe set
-          var briefMessageIds = (c.message_ids || []).slice();
-          var briefStyleIds = (c.style_ids || []).slice();
-          var briefFormatIds = (c.format_ids || []).slice();
-
-          var newSet = createEntity('ad_set', {
-            campaign_id: newCamp.id,
-            name: persona ? (newCamp.name + ' — ' + persona.name) : (newCamp.name + ' — Untargeted'),
-            persona_id: persona ? persona.id : '',
-            persona_snapshot: persona ? buildPersonaSnapshot(persona) : null,
-            optimization_goal: Constants.META_AD_SET_DEFAULTS.optimization_goal,
-            billing_event: 'IMPRESSIONS',
-            attribution_setting: '7d_click',
-            brief: {
-              creative_direction: c.brief || '',
-              message_ids: briefMessageIds,
-              style_ids: briefStyleIds,
-              format_ids: briefFormatIds,
-              hook_angles: [],
-              ai_notes: c.ai_instructions || ''
-            },
-            status: V2_CAMP_STATUS_MAP[c.status] === 'ACTIVE' ? 'ACTIVE' : 'DRAFT',
-            created: c.created || new Date().toISOString()
-          });
-          if (!newSet) { summary.errors++; return; }
-          summary.ad_sets++;
-
-          // Create Ads for each recipe
-          grp.forEach(function(r) {
-            try {
-              var adPayload = mapRecipeToAd(r);
-              adPayload.ad_set_id = newSet.id;
-              var newAd = createEntity('ad', adPayload);
-              if (newAd) summary.ads++;
-              else summary.errors++;
-            } catch (e) {
-              console.error('[CP v2 migration] Ad mapping failed:', r.id, e);
-              summary.errors++;
-            }
-          });
-        });
-      } catch (e) {
-        console.error('[CP v2 migration] Campaign mapping failed:', c.id, e);
-        summary.errors++;
-      }
-    });
-
-    // Clear legacy arrays now that they're safely in backup
-    S.data.campaigns = [];
-    S.data.recipes = [];
-
-    // Flip flags
-    S.meta.setup = S.meta.setup || {};
-    S.meta.setup.meta_v2 = true;
-    S.meta.setup.migrated_to_v2 = true;
-
-    buildMaps(); syncToTextarea();
-    logActivity('legacy_migrated', 'workspace', '', '', 'Migrated: ' + summary.campaigns + ' campaigns, ' + summary.ad_sets + ' ad sets, ' + summary.ads + ' ads');
-
-    v2MigrationState.summary = summary;
-    v2MigrationState.step = 5;
-    renderMigrationWizardStep();
-    // Force a re-render of the app shell so the sidebar regroups
-    if (window._cpRenderAppShell) {
-      $('#cpApp').html(window._cpRenderAppShell());
-      render();
-    }
-  }
-
-  // --- Discard legacy backup (Settings action) ---
-
-  function discardLegacyBackup() {
-    openConfirmDialog({
-      title: 'Discard legacy backup?',
-      message: 'This permanently deletes your pre-v2 campaigns and recipes. Your migrated v2 data will be unaffected.',
-      confirmLabel: 'Discard backup',
-      danger: true,
-      onConfirm: function() {
-        snapshot('Discard legacy backup');
-        S.meta.legacy_backup = null;
-        syncToTextarea();
-        toast('Legacy backup discarded', 'success');
-        render();
-      }
-    });
-  }
-
 /* ===== src/30-part2b/23-import-export.js ===== */
   // ============================================================
   // SECTION 19: IMPORT/EXPORT
@@ -19614,8 +14495,8 @@
     }
     if (type === 'data' || type === 'combined') {
       var d = type === 'combined' ? data.data : data;
-      if (!Array.isArray(d.personas) && !Array.isArray(d.messages) && !Array.isArray(d.recipes)) {
-        return 'Data import must contain at least one entity array (personas, messages, or recipes).';
+      if (!Array.isArray(d.personas) && !Array.isArray(d.messages) && !Array.isArray(d.campaigns_v2)) {
+        return 'Data import must contain at least one entity array (personas, messages, or campaigns_v2).';
       }
     }
     return null; // valid
@@ -19650,8 +14531,15 @@
               // Snapshot before import for rollback via undo
               snapshot('Before import');
               if (importType === 'combined') {
-                S.meta = imported.meta; S.data = imported.data; S.activity = imported.activity || [];
-              } else if (importType === 'meta') { S.meta = imported; }
+                S.meta = imported.meta;
+                S.data = imported.data;
+                // Drop any legacy v1 collections; they're not supported anymore.
+                delete S.data.recipes;
+                delete S.data.campaigns;
+                S.activity = imported.activity || [];
+              } else if (importType === 'meta') {
+                S.meta = imported;
+              }
               else {
                 // Preserve essential arrays that might be missing in partial imports
                 S.data.personas = imported.personas || S.data.personas || [];
@@ -19660,9 +14548,11 @@
                 S.data.messages = imported.messages || S.data.messages || [];
                 S.data.styles = imported.styles || S.data.styles || [];
                 S.data.visual_formats = imported.visual_formats || S.data.visual_formats || [];
-                S.data.recipes = imported.recipes || S.data.recipes || [];
-                S.data.campaigns = imported.campaigns || S.data.campaigns || [];
                 S.data.tags = imported.tags || S.data.tags || [];
+                // Meta v2 entities (if present in the import)
+                if (Array.isArray(imported.campaigns_v2)) S.data.campaigns_v2 = imported.campaigns_v2;
+                if (Array.isArray(imported.ad_sets))      S.data.ad_sets      = imported.ad_sets;
+                if (Array.isArray(imported.ads))          S.data.ads          = imported.ads;
               }
               logActivity('data_imported', '', '', 'Data imported from file (' + importType + ')');
               snapshot('Import'); buildMaps(); render(); syncToTextarea(); toast('Imported successfully', 'success');
@@ -20097,25 +14987,31 @@
           html += '<input type="text" class="cp-input cp-img-meta-field" data-meta-field="tags" value="' + esc((meta.tags || []).join(', ')) + '" placeholder="studio, product, lifestyle"></div>';
           html += '<div style="margin-top:var(--cp-space-2)"><label style="display:flex;align-items:center;gap:var(--cp-space-2);cursor:pointer"><input type="checkbox" class="cp-img-meta-field" data-meta-field="star"' + (meta.star ? ' checked' : '') + '> ' + icon('star') + ' Starred</label></div>';
 
-          // Usage tracking — which recipes use this image
-          var usedInRecipes = (S.data.recipes || []).filter(function(r) {
-            return (r.image_brief && r.image_brief.reference_image_ids || []).indexOf(selImg.fid) > -1;
+          // Usage tracking — which Ads use this image
+          var usedInAds = (S.data.ads || []).filter(function(a) {
+            var imgIds = (a.media && a.media.image && a.media.image.reference_image_ids) || [];
+            if (imgIds.indexOf(selImg.fid) > -1) return true;
+            var cards = (a.media && a.media.carousel_cards) || [];
+            for (var ci = 0; ci < cards.length; ci++) {
+              if ((cards[ci].reference_image_ids || []).indexOf(selImg.fid) > -1) return true;
+            }
+            return false;
           });
-          if (usedInRecipes.length > 0) {
+          if (usedInAds.length > 0) {
             html += '<div style="margin-top:var(--cp-space-3);border-top:1px solid var(--cp-border-light);padding-top:var(--cp-space-2)">';
-            html += '<div class="cp-field-label">' + icon('shuffle') + ' Used in ' + usedInRecipes.length + ' recipe' + (usedInRecipes.length !== 1 ? 's' : '') + '</div>';
-            for (var uri = 0; uri < usedInRecipes.length; uri++) {
-              html += '<div style="font-size:11px;color:var(--cp-text-secondary);padding:2px 0;cursor:pointer" data-action="select-recipe" data-id="' + esc(usedInRecipes[uri].id) + '">' + icon('arrow-right') + ' ' + esc(truncate(usedInRecipes[uri].title, 25)) + '</div>';
+            html += '<div class="cp-field-label">' + icon('rectangle-ad') + ' Used in ' + usedInAds.length + ' Ad' + (usedInAds.length !== 1 ? 's' : '') + '</div>';
+            for (var uai = 0; uai < usedInAds.length; uai++) {
+              html += '<div style="font-size:11px;color:var(--cp-text-secondary);padding:2px 0;cursor:pointer" data-action="ws-select-ad" data-id="' + esc(usedInAds[uai].id) + '">' + icon('arrow-right') + ' ' + esc(truncate(usedInAds[uai].name, 25)) + '</div>';
             }
             html += '</div>';
           }
 
-          // Campaign association
-          var campId = (meta && meta.campaign_id) || '';
-          var camps = S.data.campaigns || [];
+          // Campaign association (Meta v2)
+          var campId = (meta && meta.campaign_v2_id) || '';
+          var camps = S.data.campaigns_v2 || [];
           if (camps.length > 0) {
             html += '<div class="cp-form-group" style="margin-top:var(--cp-space-3)"><label class="cp-field-label">' + icon('bullhorn') + ' Campaign</label>';
-            html += '<select class="cp-select cp-img-meta-field" data-meta-field="campaign_id">';
+            html += '<select class="cp-select cp-img-meta-field" data-meta-field="campaign_v2_id">';
             html += '<option value="">None</option>';
             for (var cmi = 0; cmi < camps.length; cmi++) {
               html += '<option value="' + esc(camps[cmi].id) + '"' + (campId === camps[cmi].id ? ' selected' : '') + '>' + esc(camps[cmi].name) + '</option>';
@@ -20335,164 +15231,10 @@
       }
     });
 
-    // AI Improve content
-    $(document).off('click.cp2b-ai-improve').on('click.cp2b-ai-improve', '[data-action="ai-improve-content"]', function(e) {
-      e.preventDefault(); aiImproveContent($(this).data('recipe-id'), _getAICustomInstructions(this));
-    });
-
-    // Export — copy ad copy to clipboard
-    $(document).off('click.cp2b-copy-content').on('click.cp2b-copy-content', '[data-action="copy-recipe-content"]', function(e) {
-      e.preventDefault();
-      var recipe = getRecipe($(this).data('recipe-id'));
-      if (!recipe) return;
-      var content = recipe.content || {};
-      var text = '';
-      if (content.headline) text += content.headline + '\n\n';
-      text += stripHtml(content.ad_copy || '');
-      if (content.cta) text += '\n\n[CTA: ' + content.cta + ']';
-      copyToClipboard(text, 'Ad copy copied to clipboard');
-    });
-    $(document).off('click.cp2b-copy-brief').on('click.cp2b-copy-brief', '[data-action="copy-recipe-brief"]', function(e) {
-      e.preventDefault();
-      var recipe = getRecipe($(this).data('recipe-id'));
-      if (!recipe) return;
-      var brief = (recipe.image_brief && recipe.image_brief.creative_brief) || '';
-      var prompt = (recipe.image_brief && recipe.image_brief.ai_prompt) || '';
-      var text = 'Creative Brief:\n' + brief;
-      if (prompt) text += '\n\nAI Prompt:\n' + prompt;
-      copyToClipboard(text, 'Creative brief copied to clipboard');
-    });
-    $(document).off('click.cp2b-export-json').on('click.cp2b-export-json', '[data-action="export-recipe-json"]', function(e) {
-      e.preventDefault();
-      var recipe = getRecipe($(this).data('recipe-id'));
-      if (!recipe) return;
-      var json = JSON.stringify(recipe, null, 2);
-      var blob = new Blob([json], { type: 'application/json' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = (recipe.title || 'recipe').replace(/[^a-z0-9]/gi, '-').toLowerCase() + '.json';
-      a.click();
-      URL.revokeObjectURL(url);
-      toast('Recipe exported as JSON', 'success');
-    });
-
-    function copyToClipboard(text, msg) {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(function() { toast(msg || 'Copied!', 'success'); }).catch(function() { fallbackCopy(text, msg); });
-      } else { fallbackCopy(text, msg); }
-    }
-    function fallbackCopy(text, msg) {
-      var ta = document.createElement('textarea');
-      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta); ta.select();
-      try { document.execCommand('copy'); toast(msg || 'Copied!', 'success'); } catch(e) { toast('Copy failed — select and copy manually', 'warning'); }
-      document.body.removeChild(ta);
-    }
-    $(document).off('click.cp2b-ai-hook').on('click.cp2b-ai-hook', '[data-action="ai-generate-hook"]', function(e) {
-      e.preventDefault(); aiGenerateHook($(this).data('recipe-id'), _getAICustomInstructions(this));
-    });
-    $(document).off('click.cp2b-ai-content').on('click.cp2b-ai-content', '[data-action="ai-generate-content"]', function(e) {
-      e.preventDefault(); aiWriteContent($(this).data('recipe-id'), _getAICustomInstructions(this));
-    });
-    $(document).off('click.cp2b-ai-brief').on('click.cp2b-ai-brief', '[data-action="ai-generate-brief"]', function(e) {
-      e.preventDefault(); aiGenerateBrief($(this).data('recipe-id'), _getAICustomInstructions(this));
-    });
-    $(document).off('click.cp2b-ai-prompt').on('click.cp2b-ai-prompt', '[data-action="ai-generate-prompt"]', function(e) {
-      e.preventDefault(); aiGenerateImagePrompt($(this).data('recipe-id'), _getAICustomInstructions(this));
-    });
-    $(document).off('click.cp2b-ai-blueprint').on('click.cp2b-ai-blueprint', '[data-action="ai-generate-blueprint"]', function(e) {
-      e.preventDefault(); aiGenerateBlueprint($(this).data('recipe-id'), _getAICustomInstructions(this));
-    });
-    $(document).off('click.cp2b-ai-script').on('click.cp2b-ai-script', '[data-action="ai-generate-script"]', function(e) {
-      e.preventDefault(); aiGenerateScript($(this).data('recipe-id'), _getAICustomInstructions(this));
-    });
-
     // AI research pain points (from persona detail)
     $(document).off('click.cp2b-ai-pp').on('click.cp2b-ai-pp', '[data-action="ai-research-pain-points"]', function(e) {
       e.preventDefault();
       aiResearchPainPoints($(this).data('persona-id'));
-    });
-
-    // AI campaign recipe suggestions
-    $(document).off('click.cp2b-ai-camp').on('click.cp2b-ai-camp', '[data-action="ai-campaign-recipes"]', function(e) {
-      e.preventDefault();
-      aiSuggestCampaignRecipes($(this).data('campaign-id'));
-    });
-
-    // AI campaign brief generation
-    $(document).off('click.cp2b-ai-camp-brief').on('click.cp2b-ai-camp-brief', '[data-action="ai-campaign-brief"]', function(e) {
-      e.preventDefault();
-      aiGenerateCampaignBrief($(this).data('campaign-id'));
-    });
-
-    // AI campaign gap analysis
-    $(document).off('click.cp2b-ai-camp-gaps').on('click.cp2b-ai-camp-gaps', '[data-action="ai-campaign-gaps"]', function(e) {
-      e.preventDefault();
-      aiAnalyzeCampaignGaps($(this).data('campaign-id'));
-    });
-
-    // Wizard AI suggest (from wizard step 3)
-    $(document).off('click.cp2b-wizard-ai').on('click.cp2b-wizard-ai', '[data-action="wizard-ai-suggest"]', function(e) {
-      e.preventDefault();
-      // Use the wizard's selected dimensions to run campaign AI suggestion
-      var P2A = window._cpPart2A;
-      if (!P2A || !P2A.wizardState) return;
-      var ws = P2A.wizardState;
-      if (!LLMService.isConfigured()) { toast('No AI providers configured', 'warning'); return; }
-      toast('AI analyzing combinations...', 'info');
-
-      // Build a lightweight prompt for prioritizing combos
-      var personas = ws.selections.personas.map(function(id) { var p = S.personaMap[id]; return p ? p.name : ''; }).filter(Boolean);
-      var messages = ws.selections.messages.map(function(id) { var m = S.messageMap[id]; return m ? m.title : ''; }).filter(Boolean);
-      var styles = ws.selections.styles.map(function(id) { var s = S.styleMap[id]; return s ? s.name : ''; }).filter(Boolean);
-      var formats = ws.selections.formats.map(function(id) { var f = S.formatMap[id]; return f ? f.name : ''; }).filter(Boolean);
-
-      var prompt = 'You are a campaign strategist. Given these dimensions, identify the top 6-8 best recipe combinations (persona × message × style × format). Rank by expected performance.\n\n';
-      prompt += 'Personas: ' + personas.join(', ') + '\n';
-      prompt += 'Messages: ' + messages.join(', ') + '\n';
-      prompt += 'Styles: ' + styles.join(', ') + '\n';
-      prompt += 'Formats: ' + formats.join(', ') + '\n';
-      if (ws.data.objective) { var obj = (Constants.CAMPAIGN_OBJECTIVES || []).find(function(o) { return o.id === ws.data.objective; }); if (obj) prompt += 'Objective: ' + obj.name + '\n'; }
-      prompt += brandSnippet('research');
-      prompt += '\n\nRespond ONLY as JSON: {"best":[{"persona":"name","message":"name","style":"name","format":"name"}]}';
-
-      callAIWithRetry(prompt, function(text) {
-        var parsed = parseJSON(text);
-        var best = parsed.best || [];
-        // Mark matching wizard recipes as selected
-        ws.recipes.forEach(function(r) { r.selected = false; });
-        best.forEach(function(b) {
-          var match = ws.recipes.find(function(r) {
-            var pOk = !b.persona || (S.personaMap[r.persona_id] && S.personaMap[r.persona_id].name === b.persona);
-            var mOk = !b.message || (S.messageMap[r.message_id] && S.messageMap[r.message_id].title === b.message);
-            var sOk = !b.style || (S.styleMap[r.style_id] && S.styleMap[r.style_id].name === b.style);
-            var fOk = !b.format || (S.formatMap[r.visual_format_id] && S.formatMap[r.visual_format_id].name === b.format);
-            return pOk && mOk && sOk && fOk && !r.selected;
-          });
-          if (match) match.selected = true;
-        });
-        P2A.openCampaignWizard ? renderWizardRefresh() : null;
-        toast('AI selected ' + best.length + ' best combinations', 'success');
-
-        function renderWizardRefresh() {
-          // Re-render the wizard modal to show updated selections
-          if (P2A.wizardState && P2A.wizardState.step === 3) {
-            // Close and reopen to refresh
-            closeModal();
-            setTimeout(function() {
-              P2A.wizardState.step = 3;
-              if (typeof P2A.openCampaignWizard === 'function') {
-                // Trigger re-render by opening step 3
-                openModal('Campaign Wizard', '', { size: 'xl' });
-                closeModal();
-                P2A.openCampaignWizard.__renderStep3 ? P2A.openCampaignWizard.__renderStep3() : null;
-              }
-              render();
-            }, 100);
-          }
-        }
-      }, function(err) { toast('AI Error: ' + err, 'error'); }, 'ai-wizard-suggest', BrandService.getSystemPrompt('research'), parseJSON);
     });
 
     // AI provider picker dynamic model update
@@ -20585,36 +15327,6 @@
       e.preventDefault();
       triggerImageUpload();
     });
-    // Pick ref images (from recipe media step)
-    $(document).off('click.cp2b-pick-refs').on('click.cp2b-pick-refs', '[data-action="pick-ref-images"]', function(e) {
-      e.preventDefault();
-      var recipeId = $(this).data('recipe-id');
-      var recipe = getRecipe(recipeId);
-      if (!recipe) return;
-      var current = (recipe.image_brief && recipe.image_brief.reference_image_ids) || [];
-      renderImagePicker(current, function(selected) {
-        recipe.image_brief = recipe.image_brief || {};
-        recipe.image_brief.reference_image_ids = selected;
-        recipe.updated = new Date().toISOString();
-        syncToTextarea(); buildMaps(); render();
-        toast('Reference images updated', 'success');
-      });
-    });
-
-    // Remove individual reference image from recipe
-    $(document).off('click.cp2b-remove-ref').on('click.cp2b-remove-ref', '[data-action="remove-ref-image"]', function(e) {
-      e.preventDefault(); e.stopPropagation();
-      var recipeId = $(this).data('recipe-id');
-      var fid = $(this).data('fid');
-      var recipe = getRecipe(recipeId);
-      if (!recipe || !fid) return;
-      recipe.image_brief = recipe.image_brief || {};
-      recipe.image_brief.reference_image_ids = (recipe.image_brief.reference_image_ids || []).filter(function(id) { return id !== fid; });
-      recipe.updated = new Date().toISOString();
-      syncToTextarea(); buildMaps(); render();
-      toast('Reference image removed', 'success');
-    });
-
     // --- Stage 4: Meta v2 AI buttons (replace Stage 1/2 stubs) ---
     $(document).off('click.cp2b-ai-tree').on('click.cp2b-ai-tree', '[data-action="ai-generate-campaign-tree"]', function(e) {
       e.preventDefault(); aiGenerateCampaignTree();
@@ -20647,25 +15359,7 @@
       e.preventDefault(); aiGenerateVideoScript($(this).data('id'));
     });
 
-    // --- Stage 6: migration wizard + feature flag toggle ---
-    $(document).off('click.cp2b-v2-mig').on('click.cp2b-v2-mig', '[data-action="v2-open-migration"]', function(e) {
-      e.preventDefault(); openMigrationWizard();
-    });
-    $(document).off('click.cp2b-v2-discard').on('click.cp2b-v2-discard', '[data-action="v2-discard-legacy"]', function(e) {
-      e.preventDefault(); discardLegacyBackup();
-    });
-    $(document).off('change.cp2b-v2-flag').on('change.cp2b-v2-flag', '.cp-v2-toggle-flag', function() {
-      snapshot('Toggle Meta v2');
-      S.meta.setup = S.meta.setup || {};
-      S.meta.setup.meta_v2 = !!this.checked;
-      syncToTextarea();
-      // Re-render the whole shell so sidebar regroups
-      if (window._cpRenderAppShell) {
-        $('#cpApp').html(window._cpRenderAppShell());
-        render();
-      }
-      toast(this.checked ? 'Meta v2 enabled' : 'Meta v2 disabled', 'success');
-    });
+    // --- Meta v2 workspace defaults ---
     $(document).off('change.cp2b-v2-def').on('change.cp2b-v2-def', '.cp-v2-defaults-field', function() {
       var key = $(this).data('key');
       var val = $(this).val();
@@ -20693,7 +15387,7 @@
   }
 
   function setupKeyboardShortcuts() {
-    var viewKeys = { '1': 'dashboard', '2': 'personas', '3': 'pain_points', '4': 'messages', '5': 'styles', '6': 'formats', '7': 'recipes', '8': 'campaigns', '9': 'research', '0': 'settings' };
+    var viewKeys = { '1': 'dashboard', '2': 'personas', '3': 'pain_points', '4': 'messages', '5': 'styles', '6': 'formats', '7': 'meta_campaigns', '8': 'calendar', '9': 'research', '0': 'settings' };
 
     $(document).off('keydown.cp2b-shortcuts').on('keydown.cp2b-shortcuts', function(e) {
       // Skip if inside input/textarea or modal open
@@ -20720,8 +15414,9 @@
         else if (view === 'messages') P2A.openMessageModal();
         else if (view === 'styles') P2A.openStyleModal();
         else if (view === 'formats') P2A.openFormatModal();
-        else if (view === 'campaigns') P2A.openCampaignModal();
-        else if (view === 'recipes') P2A.openMixerModal('manual');
+        else if (view === 'meta_campaigns' || view === 'campaign_workspace') {
+          if (P2A.openNewCampaignWizard) P2A.openNewCampaignWizard();
+        }
         return;
       }
     });
@@ -20739,7 +15434,7 @@
 
     // AI utilities
     parseJSON: parseJSON, callAIWithRetry: callAIWithRetry,
-    brandSnippet: brandSnippet, recipeContextSnippet: recipeContextSnippet,
+    brandSnippet: brandSnippet,
     entityContextSnippet: entityContextSnippet,
 
     // Components
@@ -20747,30 +15442,19 @@
     renderInlineAIAssist: renderInlineAIAssist,
     renderInlinePicker: LLMService.renderInlinePicker,
 
-    // AI actions
+    // AI library research actions
     aiResearchPersonas: aiResearchPersonas, aiResearchPainPoints: aiResearchPainPoints,
     aiResearchMessages: aiResearchMessages, aiResearchStyles: aiResearchStyles,
     aiResearchFormats: aiResearchFormats,
-    aiGenerateHook: aiGenerateHook, aiWriteContent: aiWriteContent,
-    aiGenerateBrief: aiGenerateBrief, aiGenerateImagePrompt: aiGenerateImagePrompt,
-    aiGenerateBlueprint: aiGenerateBlueprint, aiGenerateScript: aiGenerateScript,
-    aiSuggestCampaignRecipes: aiSuggestCampaignRecipes,
-    aiGenerateCampaignBrief: aiGenerateCampaignBrief,
-    aiAnalyzeCampaignGaps: aiAnalyzeCampaignGaps,
-    aiImproveContent: aiImproveContent,
     showAIPreview: showAIPreview,
 
-    // Meta v2 — migration (Stage 6)
-    openMigrationWizard: openMigrationWizard,
-    discardLegacyBackup: discardLegacyBackup,
-
-    // Meta v2 — export (Stage 7)
+    // Meta v2 — export
     openExportModal: openExportModal,
     exportV2JSON: exportV2JSON, exportV2CSV: exportV2CSV,
     validateForExport: validateForExport,
     copyAdField: copyAdField,
 
-    // Meta v2 AI (Stage 4)
+    // Meta v2 AI
     aiGenerateCampaignTree: aiGenerateCampaignTree,
     aiSuggestAdSets: aiSuggestAdSets, aiSuggestAds: aiSuggestAds,
     aiGenerateAdSetBrief: aiGenerateAdSetBrief,

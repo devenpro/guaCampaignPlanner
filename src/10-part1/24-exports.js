@@ -35,8 +35,6 @@
 
   // Badges
   window._cpBadge = badge;
-  window._cpRecipeStatusBadge = recipeStatusBadge;
-  window._cpCampaignStatusBadge = campaignStatusBadge;
   window._cpPriorityBadge = priorityBadge;
   window._cpFunnelBadge = funnelBadge;
   window._cpDimensionBadge = dimensionBadge;
@@ -51,13 +49,10 @@
   window._cpGetMessage = getMessage;
   window._cpGetStyle = getStyle;
   window._cpGetFormat = getFormat;
-  window._cpGetRecipe = getRecipe;
-  window._cpGetCampaign = getCampaign;
   window._cpGetTag = getTag;
   window._cpGetFunnelStage = getFunnelStage;
   window._cpGetResearchSession = getResearchSession;
   window._cpGetImageById = getImageById;
-  window._cpGetRecipeProduction = getRecipeProduction;
   window._cpGetProductionStatusStyle = getProductionStatusStyle;
   window._cpParseProductionData = parseProductionData;
 
@@ -73,8 +68,6 @@
   window._cpGetAllMessages = getAllMessages;
   window._cpGetAllStyles = getAllStyles;
   window._cpGetAllFormats = getAllFormats;
-  window._cpGetAllRecipes = getAllRecipes;
-  window._cpGetAllCampaigns = getAllCampaigns;
   window._cpGetAllPainPoints = getAllPainPoints;
   window._cpGetAllCategories = getAllCategories;
 
@@ -87,22 +80,18 @@
   window._cpGetAdsByCampaign = getAdsByCampaign;
   window._cpGetRecentActivity = getRecentActivity;
   window._cpGetPersonasByCategory = getPersonasByCategory;
-  window._cpGetRecipesByCampaign = getRecipesByCampaign;
-  window._cpGetRecipesByPersona = getRecipesByPersona;
   window._cpGetPersonaPainPoints = getPersonaPainPoints;
   window._cpGetImages = getImages;
   window._cpGetAllImageTags = getAllImageTags;
-  window._cpCalculateDiversityScore = calculateDiversityScore;
   window._cpIsSetupComplete = isSetupComplete;
   window._cpParseImageField = parseImageField;
 
   // Constants
   window._cpConstants = {
     APP_VIEWS: APP_VIEWS, SIDEBAR_GROUPS: SIDEBAR_GROUPS, DIMENSIONS: DIMENSIONS,
-    RECIPE_STATUSES: RECIPE_STATUSES, STATUS_ORDER: STATUS_ORDER, ACTIVE_STATUSES: ACTIVE_STATUSES,
-    CAMPAIGN_STATUSES: CAMPAIGN_STATUSES, FUNNEL_DEFAULTS: FUNNEL_DEFAULTS,
-    PIPELINE_STEPS: PIPELINE_STEPS, MEDIA_TYPES: MEDIA_TYPES, HOOK_TYPES: HOOK_TYPES,
-    PRIORITY_LEVELS: PRIORITY_LEVELS, CAMPAIGN_OBJECTIVES: CAMPAIGN_OBJECTIVES,
+    FUNNEL_DEFAULTS: FUNNEL_DEFAULTS,
+    MEDIA_TYPES: MEDIA_TYPES, HOOK_TYPES: HOOK_TYPES,
+    PRIORITY_LEVELS: PRIORITY_LEVELS,
     FORMAT_CATEGORIES: FORMAT_CATEGORIES, PAIN_POINT_CATEGORIES: PAIN_POINT_CATEGORIES,
     ACTIVITY_TYPES: ACTIVITY_TYPES, CARD_DENSITIES: CARD_DENSITIES, GROUPING_OPTIONS: GROUPING_OPTIONS,
     PRODUCTION_STATUSES: PRODUCTION_STATUSES, PRODUCTION_STATUS_DEFAULT: PRODUCTION_STATUS_DEFAULT,
@@ -156,23 +145,14 @@
   window._cpRenderMessageCard = renderMessageCard;
   window._cpRenderStyleCard = renderStyleCard;
   window._cpRenderFormatCard = renderFormatCard;
-  window._cpRenderRecipeListItem = renderRecipeListItem;
-  window._cpRenderCampaignListItem = renderCampaignListItem;
-  window._cpGetRecipeCompletionPct = getRecipeCompletionPct;
-  window._cpGetFilteredRecipes = getFilteredRecipes;
   window._cpGetFilteredPersonas = getFilteredPersonas;
   window._cpGetFilteredMessages = getFilteredMessages;
-  window._cpGetGroupedRecipes = getGroupedRecipes;
 
   // CRUD
   window._cpCreateEntity = createEntity;
   window._cpDeleteEntity = deleteEntity;
   window._cpSaveEntityField = saveEntityField;
   window._cpDuplicateEntity = duplicateEntity;
-
-  // Auto-status
-  window._cpEvaluateAutoStatus = evaluateAutoStatus;
-  window._cpMaybeAdvanceRecipeStatus = maybeAdvanceRecipeStatus;
 
   // Meta v2 snapshot + auto-status (Stage 2)
   window._cpIsPersonaSnapshotStale = isPersonaSnapshotStale;

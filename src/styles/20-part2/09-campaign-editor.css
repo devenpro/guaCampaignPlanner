@@ -1,7 +1,0 @@
-/* ═══ S9: CAMPAIGN EDITOR ═══ */
-.cp-campaign-editor { }
-.cp-date-range { display: flex; gap: var(--cp-space-3); align-items: center; }
-.cp-date-range input[type="date"] { font-family: var(--cp-font-family); font-size: var(--cp-font-size-sm); border: 1.5px solid var(--cp-border-default); border-radius: var(--cp-radius-md); padding: var(--cp-space-2) var(--cp-space-3); }
-.cp-date-range-sep { color: var(--cp-text-muted); font-weight: 600; }
-.cp-campaign-recipe-picker { max-height: 300px; overflow-y: auto; border: 1px solid var(--cp-border-light); border-radius: var(--cp-radius-md); padding: var(--cp-space-2); }
-

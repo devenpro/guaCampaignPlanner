@@ -105,8 +105,6 @@
       case 'personas': count = S.totalPersonas; break;
       case 'messages': count = S.totalMessages; break;
       case 'styles': count = S.totalStyles + S.totalFormats; break;
-      case 'recipes': count = S.activeRecipes; break;
-      case 'campaigns': count = S.activeCampaigns; break;
       case 'meta_campaigns': count = S.activeCampaignsV2; break;
       case 'images': count = S.images.length; break;
       case 'activity':
