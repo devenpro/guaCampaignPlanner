@@ -136,7 +136,7 @@
           hook: { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' },
           media: {
             image: { asset_id: '', prompt: '', aspect_ratio: '1:1', reference_image_ids: [] },
-            video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', blueprint: { scenes: [] }, script: { rows: [] } },
+            video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', script: { sections: [] } },
             carousel_cards: []
           },
           message_snapshot: null, style_snapshot: null, format_snapshot: null,

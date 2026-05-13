@@ -40,7 +40,6 @@
     aiGenerateAdHooks: aiGenerateAdHooks,
     aiWriteAdCopy: aiWriteAdCopy, aiImproveAdCopy: aiImproveAdCopy,
     aiGenerateAdImagePrompt: aiGenerateAdImagePrompt,
-    aiGenerateVideoBlueprint: aiGenerateVideoBlueprint,
     aiGenerateVideoScript: aiGenerateVideoScript,
 
     // Setup Wizard AI generators + finalize

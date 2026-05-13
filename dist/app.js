@@ -1158,11 +1158,10 @@
       a.hook.text = a.hook.text || '';
       a.hook.type = a.hook.type || 'direct';
       a.media = a.media || {};
-      a.media.image = a.media.image || { asset_id: '', ai_prompt: '', brief: '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] };
+      a.media.image = a.media.image || { asset_id: '', prompt: '', aspect_ratio: '1:1', reference_image_ids: [] };
       a.media.image.reference_image_ids = a.media.image.reference_image_ids || [];
-      a.media.video = a.media.video || { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', blueprint: { scenes: [] }, script: { rows: [] } };
-      a.media.video.blueprint = a.media.video.blueprint || { scenes: [] };
-      a.media.video.script = a.media.video.script || { rows: [] };
+      a.media.video = a.media.video || { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', script: { sections: [] } };
+      a.media.video.script = a.media.video.script || { sections: [] };
       a.media.carousel_cards = a.media.carousel_cards || [];
       // Snapshots
       a.message_snapshot = a.message_snapshot || null;
@@ -3897,18 +3896,19 @@
       }
     } else if (ad.creative_type === 'single_video') {
       var vid = media.video || {};
-      var scenes = (vid.blueprint && vid.blueprint.scenes) || [];
-      var rows   = (vid.script && vid.script.rows) || [];
-      var vidFilled = !!(vid.concept || scenes.length || rows.length);
+      var sections = (vid.script && vid.script.sections) || [];
+      var legacyRows = (vid.script && vid.script.rows) || [];
+      var sectionCount = sections.length || (legacyRows.length ? 1 : 0);
+      var vidFilled = !!(vid.concept || sectionCount);
       pill = vidFilled
         ? '<span class="cp-inspector-status-pill cp-inspector-status-pill-filled">' + icon('circle-check') + ' Filled</span>'
         : '<span class="cp-inspector-status-pill cp-inspector-status-pill-empty">' + icon('circle') + ' Not set</span>';
       if (vidFilled) {
         body = '';
         if (vid.concept) body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Concept</div><div class="cp-inspector-field-value">' + esc(truncate(vid.concept, 200)) + '</div></div>';
-        body += '<div class="cp-text-muted" style="font-size:11px;margin-top:4px">' + (vid.duration_seconds || '?') + 's · ' + esc(vid.aspect_ratio || '9:16') + ' · ' + scenes.length + ' scene' + (scenes.length !== 1 ? 's' : '') + ' · ' + rows.length + ' script row' + (rows.length !== 1 ? 's' : '') + '</div>';
+        body += '<div class="cp-text-muted" style="font-size:11px;margin-top:4px">' + (vid.duration_seconds || '?') + 's · ' + esc(vid.aspect_ratio || '9:16') + ' · ' + sectionCount + ' script section' + (sectionCount !== 1 ? 's' : '') + '</div>';
       } else {
-        body = '<div class="cp-text-muted">No video brief yet. Open the Media tab to add concept, scenes, and script.</div>';
+        body = '<div class="cp-text-muted">No video brief yet. Open the Media tab to add concept and script sections.</div>';
       }
     } else if (ad.creative_type === 'carousel') {
       var cards = media.carousel_cards || [];
@@ -4403,8 +4403,7 @@
 
   function renderAdMediaVideo(ad) {
     var vid = (ad.media && ad.media.video) || {};
-    var script = vid.script || { rows: [] };
-    var blueprint = vid.blueprint || { scenes: [] };
+    var sections = getAdVideoScriptSections(vid);
 
     var html = '';
     html += '<div class="cp-inspector-section">';
@@ -4423,56 +4422,59 @@
     }
     html += '</select></div></div></div>';
 
-    // Blueprint scenes
+    // Script sections
     html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('film') + ' Storyboard scenes';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ad-add-scene" data-id="' + esc(ad.id) + '" style="margin-left:auto">' + icon('plus') + ' Add scene</button>';
+    html += '<div class="cp-inspector-section-title">' + icon('list-tree') + ' Script';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">Add a section per beat (Hook · Setup · Payoff · CTA). Visual direction lives in your media app.</span>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ad-add-script-section" data-id="' + esc(ad.id) + '" style="margin-left:auto">' + icon('plus') + ' Add section</button>';
     html += '</div>';
-    if ((blueprint.scenes || []).length === 0) {
-      html += '<div class="cp-text-muted">No scenes yet.</div>';
+    if (sections.length === 0) {
+      html += '<div class="cp-text-muted">No sections yet. Add a section or use AI generate below.</div>';
     } else {
-      html += '<div class="cp-v2-scenes">';
-      for (var si = 0; si < blueprint.scenes.length; si++) {
-        var sc = blueprint.scenes[si];
-        html += '<div class="cp-v2-scene"><div class="cp-v2-scene-num">' + (si + 1) + '</div>';
-        html += '<div class="cp-v2-scene-fields">';
-        html += '<input type="text" class="cp-input cp-v2-scene-field" data-entity-id="' + esc(ad.id) + '" data-index="' + si + '" data-key="name" value="' + esc(sc.name || '') + '" placeholder="Scene name">';
-        html += '<textarea class="cp-textarea cp-v2-scene-field" data-entity-id="' + esc(ad.id) + '" data-index="' + si + '" data-key="description" rows="2" placeholder="What happens">' + esc(sc.description || '') + '</textarea>';
-        html += '</div>';
-        html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-remove-scene" data-id="' + esc(ad.id) + '" data-index="' + si + '">' + icon('trash') + '</button>';
+      html += '<div class="cp-v2-script-sections">';
+      for (var si = 0; si < sections.length; si++) {
+        var sec = sections[si];
+        html += '<div class="cp-v2-script-section">';
+        html += '<div class="cp-v2-script-section-header">';
+        html += '<span class="cp-v2-script-section-num">' + (si + 1) + '</span>';
+        html += '<input type="text" class="cp-input cp-v2-script-section-field" data-entity-id="' + esc(ad.id) + '" data-index="' + si + '" data-key="label" value="' + esc(sec.label || '') + '" placeholder="Section name (e.g., Hook)">';
+        html += '<div class="cp-v2-script-section-actions">';
+        html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-move-script-section" data-id="' + esc(ad.id) + '" data-index="' + si + '" data-dir="-1" title="Move up"' + (si === 0 ? ' disabled' : '') + '>' + icon('arrow-up') + '</button>';
+        html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-move-script-section" data-id="' + esc(ad.id) + '" data-index="' + si + '" data-dir="1" title="Move down"' + (si === sections.length - 1 ? ' disabled' : '') + '>' + icon('arrow-down') + '</button>';
+        html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-remove-script-section" data-id="' + esc(ad.id) + '" data-index="' + si + '" title="Remove">' + icon('trash') + '</button>';
+        html += '</div></div>';
+        html += '<textarea class="cp-textarea cp-v2-script-section-field" data-entity-id="' + esc(ad.id) + '" data-index="' + si + '" data-key="script" rows="3" placeholder="Write what is said and any on-screen text for this beat.">' + esc(sec.script || '') + '</textarea>';
         html += '</div>';
       }
       html += '</div>';
     }
     html += '</div>';
 
-    // Script rows
-    html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('list-tree') + ' Script';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ad-add-script-row" data-id="' + esc(ad.id) + '" style="margin-left:auto">' + icon('plus') + ' Add row</button>';
-    html += '</div>';
-    if ((script.rows || []).length === 0) {
-      html += '<div class="cp-text-muted">No script rows yet.</div>';
-    } else {
-      html += '<table class="cp-v2-script-table"><thead><tr><th>Time</th><th>Dialogue</th><th>Visual</th><th></th></tr></thead><tbody>';
-      for (var ri = 0; ri < script.rows.length; ri++) {
-        var row = script.rows[ri];
-        html += '<tr>';
-        html += '<td><input type="text" class="cp-input cp-input-sm cp-v2-script-field" data-entity-id="' + esc(ad.id) + '" data-index="' + ri + '" data-key="time" value="' + esc(row.time || '') + '" placeholder="0:00"></td>';
-        html += '<td><input type="text" class="cp-input cp-input-sm cp-v2-script-field" data-entity-id="' + esc(ad.id) + '" data-index="' + ri + '" data-key="dialogue" value="' + esc(row.dialogue || '') + '" placeholder="What\'s said"></td>';
-        html += '<td><input type="text" class="cp-input cp-input-sm cp-v2-script-field" data-entity-id="' + esc(ad.id) + '" data-index="' + ri + '" data-key="visual" value="' + esc(row.visual || '') + '" placeholder="What\'s shown"></td>';
-        html += '<td><button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-remove-script-row" data-id="' + esc(ad.id) + '" data-index="' + ri + '">' + icon('trash') + '</button></td>';
-        html += '</tr>';
-      }
-      html += '</tbody></table>';
-    }
-    html += '</div>';
-
     html += '<div class="cp-inspector-actions">';
-    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-video-blueprint" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate scenes</button>';
     html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-video-script" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate script</button>';
     html += '</div>';
     return html;
+  }
+
+  // Single source of truth for the section list shown in the Video editor and
+  // exported in the media brief. New ads carry `script.sections`; legacy ads
+  // built with the old time/dialogue/visual rows are folded into a single
+  // "Script" section so existing copy isn't lost. The migration is read-only;
+  // writes always go to `script.sections`.
+  function getAdVideoScriptSections(vid) {
+    var script = (vid && vid.script) || {};
+    if (script.sections && script.sections.length) return script.sections;
+    if (script.rows && script.rows.length) {
+      var combined = script.rows.map(function(r) {
+        var bits = [];
+        if (r.time) bits.push('[' + r.time + ']');
+        if (r.dialogue) bits.push(r.dialogue);
+        if (r.visual) bits.push('(visual: ' + r.visual + ')');
+        return bits.join(' ');
+      }).filter(Boolean).join('\n');
+      return combined ? [{ label: 'Script', script: combined }] : [];
+    }
+    return [];
   }
 
   function renderAdMediaCarousel(ad) {
@@ -4692,7 +4694,15 @@
       return !!(img.asset_id || p.length > 10);
     } else if (ad.creative_type === 'single_video') {
       var vid = media.video || {};
-      return !!(vid.asset_id || vid.concept || (vid.script && vid.script.rows && vid.script.rows.length) || (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length));
+      if (vid.asset_id || (vid.concept || '').trim()) return true;
+      var sections = (vid.script && vid.script.sections) || [];
+      for (var s = 0; s < sections.length; s++) {
+        if ((sections[s].label || '').trim() || (sections[s].script || '').trim()) return true;
+      }
+      // Back-compat: legacy ads still satisfy "done" via rows or scenes.
+      if (vid.script && vid.script.rows && vid.script.rows.length) return true;
+      if (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length) return true;
+      return false;
     } else if (ad.creative_type === 'carousel') {
       return !!(media.carousel_cards && media.carousel_cards.length >= 2);
     }
@@ -4715,6 +4725,10 @@
     if ((img.prompt || '').trim() || (img.ai_prompt || '').trim() || (img.brief || '').trim() || img.asset_id || (img.negative_prompt || '').trim()) return false;
     var vid = m.video || {};
     if ((vid.concept || '').trim() || vid.asset_id) return false;
+    var vidSections = (vid.script && vid.script.sections) || [];
+    for (var vsi = 0; vsi < vidSections.length; vsi++) {
+      if ((vidSections[vsi].label || '').trim() || (vidSections[vsi].script || '').trim()) return false;
+    }
     if (vid.script && vid.script.rows && vid.script.rows.length) return false;
     if (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length) return false;
     if (m.carousel_cards && m.carousel_cards.length) return false;
@@ -5719,7 +5733,7 @@
           hook: { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' },
           media: {
             image: { asset_id: '', prompt: '', aspect_ratio: '1:1', reference_image_ids: [] },
-            video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', blueprint: { scenes: [] }, script: { rows: [] } },
+            video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', script: { sections: [] } },
             carousel_cards: []
           },
           message_snapshot: null, style_snapshot: null, format_snapshot: null,
@@ -7835,7 +7849,7 @@
               prompt: fields['media.image.prompt'] || '',
               aspect_ratio: fields['media.image.aspect_ratio'] || '1:1'
             }),
-            video: $.extend({}, vid, {
+            video: $.extend({ script: { sections: [] } }, vid, {
               concept: fields['media.video.concept'] || '',
               duration_seconds: fields['media.video.duration_seconds'] !== '' ? Number(fields['media.video.duration_seconds']) : 30,
               aspect_ratio: fields['media.video.aspect_ratio'] || '9:16'
@@ -11224,68 +11238,62 @@
         .find('[data-action="ws-status-dropdown-toggle"]').attr('aria-expanded', 'false');
     });
 
-    // Video scene rows
-    $(document).off('click.cpv2-add-scene').on('click.cpv2-add-scene', '[data-action="ws-ad-add-scene"]', function(e) {
-      e.preventDefault();
-      var id = $(this).data('id');
-      var ad = getAd(id); if (!ad) return;
+    // Video script sections — each section is a { label, script } block. Old
+    // ads with `script.rows` are auto-folded into a single section on first
+    // edit (the renderer materialises them; writes always target `sections`).
+    function _ensureScriptSections(ad) {
       ad.media = ad.media || {};
-      ad.media.video = ad.media.video || { blueprint: { scenes: [] }, script: { rows: [] } };
-      ad.media.video.blueprint = ad.media.video.blueprint || { scenes: [] };
-      ad.media.video.blueprint.scenes.push({ name: '', description: '', timestamp: '', duration: 5 });
-      snapshot('Add scene');
-      saveEntityField('ad', id, 'media.video.blueprint.scenes', ad.media.video.blueprint.scenes);
-    });
-    $(document).off('click.cpv2-rm-scene').on('click.cpv2-rm-scene', '[data-action="ws-ad-remove-scene"]', function(e) {
-      e.preventDefault();
-      var id = $(this).data('id'); var idx = $(this).data('index');
-      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
-      var arr = (ad.media.video.blueprint && ad.media.video.blueprint.scenes) || [];
-      arr.splice(idx, 1);
-      snapshot('Remove scene');
-      saveEntityField('ad', id, 'media.video.blueprint.scenes', arr);
-    });
-    $(document).off('blur.cpv2-scene-field').on('blur.cpv2-scene-field', '.cp-v2-scene-field', function() {
-      var $f = $(this);
-      var id = $f.data('entity-id'); var idx = $f.data('index'); var key = $f.data('key');
-      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
-      var arr = (ad.media.video.blueprint && ad.media.video.blueprint.scenes) || [];
-      if (!arr[idx]) return;
-      if (arr[idx][key] === $f.val()) return;
-      arr[idx][key] = $f.val();
-      saveEntityField('ad', id, 'media.video.blueprint.scenes', arr);
-    });
+      ad.media.video = ad.media.video || {};
+      ad.media.video.script = ad.media.video.script || {};
+      if (!ad.media.video.script.sections) {
+        var derived = (typeof getAdVideoScriptSections === 'function')
+          ? getAdVideoScriptSections(ad.media.video).map(function(s) { return { label: s.label || '', script: s.script || '' }; })
+          : [];
+        ad.media.video.script.sections = derived;
+      }
+      return ad.media.video.script.sections;
+    }
 
-    // Video script rows
-    $(document).off('click.cpv2-add-row').on('click.cpv2-add-row', '[data-action="ws-ad-add-script-row"]', function(e) {
+    $(document).off('click.cpv2-add-section').on('click.cpv2-add-section', '[data-action="ws-ad-add-script-section"]', function(e) {
       e.preventDefault();
       var id = $(this).data('id');
       var ad = getAd(id); if (!ad) return;
-      ad.media = ad.media || {};
-      ad.media.video = ad.media.video || { blueprint: { scenes: [] }, script: { rows: [] } };
-      ad.media.video.script = ad.media.video.script || { rows: [] };
-      ad.media.video.script.rows.push({ time: '', dialogue: '', visual: '', camera: '', audio: '' });
-      snapshot('Add script row');
-      saveEntityField('ad', id, 'media.video.script.rows', ad.media.video.script.rows);
+      var sections = _ensureScriptSections(ad);
+      sections.push({ label: '', script: '' });
+      snapshot('Add script section');
+      saveEntityField('ad', id, 'media.video.script.sections', sections);
     });
-    $(document).off('click.cpv2-rm-row').on('click.cpv2-rm-row', '[data-action="ws-ad-remove-script-row"]', function(e) {
+    $(document).off('click.cpv2-rm-section').on('click.cpv2-rm-section', '[data-action="ws-ad-remove-script-section"]', function(e) {
       e.preventDefault();
-      var id = $(this).data('id'); var idx = $(this).data('index');
-      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
-      var arr = (ad.media.video.script && ad.media.video.script.rows) || [];
-      arr.splice(idx, 1);
-      snapshot('Remove script row');
-      saveEntityField('ad', id, 'media.video.script.rows', arr);
+      var id = $(this).data('id'); var idx = parseInt($(this).data('index'), 10);
+      var ad = getAd(id); if (!ad) return;
+      var sections = _ensureScriptSections(ad);
+      if (idx < 0 || idx >= sections.length) return;
+      sections.splice(idx, 1);
+      snapshot('Remove script section');
+      saveEntityField('ad', id, 'media.video.script.sections', sections);
     });
-    $(document).off('blur.cpv2-script-field').on('blur.cpv2-script-field', '.cp-v2-script-field', function() {
+    $(document).off('click.cpv2-mv-section').on('click.cpv2-mv-section', '[data-action="ws-ad-move-script-section"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id'); var idx = parseInt($(this).data('index'), 10); var dir = parseInt($(this).data('dir'), 10);
+      var ad = getAd(id); if (!ad) return;
+      var sections = _ensureScriptSections(ad);
+      var newIdx = idx + dir;
+      if (idx < 0 || idx >= sections.length || newIdx < 0 || newIdx >= sections.length) return;
+      var moved = sections.splice(idx, 1)[0];
+      sections.splice(newIdx, 0, moved);
+      snapshot('Reorder script section');
+      saveEntityField('ad', id, 'media.video.script.sections', sections);
+    });
+    $(document).off('blur.cpv2-section-field change.cpv2-section-field').on('blur.cpv2-section-field change.cpv2-section-field', '.cp-v2-script-section-field', function() {
       var $f = $(this);
-      var id = $f.data('entity-id'); var idx = $f.data('index'); var key = $f.data('key');
-      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
-      var arr = (ad.media.video.script && ad.media.video.script.rows) || [];
-      if (!arr[idx]) return;
-      if (arr[idx][key] === $f.val()) return;
-      arr[idx][key] = $f.val();
-      saveEntityField('ad', id, 'media.video.script.rows', arr);
+      var id = $f.data('entity-id'); var idx = parseInt($f.data('index'), 10); var key = $f.data('key');
+      var ad = getAd(id); if (!ad) return;
+      var sections = _ensureScriptSections(ad);
+      if (!sections[idx]) return;
+      if (sections[idx][key] === $f.val()) return;
+      sections[idx][key] = $f.val();
+      saveEntityField('ad', id, 'media.video.script.sections', sections);
     });
 
     // --- Stage 3: Library ↔ Workspace integration ---
@@ -12803,7 +12811,7 @@
           creative: $.extend({ primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' }, aData.creative || {}),
           media: {
             image: { asset_id: '', prompt: (aData.media && (aData.media.image_prompt || aData.media.image_brief)) || '', aspect_ratio: '1:1', reference_image_ids: [] },
-            video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: (aData.media && aData.media.video_concept) || '', blueprint: { scenes: [] }, script: { rows: [] } },
+            video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: (aData.media && aData.media.video_concept) || '', script: { sections: [] } },
             carousel_cards: []
           }
         });
@@ -13120,36 +13128,7 @@
 
   // --- 9. Generate Video Blueprint (scenes) ---
 
-  function aiGenerateVideoBlueprint(adId) {
-    if (!aiV2_assertConfigured()) return;
-    var ad = getAd(adId); if (!ad) return;
-    var vid = (ad.media && ad.media.video) || {};
-    var adSet = getAdSet(ad.ad_set_id);
-
-    var prompt = 'Create a scene-by-scene storyboard for this Meta video Ad. Target duration: ' + (vid.duration_seconds || 30) + 's. Aspect: ' + (vid.aspect_ratio || '9:16') + '.\n\n';
-    if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
-    if (vid.concept) prompt += 'Video concept: ' + vid.concept + '\n';
-    if (ad.hook && ad.hook.text) prompt += 'Hook: ' + ad.hook.text + '\n';
-    prompt += '\n' + brandSnippet('content');
-    prompt += '\n\nReturn 4-6 scenes. JSON only: {"scenes":[{"name":"","description":"","timestamp":"0:00","duration":5}]}';
-
-    toast('AI building storyboard...', 'info');
-    callAIWithRetry(prompt, function(parsed) {
-      var scenes = (parsed && parsed.scenes) || [];
-      if (scenes.length === 0) { toast('AI returned no scenes', 'warning'); return; }
-      snapshot('AI video blueprint');
-      ad.media = ad.media || {}; ad.media.video = ad.media.video || {};
-      ad.media.video.blueprint = { scenes: scenes };
-      ad.updated = new Date().toISOString();
-      if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'storyboard');
-      buildMaps(); syncToTextarea(); render();
-      logActivity('media_generated', 'ad', adId, ad.name, 'AI storyboard (' + scenes.length + ' scenes)');
-      toast('Storyboard added', 'success');
-    }, function(err) { toast('AI error: ' + err, 'error'); },
-       'ai-generate-video-blueprint', BrandService.getSystemPrompt('content'), parseJSON);
-  }
-
-  // --- 10. Generate Video Script ---
+  // --- 10. Generate Video Script (sectioned) ---
 
   function aiGenerateVideoScript(adId) {
     if (!aiV2_assertConfigured()) return;
@@ -13157,28 +13136,29 @@
     var vid = (ad.media && ad.media.video) || {};
     var adSet = getAdSet(ad.ad_set_id);
 
-    var prompt = 'Write a time-coded script for this Meta video Ad. Duration: ' + (vid.duration_seconds || 30) + 's. Aspect: ' + (vid.aspect_ratio || '9:16') + '.\n\n';
+    var prompt = 'Write a script for this Meta video Ad as labelled sections (e.g., Hook, Setup, Payoff, CTA). Target duration: ' + (vid.duration_seconds || 30) + 's. Aspect: ' + (vid.aspect_ratio || '9:16') + '.\n\n';
     if (adSet) prompt += aiV2_adSetContext(adSet) + '\n';
     if (vid.concept) prompt += 'Concept: ' + vid.concept + '\n';
-    if (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length) {
-      prompt += 'Storyboard:\n' + vid.blueprint.scenes.map(function(s, i) { return (i+1) + '. ' + s.name + ': ' + s.description; }).join('\n') + '\n';
-    }
     if (ad.hook && ad.hook.text) prompt += 'Hook: ' + ad.hook.text + '\n';
     if (ad.creative && ad.creative.cta_type) prompt += 'CTA: ' + (Constants.META_CTA_TYPES[ad.creative.cta_type] || {}).label + '\n';
+    prompt += '\nVisual direction is out of scope here — only write the spoken / on-screen script per section.\n';
     prompt += '\n' + brandSnippet('content');
-    prompt += '\n\nReturn 6-12 rows. JSON only: {"rows":[{"time":"0:00-0:03","dialogue":"","visual":"","camera":"","audio":""}]}';
+    prompt += '\n\nReturn 3-6 sections. JSON only: {"sections":[{"label":"Hook","script":""}]}';
 
     toast('AI writing script...', 'info');
     callAIWithRetry(prompt, function(parsed) {
-      var rows = (parsed && parsed.rows) || [];
-      if (rows.length === 0) { toast('AI returned no script', 'warning'); return; }
+      var sections = (parsed && parsed.sections) || [];
+      if (sections.length === 0) { toast('AI returned no script', 'warning'); return; }
+      var normalised = sections.map(function(s) { return { label: String(s.label || '').trim(), script: String(s.script || '').trim() }; })
+                               .filter(function(s) { return s.label || s.script; });
+      if (normalised.length === 0) { toast('AI returned no script', 'warning'); return; }
       snapshot('AI video script');
       ad.media = ad.media || {}; ad.media.video = ad.media.video || {};
-      ad.media.video.script = { rows: rows };
+      ad.media.video.script = { sections: normalised };
       ad.updated = new Date().toISOString();
       if (typeof maybeAdvanceAdStatus === 'function') maybeAdvanceAdStatus(ad, 'video script');
       buildMaps(); syncToTextarea(); render();
-      logActivity('script_generated', 'ad', adId, ad.name, 'AI script (' + rows.length + ' rows)');
+      logActivity('script_generated', 'ad', adId, ad.name, 'AI script (' + normalised.length + ' sections)');
       toast('Script generated', 'success');
     }, function(err) { toast('AI error: ' + err, 'error'); },
        'ai-generate-video-script', BrandService.getSystemPrompt('content'), parseJSON);
@@ -13436,7 +13416,7 @@
           },
           media: {
             image: { asset_id: '', prompt: m.image_prompt || m.image_brief || '', aspect_ratio: '1:1', reference_image_ids: [] },
-            video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: m.video_concept || '', blueprint: { scenes: [] }, script: { rows: [] } },
+            video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: m.video_concept || '', script: { sections: [] } },
             carousel_cards: []
           }
         });
@@ -15098,36 +15078,30 @@
     }
     if (ctype === 'single_video') {
       var vid = media.video || {};
-      var blueprint = vid.blueprint || { scenes: [] };
-      var script = vid.script || { rows: [] };
+      // Sections are the new structure; legacy `script.rows` is folded into a
+      // single section so downstream tools still see content.
+      var sections = (vid.script && vid.script.sections) || [];
+      if (sections.length === 0 && vid.script && vid.script.rows && vid.script.rows.length) {
+        var combined = vid.script.rows.map(function(r) {
+          var bits = [];
+          if (r.time) bits.push('[' + r.time + ']');
+          if (r.dialogue) bits.push(r.dialogue);
+          if (r.visual) bits.push('(visual: ' + r.visual + ')');
+          return bits.join(' ');
+        }).filter(Boolean).join('\n');
+        if (combined) sections = [{ label: 'Script', script: combined }];
+      }
       return {
         type: 'video',
         video: {
           concept: vid.concept || '',
           duration_seconds: vid.duration_seconds || 30,
           aspect_ratio: vid.aspect_ratio || '9:16',
-          scenes: (blueprint.scenes || []).map(function(s, i) {
-            return {
-              index: i,
-              name: s.name || '',
-              description: s.description || '',
-              timestamp: s.timestamp || '',
-              duration: s.duration || null
-            };
-          }),
-          script: (script.rows || []).map(function(r, i) {
-            return {
-              index: i,
-              time: r.time || '',
-              dialogue: r.dialogue || '',
-              visual: r.visual || '',
-              camera: r.camera || '',
-              audio: r.audio || ''
-            };
-          }),
-          voiceover_notes: vid.voiceover_notes || '',
-          music_notes: vid.music_notes || '',
-          captions_notes: vid.captions_notes || ''
+          script: {
+            sections: sections.map(function(s, i) {
+              return { index: i, label: s.label || '', script: s.script || '' };
+            })
+          }
         }
       };
     }
@@ -15178,7 +15152,7 @@
       return common + ' For image: pass `media.image.prompt` to your image-generation tool. Aspect ratio is in `media.image.aspect_ratio`.';
     }
     if (ctype === 'single_video') {
-      return common + ' For video: each entry in `media.video.scenes` is one storyboard beat — generate one clip per scene at the implied duration, then concat. Use `media.video.script` for time-coded dialogue/voiceover and on-screen visuals. Aspect ratio is in `media.video.aspect_ratio`.';
+      return common + ' For video: `media.video.script.sections` is the script broken into labelled beats (Hook, Setup, Payoff, CTA, etc.) — write one shot or clip per section that delivers the script for that beat at the implied duration, then concat. Visual direction is intentionally out of scope here; treat the script and brand voice as the source of truth. Aspect ratio is in `media.video.aspect_ratio`.';
     }
     if (ctype === 'carousel') {
       return common + ' For carousel: generate one image per entry in `media.carousel.cards`. Keep visual style consistent across cards; the `headline` and `description` describe what each card communicates.';
@@ -15704,9 +15678,6 @@
     $(document).off('click.cp2b-ai-img-prompt').on('click.cp2b-ai-img-prompt', '[data-action="ai-generate-ad-image-prompt"]', function(e) {
       e.preventDefault(); aiGenerateAdImagePrompt($(this).data('id'));
     });
-    $(document).off('click.cp2b-ai-video-bp').on('click.cp2b-ai-video-bp', '[data-action="ai-generate-video-blueprint"]', function(e) {
-      e.preventDefault(); aiGenerateVideoBlueprint($(this).data('id'));
-    });
     $(document).off('click.cp2b-ai-video-scr').on('click.cp2b-ai-video-scr', '[data-action="ai-generate-video-script"]', function(e) {
       e.preventDefault(); aiGenerateVideoScript($(this).data('id'));
     });
@@ -15853,7 +15824,6 @@
     aiGenerateAdHooks: aiGenerateAdHooks,
     aiWriteAdCopy: aiWriteAdCopy, aiImproveAdCopy: aiImproveAdCopy,
     aiGenerateAdImagePrompt: aiGenerateAdImagePrompt,
-    aiGenerateVideoBlueprint: aiGenerateVideoBlueprint,
     aiGenerateVideoScript: aiGenerateVideoScript,
 
     // Setup Wizard AI generators + finalize

@@ -912,68 +912,62 @@
         .find('[data-action="ws-status-dropdown-toggle"]').attr('aria-expanded', 'false');
     });
 
-    // Video scene rows
-    $(document).off('click.cpv2-add-scene').on('click.cpv2-add-scene', '[data-action="ws-ad-add-scene"]', function(e) {
-      e.preventDefault();
-      var id = $(this).data('id');
-      var ad = getAd(id); if (!ad) return;
+    // Video script sections — each section is a { label, script } block. Old
+    // ads with `script.rows` are auto-folded into a single section on first
+    // edit (the renderer materialises them; writes always target `sections`).
+    function _ensureScriptSections(ad) {
       ad.media = ad.media || {};
-      ad.media.video = ad.media.video || { blueprint: { scenes: [] }, script: { rows: [] } };
-      ad.media.video.blueprint = ad.media.video.blueprint || { scenes: [] };
-      ad.media.video.blueprint.scenes.push({ name: '', description: '', timestamp: '', duration: 5 });
-      snapshot('Add scene');
-      saveEntityField('ad', id, 'media.video.blueprint.scenes', ad.media.video.blueprint.scenes);
-    });
-    $(document).off('click.cpv2-rm-scene').on('click.cpv2-rm-scene', '[data-action="ws-ad-remove-scene"]', function(e) {
-      e.preventDefault();
-      var id = $(this).data('id'); var idx = $(this).data('index');
-      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
-      var arr = (ad.media.video.blueprint && ad.media.video.blueprint.scenes) || [];
-      arr.splice(idx, 1);
-      snapshot('Remove scene');
-      saveEntityField('ad', id, 'media.video.blueprint.scenes', arr);
-    });
-    $(document).off('blur.cpv2-scene-field').on('blur.cpv2-scene-field', '.cp-v2-scene-field', function() {
-      var $f = $(this);
-      var id = $f.data('entity-id'); var idx = $f.data('index'); var key = $f.data('key');
-      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
-      var arr = (ad.media.video.blueprint && ad.media.video.blueprint.scenes) || [];
-      if (!arr[idx]) return;
-      if (arr[idx][key] === $f.val()) return;
-      arr[idx][key] = $f.val();
-      saveEntityField('ad', id, 'media.video.blueprint.scenes', arr);
-    });
+      ad.media.video = ad.media.video || {};
+      ad.media.video.script = ad.media.video.script || {};
+      if (!ad.media.video.script.sections) {
+        var derived = (typeof getAdVideoScriptSections === 'function')
+          ? getAdVideoScriptSections(ad.media.video).map(function(s) { return { label: s.label || '', script: s.script || '' }; })
+          : [];
+        ad.media.video.script.sections = derived;
+      }
+      return ad.media.video.script.sections;
+    }
 
-    // Video script rows
-    $(document).off('click.cpv2-add-row').on('click.cpv2-add-row', '[data-action="ws-ad-add-script-row"]', function(e) {
+    $(document).off('click.cpv2-add-section').on('click.cpv2-add-section', '[data-action="ws-ad-add-script-section"]', function(e) {
       e.preventDefault();
       var id = $(this).data('id');
       var ad = getAd(id); if (!ad) return;
-      ad.media = ad.media || {};
-      ad.media.video = ad.media.video || { blueprint: { scenes: [] }, script: { rows: [] } };
-      ad.media.video.script = ad.media.video.script || { rows: [] };
-      ad.media.video.script.rows.push({ time: '', dialogue: '', visual: '', camera: '', audio: '' });
-      snapshot('Add script row');
-      saveEntityField('ad', id, 'media.video.script.rows', ad.media.video.script.rows);
+      var sections = _ensureScriptSections(ad);
+      sections.push({ label: '', script: '' });
+      snapshot('Add script section');
+      saveEntityField('ad', id, 'media.video.script.sections', sections);
     });
-    $(document).off('click.cpv2-rm-row').on('click.cpv2-rm-row', '[data-action="ws-ad-remove-script-row"]', function(e) {
+    $(document).off('click.cpv2-rm-section').on('click.cpv2-rm-section', '[data-action="ws-ad-remove-script-section"]', function(e) {
       e.preventDefault();
-      var id = $(this).data('id'); var idx = $(this).data('index');
-      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
-      var arr = (ad.media.video.script && ad.media.video.script.rows) || [];
-      arr.splice(idx, 1);
-      snapshot('Remove script row');
-      saveEntityField('ad', id, 'media.video.script.rows', arr);
+      var id = $(this).data('id'); var idx = parseInt($(this).data('index'), 10);
+      var ad = getAd(id); if (!ad) return;
+      var sections = _ensureScriptSections(ad);
+      if (idx < 0 || idx >= sections.length) return;
+      sections.splice(idx, 1);
+      snapshot('Remove script section');
+      saveEntityField('ad', id, 'media.video.script.sections', sections);
     });
-    $(document).off('blur.cpv2-script-field').on('blur.cpv2-script-field', '.cp-v2-script-field', function() {
+    $(document).off('click.cpv2-mv-section').on('click.cpv2-mv-section', '[data-action="ws-ad-move-script-section"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('id'); var idx = parseInt($(this).data('index'), 10); var dir = parseInt($(this).data('dir'), 10);
+      var ad = getAd(id); if (!ad) return;
+      var sections = _ensureScriptSections(ad);
+      var newIdx = idx + dir;
+      if (idx < 0 || idx >= sections.length || newIdx < 0 || newIdx >= sections.length) return;
+      var moved = sections.splice(idx, 1)[0];
+      sections.splice(newIdx, 0, moved);
+      snapshot('Reorder script section');
+      saveEntityField('ad', id, 'media.video.script.sections', sections);
+    });
+    $(document).off('blur.cpv2-section-field change.cpv2-section-field').on('blur.cpv2-section-field change.cpv2-section-field', '.cp-v2-script-section-field', function() {
       var $f = $(this);
-      var id = $f.data('entity-id'); var idx = $f.data('index'); var key = $f.data('key');
-      var ad = getAd(id); if (!ad || !ad.media || !ad.media.video) return;
-      var arr = (ad.media.video.script && ad.media.video.script.rows) || [];
-      if (!arr[idx]) return;
-      if (arr[idx][key] === $f.val()) return;
-      arr[idx][key] = $f.val();
-      saveEntityField('ad', id, 'media.video.script.rows', arr);
+      var id = $f.data('entity-id'); var idx = parseInt($f.data('index'), 10); var key = $f.data('key');
+      var ad = getAd(id); if (!ad) return;
+      var sections = _ensureScriptSections(ad);
+      if (!sections[idx]) return;
+      if (sections[idx][key] === $f.val()) return;
+      sections[idx][key] = $f.val();
+      saveEntityField('ad', id, 'media.video.script.sections', sections);
     });
 
     // --- Stage 3: Library ↔ Workspace integration ---

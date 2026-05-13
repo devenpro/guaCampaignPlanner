@@ -537,18 +537,19 @@
       }
     } else if (ad.creative_type === 'single_video') {
       var vid = media.video || {};
-      var scenes = (vid.blueprint && vid.blueprint.scenes) || [];
-      var rows   = (vid.script && vid.script.rows) || [];
-      var vidFilled = !!(vid.concept || scenes.length || rows.length);
+      var sections = (vid.script && vid.script.sections) || [];
+      var legacyRows = (vid.script && vid.script.rows) || [];
+      var sectionCount = sections.length || (legacyRows.length ? 1 : 0);
+      var vidFilled = !!(vid.concept || sectionCount);
       pill = vidFilled
         ? '<span class="cp-inspector-status-pill cp-inspector-status-pill-filled">' + icon('circle-check') + ' Filled</span>'
         : '<span class="cp-inspector-status-pill cp-inspector-status-pill-empty">' + icon('circle') + ' Not set</span>';
       if (vidFilled) {
         body = '';
         if (vid.concept) body += '<div class="cp-inspector-field"><div class="cp-inspector-field-label">Concept</div><div class="cp-inspector-field-value">' + esc(truncate(vid.concept, 200)) + '</div></div>';
-        body += '<div class="cp-text-muted" style="font-size:11px;margin-top:4px">' + (vid.duration_seconds || '?') + 's · ' + esc(vid.aspect_ratio || '9:16') + ' · ' + scenes.length + ' scene' + (scenes.length !== 1 ? 's' : '') + ' · ' + rows.length + ' script row' + (rows.length !== 1 ? 's' : '') + '</div>';
+        body += '<div class="cp-text-muted" style="font-size:11px;margin-top:4px">' + (vid.duration_seconds || '?') + 's · ' + esc(vid.aspect_ratio || '9:16') + ' · ' + sectionCount + ' script section' + (sectionCount !== 1 ? 's' : '') + '</div>';
       } else {
-        body = '<div class="cp-text-muted">No video brief yet. Open the Media tab to add concept, scenes, and script.</div>';
+        body = '<div class="cp-text-muted">No video brief yet. Open the Media tab to add concept and script sections.</div>';
       }
     } else if (ad.creative_type === 'carousel') {
       var cards = media.carousel_cards || [];

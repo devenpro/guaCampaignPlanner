@@ -386,8 +386,7 @@
 
   function renderAdMediaVideo(ad) {
     var vid = (ad.media && ad.media.video) || {};
-    var script = vid.script || { rows: [] };
-    var blueprint = vid.blueprint || { scenes: [] };
+    var sections = getAdVideoScriptSections(vid);
 
     var html = '';
     html += '<div class="cp-inspector-section">';
@@ -406,56 +405,59 @@
     }
     html += '</select></div></div></div>';
 
-    // Blueprint scenes
+    // Script sections
     html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('film') + ' Storyboard scenes';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ad-add-scene" data-id="' + esc(ad.id) + '" style="margin-left:auto">' + icon('plus') + ' Add scene</button>';
+    html += '<div class="cp-inspector-section-title">' + icon('list-tree') + ' Script';
+    html += '<span class="cp-text-muted" style="font-weight:400;font-size:11px;margin-left:8px">Add a section per beat (Hook · Setup · Payoff · CTA). Visual direction lives in your media app.</span>';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ad-add-script-section" data-id="' + esc(ad.id) + '" style="margin-left:auto">' + icon('plus') + ' Add section</button>';
     html += '</div>';
-    if ((blueprint.scenes || []).length === 0) {
-      html += '<div class="cp-text-muted">No scenes yet.</div>';
+    if (sections.length === 0) {
+      html += '<div class="cp-text-muted">No sections yet. Add a section or use AI generate below.</div>';
     } else {
-      html += '<div class="cp-v2-scenes">';
-      for (var si = 0; si < blueprint.scenes.length; si++) {
-        var sc = blueprint.scenes[si];
-        html += '<div class="cp-v2-scene"><div class="cp-v2-scene-num">' + (si + 1) + '</div>';
-        html += '<div class="cp-v2-scene-fields">';
-        html += '<input type="text" class="cp-input cp-v2-scene-field" data-entity-id="' + esc(ad.id) + '" data-index="' + si + '" data-key="name" value="' + esc(sc.name || '') + '" placeholder="Scene name">';
-        html += '<textarea class="cp-textarea cp-v2-scene-field" data-entity-id="' + esc(ad.id) + '" data-index="' + si + '" data-key="description" rows="2" placeholder="What happens">' + esc(sc.description || '') + '</textarea>';
-        html += '</div>';
-        html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-remove-scene" data-id="' + esc(ad.id) + '" data-index="' + si + '">' + icon('trash') + '</button>';
+      html += '<div class="cp-v2-script-sections">';
+      for (var si = 0; si < sections.length; si++) {
+        var sec = sections[si];
+        html += '<div class="cp-v2-script-section">';
+        html += '<div class="cp-v2-script-section-header">';
+        html += '<span class="cp-v2-script-section-num">' + (si + 1) + '</span>';
+        html += '<input type="text" class="cp-input cp-v2-script-section-field" data-entity-id="' + esc(ad.id) + '" data-index="' + si + '" data-key="label" value="' + esc(sec.label || '') + '" placeholder="Section name (e.g., Hook)">';
+        html += '<div class="cp-v2-script-section-actions">';
+        html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-move-script-section" data-id="' + esc(ad.id) + '" data-index="' + si + '" data-dir="-1" title="Move up"' + (si === 0 ? ' disabled' : '') + '>' + icon('arrow-up') + '</button>';
+        html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-move-script-section" data-id="' + esc(ad.id) + '" data-index="' + si + '" data-dir="1" title="Move down"' + (si === sections.length - 1 ? ' disabled' : '') + '>' + icon('arrow-down') + '</button>';
+        html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-remove-script-section" data-id="' + esc(ad.id) + '" data-index="' + si + '" title="Remove">' + icon('trash') + '</button>';
+        html += '</div></div>';
+        html += '<textarea class="cp-textarea cp-v2-script-section-field" data-entity-id="' + esc(ad.id) + '" data-index="' + si + '" data-key="script" rows="3" placeholder="Write what is said and any on-screen text for this beat.">' + esc(sec.script || '') + '</textarea>';
         html += '</div>';
       }
       html += '</div>';
     }
     html += '</div>';
 
-    // Script rows
-    html += '<div class="cp-inspector-section">';
-    html += '<div class="cp-inspector-section-title">' + icon('list-tree') + ' Script';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="ws-ad-add-script-row" data-id="' + esc(ad.id) + '" style="margin-left:auto">' + icon('plus') + ' Add row</button>';
-    html += '</div>';
-    if ((script.rows || []).length === 0) {
-      html += '<div class="cp-text-muted">No script rows yet.</div>';
-    } else {
-      html += '<table class="cp-v2-script-table"><thead><tr><th>Time</th><th>Dialogue</th><th>Visual</th><th></th></tr></thead><tbody>';
-      for (var ri = 0; ri < script.rows.length; ri++) {
-        var row = script.rows[ri];
-        html += '<tr>';
-        html += '<td><input type="text" class="cp-input cp-input-sm cp-v2-script-field" data-entity-id="' + esc(ad.id) + '" data-index="' + ri + '" data-key="time" value="' + esc(row.time || '') + '" placeholder="0:00"></td>';
-        html += '<td><input type="text" class="cp-input cp-input-sm cp-v2-script-field" data-entity-id="' + esc(ad.id) + '" data-index="' + ri + '" data-key="dialogue" value="' + esc(row.dialogue || '') + '" placeholder="What\'s said"></td>';
-        html += '<td><input type="text" class="cp-input cp-input-sm cp-v2-script-field" data-entity-id="' + esc(ad.id) + '" data-index="' + ri + '" data-key="visual" value="' + esc(row.visual || '') + '" placeholder="What\'s shown"></td>';
-        html += '<td><button class="cp-btn-icon cp-btn-icon-sm" data-action="ws-ad-remove-script-row" data-id="' + esc(ad.id) + '" data-index="' + ri + '">' + icon('trash') + '</button></td>';
-        html += '</tr>';
-      }
-      html += '</tbody></table>';
-    }
-    html += '</div>';
-
     html += '<div class="cp-inspector-actions">';
-    html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-video-blueprint" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate scenes</button>';
     html += '<button class="cp-btn cp-btn-ai" data-action="ai-generate-video-script" data-id="' + esc(ad.id) + '">' + icon('sparkles') + ' Generate script</button>';
     html += '</div>';
     return html;
+  }
+
+  // Single source of truth for the section list shown in the Video editor and
+  // exported in the media brief. New ads carry `script.sections`; legacy ads
+  // built with the old time/dialogue/visual rows are folded into a single
+  // "Script" section so existing copy isn't lost. The migration is read-only;
+  // writes always go to `script.sections`.
+  function getAdVideoScriptSections(vid) {
+    var script = (vid && vid.script) || {};
+    if (script.sections && script.sections.length) return script.sections;
+    if (script.rows && script.rows.length) {
+      var combined = script.rows.map(function(r) {
+        var bits = [];
+        if (r.time) bits.push('[' + r.time + ']');
+        if (r.dialogue) bits.push(r.dialogue);
+        if (r.visual) bits.push('(visual: ' + r.visual + ')');
+        return bits.join(' ');
+      }).filter(Boolean).join('\n');
+      return combined ? [{ label: 'Script', script: combined }] : [];
+    }
+    return [];
   }
 
   function renderAdMediaCarousel(ad) {
@@ -675,7 +677,15 @@
       return !!(img.asset_id || p.length > 10);
     } else if (ad.creative_type === 'single_video') {
       var vid = media.video || {};
-      return !!(vid.asset_id || vid.concept || (vid.script && vid.script.rows && vid.script.rows.length) || (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length));
+      if (vid.asset_id || (vid.concept || '').trim()) return true;
+      var sections = (vid.script && vid.script.sections) || [];
+      for (var s = 0; s < sections.length; s++) {
+        if ((sections[s].label || '').trim() || (sections[s].script || '').trim()) return true;
+      }
+      // Back-compat: legacy ads still satisfy "done" via rows or scenes.
+      if (vid.script && vid.script.rows && vid.script.rows.length) return true;
+      if (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length) return true;
+      return false;
     } else if (ad.creative_type === 'carousel') {
       return !!(media.carousel_cards && media.carousel_cards.length >= 2);
     }
@@ -698,6 +708,10 @@
     if ((img.prompt || '').trim() || (img.ai_prompt || '').trim() || (img.brief || '').trim() || img.asset_id || (img.negative_prompt || '').trim()) return false;
     var vid = m.video || {};
     if ((vid.concept || '').trim() || vid.asset_id) return false;
+    var vidSections = (vid.script && vid.script.sections) || [];
+    for (var vsi = 0; vsi < vidSections.length; vsi++) {
+      if ((vidSections[vsi].label || '').trim() || (vidSections[vsi].script || '').trim()) return false;
+    }
     if (vid.script && vid.script.rows && vid.script.rows.length) return false;
     if (vid.blueprint && vid.blueprint.scenes && vid.blueprint.scenes.length) return false;
     if (m.carousel_cards && m.carousel_cards.length) return false;

@@ -248,7 +248,7 @@
               prompt: fields['media.image.prompt'] || '',
               aspect_ratio: fields['media.image.aspect_ratio'] || '1:1'
             }),
-            video: $.extend({}, vid, {
+            video: $.extend({ script: { sections: [] } }, vid, {
               concept: fields['media.video.concept'] || '',
               duration_seconds: fields['media.video.duration_seconds'] !== '' ? Number(fields['media.video.duration_seconds']) : 30,
               aspect_ratio: fields['media.video.aspect_ratio'] || '9:16'

@@ -274,11 +274,10 @@
       a.hook.text = a.hook.text || '';
       a.hook.type = a.hook.type || 'direct';
       a.media = a.media || {};
-      a.media.image = a.media.image || { asset_id: '', ai_prompt: '', brief: '', aspect_ratio: '1:1', negative_prompt: '', reference_image_ids: [] };
+      a.media.image = a.media.image || { asset_id: '', prompt: '', aspect_ratio: '1:1', reference_image_ids: [] };
       a.media.image.reference_image_ids = a.media.image.reference_image_ids || [];
-      a.media.video = a.media.video || { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', blueprint: { scenes: [] }, script: { rows: [] } };
-      a.media.video.blueprint = a.media.video.blueprint || { scenes: [] };
-      a.media.video.script = a.media.video.script || { rows: [] };
+      a.media.video = a.media.video || { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', script: { sections: [] } };
+      a.media.video.script = a.media.video.script || { sections: [] };
       a.media.carousel_cards = a.media.carousel_cards || [];
       // Snapshots
       a.message_snapshot = a.message_snapshot || null;
