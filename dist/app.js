@@ -1,4 +1,4 @@
-/* Campaign Planner — built from 82 source files (see src/) */
+/* Campaign Planner — built from 81 source files (see src/) */
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -47,8 +47,7 @@
 
   var APP_VIEWS = {
     'dashboard':         { order: 1,  label: 'Dashboard',         icon: 'chart-pie',          group: 'main',    description: 'Overview & stats' },
-    'personas':          { order: 2,  label: 'Personas',          icon: 'users',              group: 'library', description: 'Audience personas' },
-    'pain_points':       { order: 3,  label: 'Pain Points',       icon: 'bolt',               group: 'library', description: 'Pain points & solutions' },
+    'personas':          { order: 2,  label: 'Personas',          icon: 'users',              group: 'library', description: 'Audience personas & pain points' },
     'messages':          { order: 4,  label: 'Messages',          icon: 'comments',           group: 'library', description: 'Message library' },
     'styles':            { order: 5,  label: 'Styles',            icon: 'palette',            group: 'library', description: 'Creative styles' },
     'formats':           { order: 6,  label: 'Formats',           icon: 'clapperboard',       group: 'library', description: 'Visual formats' },
@@ -1392,10 +1391,17 @@
       return;
     }
 
+    // Legacy 'pain_points' view was merged into Personas. Redirect any
+    // bookmarks / hash routes to the Personas view with the Pain Points tab
+    // pre-selected.
+    if (S.currentView === 'pain_points') {
+      S.currentView = 'personas';
+      S.personasTab = 'pain_points';
+    }
+
     switch (S.currentView) {
       case 'dashboard':    html = renderDashboardView(); break;
       case 'personas':     html = renderPersonasView(); break;
-      case 'pain_points':  html = renderPainPointsPageView(); break;
       case 'messages':     html = renderMessagesView(); break;
       case 'styles':       html = renderStylesView(); break;
       case 'formats':      html = renderFormatsPageView(); break;
@@ -2328,37 +2334,75 @@
   // ============================================================
 
   function renderPersonasView() {
-    var html = '<div class="cp-view cp-view-personas">';
+    var isPP = S.personasTab === 'pain_points';
+    var html = '<div class="cp-view cp-view-personas' + (isPP ? ' cp-view-personas--pp' : '') + '">';
 
     // View header
     html += '<div class="cp-view-header"><div class="cp-view-header-left">';
-    html += '<h1>' + icon('users') + ' Personas</h1>';
-    html += '<span class="cp-view-subtitle">' + S.totalPersonas + ' personas in ' + (S.data.persona_categories || []).length + ' categories</span>';
+    if (isPP) {
+      var pps = getAllPainPoints();
+      html += '<h1>' + icon('bolt') + ' Pain Points</h1>';
+      html += '<span class="cp-view-subtitle">' + pps.length + ' shared pain point' + (pps.length !== 1 ? 's' : '') + ', linked to personas</span>';
+    } else {
+      html += '<h1>' + icon('users') + ' Personas</h1>';
+      html += '<span class="cp-view-subtitle">' + S.totalPersonas + ' personas in ' + (S.data.persona_categories || []).length + ' categories</span>';
+    }
     html += '</div><div class="cp-view-header-right">';
-    // Tab toggle
+    // Tab toggle — Personas / Pain Points
     html += '<div class="cp-tab-toggle">';
-    html += '<button class="cp-tab-btn' + (S.personasTab === 'personas' ? ' cp-tab-btn-active' : '') + '" data-action="set-personas-tab" data-tab="personas">' + icon('users') + ' Personas</button>';
-    html += '<button class="cp-tab-btn' + (S.personasTab === 'pain_points' ? ' cp-tab-btn-active' : '') + '" data-action="set-personas-tab" data-tab="pain_points">' + icon('bolt') + ' Pain Points</button>';
+    html += '<button class="cp-tab-btn' + (!isPP ? ' cp-tab-btn-active' : '') + '" data-action="set-personas-tab" data-tab="personas">' + icon('users') + ' Personas</button>';
+    html += '<button class="cp-tab-btn' + (isPP ? ' cp-tab-btn-active' : '') + '" data-action="set-personas-tab" data-tab="pain_points">' + icon('bolt') + ' Pain Points</button>';
     html += '</div>';
-    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-persona">' + icon('plus') + ' Add Persona</button>';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="new-category">' + icon('folder-plus') + ' Category</button>';
+    if (isPP) {
+      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-pain-point">' + icon('plus') + ' Add Pain Point</button>';
+    } else {
+      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-persona">' + icon('plus') + ' Add Persona</button>';
+      html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="new-category">' + icon('folder-plus') + ' Category</button>';
+    }
     html += '</div></div>';
 
-    // AI Research Panel placeholder (Part 2B will replace)
+    // AI Research Panel — switches stateKey based on tab so each tab has
+    // its own research workflow.
     html += '<div class="cp-ai-research-slot" id="cpPersonaResearchSlot">';
-    html += renderAIResearchBar('Persona', '#9334e9', 'users', 'personas');
+    if (isPP) {
+      html += renderAIResearchBar('Pain Point', '#d93025', 'bolt', 'pain_points');
+    } else {
+      html += renderAIResearchBar('Persona', '#9334e9', 'users', 'personas');
+    }
     html += '</div>';
+
+    if (isPP) {
+      // Pain Points tab — full toolbar + grouped list + dedicated detail pane.
+      var ppFilter = S.painPointFilter || {};
+      html += '<div class="cp-view-toolbar cp-pp-toolbar">';
+      html += '<div class="cp-search-wrapper">' + icon('search') + '<input type="text" class="cp-input" id="cpPainPointPageSearch" placeholder="Search pain points & solutions…" value="' + esc(ppFilter.search || '') + '"></div>';
+      html += '<select class="cp-select cp-select-sm" id="cpPainPointCatFilter"><option value="">All Categories</option>';
+      for (var ci = 0; ci < PAIN_POINT_CATEGORIES.length; ci++) {
+        var pcat = PAIN_POINT_CATEGORIES[ci];
+        html += '<option value="' + esc(pcat.id) + '"' + (ppFilter.category === pcat.id ? ' selected' : '') + '>' + esc(pcat.name) + '</option>';
+      }
+      html += '</select>';
+      var groupBy = ppFilter.groupBy || 'category';
+      html += '<select class="cp-select cp-select-sm" id="cpPainPointGroupBy">';
+      html += '<option value="category"' + (groupBy === 'category' ? ' selected' : '') + '>Group: Category</option>';
+      html += '<option value="flat"' + (groupBy === 'flat' ? ' selected' : '') + '>Group: None</option>';
+      html += '</select>';
+      html += '</div>';
+    }
 
     // Split pane
     html += '<div class="cp-split-pane">';
-    if (S.personasTab === 'personas') {
-      html += renderPersonasLeftPane();
+    if (isPP) {
+      html += renderPainPointsPaneLeft();
+      html += '<div class="cp-preview-pane">';
+      html += renderPainPointDetailPane();
+      html += '</div>';
     } else {
-      html += renderPainPointsLeftPane();
+      html += renderPersonasLeftPane();
+      html += '<div class="cp-preview-pane" id="cpPersonaPreview">';
+      html += renderPersonaDetailPane();
+      html += '</div>';
     }
-    html += '<div class="cp-preview-pane" id="cpPersonaPreview">';
-    html += renderPersonaDetailPane();
-    html += '</div>';
     html += '</div>';
 
     html += '</div>';
@@ -2483,38 +2527,159 @@
     return html;
   }
 
-  function renderPainPointsLeftPane() {
+  // Pain Points pane (used inside the Personas view's Pain Points tab).
+  // Mirrors the rich behaviour of the former standalone Pain Points page:
+  // search + category filter + group-by toggle, list grouped by category
+  // (collapsible) or flat, with persona count badges and inline solution
+  // previews.
+  function renderPainPointsPaneLeft() {
     var pps = getAllPainPoints();
-    var html = '<div class="cp-list-pane">';
-    html += '<div class="cp-list-toolbar"><div class="cp-list-toolbar-row">';
-    html += '<div class="cp-search-wrapper">' + icon('search') + '<input type="text" class="cp-input" id="cpPainPointSearch" placeholder="Search pain points..." value=""></div>';
-    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-pain-point">' + icon('plus') + ' Add</button>';
+    var ppFilter = S.painPointFilter || {};
+    var filtered = pps.slice();
+    if (ppFilter.search) {
+      var q = ppFilter.search.toLowerCase();
+      filtered = filtered.filter(function(pp) {
+        return (pp.pain_point || '').toLowerCase().indexOf(q) > -1 || (pp.solution || '').toLowerCase().indexOf(q) > -1;
+      });
+    }
+    if (ppFilter.category) filtered = filtered.filter(function(pp) { return pp.category === ppFilter.category; });
+    var groupBy = ppFilter.groupBy || 'category';
+
+    var html = '<div class="cp-list-pane cp-pp-list-pane">';
+    if (filtered.length === 0) {
+      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No pain points' + (ppFilter.search || ppFilter.category ? ' match your filters' : ' yet') + '.</p>';
+      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-pain-point">' + icon('plus') + ' Create First Pain Point</button></div>';
+    } else if (groupBy === 'category') {
+      html += renderPainPointListGroupedByCategory(filtered);
+    } else {
+      html += '<div class="cp-pp-list">';
+      for (var i = 0; i < filtered.length; i++) html += renderPainPointListItem(filtered[i]);
+      html += '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function renderPainPointListGroupedByCategory(filtered) {
+    var grouped = {};
+    var uncatId = '__uncat__';
+    for (var i = 0; i < filtered.length; i++) {
+      var key = filtered[i].category || uncatId;
+      (grouped[key] = grouped[key] || []).push(filtered[i]);
+    }
+    var order = (PAIN_POINT_CATEGORIES || []).map(function(c) { return c.id; });
+    order.push(uncatId);
+
+    var html = '';
+    for (var oi = 0; oi < order.length; oi++) {
+      var catId = order[oi];
+      var items = grouped[catId];
+      if (!items || items.length === 0) continue;
+      var cat = (PAIN_POINT_CATEGORIES || []).find(function(c) { return c.id === catId; });
+      var label = cat ? cat.name : 'Uncategorized';
+      var collapsed = !!(S.collapsedGroups && S.collapsedGroups['ppcat_' + catId]);
+
+      html += '<div class="cp-pp-group">';
+      html += '<div class="cp-pp-group-header" data-action="toggle-pp-group" data-cat-id="' + esc(catId) + '">';
+      html += icon(collapsed ? 'chevron-right' : 'chevron-down');
+      html += '<span class="cp-pp-group-name">' + esc(label) + '</span>';
+      html += '<span class="cp-pp-group-count">' + items.length + '</span>';
+      html += '</div>';
+      if (!collapsed) {
+        html += '<div class="cp-pp-list">';
+        for (var k = 0; k < items.length; k++) html += renderPainPointListItem(items[k]);
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    return html;
+  }
+
+  function renderPainPointListItem(pp) {
+    var personaCount = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) > -1; }).length;
+    var sel = S.selectedPainPointId === pp.id ? ' cp-pp-item-selected' : '';
+    var hasSolution = !!(pp.solution && pp.solution.trim());
+
+    var html = '<div class="cp-pp-item' + sel + '" data-action="select-pain-point-page" data-id="' + esc(pp.id) + '">';
+    html += '<div class="cp-pp-item-main">';
+    html += '<div class="cp-pp-item-title">' + esc(truncate(pp.pain_point || '(Empty)', 90)) + '</div>';
+    if (hasSolution) {
+      html += '<div class="cp-pp-item-solution" title="Solution"><span class="cp-pp-item-solution-icon">' + icon('lightbulb') + '</span>' + esc(truncate(pp.solution, 90)) + '</div>';
+    }
+    html += '</div>';
+    html += '<div class="cp-pp-item-meta">';
+    if (personaCount > 0) html += '<span class="cp-pp-mini-stat" title="Linked personas">' + icon('users') + ' ' + personaCount + '</span>';
+    if (!hasSolution) html += '<span class="cp-pp-mini-stat cp-pp-mini-warn" title="No solution defined">' + icon('triangle-exclamation') + '</span>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderPainPointDetailPane() {
+    if (!S.selectedPainPointId || !S.painPointMap[S.selectedPainPointId]) {
+      return '<div class="cp-empty-state cp-empty-state--center">' +
+        '<div class="cp-empty-state-icon">' + icon('bolt') + '</div>' +
+        '<div class="cp-empty-state-title">Select a pain point</div>' +
+        '<div class="cp-empty-state-text">Choose from the list, or create a new one.</div>' +
+        '<button class="cp-btn cp-btn-primary" data-action="new-pain-point">' + icon('plus') + ' New Pain Point</button></div>';
+    }
+    var pp = S.painPointMap[S.selectedPainPointId];
+    var ppCats = PAIN_POINT_CATEGORIES || [];
+    var catLabel = '';
+    if (pp.category) { var ppcMatch = ppCats.find(function(c) { return c.id === pp.category; }); catLabel = ppcMatch ? ppcMatch.name : ''; }
+
+    var linkedPersonas = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) > -1; });
+    var unlinkedPersonas = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) === -1; });
+
+    var html = '<div class="cp-detail-header"><div class="cp-detail-header-left">';
+    html += '<h2>' + icon('bolt') + ' Pain Point</h2>';
+    if (catLabel) html += '<span class="cp-badge" style="background:#d9302515;color:#d93025">' + esc(catLabel) + '</span>';
+    html += '</div><div class="cp-detail-header-right">';
+    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-pain-point" data-id="' + esc(pp.id) + '">' + icon('trash') + ' Delete</button>';
     html += '</div></div>';
 
-    html += '<div class="cp-pain-point-list" id="cpPainPointList">';
-    if (pps.length === 0) {
-      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No shared pain points yet.</p>';
-      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-pain-point">' + icon('plus') + ' Create First</button></div>';
-    } else {
-      for (var i = 0; i < pps.length; i++) {
-        var pp = pps[i];
-        // Count how many personas reference this pain point
-        var usedByCount = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) > -1; }).length;
-        var catLabel = '';
-        if (pp.category) {
-          var ppcMatch = PAIN_POINT_CATEGORIES.find(function(c) { return c.id === pp.category; });
-          catLabel = ppcMatch ? ppcMatch.name : pp.category;
-        }
+    html += '<div class="cp-card cp-pp-detail-card">';
+    html += '<div class="cp-section-header"><h3>' + icon('triangle-exclamation') + ' Pain Point</h3></div>';
+    html += '<textarea class="cp-textarea cp-pp-inline-field" data-ppfield="pain_point" rows="3">' + esc(pp.pain_point || '') + '</textarea>';
+    html += '</div>';
 
-        html += '<div class="cp-pain-point-item" data-action="select-pain-point" data-id="' + esc(pp.id) + '">';
-        html += '<div class="cp-pain-point-text">' + esc(truncate(pp.pain_point, 60)) + '</div>';
-        html += '<div class="cp-pain-point-meta">';
-        if (catLabel) html += '<span class="cp-badge" style="background:#5f636815;color:#5f6368">' + esc(catLabel) + '</span>';
-        html += '<span class="cp-text-muted">Used by ' + usedByCount + ' persona' + (usedByCount !== 1 ? 's' : '') + '</span>';
-        html += '</div></div>';
+    html += '<div class="cp-card cp-pp-detail-card cp-pp-detail-solution">';
+    html += '<div class="cp-section-header"><h3 style="color:var(--cp-success)">' + icon('lightbulb') + ' Solution</h3></div>';
+    html += '<textarea class="cp-textarea cp-pp-inline-field" data-ppfield="solution" rows="3" placeholder="How does your product solve this?">' + esc(pp.solution || '') + '</textarea>';
+    html += '</div>';
+
+    html += '<div class="cp-card cp-pp-detail-card">';
+    html += '<div class="cp-form-group"><label class="cp-field-label">Category</label>';
+    html += '<select class="cp-select cp-pp-inline-field" data-ppfield="category">';
+    html += '<option value="">None</option>';
+    for (var ci = 0; ci < ppCats.length; ci++) {
+      html += '<option value="' + esc(ppCats[ci].id) + '"' + (pp.category === ppCats[ci].id ? ' selected' : '') + '>' + esc(ppCats[ci].name) + '</option>';
+    }
+    html += '</select></div></div>';
+
+    // Linked Personas
+    html += '<div class="cp-card cp-pp-detail-card">';
+    html += '<div class="cp-section-header"><h3>' + icon('users') + ' Linked Personas (' + linkedPersonas.length + ')</h3>';
+    if (unlinkedPersonas.length > 0) html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="link-pp-to-personas" data-pp-id="' + esc(pp.id) + '">' + icon('link') + ' Link to Personas</button>';
+    html += '</div>';
+    if (linkedPersonas.length === 0) {
+      html += '<p class="cp-text-muted">Not linked to any personas yet.' + (unlinkedPersonas.length > 0 ? ' Click "Link to Personas" above.' : '') + '</p>';
+    } else {
+      for (var pi = 0; pi < linkedPersonas.length; pi++) {
+        html += '<div class="cp-list-item-inline">';
+        html += '<span style="flex:1;cursor:pointer" data-action="select-persona-from-pp" data-persona-id="' + esc(linkedPersonas[pi].id) + '">' + dimensionBadge('persona', linkedPersonas[pi].id) + '</span>';
+        html += '<button class="cp-btn-icon cp-btn-xs" data-action="unlink-pp-from-persona" data-pp-id="' + esc(pp.id) + '" data-persona-id="' + esc(linkedPersonas[pi].id) + '" title="Unlink">' + icon('link-slash') + '</button>';
+        html += '</div>';
       }
     }
-    html += '</div></div>';
+    html += '</div>';
+
+    // Workspace usage (meta_v2)
+    if (typeof renderLibraryWorkspaceUsage === 'function') {
+      html += renderLibraryWorkspaceUsage('pain_point', pp.id);
+    }
+
+    html += '<div class="cp-detail-footer"><span class="cp-text-muted">Created ' + formatDate(pp.created) + (pp.updated ? ' · Updated ' + formatRelativeTime(pp.updated) : '') + '</span></div>';
     return html;
   }
 
@@ -2929,209 +3094,6 @@
     html += '<span class="cp-text-muted">Used in <strong>' + recipeCount + '</strong> recipe' + (recipeCount !== 1 ? 's' : '') + '</span>';
     html += '</div>';
     html += '</div>';
-    return html;
-  }
-
-
-/* ===== src/10-part1/14-view-pain-points.js ===== */
-  // ============================================================
-  // SECTION 13.5: DEDICATED PAIN POINTS VIEW
-  // ============================================================
-
-  function renderPainPointsPageView() {
-    var pps = getAllPainPoints();
-    var ppFilter = S.painPointFilter || {};
-
-    // Apply filters
-    var filtered = pps.slice();
-    if (ppFilter.search) {
-      var q = ppFilter.search.toLowerCase();
-      filtered = filtered.filter(function(pp) {
-        return (pp.pain_point || '').toLowerCase().indexOf(q) > -1 || (pp.solution || '').toLowerCase().indexOf(q) > -1;
-      });
-    }
-    if (ppFilter.category) filtered = filtered.filter(function(pp) { return pp.category === ppFilter.category; });
-
-    // Group mode: 'category' (default) | 'flat'
-    var groupBy = ppFilter.groupBy || 'category';
-
-    var html = '<div class="cp-view cp-view-pain-points">';
-
-    // Header
-    html += '<div class="cp-view-header"><div class="cp-view-header-left">';
-    html += '<h1>' + icon('bolt') + ' Pain Points</h1>';
-    html += '<span class="cp-view-subtitle">' + filtered.length + ' of ' + pps.length + '</span>';
-    html += '</div><div class="cp-view-header-right">';
-    html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-pain-point">' + icon('plus') + ' Add Pain Point</button>';
-    html += '</div></div>';
-
-    // AI Research Panel
-    html += '<div class="cp-ai-research-slot" id="cpPainPointResearchSlot">';
-    html += renderAIResearchBar('Pain Point', '#d93025', 'bolt', 'pain_points');
-    html += '</div>';
-
-    // Toolbar — single compact row
-    html += '<div class="cp-view-toolbar cp-pp-toolbar">';
-    html += '<div class="cp-search-wrapper">' + icon('search') + '<input type="text" class="cp-input" id="cpPainPointPageSearch" placeholder="Search pain points & solutions…" value="' + esc(ppFilter.search || '') + '"></div>';
-    html += '<select class="cp-select cp-select-sm" id="cpPainPointCatFilter"><option value="">All Categories</option>';
-    for (var ci = 0; ci < PAIN_POINT_CATEGORIES.length; ci++) {
-      var cat = PAIN_POINT_CATEGORIES[ci];
-      html += '<option value="' + esc(cat.id) + '"' + (ppFilter.category === cat.id ? ' selected' : '') + '>' + esc(cat.name) + '</option>';
-    }
-    html += '</select>';
-    html += '<select class="cp-select cp-select-sm" id="cpPainPointGroupBy">';
-    html += '<option value="category"' + (groupBy === 'category' ? ' selected' : '') + '>Group: Category</option>';
-    html += '<option value="flat"' + (groupBy === 'flat' ? ' selected' : '') + '>Group: None</option>';
-    html += '</select>';
-    html += '</div>';
-
-    // Split pane: list + detail
-    html += '<div class="cp-split-pane">';
-
-    // Left: list
-    html += '<div class="cp-list-pane cp-pp-list-pane">';
-    if (filtered.length === 0) {
-      html += '<div class="cp-empty-state cp-empty-state--compact"><p>No pain points' + (ppFilter.search || ppFilter.category ? ' match your filters' : ' yet') + '.</p>';
-      html += '<button class="cp-btn cp-btn-primary cp-btn-sm" data-action="new-pain-point">' + icon('plus') + ' Create First Pain Point</button></div>';
-    } else if (groupBy === 'category') {
-      html += renderPainPointListGroupedByCategory(filtered);
-    } else {
-      html += '<div class="cp-pp-list">';
-      for (var i = 0; i < filtered.length; i++) html += renderPainPointListItem(filtered[i]);
-      html += '</div>';
-    }
-    html += '</div>';
-
-    // Right: detail
-    html += '<div class="cp-preview-pane">';
-    html += renderPainPointDetailPane();
-    html += '</div></div>';
-
-    html += '</div>';
-    return html;
-  }
-
-  function renderPainPointListGroupedByCategory(filtered) {
-    var grouped = {};
-    var uncatId = '__uncat__';
-    for (var i = 0; i < filtered.length; i++) {
-      var key = filtered[i].category || uncatId;
-      (grouped[key] = grouped[key] || []).push(filtered[i]);
-    }
-    var order = (PAIN_POINT_CATEGORIES || []).map(function(c) { return c.id; });
-    order.push(uncatId);
-
-    var html = '';
-    for (var oi = 0; oi < order.length; oi++) {
-      var catId = order[oi];
-      var items = grouped[catId];
-      if (!items || items.length === 0) continue;
-      var cat = (PAIN_POINT_CATEGORIES || []).find(function(c) { return c.id === catId; });
-      var label = cat ? cat.name : 'Uncategorized';
-      var collapsed = !!(S.collapsedGroups && S.collapsedGroups['ppcat_' + catId]);
-
-      html += '<div class="cp-pp-group">';
-      html += '<div class="cp-pp-group-header" data-action="toggle-pp-group" data-cat-id="' + esc(catId) + '">';
-      html += icon(collapsed ? 'chevron-right' : 'chevron-down');
-      html += '<span class="cp-pp-group-name">' + esc(label) + '</span>';
-      html += '<span class="cp-pp-group-count">' + items.length + '</span>';
-      html += '</div>';
-      if (!collapsed) {
-        html += '<div class="cp-pp-list">';
-        for (var k = 0; k < items.length; k++) html += renderPainPointListItem(items[k]);
-        html += '</div>';
-      }
-      html += '</div>';
-    }
-    return html;
-  }
-
-  function renderPainPointListItem(pp) {
-    var personaCount = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) > -1; }).length;
-    var sel = S.selectedPainPointId === pp.id ? ' cp-pp-item-selected' : '';
-    var hasSolution = !!(pp.solution && pp.solution.trim());
-
-    var html = '<div class="cp-pp-item' + sel + '" data-action="select-pain-point-page" data-id="' + esc(pp.id) + '">';
-    html += '<div class="cp-pp-item-main">';
-    html += '<div class="cp-pp-item-title">' + esc(truncate(pp.pain_point || '(Empty)', 90)) + '</div>';
-    if (hasSolution) {
-      html += '<div class="cp-pp-item-solution" title="Solution"><span class="cp-pp-item-solution-icon">' + icon('lightbulb') + '</span>' + esc(truncate(pp.solution, 90)) + '</div>';
-    }
-    html += '</div>';
-    html += '<div class="cp-pp-item-meta">';
-    if (personaCount > 0) html += '<span class="cp-pp-mini-stat" title="Linked personas">' + icon('users') + ' ' + personaCount + '</span>';
-    if (!hasSolution) html += '<span class="cp-pp-mini-stat cp-pp-mini-warn" title="No solution defined">' + icon('triangle-exclamation') + '</span>';
-    html += '</div>';
-    html += '</div>';
-    return html;
-  }
-
-  function renderPainPointDetailPane() {
-    if (!S.selectedPainPointId || !S.painPointMap[S.selectedPainPointId]) {
-      return '<div class="cp-empty-state cp-empty-state--center">' +
-        '<div class="cp-empty-state-icon">' + icon('bolt') + '</div>' +
-        '<div class="cp-empty-state-title">Select a pain point</div>' +
-        '<div class="cp-empty-state-text">Choose from the list, or create a new one.</div>' +
-        '<button class="cp-btn cp-btn-primary" data-action="new-pain-point">' + icon('plus') + ' New Pain Point</button></div>';
-    }
-    var pp = S.painPointMap[S.selectedPainPointId];
-    var ppCats = PAIN_POINT_CATEGORIES || [];
-    var catLabel = '';
-    if (pp.category) { var ppcMatch = ppCats.find(function(c) { return c.id === pp.category; }); catLabel = ppcMatch ? ppcMatch.name : ''; }
-
-    // Find linked personas
-    var linkedPersonas = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) > -1; });
-    var unlinkedPersonas = (S.data.personas || []).filter(function(p) { return (p.pain_point_ids || []).indexOf(pp.id) === -1; });
-
-    var html = '<div class="cp-detail-header"><div class="cp-detail-header-left">';
-    html += '<h2>' + icon('bolt') + ' Pain Point</h2>';
-    if (catLabel) html += '<span class="cp-badge" style="background:#d9302515;color:#d93025">' + esc(catLabel) + '</span>';
-    html += '</div><div class="cp-detail-header-right">';
-    html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="delete-pain-point" data-id="' + esc(pp.id) + '">' + icon('trash') + ' Delete</button>';
-    html += '</div></div>';
-
-    // Inline editable pain point + solution
-    html += '<div class="cp-card cp-pp-detail-card">';
-    html += '<div class="cp-section-header"><h3>' + icon('triangle-exclamation') + ' Pain Point</h3></div>';
-    html += '<textarea class="cp-textarea cp-pp-inline-field" data-ppfield="pain_point" rows="3">' + esc(pp.pain_point || '') + '</textarea>';
-    html += '</div>';
-
-    html += '<div class="cp-card cp-pp-detail-card cp-pp-detail-solution">';
-    html += '<div class="cp-section-header"><h3 style="color:var(--cp-success)">' + icon('lightbulb') + ' Solution</h3></div>';
-    html += '<textarea class="cp-textarea cp-pp-inline-field" data-ppfield="solution" rows="3" placeholder="How does your product solve this?">' + esc(pp.solution || '') + '</textarea>';
-    html += '</div>';
-
-    // Category inline selector
-    html += '<div class="cp-card cp-pp-detail-card">';
-    html += '<div class="cp-form-group"><label class="cp-field-label">Category</label>';
-    html += '<select class="cp-select cp-pp-inline-field" data-ppfield="category">';
-    html += '<option value="">None</option>';
-    for (var ci = 0; ci < ppCats.length; ci++) {
-      html += '<option value="' + esc(ppCats[ci].id) + '"' + (pp.category === ppCats[ci].id ? ' selected' : '') + '>' + esc(ppCats[ci].name) + '</option>';
-    }
-    html += '</select></div></div>';
-
-    // Linked Personas with link/unlink actions
-    html += '<div class="cp-card cp-pp-detail-card">';
-    html += '<div class="cp-section-header"><h3>' + icon('users') + ' Linked Personas (' + linkedPersonas.length + ')</h3>';
-    if (unlinkedPersonas.length > 0) html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="link-pp-to-personas" data-pp-id="' + esc(pp.id) + '">' + icon('link') + ' Link to Personas</button>';
-    html += '</div>';
-    if (linkedPersonas.length === 0) {
-      html += '<p class="cp-text-muted">Not linked to any personas yet.' + (unlinkedPersonas.length > 0 ? ' Click "Link to Personas" above.' : '') + '</p>';
-    } else {
-      for (var pi = 0; pi < linkedPersonas.length; pi++) {
-        html += '<div class="cp-list-item-inline">';
-        html += '<span style="flex:1;cursor:pointer" data-action="go-view" data-view="personas" data-select="' + esc(linkedPersonas[pi].id) + '">' + dimensionBadge('persona', linkedPersonas[pi].id) + '</span>';
-        html += '<button class="cp-btn-icon cp-btn-xs" data-action="unlink-pp-from-persona" data-pp-id="' + esc(pp.id) + '" data-persona-id="' + esc(linkedPersonas[pi].id) + '" title="Unlink">' + icon('link-slash') + '</button>';
-        html += '</div>';
-      }
-    }
-    html += '</div>';
-
-    // Workspace usage (meta_v2)
-    html += renderLibraryWorkspaceUsage('pain_point', pp.id);
-
-    html += '<div class="cp-detail-footer"><span class="cp-text-muted">Created ' + formatDate(pp.created) + (pp.updated ? ' · Updated ' + formatRelativeTime(pp.updated) : '') + '</span></div>';
     return html;
   }
 
@@ -4772,10 +4734,15 @@
     });
 
     // Go-view buttons (data-action="go-view" data-view="xxx")
+    // Optional data-tab="..." can set a sub-tab (currently only Personas
+    // view uses this — for the Pain Points tab).
     $(document).off('click.cp-go-view').on('click.cp-go-view', '[data-action="go-view"]', function(e) {
       e.preventDefault();
       var v = $(this).data('view');
-      if (v) navigate(v);
+      var tab = $(this).data('tab');
+      if (!v) return;
+      if (v === 'personas' && tab) S.personasTab = tab;
+      navigate(v);
     });
 
     // Navigate to a Meta v2 Campaign in the Workspace
@@ -4834,7 +4801,7 @@
       // Search pain points
       (S.data.pain_points || []).forEach(function(pp) {
         if ((pp.pain_point || '').toLowerCase().indexOf(q) > -1) {
-          results.push({ type: 'pain_point', icon: 'bolt', color: '#d93025', title: truncate(pp.pain_point, 40), sub: pp.category || '', id: pp.id, view: 'pain_points' });
+          results.push({ type: 'pain_point', icon: 'bolt', color: '#d93025', title: truncate(pp.pain_point, 40), sub: pp.category || '', id: pp.id, view: 'personas', tab: 'pain_points' });
         }
       });
       // Search styles
@@ -4858,7 +4825,7 @@
           rHtml += '<div class="cp-global-search-type">' + icon(r.icon) + ' ' + r.type.replace('_', ' ') + 's</div>';
           shownTypes[r.type] = true;
         }
-        rHtml += '<div class="cp-global-search-item" data-action="global-search-go" data-view="' + esc(r.view) + '" data-id="' + esc(r.id) + '" data-type="' + esc(r.type) + '">';
+        rHtml += '<div class="cp-global-search-item" data-action="global-search-go" data-view="' + esc(r.view) + '" data-id="' + esc(r.id) + '" data-type="' + esc(r.type) + '"' + (r.tab ? ' data-tab="' + esc(r.tab) + '"' : '') + '">';
         rHtml += '<span style="color:' + r.color + '">' + icon(r.icon) + '</span> ';
         rHtml += '<span style="font-weight:500">' + esc(r.title) + '</span>';
         if (r.sub) rHtml += '<span class="cp-text-muted" style="margin-left:auto;font-size:11px">' + esc(r.sub) + '</span>';
@@ -4874,10 +4841,11 @@
       var view = $(this).data('view');
       var id = $(this).data('id');
       var type = $(this).data('type');
+      var tab = $(this).data('tab');
       $('#cpGlobalSearchInput').val('');
       $('#cpGlobalSearchResults').hide();
       if (type === 'persona') S.selectedPersonaId = id;
-      else if (type === 'pain_point') S.selectedPainPointId = id;
+      else if (type === 'pain_point') { S.selectedPainPointId = id; if (view === 'personas') S.personasTab = tab || 'pain_points'; }
       else if (type === 'campaign_v2') { if (typeof window._cpNavigateToCampaignV2 === 'function') return window._cpNavigateToCampaignV2(id); }
       else if (type === 'ad') {
         var ad = S.adMap[id];
@@ -4938,6 +4906,17 @@
         S.selectedPersonaId = id;
         renderCurrentView();
       }
+    });
+
+    // From a Pain Point's "Linked personas" list — jump to that persona
+    // (switch the Personas-view tab back to "personas" too).
+    $(document).off('click.cp-sel-persona-pp').on('click.cp-sel-persona-pp', '[data-action="select-persona-from-pp"]', function(e) {
+      e.preventDefault();
+      var id = $(this).data('persona-id');
+      if (!id) return;
+      S.selectedPersonaId = id;
+      S.personasTab = 'personas';
+      renderCurrentView();
     });
 
     // Toggle category collapse
@@ -14994,15 +14973,28 @@
   }
 
   function setupKeyboardShortcuts() {
-    var viewKeys = { '1': 'dashboard', '2': 'personas', '3': 'pain_points', '4': 'messages', '5': 'styles', '6': 'formats', '7': 'meta_campaigns', '8': 'calendar', '9': 'research', '0': 'settings' };
+    // Key '3' (formerly Pain Points) now opens the Personas view's Pain Points tab.
+    var viewKeys = { '1': 'dashboard', '2': 'personas', '3': 'personas_pp', '4': 'messages', '5': 'styles', '6': 'formats', '7': 'meta_campaigns', '8': 'calendar', '9': 'research', '0': 'settings' };
 
     $(document).off('keydown.cp2b-shortcuts').on('keydown.cp2b-shortcuts', function(e) {
       // Skip if inside input/textarea or modal open
       if ($(e.target).is('input, textarea, select, [contenteditable]')) return;
       if ($('.cp-modal-backdrop').length || $('.cp-confirm-backdrop').length) return;
 
-      // Number keys → navigate
-      if (viewKeys[e.key]) { e.preventDefault(); navigate(viewKeys[e.key]); return; }
+      // Number keys → navigate. 'personas_pp' is a synthetic key that means
+      // "open Personas view with the Pain Points tab active".
+      if (viewKeys[e.key]) {
+        e.preventDefault();
+        var target = viewKeys[e.key];
+        if (target === 'personas_pp') {
+          S.personasTab = 'pain_points';
+          navigate('personas');
+        } else {
+          if (target === 'personas') S.personasTab = 'personas';
+          navigate(target);
+        }
+        return;
+      }
       // / → focus search
       if (e.key === '/') {
         e.preventDefault();
@@ -15016,8 +15008,11 @@
         var P2A = window._cpPart2A;
         if (!P2A) return;
         var view = S.currentView;
-        if (view === 'personas') P2A.openPersonaModal();
-        else if (view === 'pain_points') P2A.openPainPointModal();
+        if (view === 'personas') {
+          // Personas view has two tabs — open the matching modal
+          if (S.personasTab === 'pain_points') P2A.openPainPointModal();
+          else P2A.openPersonaModal();
+        }
         else if (view === 'messages') P2A.openMessageModal();
         else if (view === 'styles') P2A.openStyleModal();
         else if (view === 'formats') P2A.openFormatModal();
