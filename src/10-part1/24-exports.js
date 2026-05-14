@@ -52,7 +52,6 @@
   window._cpGetTag = getTag;
   window._cpGetFunnelStage = getFunnelStage;
   window._cpGetResearchSession = getResearchSession;
-  window._cpGetImageById = getImageById;
   window._cpGetProductionStatusStyle = getProductionStatusStyle;
   window._cpParseProductionData = parseProductionData;
 
@@ -81,10 +80,7 @@
   window._cpGetRecentActivity = getRecentActivity;
   window._cpGetPersonasByCategory = getPersonasByCategory;
   window._cpGetPersonaPainPoints = getPersonaPainPoints;
-  window._cpGetImages = getImages;
-  window._cpGetAllImageTags = getAllImageTags;
   window._cpIsSetupComplete = isSetupComplete;
-  window._cpParseImageField = parseImageField;
 
   // Constants
   window._cpConstants = {

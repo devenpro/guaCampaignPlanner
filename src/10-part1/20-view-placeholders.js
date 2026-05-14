@@ -12,15 +12,6 @@
       '</div></div>';
   }
 
-  function renderImagesPlaceholder() {
-    var msg = S._part2bTimeout ? 'Images view could not load. Please refresh the page.' : 'Loading Images...';
-    return '<div class="cp-view cp-view-placeholder">' +
-      '<div class="cp-empty-state cp-empty-state--center">' +
-      '<div class="cp-empty-state-icon">' + (S._part2bTimeout ? icon('warning') : icon('spinner')) + '</div>' +
-      '<div class="cp-empty-state-title">' + esc(msg) + '</div>' +
-      '</div></div>';
-  }
-
   function renderSettingsPlaceholder() {
     var msg = S._part2bTimeout ? 'Settings view could not load. Please refresh the page.' : 'Loading Settings...';
     return '<div class="cp-view cp-view-placeholder">' +

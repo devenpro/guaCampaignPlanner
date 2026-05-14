@@ -113,7 +113,6 @@
       case 'messages': count = S.totalMessages; break;
       case 'styles': count = S.totalStyles + S.totalFormats; break;
       case 'meta_campaigns': count = S.activeCampaignsV2; break;
-      case 'images': count = S.images.length; break;
       case 'activity':
         var recent24h = (S.activity || []).filter(function(a) {
           return a.timestamp && (Date.now() - new Date(a.timestamp).getTime()) < 86400000;

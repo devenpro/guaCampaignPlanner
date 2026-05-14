@@ -37,7 +37,7 @@
     currentView: 'dashboard', previousView: null,
     selectedPersonaId: null, selectedCategoryId: null,
     selectedMessageId: null,
-    selectedImageId: null, selectedTagId: null,
+    selectedTagId: null,
     personasTab: 'personas',  // 'personas' or 'pain_points'
     stylesTab: 'styles',      // 'styles' or 'formats'
     settingsTab: 'workspace',
@@ -73,11 +73,6 @@
 
     // Activity filter
     activityFilter: { search: '', type: '' },
-
-    // Images state
-    images: [], imageMap: {}, $imageField: null,
-    imageFilter: { search: '', category: '', tag: '', star: false, sort: 'newest' },
-    imageViewMode: 'grid',
 
     // AI Research panel state (per view)
     aiResearchOpen: { personas: false, pain_points: false, messages: false, styles: false, formats: false, campaign_research: false },

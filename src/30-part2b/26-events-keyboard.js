@@ -142,36 +142,6 @@
       e.preventDefault(); S._researchTab = $(this).data('tab'); render();
     });
 
-    // --- Images View ---
-    $(document).off('click.cp2b-select-img').on('click.cp2b-select-img', '[data-action="select-image"]', function(e) {
-      e.preventDefault();
-      S.selectedImageId = $(this).data('fid');
-      render();
-    });
-    $(document).off('click.cp2b-save-img-meta').on('click.cp2b-save-img-meta', '[data-action="save-img-meta"]', function(e) {
-      e.preventDefault(); saveImageMeta();
-    });
-    $(document).off('input.cp2b-img-search').on('input.cp2b-img-search', '#cpImgSearch', function() {
-      S.imageFilter = S.imageFilter || {};
-      S.imageFilter.search = $(this).val() || '';
-      render();
-    });
-    $(document).off('change.cp2b-img-filter').on('change.cp2b-img-filter', '.cp-img-filter', function() {
-      var filterKey = $(this).data('filter');
-      S.imageFilter = S.imageFilter || {};
-      S.imageFilter[filterKey] = $(this).val() || '';
-      render();
-    });
-    $(document).off('click.cp2b-img-star-filter').on('click.cp2b-img-star-filter', '[data-action="toggle-img-star-filter"]', function(e) {
-      e.preventDefault();
-      S.imageFilter = S.imageFilter || {};
-      S.imageFilter.star = !S.imageFilter.star;
-      render();
-    });
-    $(document).off('click.cp2b-upload-img').on('click.cp2b-upload-img', '[data-action="upload-image"]', function(e) {
-      e.preventDefault();
-      triggerImageUpload();
-    });
     // --- Stage 4: Meta v2 AI buttons (replace Stage 1/2 stubs) ---
     $(document).off('click.cp2b-ai-sug-sets').on('click.cp2b-ai-sug-sets', '[data-action="ai-suggest-ad-sets"]', function(e) {
       e.preventDefault(); aiSuggestAdSets($(this).data('campaign-id'));

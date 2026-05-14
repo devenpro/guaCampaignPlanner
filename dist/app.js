@@ -1,6 +1,6 @@
-/* Campaign Planner v1.0.3 · built 2026-05-14T17:03:43.142Z · 83 source files (see src/) */
+/* Campaign Planner v1.0.3 · built 2026-05-14T17:06:31.328Z · 81 source files (see src/) */
 window.CP_VERSION = "1.0.3";
-window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
+window.CP_BUILD_TIME = "2026-05-14T17:06:31.328Z";
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -58,7 +58,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
     'campaign_workspace':{ order: 8,  label: 'Campaign Workspace',icon: 'sitemap',            group: 'core',    description: 'Campaign → Ad Set → Ad',    hidden: true },
     'calendar':          { order: 9,  label: 'Calendar',          icon: 'calendar',           group: 'core',    description: 'Timeline view' },
     'research':          { order: 10, label: 'Research Lab',      icon: 'flask',              group: 'tools',   description: 'AI research hub' },
-    'images':            { order: 11, label: 'Images',            icon: 'images',             group: 'tools',   description: 'Reference images' },
     'activity':          { order: 12, label: 'Activity',          icon: 'clock-rotate-left',  group: 'tools',   description: 'Activity log' },
     'settings':          { order: 13, label: 'Settings',          icon: 'gear',               group: 'tools',   description: 'Workspace config' }
   };
@@ -566,7 +565,7 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
     currentView: 'dashboard', previousView: null,
     selectedPersonaId: null, selectedCategoryId: null,
     selectedMessageId: null,
-    selectedImageId: null, selectedTagId: null,
+    selectedTagId: null,
     personasTab: 'personas',  // 'personas' or 'pain_points'
     stylesTab: 'styles',      // 'styles' or 'formats'
     settingsTab: 'workspace',
@@ -602,11 +601,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
 
     // Activity filter
     activityFilter: { search: '', type: '' },
-
-    // Images state
-    images: [], imageMap: {}, $imageField: null,
-    imageFilter: { search: '', category: '', tag: '', star: false, sort: 'newest' },
-    imageViewMode: 'grid',
 
     // AI Research panel state (per view)
     aiResearchOpen: { personas: false, pain_points: false, messages: false, styles: false, formats: false, campaign_research: false },
@@ -681,7 +675,7 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
     // Timeout: if Part 2B hasn't loaded in 8 seconds, re-render with helpful messages
     setTimeout(function() {
       var R = window._cpRenderers || {};
-      if (!R.researchView || !R.settingsView || !R.imagesView) {
+      if (!R.researchView || !R.settingsView) {
         var diag = [];
         if (!window._cpPart2AScript) diag.push('Part 2A script not loaded');
         else if (!window._cpPart2A) diag.push('Part 2A crashed during init');
@@ -689,7 +683,7 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
         if (!window._cpPart2B) diag.push('Part 2B not initialized');
         console.warn('[CP] Part 2B not loaded after 8s — ' + diag.join('; '));
         S._part2bTimeout = true;
-        if (S.currentView === 'research' || S.currentView === 'settings' || S.currentView === 'images') renderCurrentView();
+        if (S.currentView === 'research' || S.currentView === 'settings') renderCurrentView();
       }
     }, 8000);
   }
@@ -720,14 +714,11 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
     S.$metaTextarea.closest('.field--name-field-json-meta').hide();
     S.$activityTextarea.closest('.field--name-field-activity-log').hide();
     S.$form.find('.node-form-options, .field--name-title, .form-actions').hide();
-    // Detect and hide image field
-    S.$imageField = S.$form.find('.field--name-field-images');
-    if (S.$imageField.length) {
-      S.$imageField.hide();
-      console.log('[CP] Image field detected');
-    } else {
-      console.log('[CP] No image field found (field_images)');
-    }
+    // Hide the legacy images field if it's still present on the content type
+    // (the feature is removed from the UI; the storage field is owned by the
+    // Drupal admin and will be dropped separately).
+    var $legacyImages = S.$form.find('.field--name-field-images');
+    if ($legacyImages.length) $legacyImages.hide();
     return true;
   }
 
@@ -747,9 +738,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
       try { S.activity = JSON.parse(rawActivity); } catch (e) { console.error('[CP] JSON activity parse error:', e); S.activity = []; }
     } else { S.activity = []; }
     if (!Array.isArray(S.activity)) S.activity = [];
-
-    // Parse images from Drupal field
-    parseImageField();
 
     // Parse brand data from DOM
     parseBrandData();
@@ -798,50 +786,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
       planner_id: plannerId,
       _parsed_at: new Date().toISOString()
     };
-  }
-
-  function parseImageField() {
-    S.images = []; S.imageMap = {};
-    if (!S.$imageField || !S.$imageField.length) return;
-    var imgMeta = (S.meta && S.meta.reference_images) || {};
-
-    S.$imageField.find('.image-widget, [data-drupal-selector*="edit-field-images"]').each(function(idx) {
-      var $widget = $(this);
-      var $img = $widget.find('.image-preview img, .image-style-thumbnail, img').first();
-      var $fileLink = $widget.find('.file a, a[href*="/files/"]').first();
-      var imgUrl = '';
-      if ($img.length) imgUrl = $img.attr('src') || '';
-      if (!imgUrl && $fileLink.length) imgUrl = $fileLink.attr('href') || '';
-      if (!imgUrl) return;
-
-      var fid = '';
-      var $fidInput = $widget.find('input[name*="fids"], input[data-fid]');
-      if ($fidInput.length) fid = $fidInput.data('fid') || $fidInput.val() || '';
-      if (!fid) {
-        var $anyInput = $widget.find('input[name*="field_images"]').first();
-        if ($anyInput.length) {
-          var match = $anyInput.attr('name').match(/field_images\[(\d+)\]/);
-          if (match) fid = 'idx_' + match[1];
-        }
-      }
-      if (!fid) fid = 'img_' + idx;
-
-      var filename = '';
-      if ($fileLink.length) filename = $fileLink.text().trim();
-      if (!filename && imgUrl) filename = imgUrl.split('/').pop().split('?')[0];
-
-      var alt = $img.attr('alt') || '';
-      var meta = imgMeta[fid] || {};
-
-      S.images.push({
-        fid: String(fid), url: imgUrl, filename: filename, alt: alt, index: idx,
-        category: meta.category || '', tags: meta.tags || [], star: !!meta.star,
-        description: meta.description || '', notes: meta.notes || '', usage: meta.usage || []
-      });
-    });
-
-    for (var i = 0; i < S.images.length; i++) S.imageMap[S.images[i].fid] = S.images[i];
-    console.log('[CP] Parsed ' + S.images.length + ' reference images');
   }
 
   function parseBrandData() {
@@ -1462,7 +1406,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
         case 'campaign_workspace': html = renderCampaignWorkspaceView(); break;
         case 'calendar':   html = renderCalendarView(); break;
         case 'research':   html = (R.researchView) ? R.researchView() : renderResearchPlaceholder(); break;
-        case 'images':     html = (R.imagesView) ? R.imagesView() : renderImagesPlaceholder(); break;
         case 'activity':   html = renderActivityView(); break;
         case 'settings':   html = (R.settingsView) ? R.settingsView() : renderSettingsPlaceholder(); break;
         default:           html = renderDashboardView();
@@ -1472,7 +1415,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
 
       // Trigger Part 2A/2B view-specific event setup
       if (R.setupResearchEvents && S.currentView === 'research') R.setupResearchEvents();
-      if (R.setupImagesEvents && S.currentView === 'images') R.setupImagesEvents();
       if (R.setupSettingsEvents && S.currentView === 'settings') R.setupSettingsEvents();
 
       // Replace any AI picker placeholders left in the DOM (Part 2B loads async).
@@ -1669,7 +1611,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
   function getTag(id) { return S.tagMap[id] || null; }
   function getFunnelStage(id) { return S.funnelStageMap[id] || null; }
   function getResearchSession(id) { return S.researchMap[id] || null; }
-  function getImageById(fid) { return S.imageMap[fid] || null; }
 
   // --- Meta v2 entity getters ---
   function getCampaignV2(id) { return S.campaignV2Map[id] || null; }
@@ -1731,31 +1672,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
       points.push({ id: customs[j].id, pain_point: customs[j].pain_point, solution: customs[j].solution, shared: false });
     }
     return points;
-  }
-
-  function getImages(filters) {
-    var imgs = S.images.slice();
-    if (!filters) return imgs;
-    if (filters.star) imgs = imgs.filter(function(img) { return img.star; });
-    if (filters.category) imgs = imgs.filter(function(img) { return img.category === filters.category; });
-    if (filters.tag) imgs = imgs.filter(function(img) { return img.tags.indexOf(filters.tag) > -1; });
-    if (filters.search) {
-      var q = filters.search.toLowerCase();
-      imgs = imgs.filter(function(img) {
-        return (img.filename || '').toLowerCase().indexOf(q) > -1 ||
-               (img.description || '').toLowerCase().indexOf(q) > -1 ||
-               (img.tags || []).some(function(t) { return t.toLowerCase().indexOf(q) > -1; });
-      });
-    }
-    if (filters.sort === 'name') imgs.sort(function(a, b) { return (a.filename || '').localeCompare(b.filename || ''); });
-    else if (filters.sort === 'most-used') imgs.sort(function(a, b) { return (b.usage || []).length - (a.usage || []).length; });
-    return imgs;
-  }
-
-  function getAllImageTags() {
-    var tags = {};
-    S.images.forEach(function(img) { (img.tags || []).forEach(function(t) { tags[t] = (tags[t] || 0) + 1; }); });
-    return Object.keys(tags).sort();
   }
 
   // --- Viewport helpers ---
@@ -1895,7 +1811,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
       case 'messages': count = S.totalMessages; break;
       case 'styles': count = S.totalStyles + S.totalFormats; break;
       case 'meta_campaigns': count = S.activeCampaignsV2; break;
-      case 'images': count = S.images.length; break;
       case 'activity':
         var recent24h = (S.activity || []).filter(function(a) {
           return a.timestamp && (Date.now() - new Date(a.timestamp).getTime()) < 86400000;
@@ -5276,15 +5191,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
       '</div></div>';
   }
 
-  function renderImagesPlaceholder() {
-    var msg = S._part2bTimeout ? 'Images view could not load. Please refresh the page.' : 'Loading Images...';
-    return '<div class="cp-view cp-view-placeholder">' +
-      '<div class="cp-empty-state cp-empty-state--center">' +
-      '<div class="cp-empty-state-icon">' + (S._part2bTimeout ? icon('warning') : icon('spinner')) + '</div>' +
-      '<div class="cp-empty-state-title">' + esc(msg) + '</div>' +
-      '</div></div>';
-  }
-
   function renderSettingsPlaceholder() {
     var msg = S._part2bTimeout ? 'Settings view could not load. Please refresh the page.' : 'Loading Settings...';
     return '<div class="cp-view cp-view-placeholder">' +
@@ -6498,7 +6404,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
   window._cpGetTag = getTag;
   window._cpGetFunnelStage = getFunnelStage;
   window._cpGetResearchSession = getResearchSession;
-  window._cpGetImageById = getImageById;
   window._cpGetProductionStatusStyle = getProductionStatusStyle;
   window._cpParseProductionData = parseProductionData;
 
@@ -6527,10 +6432,7 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
   window._cpGetRecentActivity = getRecentActivity;
   window._cpGetPersonasByCategory = getPersonasByCategory;
   window._cpGetPersonaPainPoints = getPersonaPainPoints;
-  window._cpGetImages = getImages;
-  window._cpGetAllImageTags = getAllImageTags;
   window._cpIsSetupComplete = isSetupComplete;
-  window._cpParseImageField = parseImageField;
 
   // Constants
   window._cpConstants = {
@@ -11876,10 +11778,10 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
  *
  * Multi-provider AI (LLMService), brand context (BrandService),
  * AI research panel component, inline AI assist, 11 AI action functions,
- * Research Lab view, Settings view (6 tabs), Images view, Import/Export.
+ * Research Lab view, Settings view (6 tabs), Import/Export.
  *
- * Registry: researchView, settingsView, imagesView, imagePicker,
- *   setupResearchEvents, setupSettingsEvents, setupImagesEvents
+ * Registry: researchView, settingsView,
+ *   setupResearchEvents, setupSettingsEvents
  *
  * Sections:
  *  1. Init & imports
@@ -11901,8 +11803,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
  * 17. Settings view (6 tabs)
  * 18. Config CRUD & settings save
  * 19. Import/Export
- * 20. Images view
- * 21. Image picker (reusable modal)
  * 22. Events & keyboard shortcuts
  * 23. API exports
  *
@@ -11927,7 +11827,7 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
   var getAllCategories, getAllPainPoints, getAllTags;
   var getPersonaPainPoints, getPersona, getMessage, getStyle, getFormat;
   var getCategory, getTag, getPainPoint, getFunnelStage;
-  var getImages, getAllImageTags, parseImageField, isSetupComplete;
+  var isSetupComplete;
   var getProductionStatusStyle, parseProductionData;
   var Constants;
   var snapshot, openModal, closeModal, openConfirmDialog, closeConfirmDialog, collectModalFields;
@@ -11992,8 +11892,7 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
     getFunnelStage = window._cpGetFunnelStage;
     getProductionStatusStyle = window._cpGetProductionStatusStyle;
     parseProductionData = window._cpParseProductionData;
-    getImages = window._cpGetImages; getAllImageTags = window._cpGetAllImageTags;
-    parseImageField = window._cpParseImageField; isSetupComplete = window._cpIsSetupComplete;
+    isSetupComplete = window._cpIsSetupComplete;
 
     if (!S) { console.error('[CP] Part 2B: State not available'); return; }
     if (!render) { console.error('[CP] Part 2B: render not available'); return; }
@@ -12018,9 +11917,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
     R.setupResearchEvents = setupResearchEvents;
     R.settingsView = renderSettingsView;
     R.setupSettingsEvents = setupSettingsEvents;
-    R.imagesView = renderImagesView;
-    R.setupImagesEvents = setupImagesEvents;
-    R.imagePicker = renderImagePicker;
     R.aiResearchPanel = renderAIResearchPanelBody;
     // Setup Wizard AI generators
     R.swAIGeneratePersonas       = swAIGeneratePersonas;
@@ -12055,7 +11951,7 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
     S._part2bTimeout = false;
 
     if (render) render();
-    console.log('[CP] Part 2B initialized — renderers: research, settings, images');
+    console.log('[CP] Part 2B initialized — renderers: research, settings');
     } catch(e) {
       console.error('[CP] Part 2B init FAILED:', e.message, e.stack);
       if (window._cpToast) window._cpToast('Part 2B init error: ' + e.message, 'error');
@@ -15715,263 +15611,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
     });
   }
 
-/* ===== src/30-part2b/24-view-images.js ===== */
-  // ============================================================
-  // SECTION 20: IMAGES VIEW
-  // ============================================================
-
-  function renderImagesView() {
-    var cats = (S.meta && S.meta.image_categories) || [];
-    var imgs = getImages(S.imageFilter);
-    var allImgTagsList = getAllImageTags();
-
-    var html = '<div class="cp-view cp-view-images">';
-    html += '<div class="cp-view-header"><div class="cp-view-header-left"><h1>' + icon('images') + ' Reference Images</h1>';
-    html += '<span class="cp-view-subtitle">' + (S.images || []).length + ' image' + ((S.images || []).length !== 1 ? 's' : '') + '</span></div>';
-    html += '<div class="cp-view-header-right">';
-    html += '<button class="cp-btn cp-btn-primary" data-action="upload-image">' + icon('upload') + ' Upload</button>';
-    html += '</div></div>';
-
-    // Filter bar
-    html += '<div class="cp-img-filters">';
-    html += '<div class="cp-search-wrapper"><span class="cp-icon">' + icon('search') + '</span>';
-    html += '<input type="text" class="cp-input" id="cpImgSearch" placeholder="Search images..." value="' + esc((S.imageFilter && S.imageFilter.search) || '') + '"></div>';
-    html += '<select class="cp-select cp-select-sm cp-img-filter" data-filter="category"><option value="">All Categories</option>';
-    for (var ci = 0; ci < cats.length; ci++) html += '<option value="' + esc(cats[ci].id) + '"' + ((S.imageFilter && S.imageFilter.category) === cats[ci].id ? ' selected' : '') + '>' + esc(cats[ci].label) + '</option>';
-    html += '</select>';
-    if (allImgTagsList.length > 0) {
-      html += '<select class="cp-select cp-select-sm cp-img-filter" data-filter="tag"><option value="">All Tags</option>';
-      for (var ti = 0; ti < allImgTagsList.length; ti++) html += '<option value="' + esc(allImgTagsList[ti]) + '"' + ((S.imageFilter && S.imageFilter.tag) === allImgTagsList[ti] ? ' selected' : '') + '>' + esc(allImgTagsList[ti]) + '</option>';
-      html += '</select>';
-    }
-    html += '<button class="cp-btn cp-btn-sm' + ((S.imageFilter && S.imageFilter.star) ? ' cp-btn-primary' : ' cp-btn-outline') + '" data-action="toggle-img-star-filter">' + icon('star') + ' Starred</button>';
-    html += '</div>';
-
-    // Gallery
-    if (imgs.length === 0) {
-      html += '<div class="cp-empty-state"><div class="cp-empty-state-icon">' + icon('images') + '</div>';
-      if (!S.images || S.images.length === 0) {
-        if (!S.$imageField || !S.$imageField.length) {
-          html += '<div class="cp-empty-state-title">Image field not configured</div>';
-          html += '<div class="cp-empty-state-text">To use reference images, add a <strong>field_images</strong> (Image, multi-value) field to your Campaign Planner content type in Drupal. Then upload images on this node.</div>';
-          html += '<div class="cp-card" style="margin-top:var(--cp-space-3);padding:var(--cp-space-3);text-align:left;max-width:400px;margin-left:auto;margin-right:auto">';
-          html += '<div class="cp-field-label">Drupal Setup Steps</div>';
-          html += '<ol style="margin:var(--cp-space-2) 0 0;padding-left:var(--cp-space-4);font-size:var(--cp-font-size-sm);color:var(--cp-text-secondary);line-height:1.8">';
-          html += '<li>Go to Admin → Structure → Content types → Campaign Planner → Manage fields</li>';
-          html += '<li>Add field: <strong>field_images</strong> (type: Image, cardinality: Unlimited)</li>';
-          html += '<li>Save, then reload this page</li>';
-          html += '</ol></div>';
-        } else {
-          html += '<div class="cp-empty-state-title">No reference images yet</div>';
-          html += '<div class="cp-empty-state-text">Upload brand reference images to build your visual library. These can be used in recipe creative briefs, AI image prompts, and campaign creative direction.</div>';
-          html += '<button class="cp-btn cp-btn-primary" data-action="upload-image">' + icon('upload') + ' Upload First Image</button>';
-        }
-      } else {
-        html += '<div class="cp-empty-state-title">No matches</div>';
-        html += '<div class="cp-empty-state-text">Try adjusting your filters.</div>';
-      }
-      html += '</div>';
-    } else {
-      html += '<div style="display:flex;gap:var(--cp-space-4)">';
-      html += '<div style="flex:1"><div class="cp-img-grid">';
-      for (var gi = 0; gi < imgs.length; gi++) html += renderImageCard(imgs[gi]);
-      html += '</div></div>';
-
-      // Detail panel
-      if (S.selectedImageId) {
-        var selImg = S.imageMap[S.selectedImageId];
-        if (selImg) {
-          var meta = (S.meta.reference_images && S.meta.reference_images[selImg.fid]) || {};
-          html += '<div class="cp-img-detail">';
-          html += '<div class="cp-img-detail-preview"><img src="' + esc(selImg.url) + '" alt="' + esc(selImg.filename) + '"></div>';
-          html += '<h3 style="margin-bottom:var(--cp-space-2)">' + esc(selImg.filename) + '</h3>';
-          html += '<div class="cp-form-group"><label class="cp-field-label">Category</label>';
-          html += '<select class="cp-select cp-img-meta-field" data-meta-field="category">';
-          html += '<option value="">None</option>';
-          for (var mci = 0; mci < cats.length; mci++) html += '<option value="' + esc(cats[mci].id) + '"' + (meta.category === cats[mci].id ? ' selected' : '') + '>' + esc(cats[mci].label) + '</option>';
-          html += '</select></div>';
-          html += '<div class="cp-form-group"><label class="cp-field-label">Description</label>';
-          html += '<textarea class="cp-textarea cp-img-meta-field" data-meta-field="description" rows="2" placeholder="Describe this image...">' + esc(meta.description || '') + '</textarea></div>';
-          html += '<div class="cp-form-group"><label class="cp-field-label">Tags (comma-separated)</label>';
-          html += '<input type="text" class="cp-input cp-img-meta-field" data-meta-field="tags" value="' + esc((meta.tags || []).join(', ')) + '" placeholder="studio, product, lifestyle"></div>';
-          html += '<div style="margin-top:var(--cp-space-2)"><label style="display:flex;align-items:center;gap:var(--cp-space-2);cursor:pointer"><input type="checkbox" class="cp-img-meta-field" data-meta-field="star"' + (meta.star ? ' checked' : '') + '> ' + icon('star') + ' Starred</label></div>';
-
-          // Usage tracking — which Ads use this image
-          var usedInAds = (S.data.ads || []).filter(function(a) {
-            var imgIds = (a.media && a.media.image && a.media.image.reference_image_ids) || [];
-            if (imgIds.indexOf(selImg.fid) > -1) return true;
-            var cards = (a.media && a.media.carousel_cards) || [];
-            for (var ci = 0; ci < cards.length; ci++) {
-              if ((cards[ci].reference_image_ids || []).indexOf(selImg.fid) > -1) return true;
-            }
-            return false;
-          });
-          if (usedInAds.length > 0) {
-            html += '<div style="margin-top:var(--cp-space-3);border-top:1px solid var(--cp-border-light);padding-top:var(--cp-space-2)">';
-            html += '<div class="cp-field-label">' + icon('rectangle-ad') + ' Used in ' + usedInAds.length + ' Ad' + (usedInAds.length !== 1 ? 's' : '') + '</div>';
-            for (var uai = 0; uai < usedInAds.length; uai++) {
-              html += '<div style="font-size:11px;color:var(--cp-text-secondary);padding:2px 0;cursor:pointer" data-action="ws-select-ad" data-id="' + esc(usedInAds[uai].id) + '">' + icon('arrow-right') + ' ' + esc(truncate(usedInAds[uai].name, 25)) + '</div>';
-            }
-            html += '</div>';
-          }
-
-          // Campaign association (Meta v2)
-          var campId = (meta && meta.campaign_v2_id) || '';
-          var camps = S.data.campaigns_v2 || [];
-          if (camps.length > 0) {
-            html += '<div class="cp-form-group" style="margin-top:var(--cp-space-3)"><label class="cp-field-label">' + icon('bullhorn') + ' Campaign</label>';
-            html += '<select class="cp-select cp-img-meta-field" data-meta-field="campaign_v2_id">';
-            html += '<option value="">None</option>';
-            for (var cmi = 0; cmi < camps.length; cmi++) {
-              html += '<option value="' + esc(camps[cmi].id) + '"' + (campId === camps[cmi].id ? ' selected' : '') + '>' + esc(camps[cmi].name) + '</option>';
-            }
-            html += '</select></div>';
-          }
-
-          html += '<div style="margin-top:var(--cp-space-3)"><button class="cp-btn cp-btn-primary cp-btn-sm" data-action="save-img-meta">' + icon('check') + ' Save</button></div>';
-          html += '</div>';
-        }
-      }
-      html += '</div>';
-    }
-
-    html += '</div>';
-    return html;
-  }
-
-  function renderImageCard(img) {
-    var meta = (S.meta.reference_images && S.meta.reference_images[img.fid]) || {};
-    var sel = S.selectedImageId === img.fid ? ' cp-img-card-selected' : '';
-    var html = '<div class="cp-img-card' + sel + '" data-action="select-image" data-fid="' + esc(img.fid) + '">';
-    html += '<div class="cp-img-card-thumb"><img src="' + esc(img.url) + '" alt="' + esc(img.filename) + '" loading="lazy"></div>';
-    html += '<div class="cp-img-card-body">';
-    html += '<div class="cp-img-card-name">' + esc(img.filename) + '</div>';
-    html += '<div class="cp-img-card-meta">';
-    if (meta.star) html += '<span style="color:#f59e0b">' + icon('star') + '</span>';
-    if (meta.category) {
-      var cat = (S.meta.image_categories || []).find(function(c) { return c.id === meta.category; });
-      if (cat) html += '<span>' + esc(cat.label) + '</span>';
-    }
-    html += '</div></div></div>';
-    return html;
-  }
-
-  function saveImageMeta() {
-    if (!S.selectedImageId) return;
-    var fid = S.selectedImageId;
-    S.meta.reference_images = S.meta.reference_images || {};
-    S.meta.reference_images[fid] = S.meta.reference_images[fid] || {};
-    var meta = S.meta.reference_images[fid];
-    $('.cp-img-meta-field').each(function() {
-      var field = $(this).data('meta-field');
-      if (field === 'star') meta[field] = $(this).is(':checked');
-      else if (field === 'tags') meta[field] = $(this).val().split(',').map(function(t) { return t.trim(); }).filter(Boolean);
-      else meta[field] = $(this).val() || '';
-    });
-    syncToTextarea(); toast('Image metadata saved', 'success');
-  }
-
-  function triggerImageUpload() {
-    if (!S.$imageField || !S.$imageField.length) {
-      toast('Image field not found on this page. Add a field_images (Image, multi-value) field to this content type.', 'error', 6000);
-      return;
-    }
-    // Temporarily show the hidden Drupal image field widget
-    S.$imageField.show();
-    // Find the last empty file input slot
-    var $fileInputs = S.$imageField.find('input[type="file"]');
-    var $emptySlot = $fileInputs.filter(function() { return !$(this).val(); }).last();
-    if (!$emptySlot.length) {
-      toast('No upload slots available — save the node first to get more slots', 'warning');
-      S.$imageField.hide();
-      return;
-    }
-    var _checkCount = 0;
-    var _prevCount = (S.images || []).length;
-    toast('Drupal upload dialog opened — select your image', 'info');
-    $emptySlot.trigger('click');
-    // Poll for new image after Drupal AJAX upload completes
-    var pollTimer = setInterval(function() {
-      _checkCount++;
-      parseImageField();
-      if ((S.images || []).length > _prevCount) {
-        clearInterval(pollTimer);
-        S.$imageField.hide();
-        var newImg = S.images[S.images.length - 1];
-        S.selectedImageId = newImg.fid;
-        logActivity('image_uploaded', '', '', 'Uploaded reference image: ' + (newImg.filename || 'image'));
-        buildMaps(); render();
-        toast('Image uploaded! Add metadata below.', 'success');
-      } else if (_checkCount > 120) { // 60 seconds timeout
-        clearInterval(pollTimer);
-        S.$imageField.hide();
-        toast('Upload timed out. If you selected a file, try saving the node first, then re-open.', 'warning');
-      }
-    }, 500);
-  }
-
-  function setupImagesEvents() {
-    // Images events handled in setupPart2BEvents
-  }
-
-
-/* ===== src/30-part2b/25-image-picker.js ===== */
-  // ============================================================
-  // SECTION 21: IMAGE PICKER (Reusable Modal)
-  // ============================================================
-
-  function renderImagePicker(selectedIds, onSelect) {
-    selectedIds = selectedIds || [];
-    var imgs = S.images || [];
-    if (imgs.length === 0) {
-      openModal('Select Images', '<div class="cp-empty-state cp-empty-state--compact"><p>No reference images available.</p><button class="cp-btn cp-btn-primary cp-btn-sm" data-action="upload-image">' + icon('upload') + ' Upload Images</button></div>', { footer: false, size: 'md' });
-      return;
-    }
-
-    var html = '<div class="cp-img-picker">';
-    html += '<p class="cp-text-muted" style="margin-bottom:var(--cp-space-3)">Click images to select. Selected images will be used as visual references for this recipe\'s creative brief and AI prompts.</p>';
-    html += '<div class="cp-img-picker-grid">';
-    for (var i = 0; i < imgs.length; i++) {
-      var img = imgs[i];
-      var isSel = selectedIds.indexOf(img.fid) > -1;
-      var meta = (S.meta.reference_images && S.meta.reference_images[img.fid]) || {};
-      html += '<div class="cp-img-picker-item' + (isSel ? ' cp-img-picker-item-selected' : '') + '" data-fid="' + esc(img.fid) + '">';
-      html += '<input type="checkbox" data-fid="' + esc(img.fid) + '"' + (isSel ? ' checked' : '') + ' style="position:absolute;top:6px;left:6px;z-index:1">';
-      html += '<img src="' + esc(img.url) + '" alt="' + esc(img.filename) + '">';
-      html += '<div class="cp-img-picker-label">';
-      if (meta.star) html += '<span style="color:#f59e0b">' + icon('star') + '</span> ';
-      html += esc(truncate(img.filename, 16));
-      if (meta.category) {
-        var cat = (S.meta.image_categories || []).find(function(c) { return c.id === meta.category; });
-        if (cat) html += '<div style="font-size:10px;color:var(--cp-text-muted)">' + esc(cat.label) + '</div>';
-      }
-      html += '</div>';
-      html += '</div>';
-    }
-    html += '</div></div>';
-
-    openModal('Select Reference Images', html, {
-      size: 'lg', saveLabel: 'Select',
-      onSave: function() {
-        var selected = [];
-        $('.cp-img-picker-item input:checked').each(function() { selected.push($(this).data('fid')); });
-        if (onSelect) onSelect(selected);
-        closeModal();
-      }
-    });
-
-    // Toggle selection on click
-    setTimeout(function() {
-      $('.cp-img-picker-item').off('click.picker').on('click.picker', function(e) {
-        if ($(e.target).is('input')) return;
-        var $cb = $(this).find('input');
-        $cb.prop('checked', !$cb.prop('checked'));
-        $(this).toggleClass('cp-img-picker-item-selected', $cb.prop('checked'));
-      });
-    }, 50);
-  }
-
-
 /* ===== src/30-part2b/26-events-keyboard.js ===== */
   // ============================================================
   // SECTION 22: EVENTS & KEYBOARD SHORTCUTS
@@ -16117,36 +15756,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
       e.preventDefault(); S._researchTab = $(this).data('tab'); render();
     });
 
-    // --- Images View ---
-    $(document).off('click.cp2b-select-img').on('click.cp2b-select-img', '[data-action="select-image"]', function(e) {
-      e.preventDefault();
-      S.selectedImageId = $(this).data('fid');
-      render();
-    });
-    $(document).off('click.cp2b-save-img-meta').on('click.cp2b-save-img-meta', '[data-action="save-img-meta"]', function(e) {
-      e.preventDefault(); saveImageMeta();
-    });
-    $(document).off('input.cp2b-img-search').on('input.cp2b-img-search', '#cpImgSearch', function() {
-      S.imageFilter = S.imageFilter || {};
-      S.imageFilter.search = $(this).val() || '';
-      render();
-    });
-    $(document).off('change.cp2b-img-filter').on('change.cp2b-img-filter', '.cp-img-filter', function() {
-      var filterKey = $(this).data('filter');
-      S.imageFilter = S.imageFilter || {};
-      S.imageFilter[filterKey] = $(this).val() || '';
-      render();
-    });
-    $(document).off('click.cp2b-img-star-filter').on('click.cp2b-img-star-filter', '[data-action="toggle-img-star-filter"]', function(e) {
-      e.preventDefault();
-      S.imageFilter = S.imageFilter || {};
-      S.imageFilter.star = !S.imageFilter.star;
-      render();
-    });
-    $(document).off('click.cp2b-upload-img').on('click.cp2b-upload-img', '[data-action="upload-image"]', function(e) {
-      e.preventDefault();
-      triggerImageUpload();
-    });
     // --- Stage 4: Meta v2 AI buttons (replace Stage 1/2 stubs) ---
     $(document).off('click.cp2b-ai-sug-sets').on('click.cp2b-ai-sug-sets', '[data-action="ai-suggest-ad-sets"]', function(e) {
       e.preventDefault(); aiSuggestAdSets($(this).data('campaign-id'));
@@ -16352,11 +15961,7 @@ window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
 
     // Settings & Config
     saveAllSettings: saveAllSettings, addFunnelStage: addFunnelStage,
-    exportJSON: exportJSON, importJSON: importJSON,
-
-    // Images
-    renderImagePicker: renderImagePicker, saveImageMeta: saveImageMeta,
-    triggerImageUpload: triggerImageUpload
+    exportJSON: exportJSON, importJSON: importJSON
   };
 
   console.log('[CP] Part 2B loaded');

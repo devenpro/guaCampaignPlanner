@@ -12,7 +12,7 @@
   var getAllCategories, getAllPainPoints, getAllTags;
   var getPersonaPainPoints, getPersona, getMessage, getStyle, getFormat;
   var getCategory, getTag, getPainPoint, getFunnelStage;
-  var getImages, getAllImageTags, parseImageField, isSetupComplete;
+  var isSetupComplete;
   var getProductionStatusStyle, parseProductionData;
   var Constants;
   var snapshot, openModal, closeModal, openConfirmDialog, closeConfirmDialog, collectModalFields;
@@ -77,8 +77,7 @@
     getFunnelStage = window._cpGetFunnelStage;
     getProductionStatusStyle = window._cpGetProductionStatusStyle;
     parseProductionData = window._cpParseProductionData;
-    getImages = window._cpGetImages; getAllImageTags = window._cpGetAllImageTags;
-    parseImageField = window._cpParseImageField; isSetupComplete = window._cpIsSetupComplete;
+    isSetupComplete = window._cpIsSetupComplete;
 
     if (!S) { console.error('[CP] Part 2B: State not available'); return; }
     if (!render) { console.error('[CP] Part 2B: render not available'); return; }
@@ -103,9 +102,6 @@
     R.setupResearchEvents = setupResearchEvents;
     R.settingsView = renderSettingsView;
     R.setupSettingsEvents = setupSettingsEvents;
-    R.imagesView = renderImagesView;
-    R.setupImagesEvents = setupImagesEvents;
-    R.imagePicker = renderImagePicker;
     R.aiResearchPanel = renderAIResearchPanelBody;
     // Setup Wizard AI generators
     R.swAIGeneratePersonas       = swAIGeneratePersonas;
@@ -140,7 +136,7 @@
     S._part2bTimeout = false;
 
     if (render) render();
-    console.log('[CP] Part 2B initialized — renderers: research, settings, images');
+    console.log('[CP] Part 2B initialized — renderers: research, settings');
     } catch(e) {
       console.error('[CP] Part 2B init FAILED:', e.message, e.stack);
       if (window._cpToast) window._cpToast('Part 2B init error: ' + e.message, 'error');

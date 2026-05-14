@@ -61,11 +61,7 @@
 
     // Settings & Config
     saveAllSettings: saveAllSettings, addFunnelStage: addFunnelStage,
-    exportJSON: exportJSON, importJSON: importJSON,
-
-    // Images
-    renderImagePicker: renderImagePicker, saveImageMeta: saveImageMeta,
-    triggerImageUpload: triggerImageUpload
+    exportJSON: exportJSON, importJSON: importJSON
   };
 
   console.log('[CP] Part 2B loaded');

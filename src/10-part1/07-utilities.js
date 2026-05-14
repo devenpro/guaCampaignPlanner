@@ -157,7 +157,6 @@
   function getTag(id) { return S.tagMap[id] || null; }
   function getFunnelStage(id) { return S.funnelStageMap[id] || null; }
   function getResearchSession(id) { return S.researchMap[id] || null; }
-  function getImageById(fid) { return S.imageMap[fid] || null; }
 
   // --- Meta v2 entity getters ---
   function getCampaignV2(id) { return S.campaignV2Map[id] || null; }
@@ -219,31 +218,6 @@
       points.push({ id: customs[j].id, pain_point: customs[j].pain_point, solution: customs[j].solution, shared: false });
     }
     return points;
-  }
-
-  function getImages(filters) {
-    var imgs = S.images.slice();
-    if (!filters) return imgs;
-    if (filters.star) imgs = imgs.filter(function(img) { return img.star; });
-    if (filters.category) imgs = imgs.filter(function(img) { return img.category === filters.category; });
-    if (filters.tag) imgs = imgs.filter(function(img) { return img.tags.indexOf(filters.tag) > -1; });
-    if (filters.search) {
-      var q = filters.search.toLowerCase();
-      imgs = imgs.filter(function(img) {
-        return (img.filename || '').toLowerCase().indexOf(q) > -1 ||
-               (img.description || '').toLowerCase().indexOf(q) > -1 ||
-               (img.tags || []).some(function(t) { return t.toLowerCase().indexOf(q) > -1; });
-      });
-    }
-    if (filters.sort === 'name') imgs.sort(function(a, b) { return (a.filename || '').localeCompare(b.filename || ''); });
-    else if (filters.sort === 'most-used') imgs.sort(function(a, b) { return (b.usage || []).length - (a.usage || []).length; });
-    return imgs;
-  }
-
-  function getAllImageTags() {
-    var tags = {};
-    S.images.forEach(function(img) { (img.tags || []).forEach(function(t) { tags[t] = (tags[t] || 0) + 1; }); });
-    return Object.keys(tags).sort();
   }
 
   // --- Viewport helpers ---
