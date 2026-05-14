@@ -1,4 +1,4 @@
-/* Campaign Planner v1.0.2 · built 2026-05-14T16:02:01.239Z · 44 source files (see src/) */
+/* Campaign Planner v1.0.2 · built 2026-05-14T16:02:35.923Z · 44 source files (see src/) */
 
 /* ===== src/styles/10-part1/00-header.css ===== */
 /**
@@ -1980,6 +1980,8 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 @media (max-width: 480px) {
   .cp-content { padding: var(--cp-space-3); }
   .cp-view-header { flex-direction: column; align-items: flex-start; }
+  .cp-view-header h1 { font-size: var(--cp-font-size-xl); }
+  .cp-dash h1, .cp-dashboard h1 { font-size: var(--cp-font-size-2xl); }
   .cp-list-toolbar-row { flex-wrap: wrap; }
   .cp-header-right .cp-header-user { display: none; }
   .cp-dash-stats { grid-template-columns: 1fr; gap: var(--cp-space-2); }
@@ -1991,6 +1993,24 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
   .cp-tab-btn { flex: 1; justify-content: center; font-size: 10px; padding: 3px 8px; }
   .cp-ai-research-bar { flex-wrap: wrap; padding: var(--cp-space-2); }
   .cp-ai-status-label { display: none; }
+}
+
+/* Focus-visible polish: ensure keyboard/touch users get a clear outline
+   on clickable cards & nav items (hover-only affordances are not enough). */
+.cp-nav-item:focus-visible,
+.cp-card[role="button"]:focus-visible,
+.cp-persona-item:focus-visible,
+.cp-message-card:focus-visible,
+.cp-cal-list-ad:focus-visible,
+.cp-cal-list-camp-chip:focus-visible {
+  outline: 2px solid var(--cp-primary);
+  outline-offset: 2px;
+}
+.cp-sidebar-toggle:focus-visible,
+.cp-btn:focus-visible,
+.cp-btn-icon:focus-visible {
+  outline: 2px solid var(--cp-primary);
+  outline-offset: 2px;
 }
 
 /* ===== src/styles/20-part2/00-header.css ===== */
