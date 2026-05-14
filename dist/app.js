@@ -1,6 +1,6 @@
-/* Campaign Planner v1.0.2 · built 2026-05-13T12:24:29.469Z · 83 source files (see src/) */
+/* Campaign Planner v1.0.2 · built 2026-05-14T15:57:41.588Z · 83 source files (see src/) */
 window.CP_VERSION = "1.0.2";
-window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
+window.CP_BUILD_TIME = "2026-05-14T15:57:41.588Z";
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -571,7 +571,7 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
     stylesTab: 'styles',      // 'styles' or 'formats'
     settingsTab: 'workspace',
     cardDensity: 'normal',
-    sidebarHidden: false,
+    sidebarMobileOpen: false,
 
     // Persona search
     personaFilter: { search: '' },
@@ -1788,6 +1788,7 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
 
   function renderAppShell() {
     return renderHeader() +
+      '<div id="cpSidebarBackdrop" class="cp-sidebar-backdrop" aria-hidden="true"></div>' +
       '<div class="cp-body">' + renderSidebar() +
       '<div class="cp-main"><div class="cp-content" id="cpContent"></div></div></div>' +
       '<div id="cpToasts" class="cp-toast-container"></div>';
@@ -1797,7 +1798,7 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
     var ws = (S.meta && S.meta.workspace) || {};
     var setup = (S.meta && S.meta.setup) || {};
     var html = '<div class="cp-header"><div class="cp-header-left">';
-    html += '<button class="cp-btn-icon cp-sidebar-toggle" id="cpSidebarToggle">' + icon('menu') + '</button>';
+    html += '<button class="cp-btn-icon cp-sidebar-toggle" id="cpSidebarToggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="cpSidebar">' + icon('menu') + '</button>';
     html += '<div class="cp-header-logo"><span class="cp-header-logo-accent">Meta</span> Campaign Planner</div>';
     if (ws.name) html += '<div class="cp-header-workspace">' + esc(ws.name) + '</div>';
     // Brand identity pill
@@ -1826,7 +1827,7 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
   }
 
   function renderSidebar() {
-    var html = '<div class="cp-sidebar' + (S.sidebarHidden ? ' cp-sidebar-hidden' : '') + '" id="cpSidebar"><div class="cp-sidebar-overlay"></div><div class="cp-sidebar-inner"><nav class="cp-nav">';
+    var html = '<aside class="cp-sidebar' + (S.sidebarMobileOpen ? ' cp-sidebar-open' : '') + '" id="cpSidebar"><div class="cp-sidebar-inner"><nav class="cp-nav">';
 
     // Grouped sidebar
     var groupOrder = ['main', 'library', 'core', 'tools'];
@@ -1868,7 +1869,7 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
     html += '<a class="cp-version-chip" href="' + chipHref + '" target="_blank" rel="noopener" title="' + esc(bt ? 'Built ' + bt : 'dev build') + '">v' + esc(v || 'dev') + '</a>';
     html += '</div>';
 
-    html += '</div></div>';
+    html += '</div></aside>';
     return html;
   }
 
@@ -5219,6 +5220,46 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
     if (P2A && P2A.snapshot) P2A.snapshot(label);
   }
 
+  // ---- Mobile sidebar drawer helpers ----
+  function openMobileSidebar() {
+    S.sidebarMobileOpen = true;
+    $('#cpSidebar').addClass('cp-sidebar-open');
+    $('#cpSidebarBackdrop').addClass('cp-sidebar-backdrop-visible').attr('aria-hidden', 'false');
+    $('#cpSidebarToggle').attr('aria-expanded', 'true');
+  }
+  function closeMobileSidebar() {
+    S.sidebarMobileOpen = false;
+    $('#cpSidebar').removeClass('cp-sidebar-open');
+    $('#cpSidebarBackdrop').removeClass('cp-sidebar-backdrop-visible').attr('aria-hidden', 'true');
+    $('#cpSidebarToggle').attr('aria-expanded', 'false');
+  }
+  // Edge-swipe to open / swipe-left on sidebar to close. Bound once at init.
+  function setupSidebarSwipe() {
+    if (window._cpSwipeBound) return;
+    window._cpSwipeBound = true;
+    var startX = 0, startY = 0, startT = 0, startedOnSidebar = false;
+    var EDGE = 24, MIN_DX = 60, MAX_DY = 40, MAX_T = 400;
+    document.addEventListener('touchstart', function(e) {
+      if (!window.matchMedia('(max-width: 992px)').matches) return;
+      var t = e.touches[0];
+      startX = t.clientX; startY = t.clientY; startT = Date.now();
+      startedOnSidebar = !!(e.target && e.target.closest && e.target.closest('#cpSidebar'));
+    }, { passive: true });
+    document.addEventListener('touchend', function(e) {
+      if (!window.matchMedia('(max-width: 992px)').matches) return;
+      var t = (e.changedTouches && e.changedTouches[0]) || null;
+      if (!t) return;
+      var dx = t.clientX - startX;
+      var dy = Math.abs(t.clientY - startY);
+      var dt = Date.now() - startT;
+      if (dy > MAX_DY || dt > MAX_T) return;
+      // Open: swipe right from left edge while drawer closed
+      if (!S.sidebarMobileOpen && startX <= EDGE && dx >= MIN_DX) openMobileSidebar();
+      // Close: swipe left while drawer open
+      else if (S.sidebarMobileOpen && startedOnSidebar && dx <= -MIN_DX) closeMobileSidebar();
+    }, { passive: true });
+  }
+
   function setupEventHandlers() {
     console.log('[CP] Setting up core event handlers...');
 
@@ -5227,6 +5268,10 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
       e.preventDefault();
       var viewName = $(this).data('view');
       if (viewName) navigate(viewName);
+      // Auto-close mobile drawer after picking a destination
+      if (S.sidebarMobileOpen && window.matchMedia('(max-width: 992px)').matches) {
+        closeMobileSidebar();
+      }
     });
 
     // View-crash card actions
@@ -5237,11 +5282,18 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
       e.preventDefault(); navigate('dashboard');
     });
 
-    // Sidebar toggle
-    $(document).off('click.cp-sidebar-toggle').on('click.cp-sidebar-toggle', '#cpSidebarToggle', function() {
-      S.sidebarHidden = !S.sidebarHidden;
-      $('#cpSidebar').toggleClass('cp-sidebar-hidden', S.sidebarHidden);
+    // Mobile sidebar drawer: toggle, backdrop click, escape, swipe
+    $(document).off('click.cp-sidebar-toggle').on('click.cp-sidebar-toggle', '#cpSidebarToggle', function(e) {
+      e.preventDefault();
+      if (S.sidebarMobileOpen) closeMobileSidebar(); else openMobileSidebar();
     });
+    $(document).off('click.cp-sidebar-backdrop').on('click.cp-sidebar-backdrop', '#cpSidebarBackdrop', function() {
+      closeMobileSidebar();
+    });
+    $(document).off('keydown.cp-sidebar-esc').on('keydown.cp-sidebar-esc', function(e) {
+      if (e.key === 'Escape' && S.sidebarMobileOpen) closeMobileSidebar();
+    });
+    setupSidebarSwipe();
 
     // Setup submit
     $(document).off('click.cp-setup').on('click.cp-setup', '#cpSetupSubmit', function(e) {

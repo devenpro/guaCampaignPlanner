@@ -42,7 +42,7 @@
     stylesTab: 'styles',      // 'styles' or 'formats'
     settingsTab: 'workspace',
     cardDensity: 'normal',
-    sidebarHidden: false,
+    sidebarMobileOpen: false,
 
     // Persona search
     personaFilter: { search: '' },

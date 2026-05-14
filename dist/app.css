@@ -1,4 +1,4 @@
-/* Campaign Planner v1.0.2 · built 2026-05-13T12:24:29.469Z · 44 source files (see src/) */
+/* Campaign Planner v1.0.2 · built 2026-05-14T15:57:41.588Z · 44 source files (see src/) */
 
 /* ===== src/styles/10-part1/00-header.css ===== */
 /**
@@ -91,6 +91,7 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 .cp-header-right { display: flex; align-items: center; gap: var(--cp-space-3); }
 .cp-header-user { font-size: var(--cp-font-size-xs); color: var(--cp-text-muted); display: flex; align-items: center; gap: var(--cp-space-1); }
 .cp-sidebar-toggle { display: flex; }
+@media (min-width: 993px) { .cp-sidebar-toggle { display: none; } }
 .cp-header-brand { display: flex; align-items: center; gap: var(--cp-space-2); padding: 3px 10px; border-radius: var(--cp-radius-full); background: var(--cp-gray-50); border: 1px solid var(--cp-border-light); margin-left: var(--cp-space-3); }
 .cp-header-brand-logo { width: 18px; height: 18px; border-radius: var(--cp-radius-sm); object-fit: contain; }
 .cp-header-brand-name { font-size: var(--cp-font-size-xs); font-weight: 600; color: var(--cp-text-secondary); white-space: nowrap; }
@@ -105,9 +106,11 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 /* ═══ S5: SIDEBAR ═══ */
 .cp-body { display: flex; flex: 1; overflow: hidden; min-height: 0; }
 .cp-sidebar { width: var(--cp-sidebar-width); background: var(--cp-white); border-right: 1px solid var(--cp-border-light); display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; transition: width var(--cp-transition-base); }
-.cp-sidebar-hidden { display: none !important; }
-.cp-sidebar-overlay { display: none; }
 .cp-sidebar-inner { display: flex; flex-direction: column; flex: 1; }
+.cp-sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.42); z-index: var(--cp-z-sidebar-overlay); animation: cpSidebarBackdropIn var(--cp-transition-fast) ease-out; }
+.cp-sidebar-backdrop-visible { display: block; }
+@keyframes cpSidebarBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+@media (min-width: 993px) { .cp-sidebar-backdrop { display: none !important; } }
 .cp-nav { display: flex; flex-direction: column; padding: var(--cp-space-2) var(--cp-space-2); gap: 0; flex: 1; }
 .cp-nav-group { margin-bottom: var(--cp-space-1); }
 .cp-nav-group-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.1px; color: var(--cp-text-muted); padding: var(--cp-space-2) var(--cp-space-2) var(--cp-space-1); margin-top: var(--cp-space-1); }
@@ -1881,9 +1884,8 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
   .cp-dash-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 992px) {
-  .cp-sidebar { display: none; }
-  .cp-sidebar.cp-sidebar-open { display: flex; position: fixed; top: 0; left: 0; bottom: 0; z-index: var(--cp-z-sidebar); box-shadow: var(--cp-shadow-xl); width: var(--cp-sidebar-width); }
-  .cp-sidebar.cp-sidebar-open .cp-sidebar-overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: var(--cp-z-sidebar-overlay); }
+  .cp-sidebar { position: fixed; top: var(--cp-drupal-toolbar, 0); bottom: 0; left: 0; width: min(280px, 86vw); z-index: var(--cp-z-sidebar); box-shadow: var(--cp-shadow-xl); transform: translateX(-100%); transition: transform var(--cp-transition-base); }
+  .cp-sidebar.cp-sidebar-open { transform: translateX(0); }
   .cp-dash-grid { grid-template-columns: 1fr; }
   .cp-split-pane { flex-direction: column; }
   .cp-list-pane { width: 100%; min-width: unset; max-width: unset; border-right: none; border-bottom: 1px solid var(--cp-border-light); max-height: 40vh; flex-shrink: 0; }

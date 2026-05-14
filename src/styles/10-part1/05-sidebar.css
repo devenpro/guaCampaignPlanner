@@ -1,9 +1,11 @@
 /* ═══ S5: SIDEBAR ═══ */
 .cp-body { display: flex; flex: 1; overflow: hidden; min-height: 0; }
 .cp-sidebar { width: var(--cp-sidebar-width); background: var(--cp-white); border-right: 1px solid var(--cp-border-light); display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto; transition: width var(--cp-transition-base); }
-.cp-sidebar-hidden { display: none !important; }
-.cp-sidebar-overlay { display: none; }
 .cp-sidebar-inner { display: flex; flex-direction: column; flex: 1; }
+.cp-sidebar-backdrop { display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.42); z-index: var(--cp-z-sidebar-overlay); animation: cpSidebarBackdropIn var(--cp-transition-fast) ease-out; }
+.cp-sidebar-backdrop-visible { display: block; }
+@keyframes cpSidebarBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+@media (min-width: 993px) { .cp-sidebar-backdrop { display: none !important; } }
 .cp-nav { display: flex; flex-direction: column; padding: var(--cp-space-2) var(--cp-space-2); gap: 0; flex: 1; }
 .cp-nav-group { margin-bottom: var(--cp-space-1); }
 .cp-nav-group-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.1px; color: var(--cp-text-muted); padding: var(--cp-space-2) var(--cp-space-2) var(--cp-space-1); margin-top: var(--cp-space-1); }

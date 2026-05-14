@@ -6,9 +6,8 @@
   .cp-dash-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 992px) {
-  .cp-sidebar { display: none; }
-  .cp-sidebar.cp-sidebar-open { display: flex; position: fixed; top: 0; left: 0; bottom: 0; z-index: var(--cp-z-sidebar); box-shadow: var(--cp-shadow-xl); width: var(--cp-sidebar-width); }
-  .cp-sidebar.cp-sidebar-open .cp-sidebar-overlay { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: var(--cp-z-sidebar-overlay); }
+  .cp-sidebar { position: fixed; top: var(--cp-drupal-toolbar, 0); bottom: 0; left: 0; width: min(280px, 86vw); z-index: var(--cp-z-sidebar); box-shadow: var(--cp-shadow-xl); transform: translateX(-100%); transition: transform var(--cp-transition-base); }
+  .cp-sidebar.cp-sidebar-open { transform: translateX(0); }
   .cp-dash-grid { grid-template-columns: 1fr; }
   .cp-split-pane { flex-direction: column; }
   .cp-list-pane { width: 100%; min-width: unset; max-width: unset; border-right: none; border-bottom: 1px solid var(--cp-border-light); max-height: 40vh; flex-shrink: 0; }
