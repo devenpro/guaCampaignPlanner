@@ -549,7 +549,7 @@
 }
 .cp-ncw-set-hooks .cp-badge { margin-right: 4px; margin-bottom: 4px; }
 .cp-ncw-set-footer { display: flex; justify-content: space-between; align-items: center; margin-top: var(--cp-space-2); }
-.cp-ncw-ad-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--cp-space-3); }
+.cp-ncw-ad-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: var(--cp-space-3); }
 .cp-ncw-ad-card {
   background: var(--cp-white, #fff); border: 1px solid var(--cp-border);
   border-radius: var(--cp-radius); padding: var(--cp-space-3);

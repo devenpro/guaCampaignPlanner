@@ -16,4 +16,9 @@
 .cp-btn-icon:hover { background: var(--cp-gray-100); color: var(--cp-text-primary); }
 .cp-btn-link { background: none; border: none; color: var(--cp-primary); font-size: var(--cp-font-size-xs); cursor: pointer; padding: 0; display: inline-flex; align-items: center; gap: 3px; font-family: var(--cp-font-family); font-weight: 600; }
 .cp-btn-link:hover { text-decoration: underline; }
+@media (max-width: 768px) and (hover: none) {
+  .cp-btn { min-height: 40px; padding: 9px 16px; }
+  .cp-btn-sm { min-height: 36px; padding: 7px 14px; }
+  .cp-btn-icon { width: 40px; height: 40px; min-width: 40px; min-height: 40px; }
+}
 

@@ -16,4 +16,19 @@
 .cp-unsaved { color: var(--cp-warning); }
 .cp-synced { color: var(--cp-synced); }
 .cp-saving { color: var(--cp-text-muted); }
+@media (max-width: 992px) {
+  .cp-header { padding: 0 var(--cp-space-3); gap: var(--cp-space-2); }
+  .cp-header-logo { font-size: var(--cp-font-size-sm); }
+  .cp-header-center { flex: 1; min-width: 0; }
+}
+@media (max-width: 768px) {
+  .cp-global-search .cp-input { font-size: var(--cp-font-size-xs); }
+}
+@media (max-width: 480px) {
+  .cp-header { flex-wrap: wrap; height: auto; padding: var(--cp-space-2) var(--cp-space-3); row-gap: var(--cp-space-2); }
+  .cp-header-center { order: 3; flex-basis: 100%; }
+  .cp-header-right { gap: var(--cp-space-2); }
+  .cp-save-status { display: none; }
+  .cp-header-user .cp-text, .cp-header-user span:not(.cp-icon) { display: none; }
+}
 
