@@ -96,7 +96,6 @@
         case 'campaign_workspace': html = renderCampaignWorkspaceView(); break;
         case 'calendar':   html = renderCalendarView(); break;
         case 'research':   html = (R.researchView) ? R.researchView() : renderResearchPlaceholder(); break;
-        case 'images':     html = (R.imagesView) ? R.imagesView() : renderImagesPlaceholder(); break;
         case 'activity':   html = renderActivityView(); break;
         case 'settings':   html = (R.settingsView) ? R.settingsView() : renderSettingsPlaceholder(); break;
         default:           html = renderDashboardView();
@@ -106,7 +105,6 @@
 
       // Trigger Part 2A/2B view-specific event setup
       if (R.setupResearchEvents && S.currentView === 'research') R.setupResearchEvents();
-      if (R.setupImagesEvents && S.currentView === 'images') R.setupImagesEvents();
       if (R.setupSettingsEvents && S.currentView === 'settings') R.setupSettingsEvents();
 
       // Replace any AI picker placeholders left in the DOM (Part 2B loads async).

@@ -3,10 +3,10 @@
  *
  * Multi-provider AI (LLMService), brand context (BrandService),
  * AI research panel component, inline AI assist, 11 AI action functions,
- * Research Lab view, Settings view (6 tabs), Images view, Import/Export.
+ * Research Lab view, Settings view (6 tabs), Import/Export.
  *
- * Registry: researchView, settingsView, imagesView, imagePicker,
- *   setupResearchEvents, setupSettingsEvents, setupImagesEvents
+ * Registry: researchView, settingsView,
+ *   setupResearchEvents, setupSettingsEvents
  *
  * Sections:
  *  1. Init & imports
@@ -28,8 +28,6 @@
  * 17. Settings view (6 tabs)
  * 18. Config CRUD & settings save
  * 19. Import/Export
- * 20. Images view
- * 21. Image picker (reusable modal)
  * 22. Events & keyboard shortcuts
  * 23. API exports
  *

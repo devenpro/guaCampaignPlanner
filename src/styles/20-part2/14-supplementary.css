@@ -45,10 +45,6 @@
 .cp-mixer { }
 .cp-mixer-input { cursor: pointer; }
 
-/* Image picker wrapper */
-.cp-img-picker { }
-.cp-img-meta-field { }
-
 /* Settings functional selectors */
 .cp-settings-field { }
 .cp-settings-body { }

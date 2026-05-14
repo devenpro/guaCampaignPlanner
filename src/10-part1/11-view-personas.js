@@ -134,7 +134,7 @@
                    (p.description || '').toLowerCase().indexOf(f.search.toLowerCase()) > -1;
           });
         }
-        var collapsed = S.collapsedGroups['pcat_' + cat.id] || false;
+        var collapsed = (S.collapsedGroups || {})['pcat_' + cat.id] || false;
 
         html += '<div class="cp-persona-category">';
         html += '<div class="cp-persona-cat-header" data-action="toggle-group" data-group="pcat_' + esc(cat.id) + '">';

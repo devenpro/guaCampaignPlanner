@@ -79,11 +79,6 @@
     var sessions = S.data.research_sessions || [];
     for (i = 0; i < sessions.length; i++) S.researchMap[sessions[i].id] = sessions[i];
 
-    // Image category map
-    S.imageCategoryMap = {};
-    var imgCats = (S.meta && S.meta.image_categories) || [];
-    for (i = 0; i < imgCats.length; i++) S.imageCategoryMap[imgCats[i].id] = imgCats[i];
-
     // --- Meta v2 hierarchy maps ---
 
     S.campaignV2Map = {};

@@ -1,4 +1,4 @@
-/* Campaign Planner v1.0.3 · built 2026-05-14T16:30:07.774Z · 44 source files (see src/) */
+/* Campaign Planner v1.0.3 · built 2026-05-14T17:08:21.244Z · 43 source files (see src/) */
 
 /* ===== src/styles/10-part1/00-header.css ===== */
 /**
@@ -528,9 +528,6 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 .cp-style-card-tags, .cp-format-card-tags { display: flex; gap: var(--cp-space-1); flex-wrap: wrap; margin-bottom: var(--cp-space-2); }
 .cp-style-card-footer, .cp-format-card-footer { font-size: var(--cp-font-size-xs); border-top: 1px solid var(--cp-border-light); padding-top: var(--cp-space-2); }
 .cp-format-card-cat { margin-bottom: var(--cp-space-2); }
-.cp-format-card-refs { display: flex; gap: var(--cp-space-2); margin-bottom: var(--cp-space-2); align-items: center; }
-.cp-format-ref-thumb { width: 36px; height: 36px; border-radius: var(--cp-radius-sm); overflow: hidden; border: 1px solid var(--cp-border-light); flex-shrink: 0; }
-.cp-format-ref-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
 
 /* ===== src/styles/10-part1/16b-view-meta-campaigns.css ===== */
@@ -2749,30 +2746,6 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 .cp-color-input-wrap .cp-input { flex: 1; font-family: var(--cp-font-mono); font-size: var(--cp-font-size-xs); }
 
 
-/* ===== src/styles/20-part2/13-view-images.css ===== */
-/* ═══ S13: IMAGES VIEW (Part 2B) ═══ */
-.cp-img-filters { display: flex; align-items: center; gap: var(--cp-space-2); margin-bottom: var(--cp-space-5); flex-wrap: wrap; }
-.cp-img-filters .cp-search-wrapper { flex: 1; min-width: 160px; max-width: 280px; }
-.cp-img-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: var(--cp-space-3); }
-.cp-img-card { background: var(--cp-white); border: 1px solid var(--cp-border-light); border-radius: var(--cp-radius-lg); overflow: hidden; cursor: pointer; transition: all var(--cp-transition-fast); }
-.cp-img-card:hover { border-color: var(--cp-border-dark); box-shadow: var(--cp-shadow-sm); transform: translateY(-2px); }
-.cp-img-card-selected { border-color: var(--cp-primary); box-shadow: 0 0 0 3px var(--cp-primary-light); }
-.cp-img-card-thumb { width: 100%; height: 140px; overflow: hidden; background: var(--cp-gray-50); display: flex; align-items: center; justify-content: center; }
-.cp-img-card-thumb img { width: 100%; height: 100%; object-fit: cover; }
-.cp-img-card-body { padding: var(--cp-space-2) var(--cp-space-3); }
-.cp-img-card-name { font-size: var(--cp-font-size-xs); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cp-img-card-meta { font-size: 10px; color: var(--cp-text-muted); display: flex; align-items: center; gap: var(--cp-space-1); }
-.cp-img-detail { position: sticky; top: 0; width: 340px; flex-shrink: 0; background: var(--cp-white); border-left: 1.5px solid var(--cp-border-light); padding: var(--cp-space-4); overflow-y: auto; }
-.cp-img-detail-preview { width: 100%; border-radius: var(--cp-radius-md); overflow: hidden; margin-bottom: var(--cp-space-3); border: 1px solid var(--cp-border-light); }
-.cp-img-detail-preview img { width: 100%; display: block; }
-.cp-img-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: var(--cp-space-2); max-height: 320px; overflow-y: auto; }
-.cp-img-picker-item { display: flex; flex-direction: column; align-items: center; border: 2px solid var(--cp-border-light); border-radius: var(--cp-radius-md); overflow: hidden; cursor: pointer; transition: all var(--cp-transition-fast); position: relative; }
-.cp-img-picker-item:hover { border-color: var(--cp-primary); }
-.cp-img-picker-item-selected { border-color: var(--cp-primary); box-shadow: 0 0 0 2px var(--cp-primary-light); }
-.cp-img-picker-item img { width: 100%; height: 72px; object-fit: cover; }
-.cp-img-picker-label { font-size: 10px; padding: 2px 4px; text-align: center; color: var(--cp-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
-
-
 /* ===== src/styles/20-part2/14-supplementary.css ===== */
 /* ═══ S13.5: SUPPLEMENTARY RULES (Phase 4 audit) ═══ */
 
@@ -2820,10 +2793,6 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 /* Mixer wrapper */
 .cp-mixer { }
 .cp-mixer-input { cursor: pointer; }
-
-/* Image picker wrapper */
-.cp-img-picker { }
-.cp-img-meta-field { }
 
 /* Settings functional selectors */
 .cp-settings-field { }
@@ -3777,8 +3746,6 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
   .cp-settings-panel, .cp-brand-design-panel { max-width: 100%; }
   .cp-mixer-columns { flex-direction: column; max-height: 60vh; overflow-y: auto; }
   .cp-mixer-column { min-height: 120px; }
-  .cp-img-detail { width: 100%; border-left: none; border-top: 1px solid var(--cp-border-light); position: relative; }
-  .cp-img-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
   .cp-script-header, .cp-script-row { grid-template-columns: 50px 1fr 1fr; }
   .cp-script-header > :nth-child(n+4), .cp-script-row > :nth-child(n+4) { display: none; }
 }
@@ -3793,8 +3760,6 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
   .cp-video-meta-row { flex-direction: column; }
   .cp-media-type-toggle { width: 100%; }
   .cp-media-type-btn { flex: 1; justify-content: center; }
-  .cp-img-filters { flex-direction: column; align-items: stretch; }
-  .cp-img-filters .cp-search-wrapper { max-width: 100%; }
   .cp-brand-color-row { flex-direction: column; }
   .cp-brand-color-field { min-width: 100%; }
   .cp-date-range { flex-direction: column; align-items: stretch; }
@@ -3808,7 +3773,4 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
   .cp-ai-picker { flex-wrap: wrap; gap: 4px; }
   .cp-ai-picker .cp-ai-provider-select, .cp-ai-picker .cp-ai-model-select { font-size: 10px; padding: 2px 4px; min-width: 60px; }
   .cp-settings-section { padding: var(--cp-space-3); }
-  .cp-img-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: var(--cp-space-2); }
-  .cp-img-card-thumb { height: 100px; }
-  .cp-img-picker-grid { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
 }

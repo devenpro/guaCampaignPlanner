@@ -60,7 +60,7 @@
     // Timeout: if Part 2B hasn't loaded in 8 seconds, re-render with helpful messages
     setTimeout(function() {
       var R = window._cpRenderers || {};
-      if (!R.researchView || !R.settingsView || !R.imagesView) {
+      if (!R.researchView || !R.settingsView) {
         var diag = [];
         if (!window._cpPart2AScript) diag.push('Part 2A script not loaded');
         else if (!window._cpPart2A) diag.push('Part 2A crashed during init');
@@ -68,7 +68,7 @@
         if (!window._cpPart2B) diag.push('Part 2B not initialized');
         console.warn('[CP] Part 2B not loaded after 8s — ' + diag.join('; '));
         S._part2bTimeout = true;
-        if (S.currentView === 'research' || S.currentView === 'settings' || S.currentView === 'images') renderCurrentView();
+        if (S.currentView === 'research' || S.currentView === 'settings') renderCurrentView();
       }
     }, 8000);
   }
@@ -99,14 +99,11 @@
     S.$metaTextarea.closest('.field--name-field-json-meta').hide();
     S.$activityTextarea.closest('.field--name-field-activity-log').hide();
     S.$form.find('.node-form-options, .field--name-title, .form-actions').hide();
-    // Detect and hide image field
-    S.$imageField = S.$form.find('.field--name-field-images');
-    if (S.$imageField.length) {
-      S.$imageField.hide();
-      console.log('[CP] Image field detected');
-    } else {
-      console.log('[CP] No image field found (field_images)');
-    }
+    // Hide the legacy images field if it's still present on the content type
+    // (the feature is removed from the UI; the storage field is owned by the
+    // Drupal admin and will be dropped separately).
+    var $legacyImages = S.$form.find('.field--name-field-images');
+    if ($legacyImages.length) $legacyImages.hide();
     return true;
   }
 
@@ -126,9 +123,6 @@
       try { S.activity = JSON.parse(rawActivity); } catch (e) { console.error('[CP] JSON activity parse error:', e); S.activity = []; }
     } else { S.activity = []; }
     if (!Array.isArray(S.activity)) S.activity = [];
-
-    // Parse images from Drupal field
-    parseImageField();
 
     // Parse brand data from DOM
     parseBrandData();
@@ -177,50 +171,6 @@
       planner_id: plannerId,
       _parsed_at: new Date().toISOString()
     };
-  }
-
-  function parseImageField() {
-    S.images = []; S.imageMap = {};
-    if (!S.$imageField || !S.$imageField.length) return;
-    var imgMeta = (S.meta && S.meta.reference_images) || {};
-
-    S.$imageField.find('.image-widget, [data-drupal-selector*="edit-field-images"]').each(function(idx) {
-      var $widget = $(this);
-      var $img = $widget.find('.image-preview img, .image-style-thumbnail, img').first();
-      var $fileLink = $widget.find('.file a, a[href*="/files/"]').first();
-      var imgUrl = '';
-      if ($img.length) imgUrl = $img.attr('src') || '';
-      if (!imgUrl && $fileLink.length) imgUrl = $fileLink.attr('href') || '';
-      if (!imgUrl) return;
-
-      var fid = '';
-      var $fidInput = $widget.find('input[name*="fids"], input[data-fid]');
-      if ($fidInput.length) fid = $fidInput.data('fid') || $fidInput.val() || '';
-      if (!fid) {
-        var $anyInput = $widget.find('input[name*="field_images"]').first();
-        if ($anyInput.length) {
-          var match = $anyInput.attr('name').match(/field_images\[(\d+)\]/);
-          if (match) fid = 'idx_' + match[1];
-        }
-      }
-      if (!fid) fid = 'img_' + idx;
-
-      var filename = '';
-      if ($fileLink.length) filename = $fileLink.text().trim();
-      if (!filename && imgUrl) filename = imgUrl.split('/').pop().split('?')[0];
-
-      var alt = $img.attr('alt') || '';
-      var meta = imgMeta[fid] || {};
-
-      S.images.push({
-        fid: String(fid), url: imgUrl, filename: filename, alt: alt, index: idx,
-        category: meta.category || '', tags: meta.tags || [], star: !!meta.star,
-        description: meta.description || '', notes: meta.notes || '', usage: meta.usage || []
-      });
-    });
-
-    for (var i = 0; i < S.images.length; i++) S.imageMap[S.images[i].fid] = S.images[i];
-    console.log('[CP] Parsed ' + S.images.length + ' reference images');
   }
 
   function parseBrandData() {

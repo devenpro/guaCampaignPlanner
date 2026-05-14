@@ -117,8 +117,7 @@
         type: 'image',
         image: {
           prompt: img.prompt || img.ai_prompt || img.brief || '',
-          aspect_ratio: img.aspect_ratio || '1:1',
-          reference_image_ids: img.reference_image_ids || []
+          aspect_ratio: img.aspect_ratio || '1:1'
         }
       };
     }
