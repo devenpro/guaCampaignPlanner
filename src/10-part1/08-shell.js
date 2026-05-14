@@ -21,6 +21,7 @@
 
   function renderAppShell() {
     return renderHeader() +
+      '<div id="cpSidebarBackdrop" class="cp-sidebar-backdrop" aria-hidden="true"></div>' +
       '<div class="cp-body">' + renderSidebar() +
       '<div class="cp-main"><div class="cp-content" id="cpContent"></div></div></div>' +
       '<div id="cpToasts" class="cp-toast-container"></div>';
@@ -30,7 +31,7 @@
     var ws = (S.meta && S.meta.workspace) || {};
     var setup = (S.meta && S.meta.setup) || {};
     var html = '<div class="cp-header"><div class="cp-header-left">';
-    html += '<button class="cp-btn-icon cp-sidebar-toggle" id="cpSidebarToggle">' + icon('menu') + '</button>';
+    html += '<button class="cp-btn-icon cp-sidebar-toggle" id="cpSidebarToggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="cpSidebar">' + icon('menu') + '</button>';
     html += '<div class="cp-header-logo"><span class="cp-header-logo-accent">Meta</span> Campaign Planner</div>';
     if (ws.name) html += '<div class="cp-header-workspace">' + esc(ws.name) + '</div>';
     // Brand identity pill
@@ -59,7 +60,7 @@
   }
 
   function renderSidebar() {
-    var html = '<div class="cp-sidebar' + (S.sidebarHidden ? ' cp-sidebar-hidden' : '') + '" id="cpSidebar"><div class="cp-sidebar-overlay"></div><div class="cp-sidebar-inner"><nav class="cp-nav">';
+    var html = '<aside class="cp-sidebar' + (S.sidebarMobileOpen ? ' cp-sidebar-open' : '') + '" id="cpSidebar"><div class="cp-sidebar-inner"><nav class="cp-nav">';
 
     // Grouped sidebar
     var groupOrder = ['main', 'library', 'core', 'tools'];
@@ -101,7 +102,7 @@
     html += '<a class="cp-version-chip" href="' + chipHref + '" target="_blank" rel="noopener" title="' + esc(bt ? 'Built ' + bt : 'dev build') + '">v' + esc(v || 'dev') + '</a>';
     html += '</div>';
 
-    html += '</div></div>';
+    html += '</div></aside>';
     return html;
   }
 

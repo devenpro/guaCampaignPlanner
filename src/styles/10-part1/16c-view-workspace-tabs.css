@@ -812,3 +812,21 @@
   border-top: 1px solid var(--cp-border-light);
   background: var(--cp-gray-50);
 }
+
+@media (max-width: 992px) {
+  .cp-ad-inspector-header { flex-direction: column; }
+  .cp-ad-inspector-header-side { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+}
+@media (max-width: 768px) {
+  .cp-inspector-tabs { gap: 0; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  .cp-inspector-tab { padding: 8px 10px; font-size: 12px; flex-shrink: 0; }
+  .cp-ad-workflow-tabs { gap: 6px; padding: 6px 2px 8px; }
+  .cp-ad-workflow-step { padding: 4px 4px; }
+  .cp-ad-workflow-step-label { font-size: 9px; }
+  .cp-ad-workflow-connector { min-width: 8px; margin-top: 17px; }
+  .cp-status-buttons { gap: 4px; }
+  .cp-status-button { padding: 5px 10px; font-size: 11px; }
+  .cp-ai-runner-body { padding: 12px; gap: 10px; }
+  .cp-ai-runner-actions { flex-wrap: wrap; padding: 10px 12px; }
+  .cp-ai-runner-actions .cp-btn { flex: 1 1 auto; justify-content: center; }
+}

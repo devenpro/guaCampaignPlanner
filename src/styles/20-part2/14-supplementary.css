@@ -134,7 +134,7 @@
 
 /* Brand context dashboard section */
 .cp-dash-brand-context { margin-top: var(--cp-space-5); }
-.cp-brand-context-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--cp-space-4); }
+.cp-brand-context-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: var(--cp-space-4); }
 .cp-brand-context-card { padding: var(--cp-space-4); }
 .cp-brand-ctx-item { display: flex; flex-direction: column; gap: 2px; padding: var(--cp-space-2) 0; border-bottom: 1px solid var(--cp-border-light); }
 .cp-brand-ctx-item:last-child { border-bottom: none; }

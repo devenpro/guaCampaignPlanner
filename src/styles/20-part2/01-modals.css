@@ -1,15 +1,22 @@
 /* ═══ S1: MODALS ═══ */
 .cp-modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: var(--cp-z-modal); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity var(--cp-transition-base); }
 .cp-modal-backdrop.cp-modal-visible { opacity: 1; }
-.cp-modal { background: var(--cp-white); border-radius: var(--cp-radius-lg); box-shadow: var(--cp-shadow-xl); width: 90%; max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; transform: translateY(10px); transition: transform var(--cp-transition-base); }
+.cp-modal { background: var(--cp-white); border-radius: var(--cp-radius-lg); box-shadow: var(--cp-shadow-xl); width: 90%; max-width: calc(100vw - var(--cp-space-6)); max-height: 85vh; display: flex; flex-direction: column; overflow: hidden; transform: translateY(10px); transition: transform var(--cp-transition-base); }
 .cp-modal-visible .cp-modal { transform: translateY(0); }
-.cp-modal-sm { max-width: 420px; }
-.cp-modal-md { max-width: 560px; }
-.cp-modal-lg { max-width: 720px; }
-.cp-modal-xl { max-width: 920px; }
+.cp-modal-sm { max-width: min(420px, calc(100vw - var(--cp-space-6))); }
+.cp-modal-md { max-width: min(560px, calc(100vw - var(--cp-space-6))); }
+.cp-modal-lg { max-width: min(720px, calc(100vw - var(--cp-space-6))); }
+.cp-modal-xl { max-width: min(920px, calc(100vw - var(--cp-space-6))); }
 .cp-modal-header { display: flex; align-items: center; justify-content: space-between; padding: var(--cp-space-4) var(--cp-space-5); border-bottom: 1px solid var(--cp-border-light); }
 .cp-modal-header h3 { font-size: var(--cp-font-size-lg); margin: 0; }
 .cp-modal-body { padding: var(--cp-space-5); overflow-y: auto; flex: 1; }
 .cp-modal-footer { display: flex; justify-content: flex-end; gap: var(--cp-space-2); padding: var(--cp-space-4) var(--cp-space-5); border-top: 1px solid var(--cp-border-light); }
 .cp-modal-close { color: var(--cp-text-muted); }
+@media (max-width: 480px) {
+  .cp-modal, .cp-modal-sm, .cp-modal-md, .cp-modal-lg, .cp-modal-xl { width: 100%; max-width: 100vw; max-height: 100vh; height: 100vh; border-radius: 0; }
+  .cp-modal-header { padding: var(--cp-space-3) var(--cp-space-4); }
+  .cp-modal-body { padding: var(--cp-space-4); }
+  .cp-modal-footer { padding: var(--cp-space-3) var(--cp-space-4); flex-wrap: wrap; }
+  .cp-modal-footer .cp-btn { flex: 1 1 auto; justify-content: center; }
+}
 

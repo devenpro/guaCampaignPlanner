@@ -13,4 +13,8 @@
 .cp-toast-info .cp-toast-icon { color: var(--cp-info); }
 .cp-toast-message { flex: 1; }
 .cp-toast-close { border: none; background: none; color: var(--cp-text-muted); cursor: pointer; font-size: var(--cp-font-size-lg); padding: 0; line-height: 1; }
+@media (max-width: 480px) {
+  .cp-toast-container { left: var(--cp-space-3); right: var(--cp-space-3); bottom: var(--cp-space-3); }
+  .cp-toast { min-width: 0; width: 100%; max-width: 100%; }
+}
 

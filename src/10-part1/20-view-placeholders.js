@@ -49,6 +49,46 @@
     if (P2A && P2A.snapshot) P2A.snapshot(label);
   }
 
+  // ---- Mobile sidebar drawer helpers ----
+  function openMobileSidebar() {
+    S.sidebarMobileOpen = true;
+    $('#cpSidebar').addClass('cp-sidebar-open');
+    $('#cpSidebarBackdrop').addClass('cp-sidebar-backdrop-visible').attr('aria-hidden', 'false');
+    $('#cpSidebarToggle').attr('aria-expanded', 'true');
+  }
+  function closeMobileSidebar() {
+    S.sidebarMobileOpen = false;
+    $('#cpSidebar').removeClass('cp-sidebar-open');
+    $('#cpSidebarBackdrop').removeClass('cp-sidebar-backdrop-visible').attr('aria-hidden', 'true');
+    $('#cpSidebarToggle').attr('aria-expanded', 'false');
+  }
+  // Edge-swipe to open / swipe-left on sidebar to close. Bound once at init.
+  function setupSidebarSwipe() {
+    if (window._cpSwipeBound) return;
+    window._cpSwipeBound = true;
+    var startX = 0, startY = 0, startT = 0, startedOnSidebar = false;
+    var EDGE = 24, MIN_DX = 60, MAX_DY = 40, MAX_T = 400;
+    document.addEventListener('touchstart', function(e) {
+      if (!window.matchMedia('(max-width: 992px)').matches) return;
+      var t = e.touches[0];
+      startX = t.clientX; startY = t.clientY; startT = Date.now();
+      startedOnSidebar = !!(e.target && e.target.closest && e.target.closest('#cpSidebar'));
+    }, { passive: true });
+    document.addEventListener('touchend', function(e) {
+      if (!window.matchMedia('(max-width: 992px)').matches) return;
+      var t = (e.changedTouches && e.changedTouches[0]) || null;
+      if (!t) return;
+      var dx = t.clientX - startX;
+      var dy = Math.abs(t.clientY - startY);
+      var dt = Date.now() - startT;
+      if (dy > MAX_DY || dt > MAX_T) return;
+      // Open: swipe right from left edge while drawer closed
+      if (!S.sidebarMobileOpen && startX <= EDGE && dx >= MIN_DX) openMobileSidebar();
+      // Close: swipe left while drawer open
+      else if (S.sidebarMobileOpen && startedOnSidebar && dx <= -MIN_DX) closeMobileSidebar();
+    }, { passive: true });
+  }
+
   function setupEventHandlers() {
     console.log('[CP] Setting up core event handlers...');
 
@@ -57,6 +97,10 @@
       e.preventDefault();
       var viewName = $(this).data('view');
       if (viewName) navigate(viewName);
+      // Auto-close mobile drawer after picking a destination
+      if (S.sidebarMobileOpen && window.matchMedia('(max-width: 992px)').matches) {
+        closeMobileSidebar();
+      }
     });
 
     // View-crash card actions
@@ -67,11 +111,19 @@
       e.preventDefault(); navigate('dashboard');
     });
 
-    // Sidebar toggle
-    $(document).off('click.cp-sidebar-toggle').on('click.cp-sidebar-toggle', '#cpSidebarToggle', function() {
-      S.sidebarHidden = !S.sidebarHidden;
-      $('#cpSidebar').toggleClass('cp-sidebar-hidden', S.sidebarHidden);
+    // Mobile sidebar drawer: toggle, backdrop click, escape, swipe
+    $(document).off('click.cp-sidebar-toggle').on('click.cp-sidebar-toggle', '#cpSidebarToggle', function(e) {
+      e.preventDefault();
+      if (S.sidebarMobileOpen) closeMobileSidebar(); else openMobileSidebar();
     });
+    $(document).off('click.cp-sidebar-backdrop').on('click.cp-sidebar-backdrop', '#cpSidebarBackdrop', function() {
+      closeMobileSidebar();
+    });
+    $(document).off('keydown.cp-sidebar-esc').on('keydown.cp-sidebar-esc', function(e) {
+      if (e.key === 'Escape' && S.sidebarMobileOpen) closeMobileSidebar();
+    });
+    setupSidebarSwipe();
+    setupResponsiveRerender();
 
     // Setup submit
     $(document).off('click.cp-setup').on('click.cp-setup', '#cpSetupSubmit', function(e) {

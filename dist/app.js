@@ -1,6 +1,6 @@
-/* Campaign Planner v1.0.2 · built 2026-05-13T12:24:29.469Z · 83 source files (see src/) */
+/* Campaign Planner v1.0.2 · built 2026-05-14T16:02:35.923Z · 83 source files (see src/) */
 window.CP_VERSION = "1.0.2";
-window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
+window.CP_BUILD_TIME = "2026-05-14T16:02:35.923Z";
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -571,7 +571,7 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
     stylesTab: 'styles',      // 'styles' or 'formats'
     settingsTab: 'workspace',
     cardDensity: 'normal',
-    sidebarHidden: false,
+    sidebarMobileOpen: false,
 
     // Persona search
     personaFilter: { search: '' },
@@ -1757,6 +1757,20 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
     return Object.keys(tags).sort();
   }
 
+  // --- Viewport helpers ---
+  function cpIsPhone()  { return window.matchMedia('(max-width: 768px)').matches; }
+  function cpIsTablet() { return window.matchMedia('(max-width: 992px)').matches; }
+
+  // Re-render the current view when the phone breakpoint flips (rotation / resize).
+  function setupResponsiveRerender() {
+    if (window._cpResponsiveBound) return;
+    window._cpResponsiveBound = true;
+    var mq = window.matchMedia('(max-width: 768px)');
+    var rerender = debounce(function() { if (typeof renderCurrentView === 'function') renderCurrentView(); }, 150);
+    if (mq.addEventListener) mq.addEventListener('change', rerender);
+    else if (mq.addListener) mq.addListener(rerender);
+  }
+
   // --- Misc ---
   function debounce(fn, delay) { var t; return function() { var c = this, a = arguments; clearTimeout(t); t = setTimeout(function() { fn.apply(c, a); }, delay); }; }
   function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
@@ -1788,6 +1802,7 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
 
   function renderAppShell() {
     return renderHeader() +
+      '<div id="cpSidebarBackdrop" class="cp-sidebar-backdrop" aria-hidden="true"></div>' +
       '<div class="cp-body">' + renderSidebar() +
       '<div class="cp-main"><div class="cp-content" id="cpContent"></div></div></div>' +
       '<div id="cpToasts" class="cp-toast-container"></div>';
@@ -1797,7 +1812,7 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
     var ws = (S.meta && S.meta.workspace) || {};
     var setup = (S.meta && S.meta.setup) || {};
     var html = '<div class="cp-header"><div class="cp-header-left">';
-    html += '<button class="cp-btn-icon cp-sidebar-toggle" id="cpSidebarToggle">' + icon('menu') + '</button>';
+    html += '<button class="cp-btn-icon cp-sidebar-toggle" id="cpSidebarToggle" aria-label="Toggle navigation" aria-expanded="false" aria-controls="cpSidebar">' + icon('menu') + '</button>';
     html += '<div class="cp-header-logo"><span class="cp-header-logo-accent">Meta</span> Campaign Planner</div>';
     if (ws.name) html += '<div class="cp-header-workspace">' + esc(ws.name) + '</div>';
     // Brand identity pill
@@ -1826,7 +1841,7 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
   }
 
   function renderSidebar() {
-    var html = '<div class="cp-sidebar' + (S.sidebarHidden ? ' cp-sidebar-hidden' : '') + '" id="cpSidebar"><div class="cp-sidebar-overlay"></div><div class="cp-sidebar-inner"><nav class="cp-nav">';
+    var html = '<aside class="cp-sidebar' + (S.sidebarMobileOpen ? ' cp-sidebar-open' : '') + '" id="cpSidebar"><div class="cp-sidebar-inner"><nav class="cp-nav">';
 
     // Grouped sidebar
     var groupOrder = ['main', 'library', 'core', 'tools'];
@@ -1868,7 +1883,7 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
     html += '<a class="cp-version-chip" href="' + chipHref + '" target="_blank" rel="noopener" title="' + esc(bt ? 'Built ' + bt : 'dev build') + '">v' + esc(v || 'dev') + '</a>';
     html += '</div>';
 
-    html += '</div></div>';
+    html += '</div></aside>';
     return html;
   }
 
@@ -5020,32 +5035,110 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
     html += '<span class="cp-text-muted" style="font-size:12px">' + ads.length + ' ad' + (ads.length !== 1 ? 's' : '') + ' with due dates</span>';
     html += '</div>';
 
-    // Campaign bars (Meta v2)
-    if (camps.length > 0) {
-      html += '<div class="cp-cal-campaign-bars">';
-      for (var ci = 0; ci < camps.length; ci++) {
-        var camp = camps[ci];
-        var cst = META_CAMPAIGN_STATUSES[camp.status] || { color: '#80868b' };
-        html += '<div class="cp-cal-campaign-row" data-action="go-to-campaign" data-id="' + esc(camp.id) + '" style="cursor:pointer">';
-        html += '<span class="cp-cal-campaign-name" style="color:' + cst.color + '">' + icon('bullhorn') + ' ' + esc(truncate(camp.name, 16)) + '</span>';
-        html += '<div class="cp-cal-campaign-bar-track">';
-        var monthStart = new Date(year, month, 1);
-        var monthEnd = new Date(year, month + 1, 0);
-        var cStart = new Date(camp.start_time);
-        var cEnd = new Date(camp.stop_time);
-        var daysInMonth = monthEnd.getDate();
-        var barLeft = Math.max(0, Math.floor(((cStart - monthStart) / (1000 * 60 * 60 * 24)) / daysInMonth * 100));
-        var barRight = Math.max(0, 100 - Math.ceil(((cEnd - monthStart) / (1000 * 60 * 60 * 24) + 1) / daysInMonth * 100));
-        if (cEnd < monthStart || cStart > monthEnd) { barLeft = 0; barRight = 100; }
-        html += '<div class="cp-cal-campaign-bar" style="left:' + barLeft + '%;right:' + barRight + '%;background:' + cst.color + '20;border-color:' + cst.color + '50"></div>';
-        html += '</div></div>';
+    if (cpIsPhone()) {
+      // Mobile: vertical day-list — chronological cards for days with ads or
+      // inside any campaign's range.
+      html += renderCalMobileList(year, month, adsByDate, camps, now);
+    } else {
+      // Campaign bars (Meta v2)
+      if (camps.length > 0) {
+        html += '<div class="cp-cal-campaign-bars">';
+        for (var ci = 0; ci < camps.length; ci++) {
+          var camp = camps[ci];
+          var cst = META_CAMPAIGN_STATUSES[camp.status] || { color: '#80868b' };
+          html += '<div class="cp-cal-campaign-row" data-action="go-to-campaign" data-id="' + esc(camp.id) + '" style="cursor:pointer">';
+          html += '<span class="cp-cal-campaign-name" style="color:' + cst.color + '">' + icon('bullhorn') + ' ' + esc(truncate(camp.name, 16)) + '</span>';
+          html += '<div class="cp-cal-campaign-bar-track">';
+          var monthStart = new Date(year, month, 1);
+          var monthEnd = new Date(year, month + 1, 0);
+          var cStart = new Date(camp.start_time);
+          var cEnd = new Date(camp.stop_time);
+          var daysInMonth = monthEnd.getDate();
+          var barLeft = Math.max(0, Math.floor(((cStart - monthStart) / (1000 * 60 * 60 * 24)) / daysInMonth * 100));
+          var barRight = Math.max(0, 100 - Math.ceil(((cEnd - monthStart) / (1000 * 60 * 60 * 24) + 1) / daysInMonth * 100));
+          if (cEnd < monthStart || cStart > monthEnd) { barLeft = 0; barRight = 100; }
+          html += '<div class="cp-cal-campaign-bar" style="left:' + barLeft + '%;right:' + barRight + '%;background:' + cst.color + '20;border-color:' + cst.color + '50"></div>';
+          html += '</div></div>';
+        }
+        html += '</div>';
       }
-      html += '</div>';
+
+      // Calendar grid
+      html += renderCalMonthGrid(year, month, dayNames, adsByDate, now);
     }
 
-    // Calendar grid
-    html += renderCalMonthGrid(year, month, dayNames, adsByDate, now);
+    html += '</div>';
+    return html;
+  }
 
+  function renderCalMobileList(year, month, adsByDate, camps, now) {
+    var monthStart = new Date(year, month, 1);
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var today = now.getDate();
+    var todayMonth = now.getMonth();
+    var todayYear = now.getFullYear();
+    var dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    // Active campaigns per day
+    function campsOnDay(d) {
+      var out = [];
+      var dayDate = new Date(year, month, d);
+      for (var i = 0; i < camps.length; i++) {
+        var c = camps[i];
+        var cs = new Date(c.start_time);
+        var ce = new Date(c.stop_time);
+        cs.setHours(0, 0, 0, 0); ce.setHours(23, 59, 59, 999);
+        if (dayDate >= cs && dayDate <= ce) out.push(c);
+      }
+      return out;
+    }
+
+    var html = '<div class="cp-cal-list">';
+    var hasAny = false;
+    for (var d = 1; d <= daysInMonth; d++) {
+      var dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+      var dayAds = adsByDate[dateStr] || [];
+      var dayCamps = camps.length > 0 ? campsOnDay(d) : [];
+      if (dayAds.length === 0 && dayCamps.length === 0) continue;
+      hasAny = true;
+      var isToday = d === today && month === todayMonth && year === todayYear;
+      var dateObj = new Date(year, month, d);
+      html += '<div class="cp-cal-list-day' + (isToday ? ' cp-cal-list-day-today' : '') + '">';
+      html += '<div class="cp-cal-list-day-header">';
+      html += '<div class="cp-cal-list-day-num">' + d + '</div>';
+      html += '<div class="cp-cal-list-day-meta"><div class="cp-cal-list-day-name">' + dayLabels[dateObj.getDay()] + '</div>';
+      if (isToday) html += '<div class="cp-cal-list-day-today-pill">Today</div>';
+      html += '</div></div>';
+
+      if (dayCamps.length > 0) {
+        html += '<div class="cp-cal-list-camps">';
+        for (var ci = 0; ci < dayCamps.length; ci++) {
+          var dc = dayCamps[ci];
+          var dcst = META_CAMPAIGN_STATUSES[dc.status] || { color: '#80868b' };
+          html += '<span class="cp-cal-list-camp-chip" style="background:' + dcst.color + '15;color:' + dcst.color + '" data-action="go-to-campaign" data-id="' + esc(dc.id) + '">' + icon('bullhorn') + ' ' + esc(truncate(dc.name, 24)) + '</span>';
+        }
+        html += '</div>';
+      }
+
+      if (dayAds.length > 0) {
+        html += '<div class="cp-cal-list-ads">';
+        for (var ai = 0; ai < dayAds.length; ai++) {
+          var ad = dayAds[ai];
+          var aSt = META_AD_STATUSES[ad.pipeline_status] || { color: '#80868b', label: ad.pipeline_status || '' };
+          html += '<button class="cp-cal-list-ad" data-action="ws-select-ad" data-id="' + esc(ad.id) + '">';
+          html += '<span class="cp-cal-list-ad-dot" style="background:' + aSt.color + '"></span>';
+          html += '<span class="cp-cal-list-ad-name">' + esc(ad.name || 'Untitled') + '</span>';
+          if (aSt.label) html += '<span class="cp-cal-list-ad-status" style="color:' + aSt.color + '">' + esc(aSt.label) + '</span>';
+          html += '</button>';
+        }
+        html += '</div>';
+      }
+
+      html += '</div>';
+    }
+    if (!hasAny) {
+      html += '<div class="cp-cal-list-empty">' + icon('calendar') + ' Nothing scheduled this month.</div>';
+    }
     html += '</div>';
     return html;
   }
@@ -5219,6 +5312,46 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
     if (P2A && P2A.snapshot) P2A.snapshot(label);
   }
 
+  // ---- Mobile sidebar drawer helpers ----
+  function openMobileSidebar() {
+    S.sidebarMobileOpen = true;
+    $('#cpSidebar').addClass('cp-sidebar-open');
+    $('#cpSidebarBackdrop').addClass('cp-sidebar-backdrop-visible').attr('aria-hidden', 'false');
+    $('#cpSidebarToggle').attr('aria-expanded', 'true');
+  }
+  function closeMobileSidebar() {
+    S.sidebarMobileOpen = false;
+    $('#cpSidebar').removeClass('cp-sidebar-open');
+    $('#cpSidebarBackdrop').removeClass('cp-sidebar-backdrop-visible').attr('aria-hidden', 'true');
+    $('#cpSidebarToggle').attr('aria-expanded', 'false');
+  }
+  // Edge-swipe to open / swipe-left on sidebar to close. Bound once at init.
+  function setupSidebarSwipe() {
+    if (window._cpSwipeBound) return;
+    window._cpSwipeBound = true;
+    var startX = 0, startY = 0, startT = 0, startedOnSidebar = false;
+    var EDGE = 24, MIN_DX = 60, MAX_DY = 40, MAX_T = 400;
+    document.addEventListener('touchstart', function(e) {
+      if (!window.matchMedia('(max-width: 992px)').matches) return;
+      var t = e.touches[0];
+      startX = t.clientX; startY = t.clientY; startT = Date.now();
+      startedOnSidebar = !!(e.target && e.target.closest && e.target.closest('#cpSidebar'));
+    }, { passive: true });
+    document.addEventListener('touchend', function(e) {
+      if (!window.matchMedia('(max-width: 992px)').matches) return;
+      var t = (e.changedTouches && e.changedTouches[0]) || null;
+      if (!t) return;
+      var dx = t.clientX - startX;
+      var dy = Math.abs(t.clientY - startY);
+      var dt = Date.now() - startT;
+      if (dy > MAX_DY || dt > MAX_T) return;
+      // Open: swipe right from left edge while drawer closed
+      if (!S.sidebarMobileOpen && startX <= EDGE && dx >= MIN_DX) openMobileSidebar();
+      // Close: swipe left while drawer open
+      else if (S.sidebarMobileOpen && startedOnSidebar && dx <= -MIN_DX) closeMobileSidebar();
+    }, { passive: true });
+  }
+
   function setupEventHandlers() {
     console.log('[CP] Setting up core event handlers...');
 
@@ -5227,6 +5360,10 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
       e.preventDefault();
       var viewName = $(this).data('view');
       if (viewName) navigate(viewName);
+      // Auto-close mobile drawer after picking a destination
+      if (S.sidebarMobileOpen && window.matchMedia('(max-width: 992px)').matches) {
+        closeMobileSidebar();
+      }
     });
 
     // View-crash card actions
@@ -5237,11 +5374,19 @@ window.CP_BUILD_TIME = "2026-05-13T12:24:29.469Z";
       e.preventDefault(); navigate('dashboard');
     });
 
-    // Sidebar toggle
-    $(document).off('click.cp-sidebar-toggle').on('click.cp-sidebar-toggle', '#cpSidebarToggle', function() {
-      S.sidebarHidden = !S.sidebarHidden;
-      $('#cpSidebar').toggleClass('cp-sidebar-hidden', S.sidebarHidden);
+    // Mobile sidebar drawer: toggle, backdrop click, escape, swipe
+    $(document).off('click.cp-sidebar-toggle').on('click.cp-sidebar-toggle', '#cpSidebarToggle', function(e) {
+      e.preventDefault();
+      if (S.sidebarMobileOpen) closeMobileSidebar(); else openMobileSidebar();
     });
+    $(document).off('click.cp-sidebar-backdrop').on('click.cp-sidebar-backdrop', '#cpSidebarBackdrop', function() {
+      closeMobileSidebar();
+    });
+    $(document).off('keydown.cp-sidebar-esc').on('keydown.cp-sidebar-esc', function(e) {
+      if (e.key === 'Escape' && S.sidebarMobileOpen) closeMobileSidebar();
+    });
+    setupSidebarSwipe();
+    setupResponsiveRerender();
 
     // Setup submit
     $(document).off('click.cp-setup').on('click.cp-setup', '#cpSetupSubmit', function(e) {
