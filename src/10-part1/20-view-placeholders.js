@@ -323,6 +323,7 @@
       e.stopPropagation();
       var groupKey = $(this).data('group');
       if (groupKey) {
+        S.collapsedGroups = S.collapsedGroups || {};
         S.collapsedGroups[groupKey] = !S.collapsedGroups[groupKey];
         renderCurrentView();
       }

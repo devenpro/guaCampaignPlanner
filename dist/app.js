@@ -1,6 +1,6 @@
-/* Campaign Planner v1.0.3 · built 2026-05-14T16:30:07.774Z · 83 source files (see src/) */
+/* Campaign Planner v1.0.3 · built 2026-05-14T17:03:43.142Z · 83 source files (see src/) */
 window.CP_VERSION = "1.0.3";
-window.CP_BUILD_TIME = "2026-05-14T16:30:07.774Z";
+window.CP_BUILD_TIME = "2026-05-14T17:03:43.142Z";
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -572,6 +572,7 @@ window.CP_BUILD_TIME = "2026-05-14T16:30:07.774Z";
     settingsTab: 'workspace',
     cardDensity: 'normal',
     sidebarMobileOpen: false,
+    collapsedGroups: {},
 
     // Persona search
     personaFilter: { search: '' },
@@ -2564,7 +2565,7 @@ window.CP_BUILD_TIME = "2026-05-14T16:30:07.774Z";
                    (p.description || '').toLowerCase().indexOf(f.search.toLowerCase()) > -1;
           });
         }
-        var collapsed = S.collapsedGroups['pcat_' + cat.id] || false;
+        var collapsed = (S.collapsedGroups || {})['pcat_' + cat.id] || false;
 
         html += '<div class="cp-persona-category">';
         html += '<div class="cp-persona-cat-header" data-action="toggle-group" data-group="pcat_' + esc(cat.id) + '">';
@@ -5586,6 +5587,7 @@ window.CP_BUILD_TIME = "2026-05-14T16:30:07.774Z";
       e.stopPropagation();
       var groupKey = $(this).data('group');
       if (groupKey) {
+        S.collapsedGroups = S.collapsedGroups || {};
         S.collapsedGroups[groupKey] = !S.collapsedGroups[groupKey];
         renderCurrentView();
       }

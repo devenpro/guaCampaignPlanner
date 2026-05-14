@@ -43,6 +43,7 @@
     settingsTab: 'workspace',
     cardDensity: 'normal',
     sidebarMobileOpen: false,
+    collapsedGroups: {},
 
     // Persona search
     personaFilter: { search: '' },
