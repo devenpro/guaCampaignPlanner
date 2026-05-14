@@ -38,3 +38,13 @@
 .cp-pain-point-icon { color: var(--cp-error); font-size: var(--cp-font-size-sm); }
 .cp-pain-point-solution { font-size: var(--cp-font-size-xs); color: var(--cp-success); margin-top: var(--cp-space-1); padding-left: var(--cp-space-5); display: flex; align-items: center; gap: var(--cp-space-1); }
 
+@media (max-width: 992px) {
+  .cp-view-personas .cp-split-pane { min-height: 0; }
+  .cp-view-personas .cp-list-pane { max-height: 50vh; transition: max-height var(--cp-transition-base); }
+}
+@media (max-width: 768px) {
+  .cp-persona-detail-actions { width: 100%; flex-wrap: wrap; }
+  .cp-persona-detail-actions .cp-btn { flex: 1 1 auto; justify-content: center; }
+  .cp-persona-tags { gap: var(--cp-space-1); }
+}
+

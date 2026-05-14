@@ -1,6 +1,6 @@
-/* Campaign Planner v1.0.2 · built 2026-05-14T15:59:26.733Z · 83 source files (see src/) */
+/* Campaign Planner v1.0.2 · built 2026-05-14T16:02:01.239Z · 83 source files (see src/) */
 window.CP_VERSION = "1.0.2";
-window.CP_BUILD_TIME = "2026-05-14T15:59:26.733Z";
+window.CP_BUILD_TIME = "2026-05-14T16:02:01.239Z";
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -1755,6 +1755,20 @@ window.CP_BUILD_TIME = "2026-05-14T15:59:26.733Z";
     var tags = {};
     S.images.forEach(function(img) { (img.tags || []).forEach(function(t) { tags[t] = (tags[t] || 0) + 1; }); });
     return Object.keys(tags).sort();
+  }
+
+  // --- Viewport helpers ---
+  function cpIsPhone()  { return window.matchMedia('(max-width: 768px)').matches; }
+  function cpIsTablet() { return window.matchMedia('(max-width: 992px)').matches; }
+
+  // Re-render the current view when the phone breakpoint flips (rotation / resize).
+  function setupResponsiveRerender() {
+    if (window._cpResponsiveBound) return;
+    window._cpResponsiveBound = true;
+    var mq = window.matchMedia('(max-width: 768px)');
+    var rerender = debounce(function() { if (typeof renderCurrentView === 'function') renderCurrentView(); }, 150);
+    if (mq.addEventListener) mq.addEventListener('change', rerender);
+    else if (mq.addListener) mq.addListener(rerender);
   }
 
   // --- Misc ---
@@ -5021,32 +5035,110 @@ window.CP_BUILD_TIME = "2026-05-14T15:59:26.733Z";
     html += '<span class="cp-text-muted" style="font-size:12px">' + ads.length + ' ad' + (ads.length !== 1 ? 's' : '') + ' with due dates</span>';
     html += '</div>';
 
-    // Campaign bars (Meta v2)
-    if (camps.length > 0) {
-      html += '<div class="cp-cal-campaign-bars">';
-      for (var ci = 0; ci < camps.length; ci++) {
-        var camp = camps[ci];
-        var cst = META_CAMPAIGN_STATUSES[camp.status] || { color: '#80868b' };
-        html += '<div class="cp-cal-campaign-row" data-action="go-to-campaign" data-id="' + esc(camp.id) + '" style="cursor:pointer">';
-        html += '<span class="cp-cal-campaign-name" style="color:' + cst.color + '">' + icon('bullhorn') + ' ' + esc(truncate(camp.name, 16)) + '</span>';
-        html += '<div class="cp-cal-campaign-bar-track">';
-        var monthStart = new Date(year, month, 1);
-        var monthEnd = new Date(year, month + 1, 0);
-        var cStart = new Date(camp.start_time);
-        var cEnd = new Date(camp.stop_time);
-        var daysInMonth = monthEnd.getDate();
-        var barLeft = Math.max(0, Math.floor(((cStart - monthStart) / (1000 * 60 * 60 * 24)) / daysInMonth * 100));
-        var barRight = Math.max(0, 100 - Math.ceil(((cEnd - monthStart) / (1000 * 60 * 60 * 24) + 1) / daysInMonth * 100));
-        if (cEnd < monthStart || cStart > monthEnd) { barLeft = 0; barRight = 100; }
-        html += '<div class="cp-cal-campaign-bar" style="left:' + barLeft + '%;right:' + barRight + '%;background:' + cst.color + '20;border-color:' + cst.color + '50"></div>';
-        html += '</div></div>';
+    if (cpIsPhone()) {
+      // Mobile: vertical day-list — chronological cards for days with ads or
+      // inside any campaign's range.
+      html += renderCalMobileList(year, month, adsByDate, camps, now);
+    } else {
+      // Campaign bars (Meta v2)
+      if (camps.length > 0) {
+        html += '<div class="cp-cal-campaign-bars">';
+        for (var ci = 0; ci < camps.length; ci++) {
+          var camp = camps[ci];
+          var cst = META_CAMPAIGN_STATUSES[camp.status] || { color: '#80868b' };
+          html += '<div class="cp-cal-campaign-row" data-action="go-to-campaign" data-id="' + esc(camp.id) + '" style="cursor:pointer">';
+          html += '<span class="cp-cal-campaign-name" style="color:' + cst.color + '">' + icon('bullhorn') + ' ' + esc(truncate(camp.name, 16)) + '</span>';
+          html += '<div class="cp-cal-campaign-bar-track">';
+          var monthStart = new Date(year, month, 1);
+          var monthEnd = new Date(year, month + 1, 0);
+          var cStart = new Date(camp.start_time);
+          var cEnd = new Date(camp.stop_time);
+          var daysInMonth = monthEnd.getDate();
+          var barLeft = Math.max(0, Math.floor(((cStart - monthStart) / (1000 * 60 * 60 * 24)) / daysInMonth * 100));
+          var barRight = Math.max(0, 100 - Math.ceil(((cEnd - monthStart) / (1000 * 60 * 60 * 24) + 1) / daysInMonth * 100));
+          if (cEnd < monthStart || cStart > monthEnd) { barLeft = 0; barRight = 100; }
+          html += '<div class="cp-cal-campaign-bar" style="left:' + barLeft + '%;right:' + barRight + '%;background:' + cst.color + '20;border-color:' + cst.color + '50"></div>';
+          html += '</div></div>';
+        }
+        html += '</div>';
       }
-      html += '</div>';
+
+      // Calendar grid
+      html += renderCalMonthGrid(year, month, dayNames, adsByDate, now);
     }
 
-    // Calendar grid
-    html += renderCalMonthGrid(year, month, dayNames, adsByDate, now);
+    html += '</div>';
+    return html;
+  }
 
+  function renderCalMobileList(year, month, adsByDate, camps, now) {
+    var monthStart = new Date(year, month, 1);
+    var daysInMonth = new Date(year, month + 1, 0).getDate();
+    var today = now.getDate();
+    var todayMonth = now.getMonth();
+    var todayYear = now.getFullYear();
+    var dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    // Active campaigns per day
+    function campsOnDay(d) {
+      var out = [];
+      var dayDate = new Date(year, month, d);
+      for (var i = 0; i < camps.length; i++) {
+        var c = camps[i];
+        var cs = new Date(c.start_time);
+        var ce = new Date(c.stop_time);
+        cs.setHours(0, 0, 0, 0); ce.setHours(23, 59, 59, 999);
+        if (dayDate >= cs && dayDate <= ce) out.push(c);
+      }
+      return out;
+    }
+
+    var html = '<div class="cp-cal-list">';
+    var hasAny = false;
+    for (var d = 1; d <= daysInMonth; d++) {
+      var dateStr = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+      var dayAds = adsByDate[dateStr] || [];
+      var dayCamps = camps.length > 0 ? campsOnDay(d) : [];
+      if (dayAds.length === 0 && dayCamps.length === 0) continue;
+      hasAny = true;
+      var isToday = d === today && month === todayMonth && year === todayYear;
+      var dateObj = new Date(year, month, d);
+      html += '<div class="cp-cal-list-day' + (isToday ? ' cp-cal-list-day-today' : '') + '">';
+      html += '<div class="cp-cal-list-day-header">';
+      html += '<div class="cp-cal-list-day-num">' + d + '</div>';
+      html += '<div class="cp-cal-list-day-meta"><div class="cp-cal-list-day-name">' + dayLabels[dateObj.getDay()] + '</div>';
+      if (isToday) html += '<div class="cp-cal-list-day-today-pill">Today</div>';
+      html += '</div></div>';
+
+      if (dayCamps.length > 0) {
+        html += '<div class="cp-cal-list-camps">';
+        for (var ci = 0; ci < dayCamps.length; ci++) {
+          var dc = dayCamps[ci];
+          var dcst = META_CAMPAIGN_STATUSES[dc.status] || { color: '#80868b' };
+          html += '<span class="cp-cal-list-camp-chip" style="background:' + dcst.color + '15;color:' + dcst.color + '" data-action="go-to-campaign" data-id="' + esc(dc.id) + '">' + icon('bullhorn') + ' ' + esc(truncate(dc.name, 24)) + '</span>';
+        }
+        html += '</div>';
+      }
+
+      if (dayAds.length > 0) {
+        html += '<div class="cp-cal-list-ads">';
+        for (var ai = 0; ai < dayAds.length; ai++) {
+          var ad = dayAds[ai];
+          var aSt = META_AD_STATUSES[ad.pipeline_status] || { color: '#80868b', label: ad.pipeline_status || '' };
+          html += '<button class="cp-cal-list-ad" data-action="ws-select-ad" data-id="' + esc(ad.id) + '">';
+          html += '<span class="cp-cal-list-ad-dot" style="background:' + aSt.color + '"></span>';
+          html += '<span class="cp-cal-list-ad-name">' + esc(ad.name || 'Untitled') + '</span>';
+          if (aSt.label) html += '<span class="cp-cal-list-ad-status" style="color:' + aSt.color + '">' + esc(aSt.label) + '</span>';
+          html += '</button>';
+        }
+        html += '</div>';
+      }
+
+      html += '</div>';
+    }
+    if (!hasAny) {
+      html += '<div class="cp-cal-list-empty">' + icon('calendar') + ' Nothing scheduled this month.</div>';
+    }
     html += '</div>';
     return html;
   }
@@ -5294,6 +5386,7 @@ window.CP_BUILD_TIME = "2026-05-14T15:59:26.733Z";
       if (e.key === 'Escape' && S.sidebarMobileOpen) closeMobileSidebar();
     });
     setupSidebarSwipe();
+    setupResponsiveRerender();
 
     // Setup submit
     $(document).off('click.cp-setup').on('click.cp-setup', '#cpSetupSubmit', function(e) {

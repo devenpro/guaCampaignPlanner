@@ -246,6 +246,20 @@
     return Object.keys(tags).sort();
   }
 
+  // --- Viewport helpers ---
+  function cpIsPhone()  { return window.matchMedia('(max-width: 768px)').matches; }
+  function cpIsTablet() { return window.matchMedia('(max-width: 992px)').matches; }
+
+  // Re-render the current view when the phone breakpoint flips (rotation / resize).
+  function setupResponsiveRerender() {
+    if (window._cpResponsiveBound) return;
+    window._cpResponsiveBound = true;
+    var mq = window.matchMedia('(max-width: 768px)');
+    var rerender = debounce(function() { if (typeof renderCurrentView === 'function') renderCurrentView(); }, 150);
+    if (mq.addEventListener) mq.addEventListener('change', rerender);
+    else if (mq.addListener) mq.addListener(rerender);
+  }
+
   // --- Misc ---
   function debounce(fn, delay) { var t; return function() { var c = this, a = arguments; clearTimeout(t); t = setTimeout(function() { fn.apply(c, a); }, delay); }; }
   function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }

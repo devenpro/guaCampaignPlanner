@@ -24,7 +24,6 @@
   .cp-cal-day { min-height: 56px; }
   .cp-cal-mode-toggle { margin-left: 0; }
   .cp-cal-title { min-width: 120px; font-size: var(--cp-font-size-base); }
-  .cp-cal-campaign-bars { display: none; }
   .cp-detail-grid { grid-template-columns: 1fr; }
   .cp-persona-detail-header { flex-direction: column; }
 }

@@ -1,4 +1,4 @@
-/* Campaign Planner v1.0.2 · built 2026-05-14T15:59:26.733Z · 44 source files (see src/) */
+/* Campaign Planner v1.0.2 · built 2026-05-14T16:02:01.239Z · 44 source files (see src/) */
 
 /* ===== src/styles/10-part1/00-header.css ===== */
 /**
@@ -494,6 +494,16 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 .cp-pain-point-card-text { font-size: var(--cp-font-size-sm); font-weight: 600; flex: 1; }
 .cp-pain-point-icon { color: var(--cp-error); font-size: var(--cp-font-size-sm); }
 .cp-pain-point-solution { font-size: var(--cp-font-size-xs); color: var(--cp-success); margin-top: var(--cp-space-1); padding-left: var(--cp-space-5); display: flex; align-items: center; gap: var(--cp-space-1); }
+
+@media (max-width: 992px) {
+  .cp-view-personas .cp-split-pane { min-height: 0; }
+  .cp-view-personas .cp-list-pane { max-height: 50vh; transition: max-height var(--cp-transition-base); }
+}
+@media (max-width: 768px) {
+  .cp-persona-detail-actions { width: 100%; flex-wrap: wrap; }
+  .cp-persona-detail-actions .cp-btn { flex: 1 1 auto; justify-content: center; }
+  .cp-persona-tags { gap: var(--cp-space-1); }
+}
 
 
 /* ===== src/styles/10-part1/14-view-messages-styles.css ===== */
@@ -1804,6 +1814,24 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
   background: var(--cp-gray-50);
 }
 
+@media (max-width: 992px) {
+  .cp-ad-inspector-header { flex-direction: column; }
+  .cp-ad-inspector-header-side { width: 100%; justify-content: space-between; flex-wrap: wrap; }
+}
+@media (max-width: 768px) {
+  .cp-inspector-tabs { gap: 0; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  .cp-inspector-tab { padding: 8px 10px; font-size: 12px; flex-shrink: 0; }
+  .cp-ad-workflow-tabs { gap: 6px; padding: 6px 2px 8px; }
+  .cp-ad-workflow-step { padding: 4px 4px; }
+  .cp-ad-workflow-step-label { font-size: 9px; }
+  .cp-ad-workflow-connector { min-width: 8px; margin-top: 17px; }
+  .cp-status-buttons { gap: 4px; }
+  .cp-status-button { padding: 5px 10px; font-size: 11px; }
+  .cp-ai-runner-body { padding: 12px; gap: 10px; }
+  .cp-ai-runner-actions { flex-wrap: wrap; padding: 10px 12px; }
+  .cp-ai-runner-actions .cp-btn { flex: 1 1 auto; justify-content: center; }
+}
+
 /* ===== src/styles/10-part1/17-view-calendar.css ===== */
 /* ═══ S17: CALENDAR VIEW ═══ */
 .cp-cal-mode-toggle { display: flex; border: 1.5px solid var(--cp-border-default); border-radius: var(--cp-radius-full); overflow: hidden; margin-left: var(--cp-space-3); }
@@ -1832,6 +1860,25 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 .cp-cal-chip-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cp-cal-more { font-size: 10px; color: var(--cp-text-muted); padding: 1px 4px; cursor: pointer; }
 .cp-cal-more:hover { color: var(--cp-primary); }
+/* Mobile vertical day-list (rendered at <=768px instead of the month grid) */
+.cp-cal-list { display: flex; flex-direction: column; gap: var(--cp-space-2); }
+.cp-cal-list-day { background: var(--cp-white); border: 1px solid var(--cp-border-light); border-radius: var(--cp-radius-md); padding: var(--cp-space-3); display: flex; flex-direction: column; gap: var(--cp-space-2); }
+.cp-cal-list-day-today { border-color: var(--cp-primary); box-shadow: 0 0 0 2px var(--cp-primary-subtle); }
+.cp-cal-list-day-header { display: flex; align-items: center; gap: var(--cp-space-3); }
+.cp-cal-list-day-num { font-size: var(--cp-font-size-2xl); font-weight: 800; font-family: var(--cp-font-display); color: var(--cp-text-primary); line-height: 1; min-width: 32px; }
+.cp-cal-list-day-today .cp-cal-list-day-num { color: var(--cp-primary); }
+.cp-cal-list-day-meta { display: flex; flex-direction: column; gap: 2px; }
+.cp-cal-list-day-name { font-size: var(--cp-font-size-xs); font-weight: 700; color: var(--cp-text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.cp-cal-list-day-today-pill { display: inline-block; font-size: 10px; font-weight: 700; color: var(--cp-primary); background: var(--cp-primary-subtle); padding: 1px 8px; border-radius: var(--cp-radius-full); text-transform: uppercase; letter-spacing: 0.05em; width: fit-content; }
+.cp-cal-list-camps { display: flex; flex-wrap: wrap; gap: 4px; }
+.cp-cal-list-camp-chip { display: inline-flex; align-items: center; gap: 4px; font-size: var(--cp-font-size-xs); font-weight: 600; padding: 4px 8px; border-radius: var(--cp-radius-full); cursor: pointer; border: none; }
+.cp-cal-list-ads { display: flex; flex-direction: column; gap: 4px; }
+.cp-cal-list-ad { display: flex; align-items: center; gap: var(--cp-space-2); width: 100%; padding: var(--cp-space-2); background: var(--cp-gray-50); border: 1px solid var(--cp-border-light); border-radius: var(--cp-radius-sm); cursor: pointer; text-align: left; font-family: var(--cp-font-family); }
+.cp-cal-list-ad:hover { background: var(--cp-white); border-color: var(--cp-border-default); }
+.cp-cal-list-ad-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.cp-cal-list-ad-name { flex: 1; font-size: var(--cp-font-size-sm); font-weight: 500; color: var(--cp-text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.cp-cal-list-ad-status { font-size: var(--cp-font-size-xs); font-weight: 600; flex-shrink: 0; }
+.cp-cal-list-empty { padding: var(--cp-space-6); text-align: center; color: var(--cp-text-muted); background: var(--cp-white); border: 1px dashed var(--cp-border-light); border-radius: var(--cp-radius-md); font-size: var(--cp-font-size-sm); }
 
 
 /* ===== src/styles/10-part1/18-view-activity.css ===== */
@@ -1927,7 +1974,6 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
   .cp-cal-day { min-height: 56px; }
   .cp-cal-mode-toggle { margin-left: 0; }
   .cp-cal-title { min-width: 120px; font-size: var(--cp-font-size-base); }
-  .cp-cal-campaign-bars { display: none; }
   .cp-detail-grid { grid-template-columns: 1fr; }
   .cp-persona-detail-header { flex-direction: column; }
 }

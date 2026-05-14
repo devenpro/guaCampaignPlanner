@@ -123,6 +123,7 @@
       if (e.key === 'Escape' && S.sidebarMobileOpen) closeMobileSidebar();
     });
     setupSidebarSwipe();
+    setupResponsiveRerender();
 
     // Setup submit
     $(document).off('click.cp-setup').on('click.cp-setup', '#cpSetupSubmit', function(e) {
