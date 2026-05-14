@@ -1,4 +1,4 @@
-/* Campaign Planner v1.0.3 · built 2026-05-14T17:06:31.328Z · 43 source files (see src/) */
+/* Campaign Planner v1.0.3 · built 2026-05-14T17:08:21.244Z · 43 source files (see src/) */
 
 /* ===== src/styles/10-part1/00-header.css ===== */
 /**
@@ -528,9 +528,6 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 .cp-style-card-tags, .cp-format-card-tags { display: flex; gap: var(--cp-space-1); flex-wrap: wrap; margin-bottom: var(--cp-space-2); }
 .cp-style-card-footer, .cp-format-card-footer { font-size: var(--cp-font-size-xs); border-top: 1px solid var(--cp-border-light); padding-top: var(--cp-space-2); }
 .cp-format-card-cat { margin-bottom: var(--cp-space-2); }
-.cp-format-card-refs { display: flex; gap: var(--cp-space-2); margin-bottom: var(--cp-space-2); align-items: center; }
-.cp-format-ref-thumb { width: 36px; height: 36px; border-radius: var(--cp-radius-sm); overflow: hidden; border: 1px solid var(--cp-border-light); flex-shrink: 0; }
-.cp-format-ref-thumb img { width: 100%; height: 100%; object-fit: cover; }
 
 
 /* ===== src/styles/10-part1/16b-view-meta-campaigns.css ===== */
@@ -2796,10 +2793,6 @@ body.cp-active .region-breadcrumb, body.cp-active .page-title-wrapper, body.cp-a
 /* Mixer wrapper */
 .cp-mixer { }
 .cp-mixer-input { cursor: pointer; }
-
-/* Image picker wrapper */
-.cp-img-picker { }
-.cp-img-meta-field { }
 
 /* Settings functional selectors */
 .cp-settings-field { }

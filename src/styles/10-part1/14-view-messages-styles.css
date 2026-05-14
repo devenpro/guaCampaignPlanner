@@ -19,7 +19,4 @@
 .cp-style-card-tags, .cp-format-card-tags { display: flex; gap: var(--cp-space-1); flex-wrap: wrap; margin-bottom: var(--cp-space-2); }
 .cp-style-card-footer, .cp-format-card-footer { font-size: var(--cp-font-size-xs); border-top: 1px solid var(--cp-border-light); padding-top: var(--cp-space-2); }
 .cp-format-card-cat { margin-bottom: var(--cp-space-2); }
-.cp-format-card-refs { display: flex; gap: var(--cp-space-2); margin-bottom: var(--cp-space-2); align-items: center; }
-.cp-format-ref-thumb { width: 36px; height: 36px; border-radius: var(--cp-radius-sm); overflow: hidden; border: 1px solid var(--cp-border-light); flex-shrink: 0; }
-.cp-format-ref-thumb img { width: 100%; height: 100%; object-fit: cover; }
 

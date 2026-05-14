@@ -118,22 +118,6 @@
       html += '<div class="cp-format-card-desc">' + esc(truncate(format.description, 120)) + '</div>';
     }
 
-    // Reference image thumbnails
-    var refIds = format.reference_image_ids || [];
-    if (refIds.length > 0) {
-      html += '<div class="cp-format-card-refs">';
-      var shown = 0;
-      for (var ri = 0; ri < refIds.length && shown < 3; ri++) {
-        var img = S.imageMap[refIds[ri]];
-        if (img) {
-          html += '<div class="cp-format-ref-thumb"><img src="' + esc(img.url) + '" alt="' + esc(img.filename) + '"></div>';
-          shown++;
-        }
-      }
-      if (refIds.length > 3) html += '<span class="cp-text-muted">+' + (refIds.length - 3) + ' more</span>';
-      html += '</div>';
-    }
-
     // Tags
     if ((format.tags || []).length > 0) {
       html += '<div class="cp-format-card-tags">';

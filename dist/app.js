@@ -1,6 +1,6 @@
-/* Campaign Planner v1.0.3 · built 2026-05-14T17:06:31.328Z · 81 source files (see src/) */
+/* Campaign Planner v1.0.3 · built 2026-05-14T17:08:21.244Z · 81 source files (see src/) */
 window.CP_VERSION = "1.0.3";
-window.CP_BUILD_TIME = "2026-05-14T17:06:31.328Z";
+window.CP_BUILD_TIME = "2026-05-14T17:08:21.244Z";
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -877,8 +877,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:06:31.328Z";
         brand_design: getDefaultBrandDesign()
       },
       aiPreferences: { appDefault: { provider: '', model: '' }, perAction: {}, lastProvider: '', lastModel: '' },
-      reference_images: {},
-      image_categories: getDefaultImageCategories(),
       // Meta v2 workspace-level defaults (Page, Pixel, attribution, currency etc.)
       meta_defaults: getDefaultMetaDefaults()
     };
@@ -890,20 +888,8 @@ window.CP_BUILD_TIME = "2026-05-14T17:06:31.328Z";
       typography: { heading_style: '', body_style: '', text_treatment: '' },
       visual_style: { overall_aesthetic: '', photography_style: '', illustration_style: '', icon_style: '', pattern_usage: '', mood: '' },
       layout_rules: { image_composition: '', ad_format_notes: '', border_radius: '', spacing: '' },
-      reference_image_ids: { primary_style: [], ad_examples: [], mood_board: [] },
       brand_prompt_prefix: ''
     };
-  }
-
-  function getDefaultImageCategories() {
-    return [
-      { id: 'ad_example',  label: 'Ad Example',       icon: 'rectangle-ad', color: '#1a73e8' },
-      { id: 'mood_board',  label: 'Mood Board',       icon: 'swatchbook',   color: '#9334e9' },
-      { id: 'style_ref',   label: 'Style Reference',  icon: 'palette',      color: '#e37400' },
-      { id: 'format_ref',  label: 'Format Reference', icon: 'clapperboard', color: '#0891b2' },
-      { id: 'logo',        label: 'Logo',             icon: 'flag',         color: '#0d904f' },
-      { id: 'other',       label: 'Other',            icon: 'folder',       color: '#80868b' }
-    ];
   }
 
   function migrateData() {
@@ -996,7 +982,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:06:31.328Z";
       vf.name = vf.name || '';
       vf.description = vf.description || '';
       vf.category = vf.category || '';
-      vf.reference_image_ids = vf.reference_image_ids || [];
       vf.tags = vf.tags || [];
       vf.created = vf.created || new Date().toISOString();
       vf.updated = vf.updated || vf.created;
@@ -1106,8 +1091,7 @@ window.CP_BUILD_TIME = "2026-05-14T17:06:31.328Z";
       a.hook.text = a.hook.text || '';
       a.hook.type = a.hook.type || 'direct';
       a.media = a.media || {};
-      a.media.image = a.media.image || { asset_id: '', prompt: '', aspect_ratio: '1:1', reference_image_ids: [] };
-      a.media.image.reference_image_ids = a.media.image.reference_image_ids || [];
+      a.media.image = a.media.image || { asset_id: '', prompt: '', aspect_ratio: '1:1' };
       a.media.video = a.media.video || { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', script: { sections: [] } };
       a.media.video.script = a.media.video.script || { sections: [] };
       a.media.carousel_cards = a.media.carousel_cards || [];
@@ -1149,8 +1133,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:06:31.328Z";
     m.aiPreferences.perAction = m.aiPreferences.perAction || {};
     m.aiPreferences.lastProvider = m.aiPreferences.lastProvider || '';
     m.aiPreferences.lastModel = m.aiPreferences.lastModel || '';
-    m.reference_images = m.reference_images || {};
-    m.image_categories = m.image_categories || getDefaultImageCategories();
 
     // Meta v2: workspace-level Page / Pixel / attribution / currency defaults
     m.meta_defaults = m.meta_defaults || {};
@@ -1249,11 +1231,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:06:31.328Z";
     S.researchMap = {};
     var sessions = S.data.research_sessions || [];
     for (i = 0; i < sessions.length; i++) S.researchMap[sessions[i].id] = sessions[i];
-
-    // Image category map
-    S.imageCategoryMap = {};
-    var imgCats = (S.meta && S.meta.image_categories) || [];
-    for (i = 0; i < imgCats.length; i++) S.imageCategoryMap[imgCats[i].id] = imgCats[i];
 
     // --- Meta v2 hierarchy maps ---
 
@@ -3063,22 +3040,6 @@ window.CP_BUILD_TIME = "2026-05-14T17:06:31.328Z";
 
     if (format.description) {
       html += '<div class="cp-format-card-desc">' + esc(truncate(format.description, 120)) + '</div>';
-    }
-
-    // Reference image thumbnails
-    var refIds = format.reference_image_ids || [];
-    if (refIds.length > 0) {
-      html += '<div class="cp-format-card-refs">';
-      var shown = 0;
-      for (var ri = 0; ri < refIds.length && shown < 3; ri++) {
-        var img = S.imageMap[refIds[ri]];
-        if (img) {
-          html += '<div class="cp-format-ref-thumb"><img src="' + esc(img.url) + '" alt="' + esc(img.filename) + '"></div>';
-          shown++;
-        }
-      }
-      if (refIds.length > 3) html += '<span class="cp-text-muted">+' + (refIds.length - 3) + ' more</span>';
-      html += '</div>';
     }
 
     // Tags
@@ -5851,7 +5812,7 @@ window.CP_BUILD_TIME = "2026-05-14T17:06:31.328Z";
       case 'visual_format':
         entity = $.extend(true, {
           id: generateId('vf'), name: '', description: '', category: '',
-          reference_image_ids: [], tags: [],
+          tags: [],
           created: now, updated: now
         }, data);
         S.data.visual_formats.push(entity);
@@ -5925,7 +5886,7 @@ window.CP_BUILD_TIME = "2026-05-14T17:06:31.328Z";
           creative: { primary_text: '', headline: '', description: '', cta_type: 'LEARN_MORE', cta_link: '', display_link: '', tracking_params: '' },
           hook: { source_message_id: '', selected_hook_id: '', text: '', type: 'direct' },
           media: {
-            image: { asset_id: '', prompt: '', aspect_ratio: '1:1', reference_image_ids: [] },
+            image: { asset_id: '', prompt: '', aspect_ratio: '1:1' },
             video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', script: { sections: [] } },
             carousel_cards: []
           },
@@ -13807,7 +13768,7 @@ window.CP_BUILD_TIME = "2026-05-14T17:06:31.328Z";
             display_link: '', tracking_params: ''
           },
           media: {
-            image: { asset_id: '', prompt: m.image_prompt || m.image_brief || '', aspect_ratio: '1:1', reference_image_ids: [] },
+            image: { asset_id: '', prompt: m.image_prompt || m.image_brief || '', aspect_ratio: '1:1' },
             video: { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: m.video_concept || '', script: { sections: [] } },
             carousel_cards: []
           }
@@ -15463,8 +15424,7 @@ window.CP_BUILD_TIME = "2026-05-14T17:06:31.328Z";
         type: 'image',
         image: {
           prompt: img.prompt || img.ai_prompt || img.brief || '',
-          aspect_ratio: img.aspect_ratio || '1:1',
-          reference_image_ids: img.reference_image_ids || []
+          aspect_ratio: img.aspect_ratio || '1:1'
         }
       };
     }

@@ -45,8 +45,6 @@
         brand_design: getDefaultBrandDesign()
       },
       aiPreferences: { appDefault: { provider: '', model: '' }, perAction: {}, lastProvider: '', lastModel: '' },
-      reference_images: {},
-      image_categories: getDefaultImageCategories(),
       // Meta v2 workspace-level defaults (Page, Pixel, attribution, currency etc.)
       meta_defaults: getDefaultMetaDefaults()
     };
@@ -58,20 +56,8 @@
       typography: { heading_style: '', body_style: '', text_treatment: '' },
       visual_style: { overall_aesthetic: '', photography_style: '', illustration_style: '', icon_style: '', pattern_usage: '', mood: '' },
       layout_rules: { image_composition: '', ad_format_notes: '', border_radius: '', spacing: '' },
-      reference_image_ids: { primary_style: [], ad_examples: [], mood_board: [] },
       brand_prompt_prefix: ''
     };
-  }
-
-  function getDefaultImageCategories() {
-    return [
-      { id: 'ad_example',  label: 'Ad Example',       icon: 'rectangle-ad', color: '#1a73e8' },
-      { id: 'mood_board',  label: 'Mood Board',       icon: 'swatchbook',   color: '#9334e9' },
-      { id: 'style_ref',   label: 'Style Reference',  icon: 'palette',      color: '#e37400' },
-      { id: 'format_ref',  label: 'Format Reference', icon: 'clapperboard', color: '#0891b2' },
-      { id: 'logo',        label: 'Logo',             icon: 'flag',         color: '#0d904f' },
-      { id: 'other',       label: 'Other',            icon: 'folder',       color: '#80868b' }
-    ];
   }
 
   function migrateData() {
@@ -164,7 +150,6 @@
       vf.name = vf.name || '';
       vf.description = vf.description || '';
       vf.category = vf.category || '';
-      vf.reference_image_ids = vf.reference_image_ids || [];
       vf.tags = vf.tags || [];
       vf.created = vf.created || new Date().toISOString();
       vf.updated = vf.updated || vf.created;
@@ -274,8 +259,7 @@
       a.hook.text = a.hook.text || '';
       a.hook.type = a.hook.type || 'direct';
       a.media = a.media || {};
-      a.media.image = a.media.image || { asset_id: '', prompt: '', aspect_ratio: '1:1', reference_image_ids: [] };
-      a.media.image.reference_image_ids = a.media.image.reference_image_ids || [];
+      a.media.image = a.media.image || { asset_id: '', prompt: '', aspect_ratio: '1:1' };
       a.media.video = a.media.video || { asset_id: '', duration_seconds: 30, aspect_ratio: '9:16', concept: '', script: { sections: [] } };
       a.media.video.script = a.media.video.script || { sections: [] };
       a.media.carousel_cards = a.media.carousel_cards || [];
@@ -317,8 +301,6 @@
     m.aiPreferences.perAction = m.aiPreferences.perAction || {};
     m.aiPreferences.lastProvider = m.aiPreferences.lastProvider || '';
     m.aiPreferences.lastModel = m.aiPreferences.lastModel || '';
-    m.reference_images = m.reference_images || {};
-    m.image_categories = m.image_categories || getDefaultImageCategories();
 
     // Meta v2: workspace-level Page / Pixel / attribution / currency defaults
     m.meta_defaults = m.meta_defaults || {};
