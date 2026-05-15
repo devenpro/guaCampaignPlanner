@@ -1,6 +1,6 @@
-/* Campaign Planner v1.0.5 · built 2026-05-15T04:10:00.410Z · 81 source files (see src/) */
-window.CP_VERSION = "1.0.5";
-window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
+/* Campaign Planner v1.0.4 · built 2026-05-15T04:44:22.741Z · 81 source files (see src/) */
+window.CP_VERSION = "1.0.4";
+window.CP_BUILD_TIME = "2026-05-15T04:44:22.741Z";
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -1460,7 +1460,7 @@ window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
 
   // --- Text ---
   function esc(text) { if (!text) return ''; var d = document.createElement('div'); d.appendChild(document.createTextNode(text)); return d.innerHTML; }
-  function truncate(text, max) { if (!text || text.length <= max) return text || ''; return text.substring(0, max) + '…'; }
+  function truncate(text, max) { text = String(text == null ? '' : text); if (text.length <= max) return text; return text.substring(0, max) + '…'; }
   function countWords(text) { return text ? text.trim().split(/\s+/).filter(Boolean).length : 0; }
   function countChars(text) { return text ? text.length : 0; }
   function stripHtml(html) { if (!html) return ''; var tmp = document.createElement('div'); tmp.innerHTML = html; return tmp.textContent || tmp.innerText || ''; }
@@ -8556,21 +8556,43 @@ window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
   }
 
   // --- Pre-fill workspace fields from brand context when available ---
+  // Brand JSON fields are heterogeneous: `audience` is an object
+  // ({primary, pain_points, desires}), `forbidden_words`/`dos`/`donts`/
+  // `content_pillars` are arrays, the rest are strings. Mirror the same
+  // coercion conventions BrandService.getSystemPrompt() uses so the
+  // brand-context card always receives strings.
   function _swPrefillFromBrand(state) {
     if (!(S.brand && S.brand.configured)) return;
     var core    = S.brand.core    || {};
     var content = S.brand.content || {};
+    var video   = S.brand.video   || {};
     var ident   = S.brand.identity || {};
+
+    function joinList(v, sep, cap) {
+      if (Array.isArray(v)) return (cap ? v.slice(0, cap) : v).join(sep);
+      return (v == null ? '' : String(v));
+    }
+    function audienceSummary(aud) {
+      if (!aud) return '';
+      if (typeof aud === 'string') return aud;
+      // Mirrors BrandService: prefer `primary`, fall back to a one-line summary.
+      if (aud.primary) return String(aud.primary);
+      var bits = [];
+      if (Array.isArray(aud.pain_points) && aud.pain_points.length) bits.push('Pain: ' + aud.pain_points.slice(0, 3).join('; '));
+      if (Array.isArray(aud.desires)     && aud.desires.length)     bits.push('Wants: ' + aud.desires.slice(0, 3).join('; '));
+      return bits.join(' · ');
+    }
+
     state.brandContext = {
-      name:           ident.name || core.brand_name || '',
-      tagline:        core.tagline || '',
-      voice:          core.brand_voice || content.writing_style || '',
-      audience:       core.audience || core.target_audience || '',
-      forbidden:      core.forbidden_words || '',
-      dos:            core.dos || '',
-      donts:          core.donts || '',
-      pillars:        (S.brand.video && S.brand.video.content_pillars) || '',
-      cta:            content.cta_style || ''
+      name:      ident.name || core.brand_name || '',
+      tagline:   core.tagline || '',
+      voice:     core.brand_voice || content.writing_style || '',
+      audience:  audienceSummary(core.audience) || (core.target_audience == null ? '' : String(core.target_audience)),
+      forbidden: joinList(core.forbidden_words, ', '),
+      dos:       joinList(core.dos,   '; ', 6),
+      donts:     joinList(core.donts, '; ', 6),
+      pillars:   joinList(video.content_pillars, ', '),
+      cta:       content.cta_style || ''
     };
     // Seed workspace fields the wizard uses for AI prompts. User can still edit.
     if (!state.workspace.name && state.brandContext.name) {
@@ -8599,13 +8621,29 @@ window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
           message: 'You have an incomplete setup from a previous session (Stage ' + saved.step + ' of ' + SW_STAGE_COUNT + '). Would you like to continue where you left off?',
           confirmLabel: 'Resume',
           cancelLabel: 'Start Over',
-          onConfirm: function() { _swReplaceState(saved); _renderSetupWizardDOM(); },
+          onConfirm: function() {
+            try { _swReplaceState(saved); _renderSetupWizardDOM(); }
+            catch (e) { _swHandleOpenFailure(e); }
+          },
           onCancel:  function() { swClearSession(); _initFreshWizard(); }
         });
         return;
       }
     }
     _initFreshWizard();
+  }
+
+  // Recovery path when prefill or render throws. Tear down the
+  // partially-built overlay so the user doesn't see a blank fixed
+  // background on top of the app, surface a toast, and log the stack.
+  function _swHandleOpenFailure(err) {
+    try { $('.cp-setup-wizard').remove(); } catch (e2) {}
+    try {
+      if (typeof toast === 'function') {
+        toast('Setup wizard failed to open — see console for details.', 'error', 6000);
+      }
+    } catch (e3) {}
+    console.error('[CP] Setup wizard open/render failed:', (err && err.stack) || err);
   }
 
   // Auto-launch the wizard on an empty workspace. Returns true if launched.
@@ -8625,10 +8663,14 @@ window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
   }
 
   function _initFreshWizard() {
-    var fresh = _swFreshState();
-    _swPrefillFromBrand(fresh);
-    _swReplaceState(fresh);
-    _renderSetupWizardDOM();
+    try {
+      var fresh = _swFreshState();
+      _swPrefillFromBrand(fresh);
+      _swReplaceState(fresh);
+      _renderSetupWizardDOM();
+    } catch (e) {
+      _swHandleOpenFailure(e);
+    }
   }
 
   function _renderSetupWizardDOM() {
@@ -9296,7 +9338,14 @@ window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
       html += '<div class="cp-field">';
       html += '<label class="cp-field-label">Provider &amp; model <span class="cp-required">*</span></label>';
       html += '<div class="cp-sw-ai-picker-wrap" id="swAiPickerWrap">';
-      html += window._cpAiSel('sw-ai-config');
+      // _cpAiSel is defined inside Part 2A's init-imports IIFE; the wizard can
+      // auto-launch before Part 2B (and the full picker hookup) is ready, so
+      // emit a placeholder that _cpReplaceAiPickers() rehydrates on Part 2B init.
+      if (typeof window._cpAiSel === 'function') {
+        html += window._cpAiSel('sw-ai-config');
+      } else {
+        html += '<span class="cp-ai-picker-loading" data-pending-action="sw-ai-config">' + icon('spinner') + ' Loading AI options…</span>';
+      }
       html += '</div>';
       html += '<p class="cp-field-hint">This selection is used for every AI run during setup.</p>';
       html += '</div>';
@@ -11023,7 +11072,16 @@ window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
     $(document).off('click.cp2a-sw-open').on('click.cp2a-sw-open', '[data-action="open-setup-wizard"]', function(e) {
       e.preventDefault();
       var forceReset = $(this).data('force-reset') === true || $(this).data('forceReset') === true;
-      openSetupWizard(forceReset);
+      try {
+        openSetupWizard(forceReset);
+      } catch (err) {
+        // Defence-in-depth: openSetupWizard's internal try/catch should already
+        // recover, but a sync throw before it would otherwise surface as a
+        // blank screen. Tear down any partial overlay and toast.
+        try { $('.cp-setup-wizard').remove(); } catch (e2) {}
+        if (typeof toast === 'function') toast('Setup wizard failed to open — see console for details.', 'error', 6000);
+        console.error('[CP] Setup wizard click handler failed:', (err && err.stack) || err);
+      }
     });
     $(document).off('click.cp2a-sw-close').on('click.cp2a-sw-close', '[data-action="sw-close"]', function(e) {
       e.preventDefault();

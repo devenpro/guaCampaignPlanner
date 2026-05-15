@@ -18,7 +18,7 @@
 
   // --- Text ---
   function esc(text) { if (!text) return ''; var d = document.createElement('div'); d.appendChild(document.createTextNode(text)); return d.innerHTML; }
-  function truncate(text, max) { if (!text || text.length <= max) return text || ''; return text.substring(0, max) + '…'; }
+  function truncate(text, max) { text = String(text == null ? '' : text); if (text.length <= max) return text; return text.substring(0, max) + '…'; }
   function countWords(text) { return text ? text.trim().split(/\s+/).filter(Boolean).length : 0; }
   function countChars(text) { return text ? text.length : 0; }
   function stripHtml(html) { if (!html) return ''; var tmp = document.createElement('div'); tmp.innerHTML = html; return tmp.textContent || tmp.innerText || ''; }

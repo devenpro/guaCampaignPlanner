@@ -224,7 +224,16 @@
     $(document).off('click.cp2a-sw-open').on('click.cp2a-sw-open', '[data-action="open-setup-wizard"]', function(e) {
       e.preventDefault();
       var forceReset = $(this).data('force-reset') === true || $(this).data('forceReset') === true;
-      openSetupWizard(forceReset);
+      try {
+        openSetupWizard(forceReset);
+      } catch (err) {
+        // Defence-in-depth: openSetupWizard's internal try/catch should already
+        // recover, but a sync throw before it would otherwise surface as a
+        // blank screen. Tear down any partial overlay and toast.
+        try { $('.cp-setup-wizard').remove(); } catch (e2) {}
+        if (typeof toast === 'function') toast('Setup wizard failed to open — see console for details.', 'error', 6000);
+        console.error('[CP] Setup wizard click handler failed:', (err && err.stack) || err);
+      }
     });
     $(document).off('click.cp2a-sw-close').on('click.cp2a-sw-close', '[data-action="sw-close"]', function(e) {
       e.preventDefault();
