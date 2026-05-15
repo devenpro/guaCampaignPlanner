@@ -1,6 +1,6 @@
-/* Campaign Planner v1.0.5 · built 2026-05-15T04:10:00.410Z · 81 source files (see src/) */
+/* Campaign Planner v1.0.5 · built 2026-05-15T05:50:20.706Z · 81 source files (see src/) */
 window.CP_VERSION = "1.0.5";
-window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
+window.CP_BUILD_TIME = "2026-05-15T05:50:20.706Z";
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -1460,7 +1460,7 @@ window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
 
   // --- Text ---
   function esc(text) { if (!text) return ''; var d = document.createElement('div'); d.appendChild(document.createTextNode(text)); return d.innerHTML; }
-  function truncate(text, max) { if (!text || text.length <= max) return text || ''; return text.substring(0, max) + '…'; }
+  function truncate(text, max) { text = String(text == null ? '' : text); if (text.length <= max) return text; return text.substring(0, max) + '…'; }
   function countWords(text) { return text ? text.trim().split(/\s+/).filter(Boolean).length : 0; }
   function countChars(text) { return text ? text.length : 0; }
   function stripHtml(html) { if (!html) return ''; var tmp = document.createElement('div'); tmp.innerHTML = html; return tmp.textContent || tmp.innerText || ''; }
@@ -1827,7 +1827,7 @@ window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
     if (brandName) {
       html += '<p class="cp-setup-welcome-sub">Setting up for <strong>' + esc(brandName) + '</strong></p>';
     }
-    html += '<p class="cp-setup-welcome-desc">Our AI-powered wizard guides you through building your personas, pain points, messages, styles, and first campaign — in about 5–10 minutes.</p>';
+    html += '<p class="cp-setup-welcome-desc">The Setup Wizard should already be open. If you don\'t see it, refresh the page — or open <strong>Settings → Workspace → Setup wizard</strong> to re-run it.</p>';
 
     html += '<div class="cp-setup-welcome-features">';
     html += '<div class="cp-setup-welcome-feat">' + icon('users') + ' Personas</div>';
@@ -1838,40 +1838,10 @@ window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
     html += '<div class="cp-setup-welcome-feat">' + icon('flag') + ' First Campaign</div>';
     html += '</div>';
 
-    html += '<button class="cp-btn cp-btn-ai cp-btn-lg" data-action="open-setup-wizard">' + icon('sparkles') + ' Start Setup Wizard</button>';
-    html += '<p class="cp-setup-welcome-note">Takes about 5–10 minutes &nbsp;&middot;&nbsp; You can skip any step</p>';
-
     html += '</div>'; // card
     html += '</div>'; // welcome
     html += '</div>'; // view
     return html;
-  }
-
-  function completeSetup() {
-    var name = ($('#cpSetupName').val() || '').trim();
-    var product = ($('#cpSetupProduct').val() || '').trim();
-    var objective = ($('#cpSetupObjective').val() || '').trim();
-    var instructions = ($('#cpSetupInstructions').val() || '').trim();
-
-    if (!name) { toast('Please enter a workspace name', 'warning'); $('#cpSetupName').focus(); return; }
-    if (!product) { toast('Please enter a product or service', 'warning'); $('#cpSetupProduct').focus(); return; }
-
-    S.meta.workspace.name = name;
-    if (!S.meta.workspace.created) S.meta.workspace.created = new Date().toISOString();
-    S.meta.setup.product_name = product;
-    S.meta.setup.objective = objective;
-    S.meta.setup.custom_instructions = instructions;
-    S.meta.setup.setup_complete = true;
-
-    logActivity('setup_completed', '', '', name, 'Workspace setup completed: ' + product);
-    buildMaps();
-    syncToTextarea();
-
-    // Re-render full app shell with sidebar now showing correctly
-    $('#cpApp').html(renderAppShell());
-    S.currentView = 'dashboard';
-    renderCurrentView();
-    toast('Workspace setup complete! Start building your creative library.', 'success', 5000);
   }
 
 
@@ -1900,15 +1870,14 @@ window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
     html += '<div class="cp-dash-onboarding-header">';
     html += '<div class="cp-dash-onboarding-icon">' + icon('bullseye') + '</div>';
     html += '<h1>Build Your Meta Campaign Library</h1>';
-    html += '<p>Run the Setup Wizard to scaffold your creative library (personas, messages, styles, formats) and a handful of campaign ideas. You\'ll then build out Ad Sets and Ads inside each campaign\'s workspace.</p>';
+    html += '<p>Your workspace is empty — the Setup Wizard will open automatically. Or jump straight in:</p>';
     html += '</div>';
 
-    // 3-step guide tuned for Meta v2
+    // 2-step shortcut for users who close the auto-launched wizard
     html += '<div class="cp-dash-steps">';
     var steps = [
-      { num: '1', label: 'Run Setup Wizard',  desc: 'AI scaffolds your library + campaign ideas',                 action: 'open-setup-wizard',     icon: 'wand-magic',  color: '#9334e9' },
-      { num: '2', label: 'New Campaign',      desc: 'Skip setup — go straight to the Campaign Wizard',            action: 'new-campaign-v2',     icon: 'bullhorn',    color: '#1a73e8' },
-      { num: '3', label: 'Open Research Lab', desc: 'Browse and refine library entities individually',           action: 'go-view',             view:  'research',   icon: 'flask',       color: '#0d904f' }
+      { num: '1', label: 'New Campaign',      desc: 'Skip setup — go straight to the Campaign Wizard',            action: 'new-campaign-v2',     icon: 'bullhorn',    color: '#1a73e8' },
+      { num: '2', label: 'Open Research Lab', desc: 'Browse and refine library entities individually',           action: 'go-view',             view:  'research',   icon: 'flask',       color: '#0d904f' }
     ];
     for (var i = 0; i < steps.length; i++) {
       var st = steps[i];
@@ -8556,21 +8525,43 @@ window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
   }
 
   // --- Pre-fill workspace fields from brand context when available ---
+  // Brand JSON fields are heterogeneous: `audience` is an object
+  // ({primary, pain_points, desires}), `forbidden_words`/`dos`/`donts`/
+  // `content_pillars` are arrays, the rest are strings. Mirror the same
+  // coercion conventions BrandService.getSystemPrompt() uses so the
+  // brand-context card always receives strings.
   function _swPrefillFromBrand(state) {
     if (!(S.brand && S.brand.configured)) return;
     var core    = S.brand.core    || {};
     var content = S.brand.content || {};
+    var video   = S.brand.video   || {};
     var ident   = S.brand.identity || {};
+
+    function joinList(v, sep, cap) {
+      if (Array.isArray(v)) return (cap ? v.slice(0, cap) : v).join(sep);
+      return (v == null ? '' : String(v));
+    }
+    function audienceSummary(aud) {
+      if (!aud) return '';
+      if (typeof aud === 'string') return aud;
+      // Mirrors BrandService: prefer `primary`, fall back to a one-line summary.
+      if (aud.primary) return String(aud.primary);
+      var bits = [];
+      if (Array.isArray(aud.pain_points) && aud.pain_points.length) bits.push('Pain: ' + aud.pain_points.slice(0, 3).join('; '));
+      if (Array.isArray(aud.desires)     && aud.desires.length)     bits.push('Wants: ' + aud.desires.slice(0, 3).join('; '));
+      return bits.join(' · ');
+    }
+
     state.brandContext = {
-      name:           ident.name || core.brand_name || '',
-      tagline:        core.tagline || '',
-      voice:          core.brand_voice || content.writing_style || '',
-      audience:       core.audience || core.target_audience || '',
-      forbidden:      core.forbidden_words || '',
-      dos:            core.dos || '',
-      donts:          core.donts || '',
-      pillars:        (S.brand.video && S.brand.video.content_pillars) || '',
-      cta:            content.cta_style || ''
+      name:      ident.name || core.brand_name || '',
+      tagline:   core.tagline || '',
+      voice:     core.brand_voice || content.writing_style || '',
+      audience:  audienceSummary(core.audience) || (core.target_audience == null ? '' : String(core.target_audience)),
+      forbidden: joinList(core.forbidden_words, ', '),
+      dos:       joinList(core.dos,   '; ', 6),
+      donts:     joinList(core.donts, '; ', 6),
+      pillars:   joinList(video.content_pillars, ', '),
+      cta:       content.cta_style || ''
     };
     // Seed workspace fields the wizard uses for AI prompts. User can still edit.
     if (!state.workspace.name && state.brandContext.name) {
@@ -8599,7 +8590,10 @@ window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
           message: 'You have an incomplete setup from a previous session (Stage ' + saved.step + ' of ' + SW_STAGE_COUNT + '). Would you like to continue where you left off?',
           confirmLabel: 'Resume',
           cancelLabel: 'Start Over',
-          onConfirm: function() { _swReplaceState(saved); _renderSetupWizardDOM(); },
+          onConfirm: function() {
+            try { _swReplaceState(saved); _renderSetupWizardDOM(); }
+            catch (e) { _swHandleOpenFailure(e); }
+          },
           onCancel:  function() { swClearSession(); _initFreshWizard(); }
         });
         return;
@@ -8608,27 +8602,51 @@ window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
     _initFreshWizard();
   }
 
+  // Recovery path when prefill or render throws. Tear down the
+  // partially-built overlay so the user doesn't see a blank fixed
+  // background on top of the app, surface a toast, and log the stack.
+  function _swHandleOpenFailure(err) {
+    try { $('.cp-setup-wizard').remove(); } catch (e2) {}
+    try {
+      if (typeof toast === 'function') {
+        toast('Setup wizard failed to open — see console for details.', 'error', 6000);
+      }
+    } catch (e3) {}
+    console.error('[CP] Setup wizard open/render failed:', (err && err.stack) || err);
+  }
+
   // Auto-launch the wizard on an empty workspace. Returns true if launched.
   // Caller (init) should also check S.meta.setup.setup_complete is falsey.
   function maybeAutoLaunchSetupWizard() {
-    if (!S || !S.meta || !S.data) return false;
+    if (!S || !S.meta || !S.data) { console.log('[CP] Setup wizard auto-launch: S not ready, skipping'); return false; }
     var setup = S.meta.setup || {};
-    if (setup.setup_complete) return false;
     var hasPersonas  = Object.keys(S.data.personas       || {}).length > 0;
     var hasMessages  = Object.keys(S.data.messages       || {}).length > 0;
     var hasCampaigns = Object.keys(S.data.campaigns_v2   || {}).length > 0;
+    var brandConfigured = !!(S.brand && S.brand.configured);
+    console.log('[CP] Setup wizard auto-launch check:', { setup_complete: !!setup.setup_complete, hasPersonas: hasPersonas, hasMessages: hasMessages, hasCampaigns: hasCampaigns, brandConfigured: brandConfigured });
+    if (setup.setup_complete) return false;
     if (hasPersonas || hasMessages || hasCampaigns) return false;
-    if ($('.cp-setup-wizard').length) return false;  // already open
-    console.log('[CP] Empty workspace detected — auto-launching Setup Wizard');
+    // Only bail if the wizard is actually visible -- a stale orphan node from
+    // a previous failed render would otherwise silently block auto-launch.
+    var $existing = $('.cp-setup-wizard');
+    if ($existing.length) {
+      if ($existing.is(':visible')) return false;
+      $existing.remove();
+    }
     openSetupWizard(false);
     return true;
   }
 
   function _initFreshWizard() {
-    var fresh = _swFreshState();
-    _swPrefillFromBrand(fresh);
-    _swReplaceState(fresh);
-    _renderSetupWizardDOM();
+    try {
+      var fresh = _swFreshState();
+      _swPrefillFromBrand(fresh);
+      _swReplaceState(fresh);
+      _renderSetupWizardDOM();
+    } catch (e) {
+      _swHandleOpenFailure(e);
+    }
   }
 
   function _renderSetupWizardDOM() {
@@ -9296,7 +9314,14 @@ window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
       html += '<div class="cp-field">';
       html += '<label class="cp-field-label">Provider &amp; model <span class="cp-required">*</span></label>';
       html += '<div class="cp-sw-ai-picker-wrap" id="swAiPickerWrap">';
-      html += window._cpAiSel('sw-ai-config');
+      // _cpAiSel is defined inside Part 2A's init-imports IIFE; the wizard can
+      // auto-launch before Part 2B (and the full picker hookup) is ready, so
+      // emit a placeholder that _cpReplaceAiPickers() rehydrates on Part 2B init.
+      if (typeof window._cpAiSel === 'function') {
+        html += window._cpAiSel('sw-ai-config');
+      } else {
+        html += '<span class="cp-ai-picker-loading" data-pending-action="sw-ai-config">' + icon('spinner') + ' Loading AI options…</span>';
+      }
       html += '</div>';
       html += '<p class="cp-field-hint">This selection is used for every AI run during setup.</p>';
       html += '</div>';
@@ -11023,7 +11048,67 @@ window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
     $(document).off('click.cp2a-sw-open').on('click.cp2a-sw-open', '[data-action="open-setup-wizard"]', function(e) {
       e.preventDefault();
       var forceReset = $(this).data('force-reset') === true || $(this).data('forceReset') === true;
-      openSetupWizard(forceReset);
+      try {
+        openSetupWizard(forceReset);
+      } catch (err) {
+        // Defence-in-depth: openSetupWizard's internal try/catch should already
+        // recover, but a sync throw before it would otherwise surface as a
+        // blank screen. Tear down any partial overlay and toast.
+        try { $('.cp-setup-wizard').remove(); } catch (e2) {}
+        if (typeof toast === 'function') toast('Setup wizard failed to open — see console for details.', 'error', 6000);
+        console.error('[CP] Setup wizard click handler failed:', (err && err.stack) || err);
+      }
+    });
+
+    // --- Settings: re-run the wizard, keeping all generated entities ---
+    $(document).off('click.cp2a-sw-restart-keep').on('click.cp2a-sw-restart-keep', '[data-action="sw-restart-keep-data"]', function(e) {
+      e.preventDefault();
+      openConfirmDialog({
+        title: 'Re-run setup wizard?',
+        message: 'Re-open the setup wizard? Your existing personas, pain points, messages, styles, formats, and campaigns will be kept. The wizard will start fresh from Stage 1.',
+        confirmLabel: 'Re-run wizard',
+        onConfirm: function() {
+          try {
+            if (S.meta && S.meta.setup) S.meta.setup.setup_complete = false;
+            if (typeof swClearSession === 'function') swClearSession();
+            syncToTextarea();
+            openSetupWizard(true);
+          } catch (err) {
+            console.error('[CP] sw-restart-keep-data failed:', (err && err.stack) || err);
+            toast('Could not re-open setup wizard — see console.', 'error', 6000);
+          }
+        }
+      });
+    });
+
+    // --- Settings: full wipe of generated entities + re-run wizard ---
+    $(document).off('click.cp2a-sw-reset-wipe').on('click.cp2a-sw-reset-wipe', '[data-action="sw-reset-wipe-data"]', function(e) {
+      e.preventDefault();
+      var personas  = Object.keys((S.data && S.data.personas)     || {}).length;
+      var messages  = Object.keys((S.data && S.data.messages)     || {}).length;
+      var campaigns = Object.keys((S.data && S.data.campaigns_v2) || {}).length;
+      openConfirmDialog({
+        title: 'Reset everything from scratch?',
+        message: 'Delete ' + personas + ' persona(s), ' + messages + ' message(s), ' + campaigns + ' campaign(s), plus all pain points, styles, formats, ad sets, and ads — and re-open the setup wizard? This cannot be undone.',
+        confirmLabel: 'Delete everything & restart',
+        danger: true,
+        onConfirm: function() {
+          try {
+            var keys = ['personas', 'pain_points', 'messages', 'styles', 'visual_formats', 'campaigns_v2', 'ad_sets', 'ads'];
+            for (var i = 0; i < keys.length; i++) {
+              if (S.data) S.data[keys[i]] = {};
+            }
+            if (S.meta && S.meta.setup) S.meta.setup.setup_complete = false;
+            if (typeof swClearSession === 'function') swClearSession();
+            if (typeof buildMaps === 'function') buildMaps();
+            syncToTextarea();
+            openSetupWizard(true);
+          } catch (err) {
+            console.error('[CP] sw-reset-wipe-data failed:', (err && err.stack) || err);
+            toast('Reset failed — see console.', 'error', 6000);
+          }
+        }
+      });
     });
     $(document).off('click.cp2a-sw-close').on('click.cp2a-sw-close', '[data-action="sw-close"]', function(e) {
       e.preventDefault();
@@ -14930,6 +15015,16 @@ window.CP_BUILD_TIME = "2026-05-15T04:10:00.410Z";
     html += '<div class="cp-form-group"><label>Product / Service Name</label><input type="text" class="cp-input cp-settings-field" data-path="setup.product_name" value="' + esc(setup.product_name || '') + '"></div>';
     html += '<div class="cp-form-group"><label>Business Objective</label><input type="text" class="cp-input cp-settings-field" data-path="setup.objective" value="' + esc(setup.objective || '') + '"></div>';
     html += '<div class="cp-form-group"><label>Custom AI Instructions</label><textarea class="cp-textarea cp-settings-field" data-path="setup.custom_instructions" rows="3" placeholder="Special instructions included in all AI prompts...">' + esc(setup.custom_instructions || '') + '</textarea></div>';
+    html += '</div>';
+
+    // Setup wizard — re-run or full reset. Auto-launch only fires on empty
+    // workspaces, so this is the only manual entry-point after onboarding.
+    html += '<div class="cp-settings-section"><h3>' + icon('wand-magic') + ' Setup wizard</h3>';
+    html += '<p class="cp-text-muted" style="margin-bottom:var(--cp-space-3)">The wizard auto-launches on empty workspaces. Use these to re-run it later, or to wipe everything and start over.</p>';
+    html += '<div class="cp-settings-actions">';
+    html += '<button class="cp-btn cp-btn-outline" data-action="sw-restart-keep-data">' + icon('wand-magic') + ' Re-run setup wizard</button> ';
+    html += '<button class="cp-btn cp-btn-danger" data-action="sw-reset-wipe-data">' + icon('trash') + ' Reset everything from scratch</button>';
+    html += '</div>';
     html += '</div>';
 
     html += '<div class="cp-settings-actions"><button class="cp-btn cp-btn-primary" data-action="save-settings">' + icon('check') + ' Save</button></div>';

@@ -22,15 +22,14 @@
     html += '<div class="cp-dash-onboarding-header">';
     html += '<div class="cp-dash-onboarding-icon">' + icon('bullseye') + '</div>';
     html += '<h1>Build Your Meta Campaign Library</h1>';
-    html += '<p>Run the Setup Wizard to scaffold your creative library (personas, messages, styles, formats) and a handful of campaign ideas. You\'ll then build out Ad Sets and Ads inside each campaign\'s workspace.</p>';
+    html += '<p>Your workspace is empty — the Setup Wizard will open automatically. Or jump straight in:</p>';
     html += '</div>';
 
-    // 3-step guide tuned for Meta v2
+    // 2-step shortcut for users who close the auto-launched wizard
     html += '<div class="cp-dash-steps">';
     var steps = [
-      { num: '1', label: 'Run Setup Wizard',  desc: 'AI scaffolds your library + campaign ideas',                 action: 'open-setup-wizard',     icon: 'wand-magic',  color: '#9334e9' },
-      { num: '2', label: 'New Campaign',      desc: 'Skip setup — go straight to the Campaign Wizard',            action: 'new-campaign-v2',     icon: 'bullhorn',    color: '#1a73e8' },
-      { num: '3', label: 'Open Research Lab', desc: 'Browse and refine library entities individually',           action: 'go-view',             view:  'research',   icon: 'flask',       color: '#0d904f' }
+      { num: '1', label: 'New Campaign',      desc: 'Skip setup — go straight to the Campaign Wizard',            action: 'new-campaign-v2',     icon: 'bullhorn',    color: '#1a73e8' },
+      { num: '2', label: 'Open Research Lab', desc: 'Browse and refine library entities individually',           action: 'go-view',             view:  'research',   icon: 'flask',       color: '#0d904f' }
     ];
     for (var i = 0; i < steps.length; i++) {
       var st = steps[i];

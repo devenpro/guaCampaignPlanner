@@ -151,21 +151,43 @@
   }
 
   // --- Pre-fill workspace fields from brand context when available ---
+  // Brand JSON fields are heterogeneous: `audience` is an object
+  // ({primary, pain_points, desires}), `forbidden_words`/`dos`/`donts`/
+  // `content_pillars` are arrays, the rest are strings. Mirror the same
+  // coercion conventions BrandService.getSystemPrompt() uses so the
+  // brand-context card always receives strings.
   function _swPrefillFromBrand(state) {
     if (!(S.brand && S.brand.configured)) return;
     var core    = S.brand.core    || {};
     var content = S.brand.content || {};
+    var video   = S.brand.video   || {};
     var ident   = S.brand.identity || {};
+
+    function joinList(v, sep, cap) {
+      if (Array.isArray(v)) return (cap ? v.slice(0, cap) : v).join(sep);
+      return (v == null ? '' : String(v));
+    }
+    function audienceSummary(aud) {
+      if (!aud) return '';
+      if (typeof aud === 'string') return aud;
+      // Mirrors BrandService: prefer `primary`, fall back to a one-line summary.
+      if (aud.primary) return String(aud.primary);
+      var bits = [];
+      if (Array.isArray(aud.pain_points) && aud.pain_points.length) bits.push('Pain: ' + aud.pain_points.slice(0, 3).join('; '));
+      if (Array.isArray(aud.desires)     && aud.desires.length)     bits.push('Wants: ' + aud.desires.slice(0, 3).join('; '));
+      return bits.join(' · ');
+    }
+
     state.brandContext = {
-      name:           ident.name || core.brand_name || '',
-      tagline:        core.tagline || '',
-      voice:          core.brand_voice || content.writing_style || '',
-      audience:       core.audience || core.target_audience || '',
-      forbidden:      core.forbidden_words || '',
-      dos:            core.dos || '',
-      donts:          core.donts || '',
-      pillars:        (S.brand.video && S.brand.video.content_pillars) || '',
-      cta:            content.cta_style || ''
+      name:      ident.name || core.brand_name || '',
+      tagline:   core.tagline || '',
+      voice:     core.brand_voice || content.writing_style || '',
+      audience:  audienceSummary(core.audience) || (core.target_audience == null ? '' : String(core.target_audience)),
+      forbidden: joinList(core.forbidden_words, ', '),
+      dos:       joinList(core.dos,   '; ', 6),
+      donts:     joinList(core.donts, '; ', 6),
+      pillars:   joinList(video.content_pillars, ', '),
+      cta:       content.cta_style || ''
     };
     // Seed workspace fields the wizard uses for AI prompts. User can still edit.
     if (!state.workspace.name && state.brandContext.name) {
@@ -194,7 +216,10 @@
           message: 'You have an incomplete setup from a previous session (Stage ' + saved.step + ' of ' + SW_STAGE_COUNT + '). Would you like to continue where you left off?',
           confirmLabel: 'Resume',
           cancelLabel: 'Start Over',
-          onConfirm: function() { _swReplaceState(saved); _renderSetupWizardDOM(); },
+          onConfirm: function() {
+            try { _swReplaceState(saved); _renderSetupWizardDOM(); }
+            catch (e) { _swHandleOpenFailure(e); }
+          },
           onCancel:  function() { swClearSession(); _initFreshWizard(); }
         });
         return;
@@ -203,27 +228,51 @@
     _initFreshWizard();
   }
 
+  // Recovery path when prefill or render throws. Tear down the
+  // partially-built overlay so the user doesn't see a blank fixed
+  // background on top of the app, surface a toast, and log the stack.
+  function _swHandleOpenFailure(err) {
+    try { $('.cp-setup-wizard').remove(); } catch (e2) {}
+    try {
+      if (typeof toast === 'function') {
+        toast('Setup wizard failed to open — see console for details.', 'error', 6000);
+      }
+    } catch (e3) {}
+    console.error('[CP] Setup wizard open/render failed:', (err && err.stack) || err);
+  }
+
   // Auto-launch the wizard on an empty workspace. Returns true if launched.
   // Caller (init) should also check S.meta.setup.setup_complete is falsey.
   function maybeAutoLaunchSetupWizard() {
-    if (!S || !S.meta || !S.data) return false;
+    if (!S || !S.meta || !S.data) { console.log('[CP] Setup wizard auto-launch: S not ready, skipping'); return false; }
     var setup = S.meta.setup || {};
-    if (setup.setup_complete) return false;
     var hasPersonas  = Object.keys(S.data.personas       || {}).length > 0;
     var hasMessages  = Object.keys(S.data.messages       || {}).length > 0;
     var hasCampaigns = Object.keys(S.data.campaigns_v2   || {}).length > 0;
+    var brandConfigured = !!(S.brand && S.brand.configured);
+    console.log('[CP] Setup wizard auto-launch check:', { setup_complete: !!setup.setup_complete, hasPersonas: hasPersonas, hasMessages: hasMessages, hasCampaigns: hasCampaigns, brandConfigured: brandConfigured });
+    if (setup.setup_complete) return false;
     if (hasPersonas || hasMessages || hasCampaigns) return false;
-    if ($('.cp-setup-wizard').length) return false;  // already open
-    console.log('[CP] Empty workspace detected — auto-launching Setup Wizard');
+    // Only bail if the wizard is actually visible -- a stale orphan node from
+    // a previous failed render would otherwise silently block auto-launch.
+    var $existing = $('.cp-setup-wizard');
+    if ($existing.length) {
+      if ($existing.is(':visible')) return false;
+      $existing.remove();
+    }
     openSetupWizard(false);
     return true;
   }
 
   function _initFreshWizard() {
-    var fresh = _swFreshState();
-    _swPrefillFromBrand(fresh);
-    _swReplaceState(fresh);
-    _renderSetupWizardDOM();
+    try {
+      var fresh = _swFreshState();
+      _swPrefillFromBrand(fresh);
+      _swReplaceState(fresh);
+      _renderSetupWizardDOM();
+    } catch (e) {
+      _swHandleOpenFailure(e);
+    }
   }
 
   function _renderSetupWizardDOM() {

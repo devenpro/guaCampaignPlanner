@@ -102,7 +102,14 @@
       html += '<div class="cp-field">';
       html += '<label class="cp-field-label">Provider &amp; model <span class="cp-required">*</span></label>';
       html += '<div class="cp-sw-ai-picker-wrap" id="swAiPickerWrap">';
-      html += window._cpAiSel('sw-ai-config');
+      // _cpAiSel is defined inside Part 2A's init-imports IIFE; the wizard can
+      // auto-launch before Part 2B (and the full picker hookup) is ready, so
+      // emit a placeholder that _cpReplaceAiPickers() rehydrates on Part 2B init.
+      if (typeof window._cpAiSel === 'function') {
+        html += window._cpAiSel('sw-ai-config');
+      } else {
+        html += '<span class="cp-ai-picker-loading" data-pending-action="sw-ai-config">' + icon('spinner') + ' Loading AI options…</span>';
+      }
       html += '</div>';
       html += '<p class="cp-field-hint">This selection is used for every AI run during setup.</p>';
       html += '</div>';

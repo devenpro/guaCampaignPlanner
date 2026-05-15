@@ -56,6 +56,16 @@
     html += '<div class="cp-form-group"><label>Custom AI Instructions</label><textarea class="cp-textarea cp-settings-field" data-path="setup.custom_instructions" rows="3" placeholder="Special instructions included in all AI prompts...">' + esc(setup.custom_instructions || '') + '</textarea></div>';
     html += '</div>';
 
+    // Setup wizard — re-run or full reset. Auto-launch only fires on empty
+    // workspaces, so this is the only manual entry-point after onboarding.
+    html += '<div class="cp-settings-section"><h3>' + icon('wand-magic') + ' Setup wizard</h3>';
+    html += '<p class="cp-text-muted" style="margin-bottom:var(--cp-space-3)">The wizard auto-launches on empty workspaces. Use these to re-run it later, or to wipe everything and start over.</p>';
+    html += '<div class="cp-settings-actions">';
+    html += '<button class="cp-btn cp-btn-outline" data-action="sw-restart-keep-data">' + icon('wand-magic') + ' Re-run setup wizard</button> ';
+    html += '<button class="cp-btn cp-btn-danger" data-action="sw-reset-wipe-data">' + icon('trash') + ' Reset everything from scratch</button>';
+    html += '</div>';
+    html += '</div>';
+
     html += '<div class="cp-settings-actions"><button class="cp-btn cp-btn-primary" data-action="save-settings">' + icon('check') + ' Save</button></div>';
     html += '</div>';
     return html;
