@@ -14,7 +14,7 @@
     if (brandName) {
       html += '<p class="cp-setup-welcome-sub">Setting up for <strong>' + esc(brandName) + '</strong></p>';
     }
-    html += '<p class="cp-setup-welcome-desc">Our AI-powered wizard guides you through building your personas, pain points, messages, styles, and first campaign — in about 5–10 minutes.</p>';
+    html += '<p class="cp-setup-welcome-desc">The Setup Wizard should already be open. If you don\'t see it, refresh the page — or open <strong>Settings → Workspace → Setup wizard</strong> to re-run it.</p>';
 
     html += '<div class="cp-setup-welcome-features">';
     html += '<div class="cp-setup-welcome-feat">' + icon('users') + ' Personas</div>';
@@ -25,39 +25,9 @@
     html += '<div class="cp-setup-welcome-feat">' + icon('flag') + ' First Campaign</div>';
     html += '</div>';
 
-    html += '<button class="cp-btn cp-btn-ai cp-btn-lg" data-action="open-setup-wizard">' + icon('sparkles') + ' Start Setup Wizard</button>';
-    html += '<p class="cp-setup-welcome-note">Takes about 5–10 minutes &nbsp;&middot;&nbsp; You can skip any step</p>';
-
     html += '</div>'; // card
     html += '</div>'; // welcome
     html += '</div>'; // view
     return html;
-  }
-
-  function completeSetup() {
-    var name = ($('#cpSetupName').val() || '').trim();
-    var product = ($('#cpSetupProduct').val() || '').trim();
-    var objective = ($('#cpSetupObjective').val() || '').trim();
-    var instructions = ($('#cpSetupInstructions').val() || '').trim();
-
-    if (!name) { toast('Please enter a workspace name', 'warning'); $('#cpSetupName').focus(); return; }
-    if (!product) { toast('Please enter a product or service', 'warning'); $('#cpSetupProduct').focus(); return; }
-
-    S.meta.workspace.name = name;
-    if (!S.meta.workspace.created) S.meta.workspace.created = new Date().toISOString();
-    S.meta.setup.product_name = product;
-    S.meta.setup.objective = objective;
-    S.meta.setup.custom_instructions = instructions;
-    S.meta.setup.setup_complete = true;
-
-    logActivity('setup_completed', '', '', name, 'Workspace setup completed: ' + product);
-    buildMaps();
-    syncToTextarea();
-
-    // Re-render full app shell with sidebar now showing correctly
-    $('#cpApp').html(renderAppShell());
-    S.currentView = 'dashboard';
-    renderCurrentView();
-    toast('Workspace setup complete! Start building your creative library.', 'success', 5000);
   }
 

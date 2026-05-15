@@ -244,15 +244,22 @@
   // Auto-launch the wizard on an empty workspace. Returns true if launched.
   // Caller (init) should also check S.meta.setup.setup_complete is falsey.
   function maybeAutoLaunchSetupWizard() {
-    if (!S || !S.meta || !S.data) return false;
+    if (!S || !S.meta || !S.data) { console.log('[CP] Setup wizard auto-launch: S not ready, skipping'); return false; }
     var setup = S.meta.setup || {};
-    if (setup.setup_complete) return false;
     var hasPersonas  = Object.keys(S.data.personas       || {}).length > 0;
     var hasMessages  = Object.keys(S.data.messages       || {}).length > 0;
     var hasCampaigns = Object.keys(S.data.campaigns_v2   || {}).length > 0;
+    var brandConfigured = !!(S.brand && S.brand.configured);
+    console.log('[CP] Setup wizard auto-launch check:', { setup_complete: !!setup.setup_complete, hasPersonas: hasPersonas, hasMessages: hasMessages, hasCampaigns: hasCampaigns, brandConfigured: brandConfigured });
+    if (setup.setup_complete) return false;
     if (hasPersonas || hasMessages || hasCampaigns) return false;
-    if ($('.cp-setup-wizard').length) return false;  // already open
-    console.log('[CP] Empty workspace detected — auto-launching Setup Wizard');
+    // Only bail if the wizard is actually visible -- a stale orphan node from
+    // a previous failed render would otherwise silently block auto-launch.
+    var $existing = $('.cp-setup-wizard');
+    if ($existing.length) {
+      if ($existing.is(':visible')) return false;
+      $existing.remove();
+    }
     openSetupWizard(false);
     return true;
   }

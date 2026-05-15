@@ -235,6 +235,57 @@
         console.error('[CP] Setup wizard click handler failed:', (err && err.stack) || err);
       }
     });
+
+    // --- Settings: re-run the wizard, keeping all generated entities ---
+    $(document).off('click.cp2a-sw-restart-keep').on('click.cp2a-sw-restart-keep', '[data-action="sw-restart-keep-data"]', function(e) {
+      e.preventDefault();
+      openConfirmDialog({
+        title: 'Re-run setup wizard?',
+        message: 'Re-open the setup wizard? Your existing personas, pain points, messages, styles, formats, and campaigns will be kept. The wizard will start fresh from Stage 1.',
+        confirmLabel: 'Re-run wizard',
+        onConfirm: function() {
+          try {
+            if (S.meta && S.meta.setup) S.meta.setup.setup_complete = false;
+            if (typeof swClearSession === 'function') swClearSession();
+            syncToTextarea();
+            openSetupWizard(true);
+          } catch (err) {
+            console.error('[CP] sw-restart-keep-data failed:', (err && err.stack) || err);
+            toast('Could not re-open setup wizard — see console.', 'error', 6000);
+          }
+        }
+      });
+    });
+
+    // --- Settings: full wipe of generated entities + re-run wizard ---
+    $(document).off('click.cp2a-sw-reset-wipe').on('click.cp2a-sw-reset-wipe', '[data-action="sw-reset-wipe-data"]', function(e) {
+      e.preventDefault();
+      var personas  = Object.keys((S.data && S.data.personas)     || {}).length;
+      var messages  = Object.keys((S.data && S.data.messages)     || {}).length;
+      var campaigns = Object.keys((S.data && S.data.campaigns_v2) || {}).length;
+      openConfirmDialog({
+        title: 'Reset everything from scratch?',
+        message: 'Delete ' + personas + ' persona(s), ' + messages + ' message(s), ' + campaigns + ' campaign(s), plus all pain points, styles, formats, ad sets, and ads — and re-open the setup wizard? This cannot be undone.',
+        confirmLabel: 'Delete everything & restart',
+        danger: true,
+        onConfirm: function() {
+          try {
+            var keys = ['personas', 'pain_points', 'messages', 'styles', 'visual_formats', 'campaigns_v2', 'ad_sets', 'ads'];
+            for (var i = 0; i < keys.length; i++) {
+              if (S.data) S.data[keys[i]] = {};
+            }
+            if (S.meta && S.meta.setup) S.meta.setup.setup_complete = false;
+            if (typeof swClearSession === 'function') swClearSession();
+            if (typeof buildMaps === 'function') buildMaps();
+            syncToTextarea();
+            openSetupWizard(true);
+          } catch (err) {
+            console.error('[CP] sw-reset-wipe-data failed:', (err && err.stack) || err);
+            toast('Reset failed — see console.', 'error', 6000);
+          }
+        }
+      });
+    });
     $(document).off('click.cp2a-sw-close').on('click.cp2a-sw-close', '[data-action="sw-close"]', function(e) {
       e.preventDefault();
       // Gate: don't allow closing before Stage 1 is complete
