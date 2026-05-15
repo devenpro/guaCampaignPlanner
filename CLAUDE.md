@@ -19,6 +19,26 @@ dist, commits `[release] vX.Y.Z`, tags it, creates a GitHub Release, and
 purges jsDelivr's `@latest`/`@main` cache. Tag-to-release wall time is
 ~13s.
 
+### Setup wizard auto-launch
+
+On init, `maybeAutoLaunchSetupWizard` (`src/20-part2a/11-setup-wizard.js`)
+opens the wizard whenever **either** the Drupal `field_json_data` or
+`field_json_meta` raw textarea was empty when the page loaded. The flags
+`S._rawDataEmpty` / `S._rawMetaEmpty` are captured by `loadData()`
+(`src/10-part1/03-init.js`) before any parsing or migration runs. The
+gate is intentionally NOT based on parsed-state heuristics
+(`setup_complete`, entity counts) — those proved fragile when migrations
+or partial saves mutated state out from under the check. The
+`setup_complete` flag still exists and gates the dashboard's setup-mode
+fallback view (`renderCurrentView` in `src/10-part1/06-navigation.js`,
+which shows the `.cp-setup-welcome` "Welcome to Campaign Planner" pane);
+do not conflate that fallback view with the wizard overlay itself —
+they're separate UX surfaces.
+
+The wizard overlay is appended to `<body>` (not `#cpApp`) to sidestep
+containing-block traps from any Drupal-injected wrapper that adds
+`transform` / `will-change` / `contain` on an ancestor of `#cpApp`.
+
 ## The 7-step workflow
 
 ### 1. Triage
@@ -103,6 +123,18 @@ a locally broken commit pollutes history and would briefly trigger a
 release with stale dist. The parse-check catches syntax errors that
 TypeScript-style tools would otherwise find — this codebase has no test
 suite.
+
+## Doc sync
+
+When a phase introduces a behavior change, naming change, or trigger
+change that contradicts existing wording in `CLAUDE.md`,
+`docs/CP-DATA-MODEL.md`, `docs/CP-ARCHITECTURE.md`,
+`docs/CP-DEVELOPMENT-GUIDE.md`, or `docs/CP-CHANGELOG.md`, the same
+commit (or a paired docs commit in the same PR) updates those docs so
+the next session reads accurate guidance. Skip this only for purely
+internal refactors that don't change observable behavior or public
+surface. The cost of a one-line doc edit is trivial; the cost of a
+future session reverse-engineering stale docs is not.
 
 ## Conventional commit prefixes
 

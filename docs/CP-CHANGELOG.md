@@ -1,5 +1,34 @@
 # Campaign Planner — Changelog
 
+## v1.0.11 — Setup wizard auto-launch trigger
+
+Auto-launch fires whenever **either** `field_json_data` or
+`field_json_meta` is empty in the Drupal node, replacing the prior gate
+(shipped in v1.0.10) that read parsed `S.meta.setup.setup_complete` plus
+entity counts on `S.data.personas/messages/campaigns_v2`. Raw-emptiness
+flags `S._rawDataEmpty` / `S._rawMetaEmpty` are set in `loadData()`
+(`src/10-part1/03-init.js`) before any migration touches `S`, so the
+gate is immune to migration side-effects and partial-save state.
+
+`setup_complete` remains in the schema and is still consumed by the
+dashboard's setup-mode fallback view (`renderCurrentView` in
+`src/10-part1/06-navigation.js`); only its role in *auto-launch gating*
+changed.
+
+## v1.0.10 — Force clean wizard on empty workspace
+
+- Auto-launch path now calls `openSetupWizard(true)` so a stale saved
+  session never triggers the "Resume Setup?" prompt on a fresh empty
+  node — the wizard always starts clean. Manual entry from
+  `Settings → Workspace → Setup wizard` still calls
+  `openSetupWizard(false)` and shows the resume prompt as before.
+- Wizard overlay now appended to `<body>` (not `#cpApp`) to sidestep
+  containing-block traps from any Drupal-injected ancestor that adds
+  `transform` / `will-change` / `contain`.
+- Post-append diagnostic logs `[CP] Setup wizard: visible on screen,
+  rect=…` on success, or `STUCK INVISIBLE after append` plus the
+  offending ancestor chain on regression.
+
 ## v2.0 — Meta Campaign Planner restructure
 
 Major architecture shift from a recipe-centric model to Meta's native
