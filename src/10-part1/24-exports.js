@@ -130,9 +130,6 @@
   window._cpMetaAdStatus = metaAdStatus;
   window._cpMetaOptimizationGoalsForObjective = metaOptimizationGoalsForObjective;
 
-  // Setup
-  window._cpCompleteSetup = completeSetup;
-
   // Renderers (for re-rendering from Part 2A/2B)
   window._cpRenderActivityItem = renderActivityItem;
   window._cpRenderAIResearchBar = renderAIResearchBar;

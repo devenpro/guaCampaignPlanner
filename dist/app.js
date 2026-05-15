@@ -1,6 +1,6 @@
-/* Campaign Planner v1.0.7 · built 2026-05-15T06:19:06.099Z · 81 source files (see src/) */
+/* Campaign Planner v1.0.7 · built 2026-05-15T06:26:21.096Z · 81 source files (see src/) */
 window.CP_VERSION = "1.0.7";
-window.CP_BUILD_TIME = "2026-05-15T06:19:06.099Z";
+window.CP_BUILD_TIME = "2026-05-15T06:26:21.096Z";
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -5236,12 +5236,6 @@ window.CP_BUILD_TIME = "2026-05-15T06:19:06.099Z";
     setupSidebarSwipe();
     setupResponsiveRerender();
 
-    // Setup submit
-    $(document).off('click.cp-setup').on('click.cp-setup', '#cpSetupSubmit', function(e) {
-      e.preventDefault();
-      completeSetup();
-    });
-
     // Go-view buttons (data-action="go-view" data-view="xxx")
     // Optional data-tab="..." can set a sub-tab (currently only Personas
     // view uses this — for the Pain Points tab).
@@ -6422,9 +6416,6 @@ window.CP_BUILD_TIME = "2026-05-15T06:19:06.099Z";
   window._cpMetaAdSetStatus = metaAdSetStatus;
   window._cpMetaAdStatus = metaAdStatus;
   window._cpMetaOptimizationGoalsForObjective = metaOptimizationGoalsForObjective;
-
-  // Setup
-  window._cpCompleteSetup = completeSetup;
 
   // Renderers (for re-rendering from Part 2A/2B)
   window._cpRenderActivityItem = renderActivityItem;

@@ -116,12 +116,6 @@
     setupSidebarSwipe();
     setupResponsiveRerender();
 
-    // Setup submit
-    $(document).off('click.cp-setup').on('click.cp-setup', '#cpSetupSubmit', function(e) {
-      e.preventDefault();
-      completeSetup();
-    });
-
     // Go-view buttons (data-action="go-view" data-view="xxx")
     // Optional data-tab="..." can set a sub-tab (currently only Personas
     // view uses this — for the Pain Points tab).
