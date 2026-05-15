@@ -228,12 +228,31 @@
     });
     $(document).off('click.cp2a-sw-close').on('click.cp2a-sw-close', '[data-action="sw-close"]', function(e) {
       e.preventDefault();
+      // Gate: don't allow closing before Stage 1 is complete
+      if (typeof _swStage1Complete === 'function' && !_swStage1Complete()) {
+        toast('Pick an AI provider and a run mode first — then you can close and explore the app.', 'warning');
+        return;
+      }
       swSaveSession();
       openConfirmDialog(
         'Close Setup Wizard?',
-        'Your progress has been saved. You can resume from where you left off.',
+        'Your progress has been saved. You can resume it from the Setup page anytime.',
         function() { $('.cp-setup-wizard').remove(); }
       );
+    });
+    // --- Stage 1 mode-pick buttons (Manual / Full Auto) ---
+    $(document).off('click.cp2a-sw-start-manual').on('click.cp2a-sw-start-manual', '[data-action="sw-start-manual"]', function(e) {
+      e.preventDefault(); swStartMode('manual');
+    });
+    $(document).off('click.cp2a-sw-start-auto').on('click.cp2a-sw-start-auto', '[data-action="sw-start-auto"]', function(e) {
+      e.preventDefault(); swStartMode('auto');
+    });
+    // --- Pause / resume Full Auto run ---
+    $(document).off('click.cp2a-sw-pause').on('click.cp2a-sw-pause', '[data-action="sw-pause-auto"]', function(e) {
+      e.preventDefault(); swPauseAutoRun();
+    });
+    $(document).off('click.cp2a-sw-resume').on('click.cp2a-sw-resume', '[data-action="sw-resume-auto"]', function(e) {
+      e.preventDefault(); swResumeAutoRun();
     });
     $(document).off('click.cp2a-sw-next').on('click.cp2a-sw-next', '[data-action="sw-next"]', function(e) {
       e.preventDefault(); swGoNext();
@@ -254,14 +273,14 @@
       if ($(e.target).closest('[data-action="sw-card-expand"]').length) return;
       e.preventDefault();
       var idx = parseInt($(this).data('idx'), 10);
+      var cardType = $(this).data('card-type');
       var step = setupWizardState.step;
-      var listKey;
-      if (step === 6) {
-        // Step 6 hosts both styles and formats — distinguish by data-card-type
-        listKey = $(this).data('card-type') === 'format' ? 'formats' : 'styles';
-      } else {
-        listKey = { 3: 'personas', 4: 'pain_points', 5: 'messages' }[step];
-      }
+      // Prefer data-card-type when present (Stage 2 hosts both persona + painpoint;
+      // Stage 4 hosts both style + format). Fall back to stage-number mapping for stages
+      // where every card on screen is one type.
+      var typeToList = { persona: 'personas', painpoint: 'pain_points',
+                          message: 'messages', style: 'styles', format: 'formats' };
+      var listKey = typeToList[cardType] || { 3: 'messages' }[step];
       if (!listKey) return;
       var items = setupWizardState[listKey];
       if (!items || isNaN(idx) || !items[idx]) return;
@@ -318,7 +337,7 @@
       if (setupWizardState.aiLoading) return;
       setupWizardState._campaignIdeasContext = $('#swCampaignIdeasContext').val() || '';
       swCollectFields();
-      setupWizardState.stepGenerated[7] = false;
+      setupWizardState.stepGenerated.campaignIdeas = false;
       var R = window._cpRenderers || {};
       if (typeof R.swAIGenerateCampaignIdeas === 'function') R.swAIGenerateCampaignIdeas();
       else toast('AI not ready — please wait for the page to fully load.', 'warning');
@@ -337,7 +356,7 @@
       var n = parseInt($(this).data('step'), 10);
       if (!isNaN(n)) swRetryStep(n);
     });
-    // --- Step 7 campaign-idea handlers ---
+    // --- Stage 5 campaign-idea handlers ---
     $(document).off('click.cp2a-sw-tree-expand').on('click.cp2a-sw-tree-expand', '[data-action="sw-tree-expand"]', function(e) {
       e.preventDefault(); e.stopPropagation();
       var key = $(this).data('key');
@@ -406,7 +425,7 @@
     $(document).off('click.cp2a-sw-test-ai').on('click.cp2a-sw-test-ai', '[data-action="sw-test-ai"]', function(e) {
       e.preventDefault(); _swTestAIConnection();
     });
-    // Update wizard AI model dropdown when provider changes (Step 2)
+    // Update wizard AI model dropdown when provider changes (Stage 1 picker)
     $(document).off('change.cp2a-sw-ai-prov').on('change.cp2a-sw-ai-prov', '.cp-sw-ai-picker-wrap .cp-ai-provider-select', function() {
       setupWizardState.aiConfig.tested = false; // reset test status on provider change
       var $prov = $(this);
@@ -474,6 +493,11 @@
         if ($('.cp-confirm-backdrop').length) closeConfirmDialog();
         else if ($('.cp-modal-backdrop').length) closeModal();
         else if ($('.cp-setup-wizard').length && !setupWizardState.finalizing) {
+          // Don't allow Escape to close before Stage 1 is complete
+          if (typeof _swStage1Complete === 'function' && !_swStage1Complete()) {
+            toast('Pick an AI provider and a run mode first — then you can close and explore the app.', 'warning');
+            return;
+          }
           swSaveSession();
           openConfirmDialog(
             'Close Setup Wizard?',

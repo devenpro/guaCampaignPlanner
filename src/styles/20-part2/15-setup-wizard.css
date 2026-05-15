@@ -558,3 +558,122 @@
 .cp-ncw-ad-card--selected { border-color: var(--cp-primary, #1a73e8); }
 .cp-ncw-ad-card-header { display: flex; gap: var(--cp-space-2); align-items: center; }
 .cp-ncw-ad-card-title { flex: 1; font-weight: 600; font-size: var(--cp-font-size-sm); }
+
+/* --- 6-stage wizard additions --- */
+
+/* Close button (gated; only rendered after Stage 1 complete) */
+.cp-sw-close {
+  position: absolute; top: var(--cp-space-3); right: var(--cp-space-4);
+  width: 36px; height: 36px; border-radius: 50%; background: var(--cp-white);
+  border: 1px solid var(--cp-border-default); color: var(--cp-text-secondary);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  z-index: 5; transition: all var(--cp-transition-fast);
+}
+.cp-sw-close:hover { background: var(--cp-gray-50); color: var(--cp-text-primary); box-shadow: var(--cp-shadow-sm); }
+
+/* Mode indicator under the rail header */
+.cp-sw-rail-mode {
+  display: inline-flex; align-items: center; gap: 5px; margin-top: var(--cp-space-2);
+  padding: 3px 10px; border-radius: var(--cp-radius-full);
+  background: var(--cp-primary-light); color: var(--cp-primary);
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.cp-sw-rail-mode--auto { background: var(--cp-accent-light); color: var(--cp-accent); }
+
+/* Brand context card on Stage 1 */
+.cp-sw-brand-card {
+  background: var(--cp-white); border: 1px solid var(--cp-border-light);
+  border-radius: var(--cp-radius-lg); padding: var(--cp-space-5);
+  margin-bottom: var(--cp-space-6);
+}
+.cp-sw-brand-card--empty { background: var(--cp-gray-50); border-style: dashed; }
+.cp-sw-brand-card-header { display: flex; gap: var(--cp-space-3); align-items: flex-start; }
+.cp-sw-brand-card-icon {
+  width: 36px; height: 36px; border-radius: var(--cp-radius-md);
+  background: var(--cp-primary-light); color: var(--cp-primary);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.cp-sw-brand-card-title { font-weight: 700; color: var(--cp-text-primary); font-size: var(--cp-font-size-base); }
+.cp-sw-brand-card-sub { font-size: var(--cp-font-size-xs); color: var(--cp-text-muted); margin-top: 2px; }
+.cp-sw-brand-card-grid {
+  display: grid; grid-template-columns: max-content 1fr; gap: var(--cp-space-2) var(--cp-space-4);
+  margin: var(--cp-space-4) 0 0; padding-top: var(--cp-space-4);
+  border-top: 1px dashed var(--cp-border-light); font-size: var(--cp-font-size-sm);
+}
+.cp-sw-brand-card-grid dt { font-weight: 600; color: var(--cp-text-muted); }
+.cp-sw-brand-card-grid dd { margin: 0; color: var(--cp-text-secondary); line-height: 1.5; }
+
+/* Form sections on Stage 1 */
+.cp-sw-section { margin-bottom: var(--cp-space-6); }
+.cp-sw-section-title {
+  font-size: var(--cp-font-size-xs); font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--cp-text-muted); margin: 0 0 var(--cp-space-3);
+}
+.cp-sw-section--start { margin-top: var(--cp-space-6); }
+
+/* Mode-pick cards (two big Start buttons) */
+.cp-sw-mode-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--cp-space-4);
+}
+.cp-sw-mode-card {
+  text-align: left; padding: var(--cp-space-5); border-radius: var(--cp-radius-lg);
+  border: 1.5px solid var(--cp-border-light); background: var(--cp-white);
+  cursor: pointer; transition: all var(--cp-transition-fast);
+  display: flex; flex-direction: column; gap: var(--cp-space-2);
+}
+.cp-sw-mode-card:hover { border-color: var(--cp-primary); box-shadow: var(--cp-shadow-md); transform: translateY(-1px); }
+.cp-sw-mode-card-icon {
+  width: 40px; height: 40px; border-radius: var(--cp-radius-md);
+  display: flex; align-items: center; justify-content: center;
+  background: var(--cp-primary-light); color: var(--cp-primary); font-size: 18px;
+}
+.cp-sw-mode-card--auto .cp-sw-mode-card-icon { background: var(--cp-accent-light); color: var(--cp-accent); }
+.cp-sw-mode-card-title {
+  font-weight: 700; color: var(--cp-text-primary); font-size: var(--cp-font-size-base);
+  display: flex; align-items: center; gap: var(--cp-space-2);
+}
+.cp-sw-mode-card-tag {
+  display: inline-block; padding: 2px 8px; border-radius: var(--cp-radius-full);
+  background: var(--cp-success-light); color: var(--cp-success);
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.cp-sw-mode-card-body { font-size: var(--cp-font-size-sm); color: var(--cp-text-secondary); line-height: 1.5; }
+.cp-sw-mode-card-cta {
+  margin-top: auto; padding-top: var(--cp-space-3);
+  font-size: var(--cp-font-size-sm); font-weight: 600; color: var(--cp-primary);
+  display: flex; align-items: center; gap: var(--cp-space-1);
+}
+.cp-sw-mode-card--auto .cp-sw-mode-card-cta { color: var(--cp-accent); }
+.cp-sw-mode-hint {
+  margin-top: var(--cp-space-3); font-size: var(--cp-font-size-xs); color: var(--cp-text-muted);
+  display: flex; align-items: center; gap: 5px;
+}
+
+/* Stage 2 sub-stage sections (personas / pain points on one screen) */
+.cp-sw-substage { margin-bottom: var(--cp-space-6); }
+.cp-sw-substage-header { margin-bottom: var(--cp-space-3); }
+.cp-sw-substage-title {
+  font-size: var(--cp-font-size-lg); font-weight: 700; color: var(--cp-text-primary);
+  margin: 0; display: flex; align-items: center; gap: var(--cp-space-2);
+}
+
+/* Footer hint on Stage 1 right-column (the Next button is replaced by mode cards) */
+.cp-sw-footer-hint { font-size: var(--cp-font-size-xs); color: var(--cp-text-muted); font-style: italic; }
+
+/* Auto-advance footer (Full Auto preview countdown) */
+.cp-sw-footer-auto {
+  flex: 1; display: flex; align-items: center; justify-content: space-between;
+  gap: var(--cp-space-4); padding: 0 var(--cp-space-2);
+}
+.cp-sw-footer-auto-msg {
+  display: flex; align-items: center; gap: var(--cp-space-2);
+  font-size: var(--cp-font-size-sm); color: var(--cp-accent); font-weight: 600;
+}
+.cp-sw-footer-auto--paused .cp-sw-footer-auto-msg { color: var(--cp-text-secondary); }
+
+/* Responsive: stack mode cards on narrow screens */
+@media (max-width: 720px) {
+  .cp-sw-mode-row { grid-template-columns: 1fr; }
+  .cp-sw-brand-card-grid { grid-template-columns: 1fr; gap: var(--cp-space-1) 0; }
+  .cp-sw-brand-card-grid dt { padding-top: var(--cp-space-2); }
+}

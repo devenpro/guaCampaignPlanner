@@ -1,13 +1,13 @@
   // ------------------------------------------------------------------
-  // SECTION 9.4c: SETUP WIZARD — STEP RENDERERS (Phase 4: Steps 5 & 6)
+  // SECTION 9.4c: SETUP WIZARD — STAGE 3 (Messages) + STAGE 4 (Styles & Formats)
   // ------------------------------------------------------------------
 
-  // --- Step 5: Messages ---
+  // --- Stage 3: Messages ---
 
-  function renderSWStep5() {
+  function renderSWStep3() {
     var ws       = setupWizardState;
     var messages = ws.messages || [];
-    var generated = ws.stepGenerated[5];
+    var generated = ws.stepGenerated.messages;
 
     var html = _buildSWStepHeader(
       'Ad Messages',
@@ -15,9 +15,8 @@
       'b'
     );
 
-    html += _swAIErrorBanner(5);
+    html += _swAIErrorBanner(3);
 
-    // Generation bar
     html += '<div class="cp-sw-gen-bar">';
     html += '<textarea class="cp-textarea" id="swMessageContext" rows="2"';
     html += ' placeholder="Optional: focus on specific angles (e.g., emphasise ROI, use testimonial hooks)...">';
@@ -41,7 +40,7 @@
       html += '<span class="cp-sw-sel-count' + (selCount > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
       html += selCount + ' of ' + messages.length + ' message' + (messages.length !== 1 ? 's' : '') + ' selected';
       html += '</span>';
-      html += _swLastGeneratedLabel(5);
+      html += _swLastGeneratedLabel('messages');
       html += '</div>';
       html += '<div class="cp-sw-card-grid">';
       for (var i = 0; i < messages.length; i++) {
@@ -60,13 +59,12 @@
     var stageLabel = { top: 'TOFU', mid: 'MOFU', bot: 'BOFU' }[msg.funnel_stage] || msg.funnel_stage || '';
     var funnelSlug = msg.funnel_stage ? ('--funnel-' + esc(msg.funnel_stage)) : '';
 
-    var html = '<div class="cp-sw-sel-card' + (selected ? ' cp-sw-sel-card--selected' : '') + '" data-idx="' + idx + '" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '">';
+    var html = '<div class="cp-sw-sel-card' + (selected ? ' cp-sw-sel-card--selected' : '') + '" data-idx="' + idx + '" data-card-type="message" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '">';
     html += '<div class="cp-sw-sel-card-check">' + (selected ? icon('check') : '') + '</div>';
     html += '<div class="cp-sw-sel-card-title">' + esc(msg.name || ('Message ' + (idx + 1))) + '</div>';
     if (msg.description) {
       html += '<div class="cp-sw-sel-card-body">' + esc(truncate(msg.description, 100)) + '</div>';
     }
-    // Always-visible body as blockquote — the actual starter copy line
     if (msg.body) {
       html += '<blockquote class="cp-sw-msg-body">' + esc(truncate(msg.body, 160)) + '</blockquote>';
     }
@@ -96,13 +94,13 @@
     return html;
   }
 
-  // --- Step 6: Styles & Formats ---
+  // --- Stage 4: Styles & Formats ---
 
-  function renderSWStep6() {
+  function renderSWStep4() {
     var ws       = setupWizardState;
     var styles   = ws.styles  || [];
     var formats  = ws.formats || [];
-    var generated = ws.stepGenerated[6];
+    var generated = ws.stepGenerated.stylesFormats;
     var bothEmpty = !styles.length && !formats.length;
 
     var html = _buildSWStepHeader(
@@ -111,9 +109,8 @@
       'b'
     );
 
-    html += _swAIErrorBanner(6);
+    html += _swAIErrorBanner(4);
 
-    // Single generation bar for both styles and formats
     html += '<div class="cp-sw-gen-bar">';
     html += '<textarea class="cp-textarea" id="swStyleFormatContext" rows="2"';
     html += ' placeholder="Optional: specify platforms, formats or style direction (e.g., focus on TikTok-native, minimalist aesthetic)...">';
@@ -123,7 +120,6 @@
     html += '</div>';
 
     if (ws.aiLoading) {
-      // Loading — show skeleton for both sections
       html += _buildSWSubSection('Styles', 0, 0);
       html += _buildSWSkeletonCards(3);
       html += _buildSWSubSection('Formats', 0, 0);
@@ -136,7 +132,6 @@
       html += '<p>Click <strong>Generate with AI</strong> to create creative style and ad format suggestions tailored to your product and objectives.</p>';
       html += '</div>';
     } else {
-      // Styles section
       var selStyles  = styles.filter(function(s) { return s._selected; }).length;
       var selFormats = formats.filter(function(f) { return f._selected; }).length;
 
@@ -149,7 +144,6 @@
         html += '<div class="cp-sw-empty-state" style="padding:var(--cp-space-4) 0"><p>No styles generated — try regenerating above.</p></div>';
       }
 
-      // Formats section
       html += _buildSWSubSection('Formats', selFormats, formats.length);
       if (formats.length) {
         html += '<div class="cp-sw-card-grid">';

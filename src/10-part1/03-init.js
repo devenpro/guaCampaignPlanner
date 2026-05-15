@@ -51,6 +51,17 @@
       S.initialized = true;
       S._initializing = false;
       console.log('[CP] Part 1 initialized — ' + S.totalAds + ' ads, ' + S.totalCampaignsV2 + ' campaigns, ' + S.totalPersonas + ' personas, ' + S.totalMessages + ' messages, user: ' + (S.user.name || 'unknown'));
+
+      // Auto-launch the Setup Wizard on an empty workspace. Part 2A owns the
+      // wizard; defer one tick so the harness finishes wiring up renderers
+      // before the modal opens (the wizard's AI buttons depend on _cpRenderers).
+      setTimeout(function() {
+        var P2A = window._cpPart2A;
+        if (P2A && typeof P2A.maybeAutoLaunchSetupWizard === 'function') {
+          try { P2A.maybeAutoLaunchSetupWizard(); }
+          catch(e2) { console.warn('[CP] Auto-launch setup wizard failed:', e2); }
+        }
+      }, 0);
     } catch(e) {
       console.error('[CP] Part 1 init CRASHED:', e.message, e.stack);
       S._initializing = false;

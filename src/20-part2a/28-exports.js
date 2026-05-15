@@ -44,12 +44,17 @@
 
     // Setup Wizard
     openSetupWizard: openSetupWizard,
+    maybeAutoLaunchSetupWizard: maybeAutoLaunchSetupWizard,
     refreshSetupWizard: refreshSetupWizard,
     setupWizardState: setupWizardState,
     swClearSession: swClearSession,
     swCancelAIGeneration: swCancelAIGeneration,
     swRetryStep: swRetryStep,
     swRelTime: _swRelTime,
+    // Chaining signals used by Part 2B after each generator success
+    _swAfterPersonasGenerated:   _swAfterPersonasGenerated,
+    _swAfterPainPointsGenerated: _swAfterPainPointsGenerated,
+    _swAfterStageGenerated:      _swAfterStageGenerated,
 
     // New Campaign Wizard
     openNewCampaignWizard: openNewCampaignWizard,
