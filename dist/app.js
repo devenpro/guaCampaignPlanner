@@ -1,6 +1,6 @@
-/* Campaign Planner v1.0.9 · built 2026-05-15T06:48:59.388Z · 81 source files (see src/) */
+/* Campaign Planner v1.0.9 · built 2026-05-15T09:02:22.942Z · 81 source files (see src/) */
 window.CP_VERSION = "1.0.9";
-window.CP_BUILD_TIME = "2026-05-15T06:48:59.388Z";
+window.CP_BUILD_TIME = "2026-05-15T09:02:22.942Z";
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -8616,16 +8616,15 @@ window.CP_BUILD_TIME = "2026-05-15T06:48:59.388Z";
     var hasCampaigns = Object.keys(S.data.campaigns_v2   || {}).length > 0;
     var brandConfigured = !!(S.brand && S.brand.configured);
     console.log('[CP] Setup wizard auto-launch check:', { setup_complete: !!setup.setup_complete, hasPersonas: hasPersonas, hasMessages: hasMessages, hasCampaigns: hasCampaigns, brandConfigured: brandConfigured });
-    if (setup.setup_complete) return false;
-    if (hasPersonas || hasMessages || hasCampaigns) return false;
-    // Only bail if the wizard is actually visible -- a stale orphan node from
-    // a previous failed render would otherwise silently block auto-launch.
-    var $existing = $('.cp-setup-wizard');
-    if ($existing.length) {
-      if ($existing.is(':visible')) return false;
-      $existing.remove();
-    }
-    openSetupWizard(false);
+    if (setup.setup_complete) { console.log('[CP] Setup wizard auto-launch: skip (setup_complete)'); return false; }
+    if (hasPersonas || hasMessages || hasCampaigns) { console.log('[CP] Setup wizard auto-launch: skip (workspace not empty)'); return false; }
+    // On a verified-empty workspace, force a clean fresh wizard. A stale
+    // session or orphan overlay (possibly invisible on this viewport due to
+    // transform/containing-block quirks) must not block auto-launch.
+    try { swClearSession(); } catch (e) {}
+    $('.cp-setup-wizard').remove();
+    console.log('[CP] Setup wizard auto-launch: opening fresh wizard');
+    openSetupWizard(true);
     return true;
   }
 
@@ -8641,13 +8640,28 @@ window.CP_BUILD_TIME = "2026-05-15T06:48:59.388Z";
   }
 
   function _renderSetupWizardDOM() {
-    // Remove any existing wizard overlay
     $('.cp-setup-wizard').remove();
-    // Build and append overlay to #cpApp with ARIA dialog role
     var $wizard = $('<div class="cp-setup-wizard" id="cpSetupWizard" role="dialog" aria-modal="true" aria-label="Campaign Planner Setup Wizard"></div>');
-    var $app = $('#cpApp');
-    if ($app.length) $app.append($wizard); else $('body').append($wizard);
+    // Append to <body> so no Drupal-injected wrapper on #cpApp (transform,
+    // will-change, etc.) can establish a containing block that traps the
+    // position:fixed overlay inside a sub-viewport region.
+    $('body').append($wizard);
     renderSetupWizard();
+    setTimeout(function() {
+      var el = document.getElementById('cpSetupWizard');
+      if (!el) { console.warn('[CP] Setup wizard: post-append node missing'); return; }
+      var r = el.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) {
+        var trail = [];
+        for (var n = el.parentElement; n && n !== document.documentElement; n = n.parentElement) {
+          var cs = getComputedStyle(n);
+          trail.push(n.tagName + (n.id ? '#' + n.id : '') + ' transform=' + cs.transform + ' filter=' + cs.filter + ' willChange=' + cs.willChange + ' contain=' + cs.contain + ' overflow=' + cs.overflow);
+        }
+        console.warn('[CP] Setup wizard: STUCK INVISIBLE after append. rect=', r, ' viewport=', window.innerWidth + 'x' + window.innerHeight, ' ancestor chain:\n  ' + trail.join('\n  '));
+      } else {
+        console.log('[CP] Setup wizard: visible on screen, rect=', { x: r.left, y: r.top, w: r.width, h: r.height });
+      }
+    }, 200);
   }
 
   // --- Main render (full wizard shell) ---
