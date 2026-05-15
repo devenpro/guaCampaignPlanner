@@ -1,6 +1,6 @@
-/* Campaign Planner v1.0.6 · built 2026-05-15T05:51:34.179Z · 81 source files (see src/) */
-window.CP_VERSION = "1.0.6";
-window.CP_BUILD_TIME = "2026-05-15T05:51:34.179Z";
+/* Campaign Planner v1.0.7 · built 2026-05-15T06:19:06.099Z · 81 source files (see src/) */
+window.CP_VERSION = "1.0.7";
+window.CP_BUILD_TIME = "2026-05-15T06:19:06.099Z";
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
