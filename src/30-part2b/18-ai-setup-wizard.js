@@ -31,29 +31,48 @@
     return lines.join('\n') + '\n';
   }
 
-  function _swBeginAI(state, n) {
+  // The "key" passed in is a string label (personas, painpoints, messages,
+  // stylesFormats, campaignIdeas). It's used both for the generation-done
+  // flag and the lastGeneratedAt timestamp.
+  function _swBeginAI(state, key) {
     state.aiLoading   = true;
     state.aiActionId  = 'sw-ai-config';
     state.aiStartedAt = Date.now();
     state.aiError     = '';
-    state.stepGenerated[n] = false;
+    state.stepGenerated[key] = false;
   }
 
-  function _swEndAISuccess(state, n) {
+  function _swEndAISuccess(state, key) {
     state.aiLoading  = false;
     state.aiActionId = '';
     state.aiError    = '';
-    state.stepGenerated[n] = true;
+    state.stepGenerated[key] = true;
     state.created = state.created || {};
     state.created.lastGeneratedAt = state.created.lastGeneratedAt || {};
-    state.created.lastGeneratedAt[n] = Date.now();
+    state.created.lastGeneratedAt[key] = Date.now();
   }
 
-  function _swEndAIError(state, n, err) {
+  function _swEndAIError(state, key, err) {
     state.aiLoading  = false;
     state.aiActionId = '';
     state.aiError    = String(err || 'AI generation failed').substring(0, 240);
-    state.stepGenerated[n] = true;
+    state.stepGenerated[key] = true;
+  }
+
+  // After a successful generation, in Full Auto mode we may chain to the
+  // next sub-stage (Stage 2: personas → painpoints) or schedule an auto-
+  // advance to the next stage. These helpers live on Part 2A; this lets
+  // Part 2B fire them without taking a direct reference.
+  function _swSignalGenerated(key) {
+    if (!window._cpPart2A) return;
+    var P2A = window._cpPart2A;
+    if (key === 'personas' && typeof P2A._swAfterPersonasGenerated === 'function') {
+      P2A._swAfterPersonasGenerated();
+    } else if (key === 'painpoints' && typeof P2A._swAfterPainPointsGenerated === 'function') {
+      P2A._swAfterPainPointsGenerated();
+    } else if (typeof P2A._swAfterStageGenerated === 'function') {
+      P2A._swAfterStageGenerated();
+    }
   }
 
   // ----- 1. Personas -----
@@ -64,7 +83,7 @@
     if (state.aiLoading) return;
     if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — check Settings → AI.'; _swRefresh(); return; }
 
-    _swBeginAI(state, 3);
+    _swBeginAI(state, 'personas');
     _swRefresh();
 
     var ws    = state.workspace || {};
@@ -109,10 +128,11 @@
           };
         });
       state.personas = clean;
-      _swEndAISuccess(state, 3);
+      _swEndAISuccess(state, 'personas');
       _swRefresh();
+      _swSignalGenerated('personas');
     }, function(err) {
-      _swEndAIError(state, 3, err);
+      _swEndAIError(state, 'personas', err);
       _swRefresh();
     }, 'sw-ai-config', BrandService.getSystemPrompt('persona'), parseJSON);
   }
@@ -127,12 +147,12 @@
 
     var selPersonas = (state.personas || []).filter(function(p) { return p._selected; });
     if (!selPersonas.length) {
-      state.aiError = 'No personas selected. Go back to Step 3 and select at least one.';
+      state.aiError = 'No personas selected yet. Select at least one persona above before generating pain points.';
       _swRefresh();
       return;
     }
 
-    _swBeginAI(state, 4);
+    _swBeginAI(state, 'painpoints');
     _swRefresh();
 
     var ws    = state.workspace || {};
@@ -177,10 +197,11 @@
           };
         });
       state.pain_points = clean;
-      _swEndAISuccess(state, 4);
+      _swEndAISuccess(state, 'painpoints');
       _swRefresh();
+      _swSignalGenerated('painpoints');
     }, function(err) {
-      _swEndAIError(state, 4, err);
+      _swEndAIError(state, 'painpoints', err);
       _swRefresh();
     }, 'sw-ai-config', BrandService.getSystemPrompt('research'), parseJSON);
   }
@@ -193,7 +214,7 @@
     if (state.aiLoading) return;
     if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — check Settings → AI.'; _swRefresh(); return; }
 
-    _swBeginAI(state, 5);
+    _swBeginAI(state, 'messages');
     _swRefresh();
 
     var ws            = state.workspace || {};
@@ -241,10 +262,11 @@
           };
         });
       state.messages = clean;
-      _swEndAISuccess(state, 5);
+      _swEndAISuccess(state, 'messages');
       _swRefresh();
+      _swSignalGenerated('messages');
     }, function(err) {
-      _swEndAIError(state, 5, err);
+      _swEndAIError(state, 'messages', err);
       _swRefresh();
     }, 'sw-ai-config', BrandService.getSystemPrompt('content'), parseJSON);
   }
@@ -257,7 +279,7 @@
     if (state.aiLoading) return;
     if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — check Settings → AI.'; _swRefresh(); return; }
 
-    _swBeginAI(state, 6);
+    _swBeginAI(state, 'stylesFormats');
     _swRefresh();
 
     var ws    = state.workspace || {};
@@ -293,21 +315,21 @@
           var cat = f.category && allowedCats[f.category] ? f.category : '';
           return { name: String(f.name).trim(), description: String(f.description).trim(), category: cat, _selected: true };
         });
-      _swEndAISuccess(state, 6);
+      _swEndAISuccess(state, 'stylesFormats');
       _swRefresh();
+      _swSignalGenerated('stylesFormats');
     }, function(err) {
-      _swEndAIError(state, 6, err);
+      _swEndAIError(state, 'stylesFormats', err);
       _swRefresh();
     }, 'sw-ai-config', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
-  // ----- 5. Campaign Ideas (Step 7) -----
+  // ----- 5. Campaign Ideas (Stage 5) -----
   //
-  // The setup wizard's Step 7 produces a list of campaign IDEAS (just
-  // name + objective + brief + target persona + message references).
-  // Each idea becomes a draft campaign_v2 on launch — Ad Sets and Ads
-  // are built later by the per-campaign wizard from the campaign
-  // workspace.
+  // Stage 5 produces a list of campaign IDEAS (just name + objective +
+  // brief + target persona + message references). Each idea becomes a draft
+  // campaign_v2 on launch — Ad Sets and Ads are built later by the
+  // per-campaign wizard from the campaign workspace.
 
   function swAIGenerateCampaignIdeas() {
     var state = _swState();
@@ -315,7 +337,7 @@
     if (state.aiLoading) return;
     if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — check Settings → AI.'; _swRefresh(); return; }
 
-    _swBeginAI(state, 7);
+    _swBeginAI(state, 'campaignIdeas');
     _swRefresh();
 
     var ws            = state.workspace || {};
@@ -325,7 +347,7 @@
     var extra         = state._campaignIdeasContext || '';
 
     if (!selPersonas.length) {
-      _swEndAIError(state, 7, 'No personas selected. Go back to Step 3.');
+      _swEndAIError(state, 'campaignIdeas', 'No personas selected. Go back to Stage 2 and select at least one.');
       _swRefresh();
       return;
     }
@@ -373,7 +395,7 @@
 
     callAIWithRetry(prompt, function(parsed) {
       if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.ideas)) {
-        _swEndAIError(state, 7, 'AI returned an invalid response. Try regenerating.');
+        _swEndAIError(state, 'campaignIdeas', 'AI returned an invalid response. Try regenerating.');
         _swRefresh();
         return;
       }
@@ -397,10 +419,11 @@
         };
       });
 
-      _swEndAISuccess(state, 7);
+      _swEndAISuccess(state, 'campaignIdeas');
       _swRefresh();
+      _swSignalGenerated('campaignIdeas');
     }, function(err) {
-      _swEndAIError(state, 7, err);
+      _swEndAIError(state, 'campaignIdeas', err);
       _swRefresh();
     }, 'sw-ai-config', BrandService.getSystemPrompt('research'), parseJSON);
   }

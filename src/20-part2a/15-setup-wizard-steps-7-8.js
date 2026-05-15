@@ -1,31 +1,30 @@
   // ------------------------------------------------------------------
-  // SECTION 9.4d: SETUP WIZARD — STEP RENDERERS (Steps 7 & 8)
+  // SECTION 9.4d: SETUP WIZARD — STAGE 5 (Campaign Ideas) + STAGE 6 (Review)
   // ------------------------------------------------------------------
   //
-  // Step 7 is "Campaign Ideas" — a list of named campaign ideas the wizard
+  // Stage 5 is "Campaign Ideas" — a list of named campaign ideas the wizard
   // proposes. The user picks which to create. Each idea becomes a draft
   // campaign_v2 on launch. Ad Sets + Ads are built later from inside the
-  // per-campaign workspace (the "Run AI setup" CTA).
+  // per-campaign workspace (the "Run AI setup" CTA there).
   //
-  // Step 8 is the final review and launch.
+  // Stage 6 is the final review and launch.
 
-  // --- Step 7: Campaign Ideas ---
+  // --- Stage 5: Campaign Ideas ---
 
-  function renderSWStep7() {
+  function renderSWStep5() {
     var ws        = setupWizardState;
-    var generated = ws.stepGenerated[7];
+    var generated = ws.stepGenerated.campaignIdeas;
     var aiLoading = ws.aiLoading;
     var ideas     = ws.campaign_ideas || [];
 
     var html = _buildSWStepHeader(
       'Campaign Ideas',
-      'AI proposes a few campaign ideas based on your library. Pick which ones to start. Each idea becomes a draft Campaign you can build out (Ad Sets + Ads) from its workspace.',
+      'AI proposes a few campaign ideas based on your library. Pick which ones to start. Each becomes a draft Campaign you can build out (Ad Sets + Ads) from its workspace.',
       'c'
     );
 
-    html += _swAIErrorBanner(7);
+    html += _swAIErrorBanner(5);
 
-    // Generation bar — direction textarea + generate button
     html += '<div class="cp-sw-gen-bar">';
     html += '<textarea class="cp-textarea" id="swCampaignIdeasContext" rows="2"';
     html += ' placeholder="Optional: direction for the ideas (e.g. \'lean into the &quot;ship in days not weeks&quot; angle, mix lead-gen and brand campaigns, target enterprise + startup segments\')...">';
@@ -55,17 +54,15 @@
       return html;
     }
 
-    // Counter
     var selCount = ideas.filter(function(c) { return c._selected; }).length;
     html += '<div class="cp-sw-card-bottom">';
     html += '<span class="cp-sw-sel-count' + (selCount > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
     html += 'Will create ' + selCount + ' Campaign' + (selCount !== 1 ? 's' : '');
     html += '</span>';
-    html += _swLastGeneratedLabel(7);
+    html += _swLastGeneratedLabel('campaignIdeas');
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="sw-idea-add-manual" style="margin-left:auto">' + icon('plus') + ' Add idea</button>';
     html += '</div>';
 
-    // List of idea cards
     html += '<div class="cp-sw-ideas">';
     for (var i = 0; i < ideas.length; i++) {
       html += _buildSWCampaignIdeaCard(ideas[i], i, selPersonas, selMessages);
@@ -98,7 +95,6 @@
 
     var html = '<div class="cp-sw-tree-set' + (selected ? ' cp-sw-tree-set--selected' : '') + '">';
 
-    // Header row: toggle, editable name, persona/objective tags, expand
     html += '<div class="cp-sw-tree-set-header">';
     html += '<button class="cp-sw-tree-check' + (selected ? ' cp-sw-tree-check--on' : '') + '" data-action="sw-idea-toggle" data-idea-idx="' + idx + '" aria-label="Toggle Campaign idea">';
     html += selected ? icon('check') : '';
@@ -116,7 +112,6 @@
     html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="sw-idea-delete" data-idea-idx="' + idx + '" title="Remove idea" style="margin-left:var(--cp-space-1)">' + icon('trash') + '</button>';
     html += '</div>';
 
-    // Expanded editor
     if (expanded) {
       html += '<div class="cp-sw-tree-set-brief">';
 
@@ -168,9 +163,9 @@
     return html;
   }
 
-  // --- Step 8: Review & Launch ---
+  // --- Stage 6: Review & Launch ---
 
-  function renderSWStep8() {
+  function renderSWStep6() {
     var ws         = setupWizardState;
     var selPersonas = (ws.personas    || []).filter(function(p) { return p._selected; });
     var selPPs      = (ws.pain_points || []).filter(function(p) { return p._selected; });
@@ -193,7 +188,6 @@
       return html;
     }
 
-    // Summary grid
     html += '<div class="cp-sw-review-grid">';
     html += _buildSWReviewBox('users',         'Personas',    selPersonas.length, selPersonas.map(function(p) { return p.name; }));
     html += _buildSWReviewBox('crosshair',     'Pain Points', selPPs.length,      selPPs.map(function(p) { return p.pain_point; }));
@@ -203,14 +197,12 @@
     html += _buildSWReviewBox('bullhorn',      'Campaigns',   selIdeas.length,    selIdeas.map(function(c) { return c.name; }));
     html += '</div>';
 
-    // Per-campaign-idea preview
     if (selIdeas.length) {
       html += '<div class="cp-sw-info-box cp-sw-info-box--success" style="margin-top:var(--cp-space-4)">';
       html += icon('bullhorn') + ' <strong>' + selIdeas.length + ' Campaign idea' + (selIdeas.length !== 1 ? 's' : '') + '</strong> will be created as drafts. You can build out Ad Sets and Ads from each campaign\'s workspace using the per-campaign wizard.';
       html += '</div>';
     }
 
-    // Launch note
     html += '<p class="cp-sw-finalize-note" style="margin-top:var(--cp-space-5);text-align:center">';
     html += 'Hit <strong>Launch Workspace</strong> below to create your library and ' + selIdeas.length + ' Campaign' + (selIdeas.length !== 1 ? 's' : '') + '.';
     html += '</p>';

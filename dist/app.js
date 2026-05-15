@@ -1,6 +1,6 @@
-/* Campaign Planner v1.0.4 · built 2026-05-14T18:28:37.548Z · 81 source files (see src/) */
+/* Campaign Planner v1.0.4 · built 2026-05-15T03:46:49.273Z · 81 source files (see src/) */
 window.CP_VERSION = "1.0.4";
-window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
+window.CP_BUILD_TIME = "2026-05-15T03:46:49.273Z";
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -666,6 +666,17 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       S.initialized = true;
       S._initializing = false;
       console.log('[CP] Part 1 initialized — ' + S.totalAds + ' ads, ' + S.totalCampaignsV2 + ' campaigns, ' + S.totalPersonas + ' personas, ' + S.totalMessages + ' messages, user: ' + (S.user.name || 'unknown'));
+
+      // Auto-launch the Setup Wizard on an empty workspace. Part 2A owns the
+      // wizard; defer one tick so the harness finishes wiring up renderers
+      // before the modal opens (the wizard's AI buttons depend on _cpRenderers).
+      setTimeout(function() {
+        var P2A = window._cpPart2A;
+        if (P2A && typeof P2A.maybeAutoLaunchSetupWizard === 'function') {
+          try { P2A.maybeAutoLaunchSetupWizard(); }
+          catch(e2) { console.warn('[CP] Auto-launch setup wizard failed:', e2); }
+        }
+      }, 0);
     } catch(e) {
       console.error('[CP] Part 1 init CRASHED:', e.message, e.stack);
       S._initializing = false;
@@ -8395,6 +8406,18 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
   // ============================================================
   // SECTION 9.4: SETUP WIZARD (First-Run Guided Setup)
   // ============================================================
+  //
+  // Six-stage flow:
+  //   1. Brand & AI   — brand context + AI provider/model + custom instructions
+  //                     + mode picker (Manual vs Full Auto)
+  //   2. Personas & Pain Points (merged)
+  //   3. Messages
+  //   4. Styles & Formats
+  //   5. Campaign Ideas
+  //   6. Review & Launch
+  //
+  // Auto-launches on empty state. The close (X) button is gated and only
+  // appears after Stage 1 is complete (AI configured + mode chosen).
 
   // --- State ---
   // Singleton object. NEVER reassign — always mutate via _swReplaceState() so the
@@ -8402,21 +8425,26 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
   // Part 2B's AI generators (which read it as a snapshot).
   var setupWizardState = {};
 
-  var SW_STEPS = [
-    { num: 1, label: 'Workspace',        sublabel: 'Brand & product',       phase: 'a', icon: 'building' },
-    { num: 2, label: 'AI Setup',         sublabel: 'Configure provider',    phase: 'a', icon: 'robot' },
-    { num: 3, label: 'Personas',         sublabel: 'Target audiences',      phase: 'b', icon: 'users' },
-    { num: 4, label: 'Pain Points',      sublabel: 'Audience challenges',   phase: 'b', icon: 'bolt' },
-    { num: 5, label: 'Messages',         sublabel: 'Ad angles & hooks',     phase: 'b', icon: 'comment-dots' },
-    { num: 6, label: 'Styles & Formats', sublabel: 'Creative approach',     phase: 'b', icon: 'palette' },
-    { num: 7, label: 'Campaign Ideas',   sublabel: 'Pick campaigns to plan', phase: 'c', icon: 'lightbulb' },
-    { num: 8, label: 'Review',           sublabel: 'Launch your workspace', phase: 'c', icon: 'rocket' }
+  var SW_STAGES = [
+    { num: 1, label: 'Brand & AI',           sublabel: 'Context + provider',     phase: 'a', icon: 'sparkles',     genKey: null },
+    { num: 2, label: 'Personas & Pain',      sublabel: 'Who & their challenges', phase: 'b', icon: 'users',        genKey: 'personas' },
+    { num: 3, label: 'Messages',             sublabel: 'Ad angles & hooks',      phase: 'b', icon: 'comment-dots', genKey: 'messages' },
+    { num: 4, label: 'Styles & Formats',     sublabel: 'Creative approach',      phase: 'b', icon: 'palette',      genKey: 'stylesFormats' },
+    { num: 5, label: 'Campaign Ideas',       sublabel: 'Pick campaigns to plan', phase: 'c', icon: 'lightbulb',    genKey: 'campaignIdeas' },
+    { num: 6, label: 'Review',               sublabel: 'Launch your workspace',  phase: 'c', icon: 'rocket',       genKey: null }
   ];
+  var SW_STAGE_COUNT = SW_STAGES.length;
 
-  var SW_PHASE_LABELS = { a: 'Phase A — Foundation', b: 'Phase B — Library', c: 'Phase C — Campaigns' };
+  var SW_PHASE_LABELS = { a: 'Foundation', b: 'Library', c: 'Campaigns' };
+
+  // Auto-advance delay (ms) shown to the user as a result preview between
+  // stages in Full Auto mode. Long enough to read the headline, short enough
+  // to feel like a chained run. User can hit Pause to freeze.
+  var SW_AUTO_ADVANCE_MS = 2500;
 
   // Volatile keys excluded from session persistence (re-derived each run)
-  var SW_VOLATILE_KEYS = ['aiLoading', 'aiActionId', 'aiStartedAt', 'aiError'];
+  var SW_VOLATILE_KEYS = ['aiLoading', 'aiActionId', 'aiStartedAt', 'aiError',
+                          '_autoAdvanceTimer', '_autoAdvanceUntil', 'paused'];
 
   // --- State persistence (session storage) ---
   function swSaveSession() {
@@ -8435,6 +8463,7 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
           // Merge over fresh defaults so older sessions get any new fields
           var merged = $.extend(true, _swFreshState(), parsed);
           merged.aiLoading = false; merged.aiActionId = ''; merged.aiStartedAt = 0;
+          merged.paused = false; merged._autoAdvanceTimer = null;
           return merged;
         }
       }
@@ -8459,7 +8488,7 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     return obj == null ? '' : obj;
   }
 
-  // --- Collect all data-sw-field inputs from current step ---
+  // --- Collect all data-sw-field inputs from current stage ---
   function swCollectFields() {
     $('.cp-sw-content-inner [data-sw-field]').each(function() {
       var path = $(this).data('sw-field');
@@ -8467,8 +8496,8 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       var val = $(this).is(':checkbox') ? $(this).is(':checked') : $(this).val();
       swSetPath(path, val || '');
     });
-    // Step 2: capture AI picker provider/model (rendered by LLMService, no data-sw-field)
-    if (setupWizardState.step === 2) {
+    // Stage 1: capture AI picker provider/model (rendered by LLMService, no data-sw-field)
+    if (setupWizardState.step === 1) {
       var $prov = $('.cp-ai-provider-select[data-action-id="sw-ai-config"]');
       var $mod  = $('.cp-ai-model-select[data-action-id="sw-ai-config"]');
       if ($prov.length) setupWizardState.aiConfig.provider = $prov.val();
@@ -8491,22 +8520,30 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
   function _swFreshState() {
     return {
       step: 1,
+      mode: '',  // '' until user picks; then 'manual' or 'auto'
+      paused: false,
+      _autoAdvanceTimer: null,
+      _autoAdvanceUntil: 0,
       aiLoading: false, aiActionId: '', aiStartedAt: 0, aiError: '',
-      stepGenerated: {}, stepSkipped: {},
+      // Generation tracking — string keys per stage (stage 2 has two: personas, painpoints)
+      stepGenerated: {},   // { personas, painpoints, messages, stylesFormats, campaignIdeas }
+      stepSkipped: {},
       _expandedCards: {}, _ppActiveTab: 0,
+      // Pre-filled from brand context at wizard open (read-only display + AI hand-off)
+      brandContext: {},
       workspace: { name: '', description: '', product_name: '', objective: '',
                    brand_voice: '', target_audience: '', custom_instructions: '' },
       aiConfig: { provider: '', model: '', tested: false },
-      // Library entities — selected during steps 3-6
-      personas:    [],  // [{ name, description, demographics:{}, psychographics:{}, _selected }]
-      pain_points: [],  // [{ pain_point, solution, category, _persona_idx, _selected }]
-      messages:    [],  // [{ name, description, theme, hook_type, funnel_stage, body, _selected }]
-      styles:      [],  // [{ name, description, _selected }]
-      formats:     [],  // [{ name, description, category, _selected }]
-      // Step 7 produces a list of named campaign ideas. Each idea becomes a
+      // Library entities — populated during stages 2-4
+      personas:    [],
+      pain_points: [],
+      messages:    [],
+      styles:      [],
+      formats:     [],
+      // Stage 5 produces a list of named campaign ideas. Each idea becomes a
       // draft campaign_v2 on launch. Ad Sets + Ads are built later by the
       // per-campaign wizard from inside the campaign workspace.
-      campaign_ideas: [],   // [{ name, objective, brief, persona_idx, message_idx_list, _selected }]
+      campaign_ideas: [],
       _campaignIdeasContext: '',
       created: {
         personaIds: [], painPointIds: [], messageIds: [],
@@ -8518,6 +8555,38 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     };
   }
 
+  // --- Pre-fill workspace fields from brand context when available ---
+  function _swPrefillFromBrand(state) {
+    if (!(S.brand && S.brand.configured)) return;
+    var core    = S.brand.core    || {};
+    var content = S.brand.content || {};
+    var ident   = S.brand.identity || {};
+    state.brandContext = {
+      name:           ident.name || core.brand_name || '',
+      tagline:        core.tagline || '',
+      voice:          core.brand_voice || content.writing_style || '',
+      audience:       core.audience || core.target_audience || '',
+      forbidden:      core.forbidden_words || '',
+      dos:            core.dos || '',
+      donts:          core.donts || '',
+      pillars:        (S.brand.video && S.brand.video.content_pillars) || '',
+      cta:            content.cta_style || ''
+    };
+    // Seed workspace fields the wizard uses for AI prompts. User can still edit.
+    if (!state.workspace.name && state.brandContext.name) {
+      state.workspace.name = state.brandContext.name + ' Campaigns';
+    }
+    if (!state.workspace.product_name && state.brandContext.name) {
+      state.workspace.product_name = state.brandContext.name;
+    }
+    if (!state.workspace.brand_voice && state.brandContext.voice) {
+      state.workspace.brand_voice = state.brandContext.voice;
+    }
+    if (!state.workspace.target_audience && state.brandContext.audience) {
+      state.workspace.target_audience = state.brandContext.audience;
+    }
+  }
+
   // --- Open wizard (entry point) ---
   function openSetupWizard(forceReset) {
     // Try to resume session unless forced reset
@@ -8527,7 +8596,7 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
         // Ask user to resume or restart
         openConfirmDialog({
           title: 'Resume Setup?',
-          message: 'You have an incomplete setup from a previous session (Step ' + saved.step + ' of 8). Would you like to continue where you left off?',
+          message: 'You have an incomplete setup from a previous session (Stage ' + saved.step + ' of ' + SW_STAGE_COUNT + '). Would you like to continue where you left off?',
           confirmLabel: 'Resume',
           cancelLabel: 'Start Over',
           onConfirm: function() { _swReplaceState(saved); _renderSetupWizardDOM(); },
@@ -8539,8 +8608,26 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     _initFreshWizard();
   }
 
+  // Auto-launch the wizard on an empty workspace. Returns true if launched.
+  // Caller (init) should also check S.meta.setup.setup_complete is falsey.
+  function maybeAutoLaunchSetupWizard() {
+    if (!S || !S.meta || !S.data) return false;
+    var setup = S.meta.setup || {};
+    if (setup.setup_complete) return false;
+    var hasPersonas  = Object.keys(S.data.personas       || {}).length > 0;
+    var hasMessages  = Object.keys(S.data.messages       || {}).length > 0;
+    var hasCampaigns = Object.keys(S.data.campaigns_v2   || {}).length > 0;
+    if (hasPersonas || hasMessages || hasCampaigns) return false;
+    if ($('.cp-setup-wizard').length) return false;  // already open
+    console.log('[CP] Empty workspace detected — auto-launching Setup Wizard');
+    openSetupWizard(false);
+    return true;
+  }
+
   function _initFreshWizard() {
-    _swReplaceState(_swFreshState());
+    var fresh = _swFreshState();
+    _swPrefillFromBrand(fresh);
+    _swReplaceState(fresh);
     _renderSetupWizardDOM();
   }
 
@@ -8549,13 +8636,15 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     $('.cp-setup-wizard').remove();
     // Build and append overlay to #cpApp with ARIA dialog role
     var $wizard = $('<div class="cp-setup-wizard" id="cpSetupWizard" role="dialog" aria-modal="true" aria-label="Campaign Planner Setup Wizard"></div>');
-    $('#cpApp').append($wizard);
+    var $app = $('#cpApp');
+    if ($app.length) $app.append($wizard); else $('body').append($wizard);
     renderSetupWizard();
   }
 
   // --- Main render (full wizard shell) ---
   function renderSetupWizard() {
     var html = _buildSWProgressBar();
+    html += _buildSWCloseButton();
     html += '<div class="cp-sw-layout">';
     html += _buildSWRail();
     html += _buildSWContentArea();
@@ -8575,11 +8664,32 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     $('#cpSetupWizard .cp-sw-rail-steps').html(_buildSWRailSteps());
     $('#cpSetupWizard .cp-sw-content-inner').html(_buildSWStepContent());
     $('#cpSetupWizard .cp-sw-footer').html(_buildSWFooter());
-    // Focus first focusable element in new step
+    // Re-render close button to reflect gating state
+    var $close = $('#cpSetupWizard .cp-sw-close');
+    if (_swStage1Complete() && !$close.length) {
+      $('#cpSetupWizard').prepend(_buildSWCloseButton());
+    } else if (!_swStage1Complete() && $close.length) {
+      $close.remove();
+    }
+    // Focus first focusable element in new stage
     setTimeout(function() {
       var $first = $('#cpSetupWizard .cp-sw-content-inner input:not([type=hidden]), #cpSetupWizard .cp-sw-content-inner textarea, #cpSetupWizard .cp-sw-content-inner select');
       if ($first.length) $first.first().focus();
     }, 50);
+  }
+
+  // True when AI provider/model is selected and a mode has been chosen.
+  // Gates the close button — until then, the user must engage with Stage 1.
+  // Escape hatch: if no AI providers are configured at all, the user has
+  // nothing to pick here, so allow close so they can go set up Settings → AI.
+  function _swStage1Complete() {
+    var cfg = setupWizardState.aiConfig || {};
+    var hasAI = !!(cfg.provider && cfg.model);
+    var hasMode = setupWizardState.mode === 'auto' || setupWizardState.mode === 'manual';
+    var pastStage1 = (setupWizardState.step || 1) > 1;
+    var p2b = window._cpPart2B;
+    var aiUnavailable = !(p2b && p2b.LLMService && p2b.LLMService.isConfigured());
+    return (hasAI && hasMode) || pastStage1 || aiUnavailable;
   }
 
   // --- Build: top progress bar ---
@@ -8587,7 +8697,13 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     return '<div class="cp-sw-progress-bar"><div class="cp-sw-progress-fill" style="width:' + _swProgressPct() + '%"></div></div>';
   }
   function _swProgressPct() {
-    return Math.round(((setupWizardState.step - 1) / 8) * 100);
+    return Math.round(((setupWizardState.step - 1) / SW_STAGE_COUNT) * 100);
+  }
+
+  // --- Build: gated close button (appears only after Stage 1 complete) ---
+  function _buildSWCloseButton() {
+    if (!_swStage1Complete()) return '';
+    return '<button class="cp-sw-close" data-action="sw-close" aria-label="Close setup wizard">' + icon('x') + '</button>';
   }
 
   // --- Build: left rail ---
@@ -8596,6 +8712,11 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     html += '<div class="cp-sw-rail-header">';
     html += '<div class="cp-sw-rail-logo">Campaign<span class="cp-sw-rail-logo-accent">Planner</span></div>';
     html += '<div class="cp-sw-rail-subtitle">Setup Wizard</div>';
+    if (setupWizardState.mode) {
+      var modeLabel = setupWizardState.mode === 'auto' ? 'Full Auto' : 'Manual';
+      var modeCls = setupWizardState.mode === 'auto' ? ' cp-sw-rail-mode--auto' : '';
+      html += '<div class="cp-sw-rail-mode' + modeCls + '">' + icon(setupWizardState.mode === 'auto' ? 'zap' : 'hand') + ' ' + esc(modeLabel) + ' mode</div>';
+    }
     html += '</div>';
     html += '<div class="cp-sw-rail-steps">' + _buildSWRailSteps() + '</div>';
     // Footer — brand connection status
@@ -8613,20 +8734,21 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
   function _buildSWRailSteps() {
     var ws          = setupWizardState;
     var currentStep = ws.step;
-    // Count map: how many items are selected per step (for done badge)
-    var step7Count = (ws.campaign_ideas || []).filter(function(c) { return c._selected; }).length;
-    var stepCounts = {
-      3: (ws.personas    || []).filter(function(p) { return p._selected; }).length,
-      4: (ws.pain_points || []).filter(function(p) { return p._selected; }).length,
-      5: (ws.messages    || []).filter(function(m) { return m._selected; }).length,
-      6: (ws.styles      || []).filter(function(s) { return s._selected; }).length +
-         (ws.formats     || []).filter(function(f) { return f._selected; }).length,
-      7: step7Count
+    // Count map: how many items are selected per stage (for done badge)
+    var stage2Count = (ws.personas    || []).filter(function(p) { return p._selected; }).length +
+                      (ws.pain_points || []).filter(function(p) { return p._selected; }).length;
+    var stage5Count = (ws.campaign_ideas || []).filter(function(c) { return c._selected; }).length;
+    var stageCounts = {
+      2: stage2Count,
+      3: (ws.messages || []).filter(function(m) { return m._selected; }).length,
+      4: (ws.styles   || []).filter(function(s) { return s._selected; }).length +
+         (ws.formats  || []).filter(function(f) { return f._selected; }).length,
+      5: stage5Count
     };
     var html = '';
     var lastPhase = '';
-    for (var i = 0; i < SW_STEPS.length; i++) {
-      var st = SW_STEPS[i];
+    for (var i = 0; i < SW_STAGES.length; i++) {
+      var st = SW_STAGES[i];
       if (st.phase !== lastPhase) {
         html += '<div class="cp-sw-phase-label">' + esc(SW_PHASE_LABELS[st.phase]) + '</div>';
         lastPhase = st.phase;
@@ -8653,16 +8775,16 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       if (isDone) html += icon('check');
       else html += st.num;
       html += '</div>';
-      if (i < SW_STEPS.length - 1) {
+      if (i < SW_STAGES.length - 1) {
         html += '<div class="cp-sw-step-connector' + (isDone ? ' cp-sw-step-connector--done' : '') + '"></div>';
       }
       html += '</div>';
 
       html += '<div class="cp-sw-step-text">';
       html += '<div class="cp-sw-step-label">' + esc(st.label);
-      // Selection count badge for done steps with counted items
-      if (isDone && stepCounts[st.num] > 0) {
-        html += '<span class="cp-sw-step-badge">' + stepCounts[st.num] + '</span>';
+      // Selection count badge for done stages with counted items
+      if (isDone && stageCounts[st.num] > 0) {
+        html += '<span class="cp-sw-step-badge">' + stageCounts[st.num] + '</span>';
       }
       html += '</div>';
       html += '<div class="cp-sw-step-sublabel">' + esc(st.sublabel) + '</div>';
@@ -8683,33 +8805,30 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     return html;
   }
 
-  // --- Step content router ---
+  // --- Stage content router ---
   function _buildSWStepContent() {
     var n = setupWizardState.step;
-    // Delegate to registered step renderers (added in later phases)
     if (typeof renderSWStep1 === 'function' && n === 1) return renderSWStep1();
     if (typeof renderSWStep2 === 'function' && n === 2) return renderSWStep2();
     if (typeof renderSWStep3 === 'function' && n === 3) return renderSWStep3();
     if (typeof renderSWStep4 === 'function' && n === 4) return renderSWStep4();
     if (typeof renderSWStep5 === 'function' && n === 5) return renderSWStep5();
     if (typeof renderSWStep6 === 'function' && n === 6) return renderSWStep6();
-    if (typeof renderSWStep7 === 'function' && n === 7) return renderSWStep7();
-    if (typeof renderSWStep8 === 'function' && n === 8) return renderSWStep8();
     return _buildSWStepPlaceholder(n);
   }
 
   function _buildSWStepPlaceholder(n) {
-    var st = SW_STEPS[n - 1] || {};
+    var st = SW_STAGES[n - 1] || {};
     var phaseKey = st.phase || 'a';
-    var html = _buildSWStepHeader(st.label || 'Step ' + n, 'This step is coming soon.', phaseKey);
+    var html = _buildSWStepHeader(st.label || 'Stage ' + n, 'This stage is coming soon.', phaseKey);
     html += '<div class="cp-sw-placeholder-body">';
     html += '<div class="cp-sw-placeholder-icon">' + icon(st.icon || 'circle') + '</div>';
-    html += '<p>' + esc('Step ' + n + ': ' + (st.label || '')) + ' — content will be added in a later phase.</p>';
+    html += '<p>' + esc('Stage ' + n + ': ' + (st.label || '')) + ' — content will be added in a later phase.</p>';
     html += '</div>';
     return html;
   }
 
-  // --- Reusable step header builder ---
+  // --- Reusable stage header builder ---
   function _buildSWStepHeader(title, subtitle, phase) {
     var phaseCls = { a: 'cp-sw-phase-badge--a', b: 'cp-sw-phase-badge--b', c: 'cp-sw-phase-badge--c' };
     var html = '<div class="cp-sw-step-header">';
@@ -8724,8 +8843,27 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
   function _buildSWFooter() {
     var n = setupWizardState.step;
     var isFirst = n === 1;
-    var isLast  = n === 8;
+    var isLast  = n === SW_STAGE_COUNT;
     var html = '';
+
+    // Auto-advance preview bar takes over the whole footer in Full Auto mode
+    // between stages — the user sees "Auto-advancing… Pause".
+    if (setupWizardState._autoAdvanceTimer && !setupWizardState.paused) {
+      html += '<div class="cp-sw-footer-auto">';
+      html += '<div class="cp-sw-footer-auto-msg">' + icon('zap') + ' Reviewing this stage — auto-advancing in a moment…</div>';
+      html += '<button class="cp-btn cp-btn-outline" data-action="sw-pause-auto">' + icon('pause') + ' Pause</button>';
+      html += '</div>';
+      return html;
+    }
+    if (setupWizardState.paused) {
+      html += '<div class="cp-sw-footer-auto cp-sw-footer-auto--paused">';
+      html += '<div class="cp-sw-footer-auto-msg">' + icon('pause') + ' Auto run paused. Edit anything you want, then resume.</div>';
+      html += '<button class="cp-btn cp-btn-outline" data-action="sw-resume-auto">' + icon('zap') + ' Resume auto</button>';
+      if (!isLast) {
+        html += '<button class="cp-btn cp-btn-primary" data-action="sw-next">Continue manually ' + icon('arrow-right') + '</button>';
+      }
+      return html + '</div>';
+    }
 
     // Left: Back button
     html += '<div class="cp-sw-footer-left">';
@@ -8736,18 +8874,22 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     }
     html += '</div>';
 
-    // Center: step counter + skip link
+    // Center: stage counter + skip link
     html += '<div class="cp-sw-footer-center">';
-    html += '<div class="cp-sw-step-counter">Step ' + n + ' of 8</div>';
-    if (!isFirst && !isLast && n !== 1) {
-      html += '<button class="cp-sw-skip-link" data-action="sw-skip">Skip this step</button>';
+    html += '<div class="cp-sw-step-counter">Stage ' + n + ' of ' + SW_STAGE_COUNT + '</div>';
+    if (!isFirst && !isLast) {
+      html += '<button class="cp-sw-skip-link" data-action="sw-skip">Skip this stage</button>';
     }
     html += '</div>';
 
-    // Right: Next / Launch button
+    // Right: Next / Launch button — except on Stage 1, where mode pickers replace it
     html += '<div class="cp-sw-footer-right">';
-    if (!isLast) {
-      html += '<button class="cp-btn cp-btn-primary" data-action="sw-next">Next ' + icon('arrow-right') + '</button>';
+    if (isFirst) {
+      // Stage 1 has its own mode-pick buttons inline. Hide footer-right.
+      html += '<span class="cp-sw-footer-hint">Pick a mode above to continue</span>';
+    } else if (!isLast) {
+      var label = setupWizardState.mode === 'auto' ? 'Approve & auto-continue' : 'Approve & continue';
+      html += '<button class="cp-btn cp-btn-primary" data-action="sw-next">' + esc(label) + ' ' + icon('arrow-right') + '</button>';
     } else {
       html += '<button class="cp-btn cp-btn-ai" data-action="sw-launch">' + icon('rocket') + ' Launch Workspace</button>';
     }
@@ -8762,30 +8904,35 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     if (n === 1) {
       if (!ws.workspace.name.trim())         return { valid: false, message: 'Please enter a workspace name to continue.' };
       if (!ws.workspace.product_name.trim()) return { valid: false, message: 'Please enter your product or service name.' };
+      if (!ws.aiConfig.provider || !ws.aiConfig.model) {
+        return { valid: false, message: 'Pick an AI provider and model to continue.' };
+      }
+      if (!ws.mode) {
+        return { valid: false, message: 'Choose Manual or Full Auto to start.' };
+      }
     }
-    if (n === 3) {
+    if (n === 2) {
       if (ws.personas.filter(function(p) { return p._selected; }).length === 0) {
         return { valid: false, message: 'Please select at least one persona to continue.' };
       }
     }
-    if (n === 5) {
+    if (n === 3) {
       if (ws.messages.filter(function(m) { return m._selected; }).length === 0) {
         return { valid: false, message: 'Please select at least one message to continue.' };
       }
     }
-    if (n === 6) {
+    if (n === 4) {
       var noStyle  = ws.styles.filter(function(s) { return s._selected; }).length === 0;
       var noFormat = ws.formats.filter(function(f) { return f._selected; }).length === 0;
       if (noStyle || noFormat) {
         return { valid: false, message: 'Please select at least one style and one format to continue.' };
       }
     }
-    if (n === 7) {
+    if (n === 5) {
       var ideas = (ws.campaign_ideas || []).filter(function(c) { return c._selected; });
       if (ideas.length === 0) {
         return { valid: false, message: 'Please select at least one campaign idea to continue.' };
       }
-      // Each selected idea needs at least a name
       for (var i = 0; i < ideas.length; i++) {
         if (!(ideas[i].name && ideas[i].name.trim())) {
           return { valid: false, message: 'Each selected campaign idea needs a name.' };
@@ -8803,22 +8950,98 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     setTimeout(function() { $msg.fadeOut(300, function() { $msg.remove(); }); }, 4000);
   }
 
+  // --- Cancel any pending auto-advance timer ---
+  function _swClearAutoAdvance() {
+    if (setupWizardState._autoAdvanceTimer) {
+      clearTimeout(setupWizardState._autoAdvanceTimer);
+      setupWizardState._autoAdvanceTimer = null;
+      setupWizardState._autoAdvanceUntil = 0;
+    }
+  }
+
+  // --- Schedule auto-advance in Full Auto mode (called after AI completes) ---
+  function _swScheduleAutoAdvance() {
+    if (setupWizardState.mode !== 'auto') return;
+    if (setupWizardState.paused) return;
+    if (setupWizardState.aiError) return;
+    if (setupWizardState.step >= SW_STAGE_COUNT) return;
+    _swClearAutoAdvance();
+    setupWizardState._autoAdvanceUntil = Date.now() + SW_AUTO_ADVANCE_MS;
+    setupWizardState._autoAdvanceTimer = setTimeout(function() {
+      setupWizardState._autoAdvanceTimer = null;
+      // Validate current stage before auto-advancing; on failure, fall back to manual.
+      var v = validateSWStep(setupWizardState.step);
+      if (!v.valid) {
+        setupWizardState.paused = true;
+        refreshSetupWizard();
+        return;
+      }
+      if (setupWizardState.step < SW_STAGE_COUNT) {
+        setupWizardState.step++;
+        refreshSetupWizard();
+        _swAutoTriggerAI(setupWizardState.step);
+      }
+    }, SW_AUTO_ADVANCE_MS);
+    // Refresh footer to show the auto-advance bar
+    $('#cpSetupWizard .cp-sw-footer').html(_buildSWFooter());
+  }
+
+  // --- Mode picker (Stage 1) ---
+  function swStartMode(mode) {
+    swCollectFields();
+    var v = validateSWStep(1);
+    if (!v.valid) { _showSWValidation(v.message); return; }
+    setupWizardState.mode = mode === 'auto' ? 'auto' : 'manual';
+    setupWizardState.paused = false;
+    // Persist AI picker selection so resolveSelection() picks it up downstream
+    var p2b = window._cpPart2B;
+    if (p2b && p2b.LLMService && setupWizardState.aiConfig.provider && setupWizardState.aiConfig.model) {
+      p2b.LLMService.savePreference('sw-ai-config', setupWizardState.aiConfig.provider, setupWizardState.aiConfig.model);
+    }
+    setupWizardState.step = 2;
+    refreshSetupWizard();
+    _swAutoTriggerAI(2);
+  }
+
+  // --- Pause / resume Full Auto run ---
+  function swPauseAutoRun() {
+    _swClearAutoAdvance();
+    setupWizardState.paused = true;
+    refreshSetupWizard();
+  }
+  function swResumeAutoRun() {
+    setupWizardState.paused = false;
+    refreshSetupWizard();
+    // If the current stage already has its generation done, resume the chain.
+    var st = SW_STAGES[setupWizardState.step - 1];
+    if (st && st.genKey) {
+      if (setupWizardState.stepGenerated[st.genKey]) {
+        _swScheduleAutoAdvance();
+      } else if (!setupWizardState.aiLoading) {
+        _swAutoTriggerAI(setupWizardState.step);
+      }
+    }
+  }
+
   // --- Navigation ---
   function swGoNext() {
     swCollectFields();
     var n = setupWizardState.step;
     var v = validateSWStep(n);
     if (!v.valid) { _showSWValidation(v.message); return; }
-    if (n < 8) {
+    _swClearAutoAdvance();
+    setupWizardState.paused = false;
+    if (n < SW_STAGE_COUNT) {
       setupWizardState.step = n + 1;
       refreshSetupWizard();
-      // Trigger AI auto-generation for the new step if applicable
       _swAutoTriggerAI(setupWizardState.step);
     }
   }
 
   function swGoBack() {
     swCollectFields();
+    _swClearAutoAdvance();
+    setupWizardState.paused = true;  // pause auto when going back manually
     if (setupWizardState.step > 1) {
       setupWizardState.step--;
       refreshSetupWizard();
@@ -8827,8 +9050,9 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
 
   function swSkipStep() {
     var n = setupWizardState.step;
+    _swClearAutoAdvance();
     setupWizardState.stepSkipped[n] = true;
-    if (n < 8) {
+    if (n < SW_STAGE_COUNT) {
       setupWizardState.step = n + 1;
       refreshSetupWizard();
       _swAutoTriggerAI(setupWizardState.step);
@@ -8836,41 +9060,86 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
   }
 
   function swGotoStep(n) {
-    // Only allow navigating to already-completed steps
+    // Only allow navigating to already-completed stages
     if (n < setupWizardState.step) {
       swCollectFields();
+      _swClearAutoAdvance();
+      setupWizardState.paused = true;
       setupWizardState.step = n;
       refreshSetupWizard();
     }
   }
 
-  // --- Auto-trigger AI for steps that support it ---
+  // --- Auto-trigger AI for stages that support it ---
   function _swAutoTriggerAI(n) {
     var R    = window._cpRenderers || {};
     var p2b  = window._cpPart2B;
     var cfg  = setupWizardState.aiConfig;
     var LLM  = p2b && p2b.LLMService;
 
-    // Persist wizard picker selection so Part 2B's resolveSelection finds it
     if (cfg.provider && cfg.model && LLM) {
       LLM.savePreference('sw-ai-config', cfg.provider, cfg.model);
     }
 
-    // Show inline error if AI isn't configured and the step needs it
-    if (n >= 3 && n <= 7 && LLM && !LLM.isConfigured()) {
-      setupWizardState.aiError = 'AI not configured. Go back to Step 2 (AI Setup) or configure providers in Settings → AI.';
+    if (n >= 2 && n <= 5 && LLM && !LLM.isConfigured()) {
+      setupWizardState.aiError = 'AI not configured. Go back to Stage 1 to pick a provider, or set one up in Settings → AI.';
       refreshSetupWizard();
       return;
     }
 
-    // Only generate once per wizard session per step (Regenerate flips the flag)
-    if (setupWizardState.stepGenerated[n]) return;
+    if (n === 2) {
+      // Stage 2 = personas + pain points. Generate personas first; pain points
+      // are auto-triggered once personas land (handled by the generator's
+      // success callback via _swAfterPersonasGenerated()).
+      if (!setupWizardState.stepGenerated.personas && typeof R.swAIGeneratePersonas === 'function') {
+        R.swAIGeneratePersonas();
+      } else if (setupWizardState.stepGenerated.personas && !setupWizardState.stepGenerated.painpoints && typeof R.swAIGeneratePainPoints === 'function') {
+        R.swAIGeneratePainPoints();
+      } else if (setupWizardState.stepGenerated.personas && setupWizardState.stepGenerated.painpoints) {
+        // Both done — schedule auto-advance if in auto mode
+        _swScheduleAutoAdvance();
+      }
+      return;
+    }
+    if (n === 3 && !setupWizardState.stepGenerated.messages && typeof R.swAIGenerateMessages === 'function') {
+      R.swAIGenerateMessages(); return;
+    }
+    if (n === 4 && !setupWizardState.stepGenerated.stylesFormats && typeof R.swAIGenerateStylesFormats === 'function') {
+      R.swAIGenerateStylesFormats(); return;
+    }
+    if (n === 5 && !setupWizardState.stepGenerated.campaignIdeas && typeof R.swAIGenerateCampaignIdeas === 'function') {
+      R.swAIGenerateCampaignIdeas(); return;
+    }
+    // Already generated — if in auto mode, advance
+    if (n >= 2 && n <= 5) _swScheduleAutoAdvance();
+  }
 
-    if (n === 3 && typeof R.swAIGeneratePersonas       === 'function') R.swAIGeneratePersonas();
-    if (n === 4 && typeof R.swAIGeneratePainPoints     === 'function') R.swAIGeneratePainPoints();
-    if (n === 5 && typeof R.swAIGenerateMessages       === 'function') R.swAIGenerateMessages();
-    if (n === 6 && typeof R.swAIGenerateStylesFormats  === 'function') R.swAIGenerateStylesFormats();
-    if (n === 7 && typeof R.swAIGenerateCampaignIdeas  === 'function') R.swAIGenerateCampaignIdeas();
+  // Called by the personas generator after a successful run. In Full Auto
+  // mode this chains immediately into pain points. In Manual mode the user
+  // sees the personas and may edit them before the wizard fires pain points.
+  function _swAfterPersonasGenerated() {
+    if (setupWizardState.step !== 2) return;
+    if (setupWizardState.mode === 'auto' && !setupWizardState.paused) {
+      var R = window._cpRenderers || {};
+      if (typeof R.swAIGeneratePainPoints === 'function') {
+        R.swAIGeneratePainPoints();
+      }
+    }
+  }
+
+  // Called by the pain-points generator after a successful run within Stage 2.
+  function _swAfterPainPointsGenerated() {
+    if (setupWizardState.step !== 2) return;
+    if (setupWizardState.mode === 'auto' && !setupWizardState.paused) {
+      _swScheduleAutoAdvance();
+    }
+  }
+
+  // Called by stages 3-5's generators after success — picks up auto-advance.
+  function _swAfterStageGenerated() {
+    if (setupWizardState.mode === 'auto' && !setupWizardState.paused) {
+      _swScheduleAutoAdvance();
+    }
   }
 
   // --- Cancel any in-flight wizard AI generation ---
@@ -8883,12 +9152,24 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     state.aiLoading = false;
     state.aiActionId = '';
     state.aiError = 'Generation cancelled.';
+    _swClearAutoAdvance();
+    state.paused = true;
     refreshSetupWizard();
   }
 
-  // --- Retry a step's AI generation ---
+  // --- Retry a stage's AI generation ---
   function swRetryStep(n) {
-    setupWizardState.stepGenerated[n] = false;
+    // n is the stage number; clear the relevant generation flag(s)
+    if (n === 2) {
+      setupWizardState.stepGenerated.personas = false;
+      setupWizardState.stepGenerated.painpoints = false;
+    } else if (n === 3) {
+      setupWizardState.stepGenerated.messages = false;
+    } else if (n === 4) {
+      setupWizardState.stepGenerated.stylesFormats = false;
+    } else if (n === 5) {
+      setupWizardState.stepGenerated.campaignIdeas = false;
+    }
     setupWizardState.aiError = '';
     refreshSetupWizard();
     _swAutoTriggerAI(n);
@@ -8912,41 +9193,80 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
 
 /* ===== src/20-part2a/12-setup-wizard-steps-1-2.js ===== */
   // ------------------------------------------------------------------
-  // SECTION 9.4a: SETUP WIZARD — STEP RENDERERS (Phase 2: Steps 1 & 2)
+  // SECTION 9.4a: SETUP WIZARD — STAGE 1 (Brand + AI + Mode picker)
   // ------------------------------------------------------------------
+  //
+  // Stage 1 is the single combined "Setup" stage:
+  //   - Brand context summary (read-only, pulled from .brand-data DOM)
+  //   - Workspace name + product + objective (editable)
+  //   - Custom AI instructions
+  //   - AI provider + model picker
+  //   - Two Start buttons: Full Auto vs Stage-by-Stage (Manual)
+  //
+  // Picking a mode validates the form, persists the AI selection, and jumps
+  // straight to Stage 2 (Personas & Pain Points) — kicking off the chain.
 
   function renderSWStep1() {
-    var ws  = setupWizardState.workspace;
+    var ws    = setupWizardState.workspace;
+    var bc    = setupWizardState.brandContext || {};
+    var cfg   = setupWizardState.aiConfig;
+    var p2b   = window._cpPart2B;
+    var aiOk  = p2b && p2b.LLMService && p2b.LLMService.isConfigured();
+    var brandOn = S && S.brand && S.brand.configured;
+
     var objMap = Constants.META_OBJECTIVES || {};
     var objectives = Object.keys(objMap).map(function(k) { return { id: k, name: objMap[k].label || k }; });
 
     var html = _buildSWStepHeader(
-      'Workspace Setup',
-      'Tell us about your brand and what you\'re advertising. This context shapes every AI output throughout the wizard.',
+      'Brand Context & AI Setup',
+      'We\'ll use your brand data plus the instructions below to generate every stage. Choose a mode at the bottom to start.',
       'a'
     );
 
     html += '<div class="cp-sw-form">';
 
-    // Workspace Name
+    // ---- Brand context summary card ----
+    html += '<section class="cp-sw-brand-card' + (brandOn ? '' : ' cp-sw-brand-card--empty') + '">';
+    html += '<header class="cp-sw-brand-card-header">';
+    html += '<span class="cp-sw-brand-card-icon">' + icon(brandOn ? 'link' : 'info') + '</span>';
+    html += '<div>';
+    html += '<div class="cp-sw-brand-card-title">' + (brandOn ? esc(bc.name || 'Connected brand') : 'No brand profile connected') + '</div>';
+    html += '<div class="cp-sw-brand-card-sub">' + (brandOn
+      ? 'Your brand context will be injected into every AI prompt automatically.'
+      : 'AI will use only the information you enter below.') + '</div>';
+    html += '</div></header>';
+    if (brandOn) {
+      html += '<dl class="cp-sw-brand-card-grid">';
+      if (bc.tagline)   html += '<dt>Tagline</dt><dd>' + esc(bc.tagline) + '</dd>';
+      if (bc.voice)     html += '<dt>Brand voice</dt><dd>' + esc(truncate(bc.voice, 180)) + '</dd>';
+      if (bc.audience)  html += '<dt>Audience</dt><dd>' + esc(truncate(bc.audience, 180)) + '</dd>';
+      if (bc.pillars)   html += '<dt>Content pillars</dt><dd>' + esc(truncate(bc.pillars, 180)) + '</dd>';
+      if (bc.dos)       html += '<dt>Do</dt><dd>' + esc(truncate(bc.dos, 180)) + '</dd>';
+      if (bc.donts)     html += '<dt>Don\'t</dt><dd>' + esc(truncate(bc.donts, 180)) + '</dd>';
+      if (bc.forbidden) html += '<dt>Forbidden</dt><dd>' + esc(truncate(bc.forbidden, 140)) + '</dd>';
+      if (bc.cta)       html += '<dt>CTA style</dt><dd>' + esc(truncate(bc.cta, 140)) + '</dd>';
+      html += '</dl>';
+    }
+    html += '</section>';
+
+    // ---- Workspace basics ----
+    html += '<section class="cp-sw-section">';
+    html += '<h3 class="cp-sw-section-title">Workspace basics</h3>';
+
     html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">Workspace Name <span class="cp-required">*</span></label>';
+    html += '<label class="cp-field-label">Workspace name <span class="cp-required">*</span></label>';
     html += '<input type="text" class="cp-input" data-sw-field="workspace.name"';
     html += ' placeholder="e.g., Brand Q2 2026 Campaigns" value="' + esc(ws.name || '') + '" autocomplete="off">';
-    html += '<p class="cp-field-hint">Names your Campaign Planner workspace — visible in the header.</p>';
     html += '</div>';
 
-    // Product / Service
     html += '<div class="cp-field">';
     html += '<label class="cp-field-label">Product / Service <span class="cp-required">*</span></label>';
     html += '<input type="text" class="cp-input" data-sw-field="workspace.product_name"';
     html += ' placeholder="What are you advertising?" value="' + esc(ws.product_name || '') + '" autocomplete="off">';
-    html += '<p class="cp-field-hint">Be specific — e.g., "SaaS project management tool for remote teams".</p>';
     html += '</div>';
 
-    // Primary Objective
     html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">Primary Campaign Objective</label>';
+    html += '<label class="cp-field-label">Primary campaign objective</label>';
     html += '<select class="cp-select" data-sw-field="workspace.objective">';
     html += '<option value="">Select objective...</option>';
     for (var i = 0; i < objectives.length; i++) {
@@ -8956,99 +9276,80 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     html += '</select>';
     html += '</div>';
 
-    // Product Description & Brand Voice
     html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">Product Description &amp; Brand Voice</label>';
-    html += '<textarea class="cp-textarea" data-sw-field="workspace.description" rows="3"';
-    html += ' placeholder="Describe what makes your product unique, your brand tone, key differentiators...">' + esc(ws.description || '') + '</textarea>';
-    html += '<p class="cp-field-hint">The more detail here, the better your AI-generated personas, messages, and hooks will be.</p>';
+    html += '<label class="cp-field-label">Custom AI instructions</label>';
+    html += '<textarea class="cp-textarea" data-sw-field="workspace.custom_instructions" rows="3"';
+    html += ' placeholder="Optional: tone, things to avoid, mandatory phrases, angle preferences...">' + esc(ws.custom_instructions || '') + '</textarea>';
+    html += '<p class="cp-field-hint">These instructions are added on top of your brand context for every AI run in the wizard.</p>';
     html += '</div>';
+    html += '</section>';
 
-    // Target Audience Overview
-    html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">Target Audience Overview</label>';
-    html += '<textarea class="cp-textarea" data-sw-field="workspace.target_audience" rows="2"';
-    html += ' placeholder="Who are your ideal customers? e.g., small business owners aged 30–50 in the US...">' + esc(ws.target_audience || '') + '</textarea>';
-    html += '</div>';
-
-    // Custom AI Instructions
-    html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">Custom AI Instructions</label>';
-    html += '<textarea class="cp-textarea" data-sw-field="workspace.custom_instructions" rows="2"';
-    html += ' placeholder="Any rules for AI: tone, things to avoid, mandatory phrases...">' + esc(ws.custom_instructions || '') + '</textarea>';
-    html += '</div>';
-
-    // Brand context callout
-    if (S.brand && S.brand.configured) {
-      var brandName = (S.brand.identity && S.brand.identity.name) || 'Your brand';
-      html += '<div class="cp-sw-info-box cp-sw-info-box--success">';
-      html += icon('link') + ' <strong>Brand context connected</strong> — ' + esc(brandName) + ' data will be automatically injected into all AI prompts.';
-      html += '</div>';
-    } else {
-      html += '<div class="cp-sw-info-box">';
-      html += icon('info') + ' No brand profile connected. AI will use the information you enter above.';
-      html += '</div>';
-    }
-
-    html += '</div>'; // .cp-sw-form
-    return html;
-  }
-
-  function renderSWStep2() {
-    var cfg   = setupWizardState.aiConfig;
-    var p2b   = window._cpPart2B;
-    var aiOk  = p2b && p2b.LLMService && p2b.LLMService.isConfigured();
-
-    var html = _buildSWStepHeader(
-      'AI Configuration',
-      'Select the AI provider and model that will power all generation steps. API keys are managed in your Drupal LLM settings.',
-      'a'
-    );
-
+    // ---- AI provider + model picker ----
+    html += '<section class="cp-sw-section">';
+    html += '<h3 class="cp-sw-section-title">AI provider</h3>';
     if (!aiOk) {
       html += '<div class="cp-sw-info-box cp-sw-info-box--warn">';
       html += icon('triangle-alert') + ' <div><strong>No AI providers configured.</strong> ';
-      html += 'AI generation requires API keys set up in your Drupal LLM settings. ';
-      html += 'You can continue through the wizard and fill in content manually.</div>';
+      html += 'Set up API keys in Settings → AI, then return here. You can still complete the wizard manually after configuring providers.</div>';
       html += '</div>';
-      html += '<p class="cp-sw-ai-skip-note">Skip this step to continue without AI assistance. You can configure AI in Settings &rarr; AI at any time.</p>';
-      return html;
-    }
-
-    html += '<div class="cp-sw-form">';
-
-    // Provider + model picker
-    html += '<div class="cp-field">';
-    html += '<label class="cp-field-label">AI Provider &amp; Model</label>';
-    html += '<div class="cp-sw-ai-picker-wrap" id="swAiPickerWrap">';
-    html += window._cpAiSel('sw-ai-config');
-    html += '</div>';
-    html += '<p class="cp-field-hint">This selection will be used for all AI generation steps in this wizard.</p>';
-    html += '</div>';
-
-    // Test connection row
-    html += '<div class="cp-sw-ai-test-row">';
-    html += '<button class="cp-btn cp-btn-secondary" data-action="sw-test-ai" id="swTestAiBtn">' + icon('zap') + ' Test Connection</button>';
-    html += '<span class="cp-sw-ai-test-status" id="swAiTestStatus">';
-    if (cfg.tested === true) {
-      html += '<span class="cp-sw-test-ok">' + icon('circle-check') + ' Connection verified</span>';
-    } else if (cfg.tested === 'fail') {
-      html += '<span class="cp-sw-test-fail">' + icon('circle-x') + ' Test failed — check your API key</span>';
     } else {
-      html += '<span class="cp-sw-test-idle">Not tested yet &mdash; you can still continue</span>';
-    }
-    html += '</span>';
-    html += '</div>';
+      html += '<div class="cp-field">';
+      html += '<label class="cp-field-label">Provider &amp; model <span class="cp-required">*</span></label>';
+      html += '<div class="cp-sw-ai-picker-wrap" id="swAiPickerWrap">';
+      html += window._cpAiSel('sw-ai-config');
+      html += '</div>';
+      html += '<p class="cp-field-hint">This selection is used for every AI run during setup.</p>';
+      html += '</div>';
 
-    html += '<div class="cp-sw-info-box" style="margin-top:var(--cp-space-2)">';
-    html += icon('info') + ' Skipping the test is fine — the wizard will let you know if AI calls fail during generation.';
-    html += '</div>';
+      html += '<div class="cp-sw-ai-test-row">';
+      html += '<button class="cp-btn cp-btn-secondary" data-action="sw-test-ai" id="swTestAiBtn">' + icon('zap') + ' Test connection</button>';
+      html += '<span class="cp-sw-ai-test-status" id="swAiTestStatus">';
+      if (cfg.tested === true) {
+        html += '<span class="cp-sw-test-ok">' + icon('circle-check') + ' Connection verified</span>';
+      } else if (cfg.tested === 'fail') {
+        html += '<span class="cp-sw-test-fail">' + icon('circle-x') + ' Test failed — check your API key</span>';
+      } else {
+        html += '<span class="cp-sw-test-idle">Not tested yet — you can still continue</span>';
+      }
+      html += '</span>';
+      html += '</div>';
+    }
+    html += '</section>';
+
+    // ---- Mode picker (two big Start buttons) ----
+    html += '<section class="cp-sw-section cp-sw-section--start">';
+    html += '<h3 class="cp-sw-section-title">How should the AI run?</h3>';
+    if (!aiOk) {
+      html += '<div class="cp-sw-info-box">';
+      html += icon('info') + ' Configure at least one AI provider in <strong>Settings → AI</strong>, then come back to pick a mode. Use the close button (top-right) to set that up now.';
+      html += '</div>';
+    } else {
+      html += '<div class="cp-sw-mode-row">';
+
+      html += '<button class="cp-sw-mode-card cp-sw-mode-card--manual" data-action="sw-start-manual">';
+      html += '<div class="cp-sw-mode-card-icon">' + icon('hand') + '</div>';
+      html += '<div class="cp-sw-mode-card-title">Stage-by-stage <span class="cp-sw-mode-card-tag">Recommended</span></div>';
+      html += '<div class="cp-sw-mode-card-body">AI generates each stage automatically, then waits for you to review and approve before moving on. Edit anything between stages.</div>';
+      html += '<div class="cp-sw-mode-card-cta">' + icon('arrow-right') + ' Start with my approval at each stage</div>';
+      html += '</button>';
+
+      html += '<button class="cp-sw-mode-card cp-sw-mode-card--auto" data-action="sw-start-auto">';
+      html += '<div class="cp-sw-mode-card-icon">' + icon('zap') + '</div>';
+      html += '<div class="cp-sw-mode-card-title">Full Auto</div>';
+      html += '<div class="cp-sw-mode-card-body">AI runs every stage end-to-end without pausing. You can hit Pause at any point to step in and edit.</div>';
+      html += '<div class="cp-sw-mode-card-cta">' + icon('arrow-right') + ' Run everything automatically</div>';
+      html += '</button>';
+
+      html += '</div>';
+      html += '<p class="cp-sw-mode-hint">' + icon('info') + ' You can always switch by hitting Pause / Continue manually during the run.</p>';
+    }
+    html += '</section>';
 
     html += '</div>'; // .cp-sw-form
     return html;
   }
 
-  // Inline AI connection test for the wizard Step 2
+  // Inline AI connection test for Stage 1
   function _swTestAIConnection() {
     var p2b = window._cpPart2B;
     if (!p2b || !p2b.LLMService || !p2b.LLMService.isConfigured()) {
@@ -9069,12 +9370,12 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     p2b.callAIWithRetry(
       'Reply with exactly one word: OK',
       function() {
-        $btn.prop('disabled', false).html(icon('zap') + ' Test Connection');
+        $btn.prop('disabled', false).html(icon('zap') + ' Test connection');
         setupWizardState.aiConfig.tested = true;
         $status.html('<span class="cp-sw-test-ok">' + icon('circle-check') + ' Connection verified</span>');
       },
       function(err) {
-        $btn.prop('disabled', false).html(icon('zap') + ' Test Connection');
+        $btn.prop('disabled', false).html(icon('zap') + ' Test connection');
         setupWizardState.aiConfig.tested = 'fail';
         $status.html('<span class="cp-sw-test-fail">' + icon('circle-x') + ' Test failed — ' + esc(String(err).substring(0, 80)) + '</span>');
       },
@@ -9085,8 +9386,12 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
 
 /* ===== src/20-part2a/13-setup-wizard-steps-3-4.js ===== */
   // ------------------------------------------------------------------
-  // SECTION 9.4b: SETUP WIZARD — STEP RENDERERS (Phase 3: Steps 3 & 4)
+  // SECTION 9.4b: SETUP WIZARD — STAGE 2 (Personas & Pain Points, merged)
   // ------------------------------------------------------------------
+  //
+  // Single screen that owns both persona and pain-point generation. AI fires
+  // personas first; once landed (and at least one is selected) AI generates
+  // pain points keyed back to those personas.
 
   // --- Shared helpers ---
 
@@ -9111,9 +9416,9 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       + '</div>';
   }
 
-  // --- Inline diagnostics helpers (shared across Steps 3-7) ---
+  // --- Inline diagnostics helpers (shared across Stages 2-5) ---
 
-  function _swAIErrorBanner(stepNum) {
+  function _swAIErrorBanner(stageNum) {
     var err = setupWizardState.aiError;
     if (!err) return '';
     var html = '<div class="cp-sw-ai-error" role="alert">';
@@ -9123,7 +9428,7 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     html += '<div class="cp-sw-ai-error-msg">' + esc(String(err)) + '</div>';
     html += '</div>';
     html += '<div class="cp-sw-ai-error-actions">';
-    html += '<button class="cp-btn cp-btn-sm cp-btn-outline" data-action="sw-ai-retry-step" data-step="' + stepNum + '">' + icon('rotate') + ' Retry</button>';
+    html += '<button class="cp-btn cp-btn-sm cp-btn-outline" data-action="sw-ai-retry-step" data-step="' + stageNum + '">' + icon('rotate') + ' Retry</button>';
     html += '<button class="cp-btn cp-btn-sm cp-btn-ghost" data-action="sw-ai-error-dismiss">' + icon('x') + ' Dismiss</button>';
     html += '</div>';
     html += '</div>';
@@ -9142,8 +9447,8 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     return html;
   }
 
-  function _swLastGeneratedLabel(stepNum) {
-    var ts = setupWizardState.created && setupWizardState.created.lastGeneratedAt && setupWizardState.created.lastGeneratedAt[stepNum];
+  function _swLastGeneratedLabel(genKey) {
+    var ts = setupWizardState.created && setupWizardState.created.lastGeneratedAt && setupWizardState.created.lastGeneratedAt[genKey];
     if (!ts) return '';
     return '<div class="cp-sw-last-gen">' + icon('clock') + ' Last generated ' + esc(_swRelTime(ts)) + '</div>';
   }
@@ -9157,31 +9462,53 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       + '</button>';
   }
 
-  // --- Step 3: Personas ---
+  // --- Stage 2: Personas + Pain Points (merged) ---
 
-  function renderSWStep3() {
-    var ws       = setupWizardState;
-    var personas = ws.personas || [];
-    var generated = ws.stepGenerated[3];
+  function renderSWStep2() {
+    var ws = setupWizardState;
 
     var html = _buildSWStepHeader(
-      'Target Personas',
-      'Select the audience personas that best represent your ideal customers. AI generates options based on your workspace setup.',
+      'Personas & Pain Points',
+      'AI generates target personas first, then specific pain points for each. Select what represents your real customers — you can edit any of it.',
       'b'
     );
 
-    html += _swAIErrorBanner(3);
+    html += _swAIErrorBanner(2);
+    html += _renderSWPersonasBlock();
 
-    // Generation bar
-    html += '<div class="cp-sw-gen-bar">';
-    html += '<textarea class="cp-textarea" id="swPersonaContext" rows="2"';
-    html += ' placeholder="Optional: additional context (e.g., focus on enterprise buyers, include a tech-savvy segment)...">';
-    html += esc(ws._personaContext || '');
-    html += '</textarea>';
-    html += _swGenButton('sw-ai-gen-personas', generated, ws.aiLoading);
+    // Pain points block only appears once at least one persona is selected.
+    var selPersonas = (ws.personas || []).filter(function(p) { return p._selected; });
+    if (selPersonas.length) {
+      html += '<div class="cp-sw-section-divider"><span class="cp-sw-section-divider-title">Pain points</span><span class="cp-sw-section-divider-line"></span></div>';
+      html += _renderSWPainPointsBlock(selPersonas);
+    } else if (ws.personas && ws.personas.length) {
+      html += '<div class="cp-sw-info-box" style="margin-top:var(--cp-space-4)">';
+      html += icon('info') + ' Select at least one persona above to unlock pain-point generation.';
+      html += '</div>';
+    }
+
+    return html;
+  }
+
+  function _renderSWPersonasBlock() {
+    var ws       = setupWizardState;
+    var personas = ws.personas || [];
+    var generated = ws.stepGenerated.personas;
+
+    var html = '<div class="cp-sw-substage">';
+    html += '<div class="cp-sw-substage-header">';
+    html += '<h3 class="cp-sw-substage-title">' + icon('users') + ' Personas</h3>';
     html += '</div>';
 
-    if (ws.aiLoading) {
+    html += '<div class="cp-sw-gen-bar">';
+    html += '<textarea class="cp-textarea" id="swPersonaContext" rows="2"';
+    html += ' placeholder="Optional: additional persona direction (e.g., focus on enterprise buyers, include a tech-savvy segment)...">';
+    html += esc(ws._personaContext || '');
+    html += '</textarea>';
+    html += _swGenButton('sw-ai-gen-personas', generated, ws.aiLoading && !ws.stepGenerated.personas);
+    html += '</div>';
+
+    if (ws.aiLoading && !ws.stepGenerated.personas) {
       html += _buildSWSkeletonCards(4);
     } else if (generated && !personas.length) {
       html += _swAIEmptyAfterGenBanner('personas', ws._personaContext || '');
@@ -9196,7 +9523,7 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       html += '<span class="cp-sw-sel-count' + (selCount > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
       html += selCount + ' of ' + personas.length + ' persona' + (personas.length !== 1 ? 's' : '') + ' selected';
       html += '</span>';
-      html += _swLastGeneratedLabel(3);
+      html += _swLastGeneratedLabel('personas');
       html += '</div>';
       html += '<div class="cp-sw-card-grid">';
       for (var i = 0; i < personas.length; i++) {
@@ -9204,7 +9531,78 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       }
       html += '</div>';
     }
+    html += '</div>';
+    return html;
+  }
 
+  function _renderSWPainPointsBlock(selPersonas) {
+    var ws        = setupWizardState;
+    var pps       = ws.pain_points || [];
+    var generated = ws.stepGenerated.painpoints;
+    var personasGen = ws.stepGenerated.personas;
+
+    var html = '<div class="cp-sw-substage">';
+    html += '<div class="cp-sw-substage-header">';
+    html += '<h3 class="cp-sw-substage-title">' + icon('crosshair') + ' Pain points</h3>';
+    html += '</div>';
+
+    html += '<div class="cp-sw-gen-bar">';
+    html += '<textarea class="cp-textarea" id="swPainPointContext" rows="2"';
+    html += ' placeholder="Optional: focus on specific challenges (e.g., emphasise time-management struggles)...">';
+    html += esc(ws._ppContext || '');
+    html += '</textarea>';
+    html += _swGenButton('sw-ai-gen-painpoints', generated, ws.aiLoading && personasGen);
+    html += '</div>';
+
+    if (ws.aiLoading && personasGen && !generated) {
+      html += _buildSWSkeletonCards(6);
+    } else if (generated && !pps.length) {
+      html += _swAIEmptyAfterGenBanner('pain points', ws._ppContext || '');
+    } else if (!pps.length) {
+      html += '<div class="cp-sw-empty-state">';
+      html += '<div class="cp-sw-empty-icon">' + icon('crosshair') + '</div>';
+      html += '<p>Click <strong>Generate with AI</strong> to create pain-point suggestions based on your selected personas.</p>';
+      html += '</div>';
+    } else {
+      if (selPersonas.length > 1) {
+        var activeTab = ws._ppActiveTab || 0;
+        html += '<div class="cp-sw-pp-tabs">';
+        for (var pi = 0; pi < selPersonas.length; pi++) {
+          var personaRealIdx = (ws.personas || []).indexOf(selPersonas[pi]);
+          var tabPPCount = pps.filter(function(pp) { return pp._persona_idx === personaRealIdx && pp._selected; }).length;
+          html += '<button class="cp-sw-pp-tab' + (activeTab === pi ? ' cp-sw-pp-tab--active' : '') + '" data-action="sw-pp-tab" data-tab="' + pi + '">';
+          html += esc(truncate(selPersonas[pi].name || 'Persona', 22));
+          if (tabPPCount) html += ' <span class="cp-sw-pp-tab-badge">' + tabPPCount + '</span>';
+          html += '</button>';
+        }
+        html += '</div>';
+      }
+
+      var visiblePPs;
+      if (selPersonas.length > 1) {
+        var activePersona = selPersonas[ws._ppActiveTab || 0];
+        var filterIdx = (ws.personas || []).indexOf(activePersona);
+        visiblePPs = pps.map(function(pp, i) { return { pp: pp, i: i }; })
+                        .filter(function(o) { return o.pp._persona_idx === filterIdx; });
+      } else {
+        visiblePPs = pps.map(function(pp, i) { return { pp: pp, i: i }; });
+      }
+
+      var totalSel = pps.filter(function(pp) { return pp._selected; }).length;
+      html += '<div class="cp-sw-card-bottom">';
+      html += '<span class="cp-sw-sel-count' + (totalSel > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
+      html += totalSel + ' of ' + pps.length + ' pain point' + (pps.length !== 1 ? 's' : '') + ' selected';
+      html += '</span>';
+      html += _swLastGeneratedLabel('painpoints');
+      html += '</div>';
+
+      html += '<div class="cp-sw-card-grid">';
+      for (var j = 0; j < visiblePPs.length; j++) {
+        html += _buildSWPainPointCard(visiblePPs[j].pp, visiblePPs[j].i);
+      }
+      html += '</div>';
+    }
+    html += '</div>';
     return html;
   }
 
@@ -9220,7 +9618,7 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     if (demo.location)   tags.push(demo.location);
     if (demo.occupation) tags.push(demo.occupation);
 
-    var html = '<div class="cp-sw-sel-card' + (selected ? ' cp-sw-sel-card--selected' : '') + '" data-idx="' + idx + '" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '">';
+    var html = '<div class="cp-sw-sel-card' + (selected ? ' cp-sw-sel-card--selected' : '') + '" data-idx="' + idx + '" data-card-type="persona" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '">';
     html += '<div class="cp-sw-sel-card-check">' + (selected ? icon('check') : '') + '</div>';
     html += '<div class="cp-sw-sel-card-title">' + esc(p.name || ('Persona ' + (idx + 1))) + '</div>';
     if (p.description) {
@@ -9233,7 +9631,6 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       }
       html += '</div>';
     }
-    // Always-visible desires / fears mini-row — the most strategic fields
     if (psych.desires || psych.fears) {
       html += '<div class="cp-sw-sel-card-psych">';
       if (psych.desires) {
@@ -9270,96 +9667,10 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     return html;
   }
 
-  // --- Step 4: Pain Points ---
-
-  function renderSWStep4() {
-    var ws        = setupWizardState;
-    var pps       = ws.pain_points || [];
-    var selPersonas = (ws.personas || []).filter(function(p) { return p._selected; });
-    var generated = ws.stepGenerated[4];
-
-    var html = _buildSWStepHeader(
-      'Pain Points',
-      'Select the key challenges your personas face. These directly shape your ad messages, hooks, and copy.',
-      'b'
-    );
-
-    if (!selPersonas.length) {
-      html += '<div class="cp-sw-empty-state cp-sw-empty-state--warn">';
-      html += icon('triangle-alert') + ' No personas selected from Step 3. Go back and select at least one persona.';
-      html += '</div>';
-      return html;
-    }
-
-    html += _swAIErrorBanner(4);
-
-    // Generation bar
-    html += '<div class="cp-sw-gen-bar">';
-    html += '<textarea class="cp-textarea" id="swPainPointContext" rows="2"';
-    html += ' placeholder="Optional: focus on specific challenges or industries (e.g., focus on time-management struggles)...">';
-    html += esc(ws._ppContext || '');
-    html += '</textarea>';
-    html += _swGenButton('sw-ai-gen-painpoints', generated, ws.aiLoading);
-    html += '</div>';
-
-    if (ws.aiLoading) {
-      html += _buildSWSkeletonCards(6);
-    } else if (generated && !pps.length) {
-      html += _swAIEmptyAfterGenBanner('pain points', ws._ppContext || '');
-    } else if (!pps.length) {
-      html += '<div class="cp-sw-empty-state">';
-      html += '<div class="cp-sw-empty-icon">' + icon('crosshair') + '</div>';
-      html += '<p>Click <strong>Generate with AI</strong> to create pain point suggestions based on your selected personas.</p>';
-      html += '</div>';
-    } else {
-      // Persona tab bar (only when 2+ personas selected)
-      if (selPersonas.length > 1) {
-        var activeTab = ws._ppActiveTab || 0;
-        html += '<div class="cp-sw-pp-tabs">';
-        for (var pi = 0; pi < selPersonas.length; pi++) {
-          var personaRealIdx = (ws.personas || []).indexOf(selPersonas[pi]);
-          var tabPPCount = pps.filter(function(pp) { return pp._persona_idx === personaRealIdx && pp._selected; }).length;
-          html += '<button class="cp-sw-pp-tab' + (activeTab === pi ? ' cp-sw-pp-tab--active' : '') + '" data-action="sw-pp-tab" data-tab="' + pi + '">';
-          html += esc(truncate(selPersonas[pi].name || 'Persona', 22));
-          if (tabPPCount) html += ' <span class="cp-sw-pp-tab-badge">' + tabPPCount + '</span>';
-          html += '</button>';
-        }
-        html += '</div>';
-      }
-
-      // Filter to active persona tab (or show all if single persona)
-      var visiblePPs;
-      if (selPersonas.length > 1) {
-        var activePersona = selPersonas[ws._ppActiveTab || 0];
-        var filterIdx = (ws.personas || []).indexOf(activePersona);
-        visiblePPs = pps.map(function(pp, i) { return { pp: pp, i: i }; })
-                        .filter(function(o) { return o.pp._persona_idx === filterIdx; });
-      } else {
-        visiblePPs = pps.map(function(pp, i) { return { pp: pp, i: i }; });
-      }
-
-      var totalSel = pps.filter(function(pp) { return pp._selected; }).length;
-      html += '<div class="cp-sw-card-bottom">';
-      html += '<span class="cp-sw-sel-count' + (totalSel > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
-      html += totalSel + ' of ' + pps.length + ' pain point' + (pps.length !== 1 ? 's' : '') + ' selected';
-      html += '</span>';
-      html += _swLastGeneratedLabel(4);
-      html += '</div>';
-
-      html += '<div class="cp-sw-card-grid">';
-      for (var j = 0; j < visiblePPs.length; j++) {
-        html += _buildSWPainPointCard(visiblePPs[j].pp, visiblePPs[j].i);
-      }
-      html += '</div>';
-    }
-
-    return html;
-  }
-
   function _buildSWPainPointCard(pp, idx) {
     var selected = pp._selected;
 
-    var html = '<div class="cp-sw-sel-card' + (selected ? ' cp-sw-sel-card--selected' : '') + '" data-idx="' + idx + '" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '">';
+    var html = '<div class="cp-sw-sel-card' + (selected ? ' cp-sw-sel-card--selected' : '') + '" data-idx="' + idx + '" data-card-type="painpoint" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '">';
     html += '<div class="cp-sw-sel-card-check">' + (selected ? icon('check') : '') + '</div>';
     html += '<div class="cp-sw-sel-card-title">' + esc(pp.pain_point || 'Pain Point') + '</div>';
     if (pp.solution) {
@@ -9379,15 +9690,15 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
 
 /* ===== src/20-part2a/14-setup-wizard-steps-5-6.js ===== */
   // ------------------------------------------------------------------
-  // SECTION 9.4c: SETUP WIZARD — STEP RENDERERS (Phase 4: Steps 5 & 6)
+  // SECTION 9.4c: SETUP WIZARD — STAGE 3 (Messages) + STAGE 4 (Styles & Formats)
   // ------------------------------------------------------------------
 
-  // --- Step 5: Messages ---
+  // --- Stage 3: Messages ---
 
-  function renderSWStep5() {
+  function renderSWStep3() {
     var ws       = setupWizardState;
     var messages = ws.messages || [];
-    var generated = ws.stepGenerated[5];
+    var generated = ws.stepGenerated.messages;
 
     var html = _buildSWStepHeader(
       'Ad Messages',
@@ -9395,9 +9706,8 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       'b'
     );
 
-    html += _swAIErrorBanner(5);
+    html += _swAIErrorBanner(3);
 
-    // Generation bar
     html += '<div class="cp-sw-gen-bar">';
     html += '<textarea class="cp-textarea" id="swMessageContext" rows="2"';
     html += ' placeholder="Optional: focus on specific angles (e.g., emphasise ROI, use testimonial hooks)...">';
@@ -9421,7 +9731,7 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       html += '<span class="cp-sw-sel-count' + (selCount > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
       html += selCount + ' of ' + messages.length + ' message' + (messages.length !== 1 ? 's' : '') + ' selected';
       html += '</span>';
-      html += _swLastGeneratedLabel(5);
+      html += _swLastGeneratedLabel('messages');
       html += '</div>';
       html += '<div class="cp-sw-card-grid">';
       for (var i = 0; i < messages.length; i++) {
@@ -9440,13 +9750,12 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     var stageLabel = { top: 'TOFU', mid: 'MOFU', bot: 'BOFU' }[msg.funnel_stage] || msg.funnel_stage || '';
     var funnelSlug = msg.funnel_stage ? ('--funnel-' + esc(msg.funnel_stage)) : '';
 
-    var html = '<div class="cp-sw-sel-card' + (selected ? ' cp-sw-sel-card--selected' : '') + '" data-idx="' + idx + '" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '">';
+    var html = '<div class="cp-sw-sel-card' + (selected ? ' cp-sw-sel-card--selected' : '') + '" data-idx="' + idx + '" data-card-type="message" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '">';
     html += '<div class="cp-sw-sel-card-check">' + (selected ? icon('check') : '') + '</div>';
     html += '<div class="cp-sw-sel-card-title">' + esc(msg.name || ('Message ' + (idx + 1))) + '</div>';
     if (msg.description) {
       html += '<div class="cp-sw-sel-card-body">' + esc(truncate(msg.description, 100)) + '</div>';
     }
-    // Always-visible body as blockquote — the actual starter copy line
     if (msg.body) {
       html += '<blockquote class="cp-sw-msg-body">' + esc(truncate(msg.body, 160)) + '</blockquote>';
     }
@@ -9476,13 +9785,13 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     return html;
   }
 
-  // --- Step 6: Styles & Formats ---
+  // --- Stage 4: Styles & Formats ---
 
-  function renderSWStep6() {
+  function renderSWStep4() {
     var ws       = setupWizardState;
     var styles   = ws.styles  || [];
     var formats  = ws.formats || [];
-    var generated = ws.stepGenerated[6];
+    var generated = ws.stepGenerated.stylesFormats;
     var bothEmpty = !styles.length && !formats.length;
 
     var html = _buildSWStepHeader(
@@ -9491,9 +9800,8 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       'b'
     );
 
-    html += _swAIErrorBanner(6);
+    html += _swAIErrorBanner(4);
 
-    // Single generation bar for both styles and formats
     html += '<div class="cp-sw-gen-bar">';
     html += '<textarea class="cp-textarea" id="swStyleFormatContext" rows="2"';
     html += ' placeholder="Optional: specify platforms, formats or style direction (e.g., focus on TikTok-native, minimalist aesthetic)...">';
@@ -9503,7 +9811,6 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     html += '</div>';
 
     if (ws.aiLoading) {
-      // Loading — show skeleton for both sections
       html += _buildSWSubSection('Styles', 0, 0);
       html += _buildSWSkeletonCards(3);
       html += _buildSWSubSection('Formats', 0, 0);
@@ -9516,7 +9823,6 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       html += '<p>Click <strong>Generate with AI</strong> to create creative style and ad format suggestions tailored to your product and objectives.</p>';
       html += '</div>';
     } else {
-      // Styles section
       var selStyles  = styles.filter(function(s) { return s._selected; }).length;
       var selFormats = formats.filter(function(f) { return f._selected; }).length;
 
@@ -9529,7 +9835,6 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
         html += '<div class="cp-sw-empty-state" style="padding:var(--cp-space-4) 0"><p>No styles generated — try regenerating above.</p></div>';
       }
 
-      // Formats section
       html += _buildSWSubSection('Formats', selFormats, formats.length);
       if (formats.length) {
         html += '<div class="cp-sw-card-grid">';
@@ -9584,33 +9889,32 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
 
 /* ===== src/20-part2a/15-setup-wizard-steps-7-8.js ===== */
   // ------------------------------------------------------------------
-  // SECTION 9.4d: SETUP WIZARD — STEP RENDERERS (Steps 7 & 8)
+  // SECTION 9.4d: SETUP WIZARD — STAGE 5 (Campaign Ideas) + STAGE 6 (Review)
   // ------------------------------------------------------------------
   //
-  // Step 7 is "Campaign Ideas" — a list of named campaign ideas the wizard
+  // Stage 5 is "Campaign Ideas" — a list of named campaign ideas the wizard
   // proposes. The user picks which to create. Each idea becomes a draft
   // campaign_v2 on launch. Ad Sets + Ads are built later from inside the
-  // per-campaign workspace (the "Run AI setup" CTA).
+  // per-campaign workspace (the "Run AI setup" CTA there).
   //
-  // Step 8 is the final review and launch.
+  // Stage 6 is the final review and launch.
 
-  // --- Step 7: Campaign Ideas ---
+  // --- Stage 5: Campaign Ideas ---
 
-  function renderSWStep7() {
+  function renderSWStep5() {
     var ws        = setupWizardState;
-    var generated = ws.stepGenerated[7];
+    var generated = ws.stepGenerated.campaignIdeas;
     var aiLoading = ws.aiLoading;
     var ideas     = ws.campaign_ideas || [];
 
     var html = _buildSWStepHeader(
       'Campaign Ideas',
-      'AI proposes a few campaign ideas based on your library. Pick which ones to start. Each idea becomes a draft Campaign you can build out (Ad Sets + Ads) from its workspace.',
+      'AI proposes a few campaign ideas based on your library. Pick which ones to start. Each becomes a draft Campaign you can build out (Ad Sets + Ads) from its workspace.',
       'c'
     );
 
-    html += _swAIErrorBanner(7);
+    html += _swAIErrorBanner(5);
 
-    // Generation bar — direction textarea + generate button
     html += '<div class="cp-sw-gen-bar">';
     html += '<textarea class="cp-textarea" id="swCampaignIdeasContext" rows="2"';
     html += ' placeholder="Optional: direction for the ideas (e.g. \'lean into the &quot;ship in days not weeks&quot; angle, mix lead-gen and brand campaigns, target enterprise + startup segments\')...">';
@@ -9640,17 +9944,15 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       return html;
     }
 
-    // Counter
     var selCount = ideas.filter(function(c) { return c._selected; }).length;
     html += '<div class="cp-sw-card-bottom">';
     html += '<span class="cp-sw-sel-count' + (selCount > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
     html += 'Will create ' + selCount + ' Campaign' + (selCount !== 1 ? 's' : '');
     html += '</span>';
-    html += _swLastGeneratedLabel(7);
+    html += _swLastGeneratedLabel('campaignIdeas');
     html += '<button class="cp-btn cp-btn-outline cp-btn-sm" data-action="sw-idea-add-manual" style="margin-left:auto">' + icon('plus') + ' Add idea</button>';
     html += '</div>';
 
-    // List of idea cards
     html += '<div class="cp-sw-ideas">';
     for (var i = 0; i < ideas.length; i++) {
       html += _buildSWCampaignIdeaCard(ideas[i], i, selPersonas, selMessages);
@@ -9683,7 +9985,6 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
 
     var html = '<div class="cp-sw-tree-set' + (selected ? ' cp-sw-tree-set--selected' : '') + '">';
 
-    // Header row: toggle, editable name, persona/objective tags, expand
     html += '<div class="cp-sw-tree-set-header">';
     html += '<button class="cp-sw-tree-check' + (selected ? ' cp-sw-tree-check--on' : '') + '" data-action="sw-idea-toggle" data-idea-idx="' + idx + '" aria-label="Toggle Campaign idea">';
     html += selected ? icon('check') : '';
@@ -9701,7 +10002,6 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     html += '<button class="cp-btn-icon cp-btn-icon-sm" data-action="sw-idea-delete" data-idea-idx="' + idx + '" title="Remove idea" style="margin-left:var(--cp-space-1)">' + icon('trash') + '</button>';
     html += '</div>';
 
-    // Expanded editor
     if (expanded) {
       html += '<div class="cp-sw-tree-set-brief">';
 
@@ -9753,9 +10053,9 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     return html;
   }
 
-  // --- Step 8: Review & Launch ---
+  // --- Stage 6: Review & Launch ---
 
-  function renderSWStep8() {
+  function renderSWStep6() {
     var ws         = setupWizardState;
     var selPersonas = (ws.personas    || []).filter(function(p) { return p._selected; });
     var selPPs      = (ws.pain_points || []).filter(function(p) { return p._selected; });
@@ -9778,7 +10078,6 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       return html;
     }
 
-    // Summary grid
     html += '<div class="cp-sw-review-grid">';
     html += _buildSWReviewBox('users',         'Personas',    selPersonas.length, selPersonas.map(function(p) { return p.name; }));
     html += _buildSWReviewBox('crosshair',     'Pain Points', selPPs.length,      selPPs.map(function(p) { return p.pain_point; }));
@@ -9788,14 +10087,12 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     html += _buildSWReviewBox('bullhorn',      'Campaigns',   selIdeas.length,    selIdeas.map(function(c) { return c.name; }));
     html += '</div>';
 
-    // Per-campaign-idea preview
     if (selIdeas.length) {
       html += '<div class="cp-sw-info-box cp-sw-info-box--success" style="margin-top:var(--cp-space-4)">';
       html += icon('bullhorn') + ' <strong>' + selIdeas.length + ' Campaign idea' + (selIdeas.length !== 1 ? 's' : '') + '</strong> will be created as drafts. You can build out Ad Sets and Ads from each campaign\'s workspace using the per-campaign wizard.';
       html += '</div>';
     }
 
-    // Launch note
     html += '<p class="cp-sw-finalize-note" style="margin-top:var(--cp-space-5);text-align:center">';
     html += 'Hit <strong>Launch Workspace</strong> below to create your library and ' + selIdeas.length + ' Campaign' + (selIdeas.length !== 1 ? 's' : '') + '.';
     html += '</p>';
@@ -10730,12 +11027,31 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     });
     $(document).off('click.cp2a-sw-close').on('click.cp2a-sw-close', '[data-action="sw-close"]', function(e) {
       e.preventDefault();
+      // Gate: don't allow closing before Stage 1 is complete
+      if (typeof _swStage1Complete === 'function' && !_swStage1Complete()) {
+        toast('Pick an AI provider and a run mode first — then you can close and explore the app.', 'warning');
+        return;
+      }
       swSaveSession();
       openConfirmDialog(
         'Close Setup Wizard?',
-        'Your progress has been saved. You can resume from where you left off.',
+        'Your progress has been saved. You can resume it from the Setup page anytime.',
         function() { $('.cp-setup-wizard').remove(); }
       );
+    });
+    // --- Stage 1 mode-pick buttons (Manual / Full Auto) ---
+    $(document).off('click.cp2a-sw-start-manual').on('click.cp2a-sw-start-manual', '[data-action="sw-start-manual"]', function(e) {
+      e.preventDefault(); swStartMode('manual');
+    });
+    $(document).off('click.cp2a-sw-start-auto').on('click.cp2a-sw-start-auto', '[data-action="sw-start-auto"]', function(e) {
+      e.preventDefault(); swStartMode('auto');
+    });
+    // --- Pause / resume Full Auto run ---
+    $(document).off('click.cp2a-sw-pause').on('click.cp2a-sw-pause', '[data-action="sw-pause-auto"]', function(e) {
+      e.preventDefault(); swPauseAutoRun();
+    });
+    $(document).off('click.cp2a-sw-resume').on('click.cp2a-sw-resume', '[data-action="sw-resume-auto"]', function(e) {
+      e.preventDefault(); swResumeAutoRun();
     });
     $(document).off('click.cp2a-sw-next').on('click.cp2a-sw-next', '[data-action="sw-next"]', function(e) {
       e.preventDefault(); swGoNext();
@@ -10756,14 +11072,14 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       if ($(e.target).closest('[data-action="sw-card-expand"]').length) return;
       e.preventDefault();
       var idx = parseInt($(this).data('idx'), 10);
+      var cardType = $(this).data('card-type');
       var step = setupWizardState.step;
-      var listKey;
-      if (step === 6) {
-        // Step 6 hosts both styles and formats — distinguish by data-card-type
-        listKey = $(this).data('card-type') === 'format' ? 'formats' : 'styles';
-      } else {
-        listKey = { 3: 'personas', 4: 'pain_points', 5: 'messages' }[step];
-      }
+      // Prefer data-card-type when present (Stage 2 hosts both persona + painpoint;
+      // Stage 4 hosts both style + format). Fall back to stage-number mapping for stages
+      // where every card on screen is one type.
+      var typeToList = { persona: 'personas', painpoint: 'pain_points',
+                          message: 'messages', style: 'styles', format: 'formats' };
+      var listKey = typeToList[cardType] || { 3: 'messages' }[step];
       if (!listKey) return;
       var items = setupWizardState[listKey];
       if (!items || isNaN(idx) || !items[idx]) return;
@@ -10820,7 +11136,7 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       if (setupWizardState.aiLoading) return;
       setupWizardState._campaignIdeasContext = $('#swCampaignIdeasContext').val() || '';
       swCollectFields();
-      setupWizardState.stepGenerated[7] = false;
+      setupWizardState.stepGenerated.campaignIdeas = false;
       var R = window._cpRenderers || {};
       if (typeof R.swAIGenerateCampaignIdeas === 'function') R.swAIGenerateCampaignIdeas();
       else toast('AI not ready — please wait for the page to fully load.', 'warning');
@@ -10839,7 +11155,7 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
       var n = parseInt($(this).data('step'), 10);
       if (!isNaN(n)) swRetryStep(n);
     });
-    // --- Step 7 campaign-idea handlers ---
+    // --- Stage 5 campaign-idea handlers ---
     $(document).off('click.cp2a-sw-tree-expand').on('click.cp2a-sw-tree-expand', '[data-action="sw-tree-expand"]', function(e) {
       e.preventDefault(); e.stopPropagation();
       var key = $(this).data('key');
@@ -10908,7 +11224,7 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     $(document).off('click.cp2a-sw-test-ai').on('click.cp2a-sw-test-ai', '[data-action="sw-test-ai"]', function(e) {
       e.preventDefault(); _swTestAIConnection();
     });
-    // Update wizard AI model dropdown when provider changes (Step 2)
+    // Update wizard AI model dropdown when provider changes (Stage 1 picker)
     $(document).off('change.cp2a-sw-ai-prov').on('change.cp2a-sw-ai-prov', '.cp-sw-ai-picker-wrap .cp-ai-provider-select', function() {
       setupWizardState.aiConfig.tested = false; // reset test status on provider change
       var $prov = $(this);
@@ -10976,6 +11292,11 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
         if ($('.cp-confirm-backdrop').length) closeConfirmDialog();
         else if ($('.cp-modal-backdrop').length) closeModal();
         else if ($('.cp-setup-wizard').length && !setupWizardState.finalizing) {
+          // Don't allow Escape to close before Stage 1 is complete
+          if (typeof _swStage1Complete === 'function' && !_swStage1Complete()) {
+            toast('Pick an AI provider and a run mode first — then you can close and explore the app.', 'warning');
+            return;
+          }
           swSaveSession();
           openConfirmDialog(
             'Close Setup Wizard?',
@@ -11716,12 +12037,17 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
 
     // Setup Wizard
     openSetupWizard: openSetupWizard,
+    maybeAutoLaunchSetupWizard: maybeAutoLaunchSetupWizard,
     refreshSetupWizard: refreshSetupWizard,
     setupWizardState: setupWizardState,
     swClearSession: swClearSession,
     swCancelAIGeneration: swCancelAIGeneration,
     swRetryStep: swRetryStep,
     swRelTime: _swRelTime,
+    // Chaining signals used by Part 2B after each generator success
+    _swAfterPersonasGenerated:   _swAfterPersonasGenerated,
+    _swAfterPainPointsGenerated: _swAfterPainPointsGenerated,
+    _swAfterStageGenerated:      _swAfterStageGenerated,
 
     // New Campaign Wizard
     openNewCampaignWizard: openNewCampaignWizard,
@@ -13834,29 +14160,48 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     return lines.join('\n') + '\n';
   }
 
-  function _swBeginAI(state, n) {
+  // The "key" passed in is a string label (personas, painpoints, messages,
+  // stylesFormats, campaignIdeas). It's used both for the generation-done
+  // flag and the lastGeneratedAt timestamp.
+  function _swBeginAI(state, key) {
     state.aiLoading   = true;
     state.aiActionId  = 'sw-ai-config';
     state.aiStartedAt = Date.now();
     state.aiError     = '';
-    state.stepGenerated[n] = false;
+    state.stepGenerated[key] = false;
   }
 
-  function _swEndAISuccess(state, n) {
+  function _swEndAISuccess(state, key) {
     state.aiLoading  = false;
     state.aiActionId = '';
     state.aiError    = '';
-    state.stepGenerated[n] = true;
+    state.stepGenerated[key] = true;
     state.created = state.created || {};
     state.created.lastGeneratedAt = state.created.lastGeneratedAt || {};
-    state.created.lastGeneratedAt[n] = Date.now();
+    state.created.lastGeneratedAt[key] = Date.now();
   }
 
-  function _swEndAIError(state, n, err) {
+  function _swEndAIError(state, key, err) {
     state.aiLoading  = false;
     state.aiActionId = '';
     state.aiError    = String(err || 'AI generation failed').substring(0, 240);
-    state.stepGenerated[n] = true;
+    state.stepGenerated[key] = true;
+  }
+
+  // After a successful generation, in Full Auto mode we may chain to the
+  // next sub-stage (Stage 2: personas → painpoints) or schedule an auto-
+  // advance to the next stage. These helpers live on Part 2A; this lets
+  // Part 2B fire them without taking a direct reference.
+  function _swSignalGenerated(key) {
+    if (!window._cpPart2A) return;
+    var P2A = window._cpPart2A;
+    if (key === 'personas' && typeof P2A._swAfterPersonasGenerated === 'function') {
+      P2A._swAfterPersonasGenerated();
+    } else if (key === 'painpoints' && typeof P2A._swAfterPainPointsGenerated === 'function') {
+      P2A._swAfterPainPointsGenerated();
+    } else if (typeof P2A._swAfterStageGenerated === 'function') {
+      P2A._swAfterStageGenerated();
+    }
   }
 
   // ----- 1. Personas -----
@@ -13867,7 +14212,7 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     if (state.aiLoading) return;
     if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — check Settings → AI.'; _swRefresh(); return; }
 
-    _swBeginAI(state, 3);
+    _swBeginAI(state, 'personas');
     _swRefresh();
 
     var ws    = state.workspace || {};
@@ -13912,10 +14257,11 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
           };
         });
       state.personas = clean;
-      _swEndAISuccess(state, 3);
+      _swEndAISuccess(state, 'personas');
       _swRefresh();
+      _swSignalGenerated('personas');
     }, function(err) {
-      _swEndAIError(state, 3, err);
+      _swEndAIError(state, 'personas', err);
       _swRefresh();
     }, 'sw-ai-config', BrandService.getSystemPrompt('persona'), parseJSON);
   }
@@ -13930,12 +14276,12 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
 
     var selPersonas = (state.personas || []).filter(function(p) { return p._selected; });
     if (!selPersonas.length) {
-      state.aiError = 'No personas selected. Go back to Step 3 and select at least one.';
+      state.aiError = 'No personas selected yet. Select at least one persona above before generating pain points.';
       _swRefresh();
       return;
     }
 
-    _swBeginAI(state, 4);
+    _swBeginAI(state, 'painpoints');
     _swRefresh();
 
     var ws    = state.workspace || {};
@@ -13980,10 +14326,11 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
           };
         });
       state.pain_points = clean;
-      _swEndAISuccess(state, 4);
+      _swEndAISuccess(state, 'painpoints');
       _swRefresh();
+      _swSignalGenerated('painpoints');
     }, function(err) {
-      _swEndAIError(state, 4, err);
+      _swEndAIError(state, 'painpoints', err);
       _swRefresh();
     }, 'sw-ai-config', BrandService.getSystemPrompt('research'), parseJSON);
   }
@@ -13996,7 +14343,7 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     if (state.aiLoading) return;
     if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — check Settings → AI.'; _swRefresh(); return; }
 
-    _swBeginAI(state, 5);
+    _swBeginAI(state, 'messages');
     _swRefresh();
 
     var ws            = state.workspace || {};
@@ -14044,10 +14391,11 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
           };
         });
       state.messages = clean;
-      _swEndAISuccess(state, 5);
+      _swEndAISuccess(state, 'messages');
       _swRefresh();
+      _swSignalGenerated('messages');
     }, function(err) {
-      _swEndAIError(state, 5, err);
+      _swEndAIError(state, 'messages', err);
       _swRefresh();
     }, 'sw-ai-config', BrandService.getSystemPrompt('content'), parseJSON);
   }
@@ -14060,7 +14408,7 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     if (state.aiLoading) return;
     if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — check Settings → AI.'; _swRefresh(); return; }
 
-    _swBeginAI(state, 6);
+    _swBeginAI(state, 'stylesFormats');
     _swRefresh();
 
     var ws    = state.workspace || {};
@@ -14096,21 +14444,21 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
           var cat = f.category && allowedCats[f.category] ? f.category : '';
           return { name: String(f.name).trim(), description: String(f.description).trim(), category: cat, _selected: true };
         });
-      _swEndAISuccess(state, 6);
+      _swEndAISuccess(state, 'stylesFormats');
       _swRefresh();
+      _swSignalGenerated('stylesFormats');
     }, function(err) {
-      _swEndAIError(state, 6, err);
+      _swEndAIError(state, 'stylesFormats', err);
       _swRefresh();
     }, 'sw-ai-config', BrandService.getSystemPrompt('content'), parseJSON);
   }
 
-  // ----- 5. Campaign Ideas (Step 7) -----
+  // ----- 5. Campaign Ideas (Stage 5) -----
   //
-  // The setup wizard's Step 7 produces a list of campaign IDEAS (just
-  // name + objective + brief + target persona + message references).
-  // Each idea becomes a draft campaign_v2 on launch — Ad Sets and Ads
-  // are built later by the per-campaign wizard from the campaign
-  // workspace.
+  // Stage 5 produces a list of campaign IDEAS (just name + objective +
+  // brief + target persona + message references). Each idea becomes a draft
+  // campaign_v2 on launch — Ad Sets and Ads are built later by the
+  // per-campaign wizard from the campaign workspace.
 
   function swAIGenerateCampaignIdeas() {
     var state = _swState();
@@ -14118,7 +14466,7 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     if (state.aiLoading) return;
     if (!LLMService.isConfigured()) { state.aiError = 'AI not configured — check Settings → AI.'; _swRefresh(); return; }
 
-    _swBeginAI(state, 7);
+    _swBeginAI(state, 'campaignIdeas');
     _swRefresh();
 
     var ws            = state.workspace || {};
@@ -14128,7 +14476,7 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
     var extra         = state._campaignIdeasContext || '';
 
     if (!selPersonas.length) {
-      _swEndAIError(state, 7, 'No personas selected. Go back to Step 3.');
+      _swEndAIError(state, 'campaignIdeas', 'No personas selected. Go back to Stage 2 and select at least one.');
       _swRefresh();
       return;
     }
@@ -14176,7 +14524,7 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
 
     callAIWithRetry(prompt, function(parsed) {
       if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.ideas)) {
-        _swEndAIError(state, 7, 'AI returned an invalid response. Try regenerating.');
+        _swEndAIError(state, 'campaignIdeas', 'AI returned an invalid response. Try regenerating.');
         _swRefresh();
         return;
       }
@@ -14200,10 +14548,11 @@ window.CP_BUILD_TIME = "2026-05-14T18:28:37.548Z";
         };
       });
 
-      _swEndAISuccess(state, 7);
+      _swEndAISuccess(state, 'campaignIdeas');
       _swRefresh();
+      _swSignalGenerated('campaignIdeas');
     }, function(err) {
-      _swEndAIError(state, 7, err);
+      _swEndAIError(state, 'campaignIdeas', err);
       _swRefresh();
     }, 'sw-ai-config', BrandService.getSystemPrompt('research'), parseJSON);
   }

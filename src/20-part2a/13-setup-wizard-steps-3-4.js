@@ -1,6 +1,10 @@
   // ------------------------------------------------------------------
-  // SECTION 9.4b: SETUP WIZARD — STEP RENDERERS (Phase 3: Steps 3 & 4)
+  // SECTION 9.4b: SETUP WIZARD — STAGE 2 (Personas & Pain Points, merged)
   // ------------------------------------------------------------------
+  //
+  // Single screen that owns both persona and pain-point generation. AI fires
+  // personas first; once landed (and at least one is selected) AI generates
+  // pain points keyed back to those personas.
 
   // --- Shared helpers ---
 
@@ -25,9 +29,9 @@
       + '</div>';
   }
 
-  // --- Inline diagnostics helpers (shared across Steps 3-7) ---
+  // --- Inline diagnostics helpers (shared across Stages 2-5) ---
 
-  function _swAIErrorBanner(stepNum) {
+  function _swAIErrorBanner(stageNum) {
     var err = setupWizardState.aiError;
     if (!err) return '';
     var html = '<div class="cp-sw-ai-error" role="alert">';
@@ -37,7 +41,7 @@
     html += '<div class="cp-sw-ai-error-msg">' + esc(String(err)) + '</div>';
     html += '</div>';
     html += '<div class="cp-sw-ai-error-actions">';
-    html += '<button class="cp-btn cp-btn-sm cp-btn-outline" data-action="sw-ai-retry-step" data-step="' + stepNum + '">' + icon('rotate') + ' Retry</button>';
+    html += '<button class="cp-btn cp-btn-sm cp-btn-outline" data-action="sw-ai-retry-step" data-step="' + stageNum + '">' + icon('rotate') + ' Retry</button>';
     html += '<button class="cp-btn cp-btn-sm cp-btn-ghost" data-action="sw-ai-error-dismiss">' + icon('x') + ' Dismiss</button>';
     html += '</div>';
     html += '</div>';
@@ -56,8 +60,8 @@
     return html;
   }
 
-  function _swLastGeneratedLabel(stepNum) {
-    var ts = setupWizardState.created && setupWizardState.created.lastGeneratedAt && setupWizardState.created.lastGeneratedAt[stepNum];
+  function _swLastGeneratedLabel(genKey) {
+    var ts = setupWizardState.created && setupWizardState.created.lastGeneratedAt && setupWizardState.created.lastGeneratedAt[genKey];
     if (!ts) return '';
     return '<div class="cp-sw-last-gen">' + icon('clock') + ' Last generated ' + esc(_swRelTime(ts)) + '</div>';
   }
@@ -71,31 +75,53 @@
       + '</button>';
   }
 
-  // --- Step 3: Personas ---
+  // --- Stage 2: Personas + Pain Points (merged) ---
 
-  function renderSWStep3() {
-    var ws       = setupWizardState;
-    var personas = ws.personas || [];
-    var generated = ws.stepGenerated[3];
+  function renderSWStep2() {
+    var ws = setupWizardState;
 
     var html = _buildSWStepHeader(
-      'Target Personas',
-      'Select the audience personas that best represent your ideal customers. AI generates options based on your workspace setup.',
+      'Personas & Pain Points',
+      'AI generates target personas first, then specific pain points for each. Select what represents your real customers — you can edit any of it.',
       'b'
     );
 
-    html += _swAIErrorBanner(3);
+    html += _swAIErrorBanner(2);
+    html += _renderSWPersonasBlock();
 
-    // Generation bar
-    html += '<div class="cp-sw-gen-bar">';
-    html += '<textarea class="cp-textarea" id="swPersonaContext" rows="2"';
-    html += ' placeholder="Optional: additional context (e.g., focus on enterprise buyers, include a tech-savvy segment)...">';
-    html += esc(ws._personaContext || '');
-    html += '</textarea>';
-    html += _swGenButton('sw-ai-gen-personas', generated, ws.aiLoading);
+    // Pain points block only appears once at least one persona is selected.
+    var selPersonas = (ws.personas || []).filter(function(p) { return p._selected; });
+    if (selPersonas.length) {
+      html += '<div class="cp-sw-section-divider"><span class="cp-sw-section-divider-title">Pain points</span><span class="cp-sw-section-divider-line"></span></div>';
+      html += _renderSWPainPointsBlock(selPersonas);
+    } else if (ws.personas && ws.personas.length) {
+      html += '<div class="cp-sw-info-box" style="margin-top:var(--cp-space-4)">';
+      html += icon('info') + ' Select at least one persona above to unlock pain-point generation.';
+      html += '</div>';
+    }
+
+    return html;
+  }
+
+  function _renderSWPersonasBlock() {
+    var ws       = setupWizardState;
+    var personas = ws.personas || [];
+    var generated = ws.stepGenerated.personas;
+
+    var html = '<div class="cp-sw-substage">';
+    html += '<div class="cp-sw-substage-header">';
+    html += '<h3 class="cp-sw-substage-title">' + icon('users') + ' Personas</h3>';
     html += '</div>';
 
-    if (ws.aiLoading) {
+    html += '<div class="cp-sw-gen-bar">';
+    html += '<textarea class="cp-textarea" id="swPersonaContext" rows="2"';
+    html += ' placeholder="Optional: additional persona direction (e.g., focus on enterprise buyers, include a tech-savvy segment)...">';
+    html += esc(ws._personaContext || '');
+    html += '</textarea>';
+    html += _swGenButton('sw-ai-gen-personas', generated, ws.aiLoading && !ws.stepGenerated.personas);
+    html += '</div>';
+
+    if (ws.aiLoading && !ws.stepGenerated.personas) {
       html += _buildSWSkeletonCards(4);
     } else if (generated && !personas.length) {
       html += _swAIEmptyAfterGenBanner('personas', ws._personaContext || '');
@@ -110,7 +136,7 @@
       html += '<span class="cp-sw-sel-count' + (selCount > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
       html += selCount + ' of ' + personas.length + ' persona' + (personas.length !== 1 ? 's' : '') + ' selected';
       html += '</span>';
-      html += _swLastGeneratedLabel(3);
+      html += _swLastGeneratedLabel('personas');
       html += '</div>';
       html += '<div class="cp-sw-card-grid">';
       for (var i = 0; i < personas.length; i++) {
@@ -118,7 +144,78 @@
       }
       html += '</div>';
     }
+    html += '</div>';
+    return html;
+  }
 
+  function _renderSWPainPointsBlock(selPersonas) {
+    var ws        = setupWizardState;
+    var pps       = ws.pain_points || [];
+    var generated = ws.stepGenerated.painpoints;
+    var personasGen = ws.stepGenerated.personas;
+
+    var html = '<div class="cp-sw-substage">';
+    html += '<div class="cp-sw-substage-header">';
+    html += '<h3 class="cp-sw-substage-title">' + icon('crosshair') + ' Pain points</h3>';
+    html += '</div>';
+
+    html += '<div class="cp-sw-gen-bar">';
+    html += '<textarea class="cp-textarea" id="swPainPointContext" rows="2"';
+    html += ' placeholder="Optional: focus on specific challenges (e.g., emphasise time-management struggles)...">';
+    html += esc(ws._ppContext || '');
+    html += '</textarea>';
+    html += _swGenButton('sw-ai-gen-painpoints', generated, ws.aiLoading && personasGen);
+    html += '</div>';
+
+    if (ws.aiLoading && personasGen && !generated) {
+      html += _buildSWSkeletonCards(6);
+    } else if (generated && !pps.length) {
+      html += _swAIEmptyAfterGenBanner('pain points', ws._ppContext || '');
+    } else if (!pps.length) {
+      html += '<div class="cp-sw-empty-state">';
+      html += '<div class="cp-sw-empty-icon">' + icon('crosshair') + '</div>';
+      html += '<p>Click <strong>Generate with AI</strong> to create pain-point suggestions based on your selected personas.</p>';
+      html += '</div>';
+    } else {
+      if (selPersonas.length > 1) {
+        var activeTab = ws._ppActiveTab || 0;
+        html += '<div class="cp-sw-pp-tabs">';
+        for (var pi = 0; pi < selPersonas.length; pi++) {
+          var personaRealIdx = (ws.personas || []).indexOf(selPersonas[pi]);
+          var tabPPCount = pps.filter(function(pp) { return pp._persona_idx === personaRealIdx && pp._selected; }).length;
+          html += '<button class="cp-sw-pp-tab' + (activeTab === pi ? ' cp-sw-pp-tab--active' : '') + '" data-action="sw-pp-tab" data-tab="' + pi + '">';
+          html += esc(truncate(selPersonas[pi].name || 'Persona', 22));
+          if (tabPPCount) html += ' <span class="cp-sw-pp-tab-badge">' + tabPPCount + '</span>';
+          html += '</button>';
+        }
+        html += '</div>';
+      }
+
+      var visiblePPs;
+      if (selPersonas.length > 1) {
+        var activePersona = selPersonas[ws._ppActiveTab || 0];
+        var filterIdx = (ws.personas || []).indexOf(activePersona);
+        visiblePPs = pps.map(function(pp, i) { return { pp: pp, i: i }; })
+                        .filter(function(o) { return o.pp._persona_idx === filterIdx; });
+      } else {
+        visiblePPs = pps.map(function(pp, i) { return { pp: pp, i: i }; });
+      }
+
+      var totalSel = pps.filter(function(pp) { return pp._selected; }).length;
+      html += '<div class="cp-sw-card-bottom">';
+      html += '<span class="cp-sw-sel-count' + (totalSel > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
+      html += totalSel + ' of ' + pps.length + ' pain point' + (pps.length !== 1 ? 's' : '') + ' selected';
+      html += '</span>';
+      html += _swLastGeneratedLabel('painpoints');
+      html += '</div>';
+
+      html += '<div class="cp-sw-card-grid">';
+      for (var j = 0; j < visiblePPs.length; j++) {
+        html += _buildSWPainPointCard(visiblePPs[j].pp, visiblePPs[j].i);
+      }
+      html += '</div>';
+    }
+    html += '</div>';
     return html;
   }
 
@@ -134,7 +231,7 @@
     if (demo.location)   tags.push(demo.location);
     if (demo.occupation) tags.push(demo.occupation);
 
-    var html = '<div class="cp-sw-sel-card' + (selected ? ' cp-sw-sel-card--selected' : '') + '" data-idx="' + idx + '" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '">';
+    var html = '<div class="cp-sw-sel-card' + (selected ? ' cp-sw-sel-card--selected' : '') + '" data-idx="' + idx + '" data-card-type="persona" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '">';
     html += '<div class="cp-sw-sel-card-check">' + (selected ? icon('check') : '') + '</div>';
     html += '<div class="cp-sw-sel-card-title">' + esc(p.name || ('Persona ' + (idx + 1))) + '</div>';
     if (p.description) {
@@ -147,7 +244,6 @@
       }
       html += '</div>';
     }
-    // Always-visible desires / fears mini-row — the most strategic fields
     if (psych.desires || psych.fears) {
       html += '<div class="cp-sw-sel-card-psych">';
       if (psych.desires) {
@@ -184,96 +280,10 @@
     return html;
   }
 
-  // --- Step 4: Pain Points ---
-
-  function renderSWStep4() {
-    var ws        = setupWizardState;
-    var pps       = ws.pain_points || [];
-    var selPersonas = (ws.personas || []).filter(function(p) { return p._selected; });
-    var generated = ws.stepGenerated[4];
-
-    var html = _buildSWStepHeader(
-      'Pain Points',
-      'Select the key challenges your personas face. These directly shape your ad messages, hooks, and copy.',
-      'b'
-    );
-
-    if (!selPersonas.length) {
-      html += '<div class="cp-sw-empty-state cp-sw-empty-state--warn">';
-      html += icon('triangle-alert') + ' No personas selected from Step 3. Go back and select at least one persona.';
-      html += '</div>';
-      return html;
-    }
-
-    html += _swAIErrorBanner(4);
-
-    // Generation bar
-    html += '<div class="cp-sw-gen-bar">';
-    html += '<textarea class="cp-textarea" id="swPainPointContext" rows="2"';
-    html += ' placeholder="Optional: focus on specific challenges or industries (e.g., focus on time-management struggles)...">';
-    html += esc(ws._ppContext || '');
-    html += '</textarea>';
-    html += _swGenButton('sw-ai-gen-painpoints', generated, ws.aiLoading);
-    html += '</div>';
-
-    if (ws.aiLoading) {
-      html += _buildSWSkeletonCards(6);
-    } else if (generated && !pps.length) {
-      html += _swAIEmptyAfterGenBanner('pain points', ws._ppContext || '');
-    } else if (!pps.length) {
-      html += '<div class="cp-sw-empty-state">';
-      html += '<div class="cp-sw-empty-icon">' + icon('crosshair') + '</div>';
-      html += '<p>Click <strong>Generate with AI</strong> to create pain point suggestions based on your selected personas.</p>';
-      html += '</div>';
-    } else {
-      // Persona tab bar (only when 2+ personas selected)
-      if (selPersonas.length > 1) {
-        var activeTab = ws._ppActiveTab || 0;
-        html += '<div class="cp-sw-pp-tabs">';
-        for (var pi = 0; pi < selPersonas.length; pi++) {
-          var personaRealIdx = (ws.personas || []).indexOf(selPersonas[pi]);
-          var tabPPCount = pps.filter(function(pp) { return pp._persona_idx === personaRealIdx && pp._selected; }).length;
-          html += '<button class="cp-sw-pp-tab' + (activeTab === pi ? ' cp-sw-pp-tab--active' : '') + '" data-action="sw-pp-tab" data-tab="' + pi + '">';
-          html += esc(truncate(selPersonas[pi].name || 'Persona', 22));
-          if (tabPPCount) html += ' <span class="cp-sw-pp-tab-badge">' + tabPPCount + '</span>';
-          html += '</button>';
-        }
-        html += '</div>';
-      }
-
-      // Filter to active persona tab (or show all if single persona)
-      var visiblePPs;
-      if (selPersonas.length > 1) {
-        var activePersona = selPersonas[ws._ppActiveTab || 0];
-        var filterIdx = (ws.personas || []).indexOf(activePersona);
-        visiblePPs = pps.map(function(pp, i) { return { pp: pp, i: i }; })
-                        .filter(function(o) { return o.pp._persona_idx === filterIdx; });
-      } else {
-        visiblePPs = pps.map(function(pp, i) { return { pp: pp, i: i }; });
-      }
-
-      var totalSel = pps.filter(function(pp) { return pp._selected; }).length;
-      html += '<div class="cp-sw-card-bottom">';
-      html += '<span class="cp-sw-sel-count' + (totalSel > 0 ? ' cp-sw-sel-count--ok' : '') + '">';
-      html += totalSel + ' of ' + pps.length + ' pain point' + (pps.length !== 1 ? 's' : '') + ' selected';
-      html += '</span>';
-      html += _swLastGeneratedLabel(4);
-      html += '</div>';
-
-      html += '<div class="cp-sw-card-grid">';
-      for (var j = 0; j < visiblePPs.length; j++) {
-        html += _buildSWPainPointCard(visiblePPs[j].pp, visiblePPs[j].i);
-      }
-      html += '</div>';
-    }
-
-    return html;
-  }
-
   function _buildSWPainPointCard(pp, idx) {
     var selected = pp._selected;
 
-    var html = '<div class="cp-sw-sel-card' + (selected ? ' cp-sw-sel-card--selected' : '') + '" data-idx="' + idx + '" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '">';
+    var html = '<div class="cp-sw-sel-card' + (selected ? ' cp-sw-sel-card--selected' : '') + '" data-idx="' + idx + '" data-card-type="painpoint" role="button" tabindex="0" aria-pressed="' + (selected ? 'true' : 'false') + '">';
     html += '<div class="cp-sw-sel-card-check">' + (selected ? icon('check') : '') + '</div>';
     html += '<div class="cp-sw-sel-card-title">' + esc(pp.pain_point || 'Pain Point') + '</div>';
     if (pp.solution) {
