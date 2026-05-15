@@ -1,6 +1,6 @@
-/* Campaign Planner v1.0.10 · built 2026-05-15T10:08:36.506Z · 81 source files (see src/) */
+/* Campaign Planner v1.0.10 · built 2026-05-15T12:43:56.772Z · 81 source files (see src/) */
 window.CP_VERSION = "1.0.10";
-window.CP_BUILD_TIME = "2026-05-15T10:08:36.506Z";
+window.CP_BUILD_TIME = "2026-05-15T12:43:56.772Z";
 
 /* ===== src/10-part1/00-header.js ===== */
 /**
@@ -735,12 +735,16 @@ window.CP_BUILD_TIME = "2026-05-15T10:08:36.506Z";
 
   function loadData() {
     var rawData = S.$textarea.val();
-    if (rawData && rawData.trim()) {
+    // Capture raw-empty flag before parsing/migration mutates S, so the
+    // auto-launch gate sees ground-truth field state.
+    S._rawDataEmpty = !(rawData && rawData.trim());
+    if (!S._rawDataEmpty) {
       try { S.data = JSON.parse(rawData); } catch (e) { console.error('[CP] JSON data parse error:', e); S.data = getDefaultData(); }
     } else { S.data = getDefaultData(); }
 
     var rawMeta = S.$metaTextarea.val();
-    if (rawMeta && rawMeta.trim()) {
+    S._rawMetaEmpty = !(rawMeta && rawMeta.trim());
+    if (!S._rawMetaEmpty) {
       try { S.meta = JSON.parse(rawMeta); } catch (e) { console.error('[CP] JSON meta parse error:', e); S.meta = getDefaultMeta(); }
     } else { S.meta = getDefaultMeta(); }
 
@@ -8606,24 +8610,21 @@ window.CP_BUILD_TIME = "2026-05-15T10:08:36.506Z";
     console.error('[CP] Setup wizard open/render failed:', (err && err.stack) || err);
   }
 
-  // Auto-launch the wizard on an empty workspace. Returns true if launched.
-  // Caller (init) should also check S.meta.setup.setup_complete is falsey.
+  // Auto-launch the wizard whenever EITHER raw json_data or raw json_meta
+  // field was empty when the page loaded. Flags set in loadData()
+  // (src/10-part1/03-init.js) before any parsing or migration runs, so this
+  // gate sees ground-truth field state and is immune to migration code or
+  // partial saves accidentally seeding parsed state.
   function maybeAutoLaunchSetupWizard() {
     if (!S || !S.meta || !S.data) { console.log('[CP] Setup wizard auto-launch: S not ready, skipping'); return false; }
-    var setup = S.meta.setup || {};
-    var hasPersonas  = Object.keys(S.data.personas       || {}).length > 0;
-    var hasMessages  = Object.keys(S.data.messages       || {}).length > 0;
-    var hasCampaigns = Object.keys(S.data.campaigns_v2   || {}).length > 0;
-    var brandConfigured = !!(S.brand && S.brand.configured);
-    console.log('[CP] Setup wizard auto-launch check:', { setup_complete: !!setup.setup_complete, hasPersonas: hasPersonas, hasMessages: hasMessages, hasCampaigns: hasCampaigns, brandConfigured: brandConfigured });
-    if (setup.setup_complete) { console.log('[CP] Setup wizard auto-launch: skip (setup_complete)'); return false; }
-    if (hasPersonas || hasMessages || hasCampaigns) { console.log('[CP] Setup wizard auto-launch: skip (workspace not empty)'); return false; }
-    // On a verified-empty workspace, force a clean fresh wizard. A stale
-    // session or orphan overlay (possibly invisible on this viewport due to
-    // transform/containing-block quirks) must not block auto-launch.
+    var rawDataEmpty = !!S._rawDataEmpty;
+    var rawMetaEmpty = !!S._rawMetaEmpty;
+    console.log('[CP] Setup wizard auto-launch check:', { rawDataEmpty: rawDataEmpty, rawMetaEmpty: rawMetaEmpty, brandConfigured: !!(S.brand && S.brand.configured) });
+    if (!rawDataEmpty && !rawMetaEmpty) { console.log('[CP] Setup wizard auto-launch: skip (both fields populated)'); return false; }
     try { swClearSession(); } catch (e) {}
     $('.cp-setup-wizard').remove();
-    console.log('[CP] Setup wizard auto-launch: opening fresh wizard');
+    var reason = (rawDataEmpty ? 'data empty' : '') + (rawDataEmpty && rawMetaEmpty ? ' + ' : '') + (rawMetaEmpty ? 'meta empty' : '');
+    console.log('[CP] Setup wizard auto-launch: opening fresh wizard (' + reason + ')');
     openSetupWizard(true);
     return true;
   }

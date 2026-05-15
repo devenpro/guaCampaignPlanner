@@ -120,12 +120,16 @@
 
   function loadData() {
     var rawData = S.$textarea.val();
-    if (rawData && rawData.trim()) {
+    // Capture raw-empty flag before parsing/migration mutates S, so the
+    // auto-launch gate sees ground-truth field state.
+    S._rawDataEmpty = !(rawData && rawData.trim());
+    if (!S._rawDataEmpty) {
       try { S.data = JSON.parse(rawData); } catch (e) { console.error('[CP] JSON data parse error:', e); S.data = getDefaultData(); }
     } else { S.data = getDefaultData(); }
 
     var rawMeta = S.$metaTextarea.val();
-    if (rawMeta && rawMeta.trim()) {
+    S._rawMetaEmpty = !(rawMeta && rawMeta.trim());
+    if (!S._rawMetaEmpty) {
       try { S.meta = JSON.parse(rawMeta); } catch (e) { console.error('[CP] JSON meta parse error:', e); S.meta = getDefaultMeta(); }
     } else { S.meta = getDefaultMeta(); }
 
